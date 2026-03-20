@@ -21,8 +21,8 @@ export default function SalesPage() {
   if (!activeBrand || !activeBrand.paidOrders.length) {
     return (
       <EmptyState
-        title="Ainda não há vendas importadas"
-        description="Importe o arquivo Lista de Pedidos.csv e o Lista de Itens.csv para ativar a visão comercial da marca."
+        title="Ainda não há vendas carregadas"
+        description="Importe Lista de Pedidos.csv e Lista de Itens.csv para abrir a leitura comercial da marca."
       />
     );
   }
@@ -36,8 +36,8 @@ export default function SalesPage() {
       <section>
         <h1 className="text-3xl font-bold text-on-surface">Vendas</h1>
         <p className="mt-2 text-sm leading-7 text-on-surface-variant">
-          Leitura consolidada dos pedidos pagos, itens vendidos e produtos com
-          melhor resultado bruto.
+          Acompanhe pedidos pagos, itens vendidos e os produtos que mais puxam a
+          receita da marca.
         </p>
       </section>
 
@@ -63,7 +63,7 @@ export default function SalesPage() {
       <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-3xl border border-outline bg-surface-container p-6">
           <h2 className="text-xl font-semibold text-on-surface">
-            Receita por dia
+            Receita diária
           </h2>
           <div className="mt-6 h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -102,7 +102,7 @@ export default function SalesPage() {
 
         <div className="rounded-3xl border border-outline bg-surface-container p-6">
           <h2 className="text-xl font-semibold text-on-surface">
-            Top produtos
+            Produtos com maior receita
           </h2>
           <div className="mt-5 space-y-3">
             {topProducts.slice(0, 8).map((product) => (

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { BarChart3, DatabaseZap, FileUp, LayoutDashboard, ShieldAlert, Tags } from "lucide-react";
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { BarChart3, DatabaseZap, FileUp, LayoutDashboard, LogOut, ShieldAlert, Tags } from "lucide-react";
 import { useBrandOps } from "./BrandOpsProvider";
 
 const navigation = [
@@ -20,8 +21,36 @@ export function AppShell({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const pathname = usePathname();
-  const { activeBrand, activeBrandId, brands, setActiveBrandId } = useBrandOps();
+  const {
+    activeBrand,
+    activeBrandId,
+    brands,
+    profile,
+    session,
+    isLoading,
+    setActiveBrandId,
+    signOut,
+  } = useBrandOps();
+
+  useEffect(() => {
+    if (!isLoading && !session) {
+      router.replace("/login");
+    }
+  }, [isLoading, router, session]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-on-surface">
+        Carregando workspace...
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background text-on-surface">
@@ -32,10 +61,10 @@ export function AppShell({
               BrandOps
             </p>
             <h1 className="mt-3 text-2xl font-bold text-on-surface">
-              Operação financeira para POD
+              Operação multi-marca
             </h1>
             <p className="mt-2 text-sm text-on-surface-variant">
-              Consolide mídia, pedidos e catálogo em uma leitura única por marca.
+              Navegue entre marcas, importe arquivos e revise os números em um só lugar.
             </p>
           </div>
 
@@ -61,11 +90,19 @@ export function AppShell({
           </nav>
 
           <div className="mt-auto rounded-2xl border border-outline bg-surface-container p-4">
-            <p className="text-xs font-semibold text-on-surface">Escopo atual</p>
-            <p className="mt-2 text-sm text-on-surface-variant">
-              MVP com importação real de CSV e persistência local por marca, pronto
-              para conectar autenticação e Supabase.
+            <p className="text-xs font-semibold text-on-surface">
+              {profile?.fullName ?? profile?.email ?? "Usuário autenticado"}
             </p>
+            <p className="mt-1 text-sm text-on-surface-variant">
+              {profile?.role === "SUPER_ADMIN" ? "Super admin" : "Dono da marca"}
+            </p>
+            <button
+              onClick={() => void signOut()}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl border border-outline px-4 py-2 text-sm text-on-surface-variant hover:text-on-surface"
+            >
+              <LogOut size={16} />
+              Sair
+            </button>
           </div>
         </aside>
 
@@ -77,14 +114,14 @@ export function AppShell({
                   Painel operacional
                 </p>
                 <h2 className="text-xl font-semibold text-on-surface">
-                  {activeBrand?.name ?? "Nenhuma marca selecionada"}
+                  {activeBrand?.name ?? "Nenhuma marca em foco"}
                 </h2>
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div className="rounded-xl border border-outline bg-surface-container px-3 py-2">
                   <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">
-                    Marca ativa
+                    Marca em foco
                   </label>
                   <select
                     value={activeBrandId ?? ""}
@@ -92,7 +129,7 @@ export function AppShell({
                     className="min-w-56 bg-transparent text-sm text-on-surface outline-none"
                     disabled={!brands.length}
                   >
-                    {!brands.length && <option value="">Nenhuma marca importada</option>}
+                    {!brands.length && <option value="">Nenhuma marca disponível</option>}
                     {brands.map((brand) => (
                       <option key={brand.id} value={brand.id} className="text-black">
                         {brand.name}
@@ -102,7 +139,7 @@ export function AppShell({
                 </div>
 
                 <div className="rounded-xl border border-outline bg-surface-container px-4 py-3 text-sm text-on-surface-variant">
-                  {`${brands.length} marca(s) carregada(s)`}
+                  {`${brands.length} marca(s) acessível(is)`}
                 </div>
               </div>
             </div>

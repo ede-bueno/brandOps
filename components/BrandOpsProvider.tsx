@@ -2,173 +2,182 @@
 
 import {
   createContext,
-  startTransition,
   useContext,
   useEffect,
   useMemo,
   useState,
 } from "react";
-import { mergeBrandDataset, parseUploadedCsv } from "@/lib/brandops/csv";
-import type { BrandDataset, CmvEntry, WorkspaceState } from "@/lib/brandops/types";
+import type { Session } from "@supabase/supabase-js";
+import {
+  createBrandIfNeeded,
+  fetchAccessibleBrands,
+  fetchBrandDataset,
+  fetchUserProfile,
+  importFilesToBrand,
+  setCurrentCmv,
+} from "@/lib/brandops/database";
+import { supabase } from "@/lib/supabase";
+import type { BrandDataset, UserProfile } from "@/lib/brandops/types";
 
-const STORAGE_KEY = "brandops-workspace-v1";
+type BrandOption = {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+};
 
 interface BrandOpsContextValue {
-  brands: BrandDataset[];
+  session: Session | null;
+  profile: UserProfile | null;
+  brands: BrandOption[];
   activeBrandId: string | null;
   activeBrand: BrandDataset | null;
+  isLoading: boolean;
   setActiveBrandId: (brandId: string) => void;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
   importFiles: (brandName: string, files: File[]) => Promise<void>;
-  saveCmvEntry: (brandId: string, productId: string, productName: string, unitCost: number) => void;
-  removeBrand: (brandId: string) => void;
+  saveCmvEntry: (brandId: string, productId: string, productName: string, unitCost: number) => Promise<void>;
+  refreshActiveBrand: () => Promise<void>;
 }
 
 const BrandOpsContext = createContext<BrandOpsContextValue | null>(null);
-
-function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
 
 export function BrandOpsProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [state, setState] = useState<WorkspaceState>(() => {
-    if (typeof window === "undefined") {
-      return {
-        brands: [],
-        activeBrandId: null,
-      };
-    }
-
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return {
-        brands: [],
-        activeBrandId: null,
-      };
-    }
-
-    try {
-      return JSON.parse(raw) as WorkspaceState;
-    } catch {
-      window.localStorage.removeItem(STORAGE_KEY);
-      return {
-        brands: [],
-        activeBrandId: null,
-      };
-    }
-  });
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [brands, setBrands] = useState<BrandOption[]>([]);
+  const [activeBrandId, setActiveBrandId] = useState<string | null>(null);
+  const [activeBrand, setActiveBrand] = useState<BrandDataset | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const userId = session?.user?.id ?? null;
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [state]);
+    let isMounted = true;
 
-  const activeBrand =
-    state.brands.find((brand) => brand.id === state.activeBrandId) ?? null;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!isMounted) {
+        return;
+      }
+      setSession(data.session);
+      setIsLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    async function loadWorkspace() {
+      if (!userId) {
+        setProfile(null);
+        setBrands([]);
+        setActiveBrandId(null);
+        setActiveBrand(null);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const [nextProfile, nextBrands] = await Promise.all([
+          fetchUserProfile(userId),
+          fetchAccessibleBrands(),
+        ]);
+
+        setProfile(nextProfile);
+        setBrands(nextBrands);
+        setActiveBrandId((current) => {
+          if (current && nextBrands.some((brand) => brand.id === current)) {
+            return current;
+          }
+          return nextBrands[0]?.id ?? null;
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void loadWorkspace();
+  }, [userId]);
+
+  useEffect(() => {
+    async function loadBrand() {
+      if (!userId || !activeBrandId) {
+        setActiveBrand(null);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const dataset = await fetchBrandDataset(activeBrandId);
+        setActiveBrand(dataset);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void loadBrand();
+  }, [activeBrandId, userId]);
 
   const value = useMemo<BrandOpsContextValue>(
     () => ({
-      brands: state.brands,
-      activeBrandId: state.activeBrandId,
+      session,
+      profile,
+      brands,
+      activeBrandId,
       activeBrand,
-      setActiveBrandId: (brandId) => {
-        setState((current) => ({ ...current, activeBrandId: brandId }));
+      isLoading,
+      setActiveBrandId,
+      signIn: async (email, password) => {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          throw error;
+        }
+      },
+      signOut: async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          throw error;
+        }
       },
       importFiles: async (brandName, files) => {
-        const normalizedName = brandName.trim();
-        if (!normalizedName) {
-          throw new Error("Informe o nome da marca para importar os arquivos.");
+        if (!userId) {
+          throw new Error("Você precisa estar autenticado para importar.");
         }
 
-        const brandId = slugify(normalizedName);
-        let nextBrand =
-          state.brands.find((brand) => brand.id === brandId) ??
-          ({
-            id: brandId,
-            name: normalizedName,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            files: {},
-            catalog: [],
-            paidOrders: [],
-            salesLines: [],
-            orderItems: [],
-            media: [],
-            cmvEntries: [],
-          } satisfies BrandDataset);
-
-        for (const file of files) {
-          const parsed = await parseUploadedCsv(file);
-          nextBrand = mergeBrandDataset(
-            nextBrand,
-            brandId,
-            normalizedName,
-            parsed.fileInfo,
-            parsed.payload,
-          );
+        const brandId = await createBrandIfNeeded(brandName, brands);
+        await importFilesToBrand(brandId, files, userId);
+        const refreshedBrands = await fetchAccessibleBrands();
+        setBrands(refreshedBrands);
+        setActiveBrandId(brandId);
+        setActiveBrand(await fetchBrandDataset(brandId));
+      },
+      saveCmvEntry: async (brandId, productId, _productName, unitCost) => {
+        await setCurrentCmv(brandId, productId, unitCost);
+        if (activeBrandId === brandId) {
+          setActiveBrand(await fetchBrandDataset(brandId));
         }
-
-        startTransition(() => {
-          setState((current) => {
-            const brands = current.brands.filter((brand) => brand.id !== brandId);
-            return {
-              brands: [...brands, nextBrand].sort((a, b) =>
-                a.name.localeCompare(b.name),
-              ),
-              activeBrandId: brandId,
-            };
-          });
-        });
       },
-      saveCmvEntry: (brandId, productId, productName, unitCost) => {
-        setState((current) => ({
-          ...current,
-          brands: current.brands.map((brand) => {
-            if (brand.id !== brandId) {
-              return brand;
-            }
-
-            const nextEntry: CmvEntry = {
-              productId,
-              productName,
-              unitCost,
-              updatedAt: new Date().toISOString(),
-            };
-            const remaining = brand.cmvEntries.filter(
-              (entry) => entry.productId !== productId,
-            );
-
-            return {
-              ...brand,
-              updatedAt: new Date().toISOString(),
-              cmvEntries: [...remaining, nextEntry].sort((a, b) =>
-                a.productName.localeCompare(b.productName),
-              ),
-            };
-          }),
-        }));
-      },
-      removeBrand: (brandId) => {
-        setState((current) => {
-          const brands = current.brands.filter((brand) => brand.id !== brandId);
-          return {
-            brands,
-            activeBrandId:
-              current.activeBrandId === brandId
-                ? brands[0]?.id ?? null
-                : current.activeBrandId,
-          };
-        });
+      refreshActiveBrand: async () => {
+        if (!activeBrandId) {
+          return;
+        }
+        setActiveBrand(await fetchBrandDataset(activeBrandId));
       },
     }),
-    [activeBrand, state.activeBrandId, state.brands],
+    [activeBrand, activeBrandId, brands, isLoading, profile, session, userId],
   );
 
   return (

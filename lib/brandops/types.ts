@@ -5,11 +5,20 @@ export type CsvFileKind =
   | "lista_pedidos"
   | "lista_itens";
 
+export type UserRole = "SUPER_ADMIN" | "BRAND_OWNER";
+
 export interface ImportedFileInfo {
   kind: CsvFileKind;
   fileName: string;
   importedAt: string;
   rowCount: number;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  fullName?: string | null;
+  role: UserRole;
 }
 
 export interface CatalogProduct {

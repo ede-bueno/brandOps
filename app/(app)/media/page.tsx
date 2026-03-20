@@ -22,8 +22,8 @@ export default function MediaPage() {
   if (!activeBrand || !activeBrand.media.length) {
     return (
       <EmptyState
-        title="Ainda não há mídia importada"
-        description="Importe o arquivo Meta Export.csv para liberar análise de investimento, receita atribuída e ROAS por campanha."
+        title="Ainda não há mídia carregada"
+        description="Importe o Meta Export.csv para analisar investimento, receita atribuída e desempenho por campanha."
       />
     );
   }
@@ -39,8 +39,8 @@ export default function MediaPage() {
       <section>
         <h1 className="text-3xl font-bold text-on-surface">Mídia</h1>
         <p className="mt-2 text-sm leading-7 text-on-surface-variant">
-          Consolidação da exportação da Meta com investimento, compras atribuídas e
-          leitura de retorno por campanha.
+          Veja o investimento da Meta, a receita atribuída e o retorno das campanhas
+          no período importado.
         </p>
       </section>
 
@@ -54,7 +54,7 @@ export default function MediaPage() {
       <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-3xl border border-outline bg-surface-container p-6">
           <h2 className="text-xl font-semibold text-on-surface">
-            Investimento vs receita atribuída por dia
+            Investimento x receita por dia
           </h2>
           <div className="mt-6 h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -105,7 +105,7 @@ export default function MediaPage() {
               >
                 <p className="font-semibold text-on-surface">{campaign.campaignName}</p>
                 <div className="mt-3 grid grid-cols-2 gap-3 text-sm text-on-surface-variant">
-                  <span>Spend: {currencyFormatter.format(campaign.spend)}</span>
+                  <span>Investimento: {currencyFormatter.format(campaign.spend)}</span>
                   <span>ROAS: {campaign.roas.toFixed(2)}x</span>
                   <span>Receita: {currencyFormatter.format(campaign.purchaseValue)}</span>
                   <span>Compras: {integerFormatter.format(campaign.purchases)}</span>

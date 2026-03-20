@@ -10,8 +10,8 @@ export default function SanitizationPage() {
   if (!activeBrand || !activeBrand.media.length) {
     return (
       <EmptyState
-        title="Ainda não há dados de mídia para saneamento"
-        description="Assim que o Meta Export.csv for importado, o BrandOps gera uma fila inicial de anomalias para revisão."
+        title="Nenhum dado de mídia carregado"
+        description="Importe o Meta Export.csv para revisar as linhas que merecem checagem antes da leitura gerencial."
       />
     );
   }
@@ -23,9 +23,8 @@ export default function SanitizationPage() {
       <section>
         <h1 className="text-3xl font-bold text-on-surface">Saneamento</h1>
         <p className="mt-2 max-w-3xl text-sm leading-7 text-on-surface-variant">
-          Lista inicial de anomalias geradas automaticamente a partir do export da
-          Meta. O objetivo aqui é destacar linhas com sinais fortes de atribuição
-          inconsistente.
+          Esta fila destaca linhas com sinais de inconsistência para você revisar
+          antes de confiar nos números da mídia.
         </p>
       </section>
 
@@ -38,10 +37,10 @@ export default function SanitizationPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-on-surface">
-                Anomalias sugeridas
+                Anomalias encontradas
               </h2>
               <p className="mt-1 text-sm text-on-surface-variant">
-                {anomalies.length} ocorrência(s) sinalizadas automaticamente.
+                {anomalies.length} ocorrência(s) marcadas para revisão.
               </p>
             </div>
           </div>

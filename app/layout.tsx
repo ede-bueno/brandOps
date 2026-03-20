@@ -16,7 +16,7 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "BrandOps",
   description:
-    "Plataforma operacional para consolidar vendas, mídia e saúde financeira de marcas print on demand.",
+    "Central de operação para acompanhar vendas, mídia e resultado financeiro por marca.",
 };
 
 export default function RootLayout({

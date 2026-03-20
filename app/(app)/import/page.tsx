@@ -69,9 +69,8 @@ export default function ImportPage() {
       <section>
         <h1 className="text-3xl font-bold text-on-surface">Importação</h1>
         <p className="mt-2 max-w-3xl text-sm leading-7 text-on-surface-variant">
-          Faça upload dos CSVs exportados da operação. O BrandOps detecta o tipo de
-          cada arquivo pelo cabeçalho e substitui apenas o bloco correspondente da
-          marca.
+          Envie os CSVs exportados da operação. O BrandOps identifica cada arquivo
+          pelos cabeçalhos e atualiza só o bloco correspondente da marca.
         </p>
       </section>
 
@@ -97,7 +96,7 @@ export default function ImportPage() {
                 }}
                 className="rounded-xl border border-outline bg-background px-4 py-3 text-sm text-on-surface outline-none"
               >
-                <option value="">Usar marca existente</option>
+                <option value="">Selecionar marca existente</option>
                 {brands.map((brand) => (
                   <option key={brand.id} value={brand.name} className="text-black">
                     {brand.name}
@@ -120,11 +119,11 @@ export default function ImportPage() {
               <UploadCloud size={28} />
             </div>
             <h2 className="mt-5 text-xl font-semibold text-on-surface">
-              Arraste os CSVs aqui
+              Solte os CSVs aqui
             </h2>
             <p className="mt-2 text-sm text-on-surface-variant">
-              Pode subir um ou vários arquivos de uma vez. Os cabeçalhos são
-              detectados automaticamente.
+              Você pode enviar um ou mais arquivos por vez. Os cabeçalhos definem
+              o tipo de cada importação.
             </p>
           </div>
 
@@ -132,14 +131,14 @@ export default function ImportPage() {
             <div className="rounded-3xl border border-outline bg-surface-container p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-on-surface">
-                  Arquivos prontos para importar
+                  Arquivos prontos para envio
                 </h2>
                 <button
                   onClick={handleImport}
                   disabled={status === "running" || !brandName.trim()}
                   className="rounded-xl bg-secondary px-4 py-2 text-sm font-semibold text-on-secondary disabled:opacity-60"
                 >
-                  {status === "running" ? "Importando..." : "Importar agora"}
+                  {status === "running" ? "Enviando..." : "Importar"}
                 </button>
               </div>
               <div className="mt-4 space-y-3">
@@ -182,16 +181,16 @@ export default function ImportPage() {
           ) : (
             <EmptyState
               title="Nenhum arquivo selecionado"
-              description="Selecione pelo menos um dos cinco CSVs padrão para atualizar a base da marca."
+              description="Selecione ao menos um dos CSVs da operação para atualizar a base da marca."
               ctaHref="/import"
-              ctaLabel="Aguardando upload"
+              ctaLabel="Aguardando arquivos"
             />
           )}
         </div>
 
         <div className="space-y-6">
           <div className="rounded-3xl border border-outline bg-surface-container p-6">
-            <h2 className="text-lg font-semibold text-on-surface">Arquivos aceitos</h2>
+            <h2 className="text-lg font-semibold text-on-surface">Arquivos esperados</h2>
             <div className="mt-4 space-y-3 text-sm text-on-surface-variant">
               <div className="rounded-2xl border border-outline bg-background p-4">Meta Export.csv</div>
               <div className="rounded-2xl border border-outline bg-background p-4">feed_facebook.csv</div>
@@ -202,13 +201,13 @@ export default function ImportPage() {
           </div>
 
           <div className="rounded-3xl border border-outline bg-surface-container p-6">
-            <h2 className="text-lg font-semibold text-on-surface">Marca ativa</h2>
+            <h2 className="text-lg font-semibold text-on-surface">Marca carregada</h2>
             {activeBrand ? (
               <div className="mt-4 space-y-3">
                 <div className="rounded-2xl border border-outline bg-background p-4">
                   <p className="font-semibold text-on-surface">{activeBrand.name}</p>
                   <p className="mt-1 text-sm text-on-surface-variant">
-                    {importedKinds.length} bloco(s) importado(s)
+                    {importedKinds.length} bloco(s) atualizados
                   </p>
                 </div>
                 {importedKinds.map((file) => (
@@ -224,7 +223,7 @@ export default function ImportPage() {
               </div>
             ) : (
               <p className="mt-4 text-sm text-on-surface-variant">
-                Nenhuma marca ativa ainda.
+                Nenhuma marca em foco.
               </p>
             )}
           </div>

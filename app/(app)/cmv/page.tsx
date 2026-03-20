@@ -20,8 +20,8 @@ export default function CmvPage() {
   if (!activeBrand || !activeBrand.salesLines.length) {
     return (
       <EmptyState
-        title="Ainda não há produtos para cadastrar CMV"
-        description="Importe o arquivo Pedidos Pagos.csv para carregar a base de produtos vendidos por ID."
+        title="Ainda não há produtos para CMV"
+        description="Importe o Pedidos Pagos.csv para carregar a base de itens vendidos e lançar custos."
       />
     );
   }
@@ -33,9 +33,8 @@ export default function CmvPage() {
       <section>
         <h1 className="text-3xl font-bold text-on-surface">CMV</h1>
         <p className="mt-2 max-w-3xl text-sm leading-7 text-on-surface-variant">
-          Cadastre o custo unitário por produto para aproximar o resultado
-          operacional. Nesta primeira versão, o BrandOps considera o custo vigente
-          atual para todo o histórico importado.
+          Cadastre o custo unitário por produto para fechar margem e resultado
+          operacional. O custo vigente vale para o histórico importado.
         </p>
       </section>
 
@@ -48,7 +47,7 @@ export default function CmvPage() {
                 <th className="pb-3 text-right">Qtde vendida</th>
                 <th className="pb-3 text-right">Receita bruta</th>
                 <th className="pb-3 text-right">CMV unitário</th>
-                <th className="pb-3 text-right">Ação</th>
+                <th className="pb-3 text-right">Salvar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline">
@@ -94,7 +93,7 @@ export default function CmvPage() {
                       }}
                       className="rounded-xl bg-secondary px-4 py-2 text-sm font-semibold text-on-secondary"
                     >
-                      Salvar
+                      Gravar
                     </button>
                   </td>
                 </tr>

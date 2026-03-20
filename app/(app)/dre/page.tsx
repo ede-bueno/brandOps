@@ -36,7 +36,7 @@ export default function DrePage() {
     return (
       <EmptyState
         title="Ainda não há dados suficientes para o DRE"
-        description="Importe Lista de Pedidos.csv e Lista de Itens.csv. Se quiser um DRE mais completo, também lance os custos unitários na tela de CMV."
+        description="Importe Lista de Pedidos.csv e Lista de Itens.csv. Para refinar o resultado, complete também o CMV por produto."
       />
     );
   }
@@ -50,8 +50,8 @@ export default function DrePage() {
       <section>
         <h1 className="text-3xl font-bold text-on-surface">DRE</h1>
         <p className="mt-2 text-sm leading-7 text-on-surface-variant">
-          Demonstrativo simplificado baseado nos arquivos importados. O resultado
-          operacional melhora conforme o CMV é alimentado por produto.
+          Demonstrativo resumido com base nos arquivos importados e nos custos já
+          cadastrados.
         </p>
       </section>
 
@@ -59,13 +59,13 @@ export default function DrePage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.25em] text-secondary">
-              Resultado do período importado
+              Resultado do período
             </p>
             <h2 className="mt-2 text-3xl font-bold text-on-surface">
               {currencyFormatter.format(metrics.operatingResult)}
             </h2>
             <p className="mt-2 text-sm text-on-surface-variant">
-              Resultado operacional após mídia, comissões e CMV cadastrado.
+              Resultado após mídia, comissões e CMV lançado no sistema.
             </p>
           </div>
           <div className="rounded-2xl border border-outline bg-background px-5 py-4 text-sm text-on-surface-variant">
@@ -130,8 +130,8 @@ export default function DrePage() {
         <div className="mt-5 rounded-2xl border border-outline bg-background p-4 text-sm text-on-surface-variant">
           Receita líquida considerada: {currencyFormatter.format(metrics.netRevenue)}.
           Receita bruta itemizada: {currencyFormatter.format(grossMargin + metrics.discounts)}.
-          Se algum produto ainda estiver sem CMV, o resultado operacional estará
-          otimista.
+          Se houver produto sem CMV cadastrado, este resultado ainda estará acima do
+          real.
         </div>
       </section>
     </div>
