@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #4edea3;
+  --color-on-primary: #070d1f;
+  --color-primary-container: #191f31;
+  --color-on-primary-container: #4edea3;
+  
+  --color-secondary: #4edea3;
+  --color-on-secondary: #070d1f;
+  --color-secondary-container: #191f31;
+  --color-on-secondary-container: #4edea3;
+  
+  --color-tertiary: #f43f5e;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #3f1d24;
+  --color-on-tertiary-container: #f43f5e;
+  
+  --color-error: #f43f5e;
+  --color-on-error: #ffffff;
+  --color-error-container: #3f1d24;
+  --color-on-error-container: #f43f5e;
+  
+  --color-background: #070d1f;
+  --color-on-background: #bcc7de;
+  --color-surface: #0c1324;
+  --color-on-surface: #bcc7de;
+  --color-surface-variant: #191f31;
+  --color-on-surface-variant: #6b7a99;
+  
+  --color-outline: #23293c;
+  --color-outline-variant: #191f31;
+  
+  --color-surface-container-highest: #23293c;
+  --color-surface-container-high: #191f31;
+  --color-surface-container: #0c1324;
+  --color-surface-container-low: #070d1f;
+  --color-surface-container-lowest: #030712;
+  
+  --font-headline: 'Manrope', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+  font-family: var(--font-body);
+}
+
+.glass-effect {
+  background: rgba(12, 19, 36, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(35, 41, 60, 0.5);
+}
+
+.glass-panel {
+  background: linear-gradient(145deg, rgba(25, 31, 49, 0.4) 0%, rgba(12, 19, 36, 0.8) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(78, 222, 163, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.metallic-sheen {
+  background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.03) 25%, transparent 30%);
+  background-size: 200% 100%;
+  animation: sheen 8s infinite linear;
+}
+
+@keyframes sheen {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom Scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-surface-container-low);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-outline);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-on-surface-variant);
+}
