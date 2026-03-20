@@ -1,236 +1,125 @@
 "use client";
 
-import { TrendingUp, ShoppingCart, Package, Users } from "lucide-react";
 import {
-  LineChart,
-  Line,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  Legend,
 } from "recharts";
-
-const dailySales = [
-  { date: "01/03", orders: 120, revenue: 15000, items: 150 },
-  { date: "02/03", orders: 98, revenue: 12500, items: 110 },
-  { date: "03/03", orders: 145, revenue: 18200, items: 180 },
-  { date: "04/03", orders: 110, revenue: 13800, items: 135 },
-  { date: "05/03", orders: 160, revenue: 21000, items: 200 },
-  { date: "06/03", orders: 135, revenue: 17500, items: 165 },
-  { date: "07/03", orders: 180, revenue: 24000, items: 230 },
-];
-
-const topProducts = [
-  { name: "Camiseta Básica Preta", revenue: 45000, units: 1200 },
-  { name: "Moletom Cinza Mescla", revenue: 32000, units: 450 },
-  { name: "Caneca Dev Life", revenue: 12000, units: 850 },
-  { name: "Poster Minimalista", revenue: 8500, units: 320 },
-  { name: "Boné Dad Hat", revenue: 6200, units: 210 },
-];
+import { EmptyState } from "@/components/EmptyState";
+import { MetricCard } from "@/components/MetricCard";
+import { useBrandOps } from "@/components/BrandOpsProvider";
+import { currencyFormatter, formatCompactDate, integerFormatter } from "@/lib/brandops/format";
+import { buildDailySalesSeries, buildTopProducts, computeBrandMetrics } from "@/lib/brandops/metrics";
 
 export default function SalesPage() {
+  const { activeBrand } = useBrandOps();
+
+  if (!activeBrand || !activeBrand.paidOrders.length) {
+    return (
+      <EmptyState
+        title="Ainda não há vendas importadas"
+        description="Importe o arquivo Lista de Pedidos.csv e o Lista de Itens.csv para ativar a visão comercial da marca."
+      />
+    );
+  }
+
+  const metrics = computeBrandMetrics(activeBrand);
+  const dailySales = buildDailySalesSeries(activeBrand);
+  const topProducts = buildTopProducts(activeBrand);
+
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Performance de Vendas
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Análise detalhada de pedidos, faturamento e produtos mais vendidos.
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <select className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5">
-            <option>Últimos 7 dias</option>
-            <option>Últimos 30 dias</option>
-            <option>Este Mês</option>
-          </select>
-        </div>
-      </div>
+    <div className="space-y-8">
+      <section>
+        <h1 className="text-3xl font-bold text-on-surface">Vendas</h1>
+        <p className="mt-2 text-sm leading-7 text-on-surface-variant">
+          Leitura consolidada dos pedidos pagos, itens vendidos e produtos com
+          melhor resultado bruto.
+        </p>
+      </section>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-500">Receita Total</p>
-            <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
-              <TrendingUp size={20} />
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-3xl font-bold text-slate-900">R$ 122.000</h3>
-          </div>
-        </div>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="Receita líquida"
+          value={currencyFormatter.format(metrics.netRevenue)}
+        />
+        <MetricCard
+          label="Pedidos pagos"
+          value={integerFormatter.format(metrics.paidOrderCount)}
+        />
+        <MetricCard
+          label="Itens vendidos"
+          value={integerFormatter.format(metrics.unitsSold)}
+        />
+        <MetricCard
+          label="Ticket médio"
+          value={currencyFormatter.format(metrics.averageTicket)}
+        />
+      </section>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-500">Pedidos</p>
-            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-              <ShoppingCart size={20} />
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-3xl font-bold text-slate-900">948</h3>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-500">Peças Vendidas</p>
-            <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
-              <Package size={20} />
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-3xl font-bold text-slate-900">1.170</h3>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-500">Ticket Médio</p>
-            <div className="p-2 bg-amber-100 text-amber-600 rounded-lg">
-              <Users size={20} />
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-3xl font-bold text-slate-900">R$ 128,69</h3>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-slate-900 mb-6">
-            Evolução de Receita e Pedidos
-          </h3>
-          <div className="h-80">
+      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-3xl border border-outline bg-surface-container p-6">
+          <h2 className="text-xl font-semibold text-on-surface">
+            Receita por dia
+          </h2>
+          <div className="mt-6 h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={dailySales}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="#e2e8f0"
-                />
+              <BarChart data={dailySales}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,122,153,0.12)" />
                 <XAxis
                   dataKey="date"
-                  stroke="#94a3b8"
-                  fontSize={12}
+                  tickFormatter={formatCompactDate}
+                  stroke="#6b7a99"
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis
-                  yAxisId="left"
-                  stroke="#94a3b8"
-                  fontSize={12}
+                  stroke="#6b7a99"
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(value) => `R$ ${value / 1000}k`}
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  stroke="#94a3b8"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
+                  tickFormatter={(value) => `R$ ${Math.round(value / 1000)}k`}
                 />
                 <Tooltip
+                  formatter={(value) =>
+                    currencyFormatter.format(Number(value ?? 0))
+                  }
+                  labelFormatter={(label) => formatCompactDate(String(label ?? ""))}
                   contentStyle={{
-                    borderRadius: "8px",
-                    border: "none",
-                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                    borderRadius: 16,
+                    border: "1px solid #23293c",
+                    backgroundColor: "#0c1324",
+                    color: "#bcc7de",
                   }}
                 />
-                <Legend />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="revenue"
-                  name="Receita"
-                  stroke="#10b981"
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="orders"
-                  name="Pedidos"
-                  stroke="#3b82f6"
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-slate-900 mb-6">
-            Top Produtos (Receita)
-          </h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={topProducts}
-                layout="vertical"
-                margin={{ top: 10, right: 30, left: 40, bottom: 0 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  horizontal={true}
-                  vertical={false}
-                  stroke="#e2e8f0"
-                />
-                <XAxis
-                  type="number"
-                  stroke="#94a3b8"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => `R$ ${value / 1000}k`}
-                />
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  stroke="#475569"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                  width={120}
-                />
-                <Tooltip
-                  cursor={{ fill: "#f1f5f9" }}
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "none",
-                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                  }}
-                  formatter={(value: any) => [`R$ ${value}`, "Receita"]}
-                />
-                <Bar
-                  dataKey="revenue"
-                  fill="#6366f1"
-                  radius={[0, 4, 4, 0]}
-                  barSize={24}
-                />
+                <Bar dataKey="revenue" fill="#4edea3" radius={[10, 10, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
-      </div>
+
+        <div className="rounded-3xl border border-outline bg-surface-container p-6">
+          <h2 className="text-xl font-semibold text-on-surface">
+            Top produtos
+          </h2>
+          <div className="mt-5 space-y-3">
+            {topProducts.slice(0, 8).map((product) => (
+              <div
+                key={product.productKey}
+                className="rounded-2xl border border-outline bg-background p-4"
+              >
+                <p className="font-semibold text-on-surface">{product.productName}</p>
+                <div className="mt-2 flex items-center justify-between text-sm text-on-surface-variant">
+                  <span>{integerFormatter.format(product.quantity)} unidade(s)</span>
+                  <span>{currencyFormatter.format(product.grossRevenue)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

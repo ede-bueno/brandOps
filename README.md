@@ -1,20 +1,27 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# BrandOps
 
-# Run and deploy your AI Studio app
+Plataforma operacional para consolidar vendas, mídia e saúde financeira de marcas
+print on demand.
 
-This contains everything you need to run your app locally.
+## Escopo atual
 
-View your app in AI Studio: https://ai.studio/apps/4f32efad-53a8-438c-bd04-7ab8fe6f8cde
+- Importação real dos CSVs padrão da operação:
+  - `Meta Export.csv`
+  - `feed_facebook.csv`
+  - `Pedidos Pagos.csv`
+  - `Lista de Pedidos.csv`
+  - `Lista de Itens.csv`
+- Workspace local com múltiplas marcas
+- Dashboard, vendas, mídia, DRE, saneamento e CMV lendo dados importados
+- Base preparada para conexão posterior com autenticação e persistência no Supabase
 
-## Run Locally
+## Rodando localmente
 
-**Prerequisites:**  Node.js
+1. Instale as dependências com `npm install`
+2. Rode o projeto com `npm run dev`
+3. Acesse `http://localhost:3000`
 
+## Observações
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- O schema SQL inicial está em `supabase-schema.sql`
+- O projeto já está pronto para receber a etapa de migrations e integração real com Supabase

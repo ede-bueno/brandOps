@@ -1,5 +1,5 @@
 {
-  "name": "Print on Demand Financial Analytics",
-  "description": "Multi-tenant financial analysis platform for print-on-demand brands.",
+  "name": "BrandOps",
+  "description": "Plataforma multi-tenant para operação financeira e comercial de marcas print on demand.",
   "requestFramePermissions": []
 }
