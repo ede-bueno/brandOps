@@ -1,0 +1,314 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e5]:
+    - banner [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - paragraph [ref=e9]: Painel operacional
+          - heading "Bateu o Pace" [level=2] [ref=e10]
+        - generic [ref=e11]:
+          - generic [ref=e12]:
+            - generic [ref=e13]: Marca em foco
+            - combobox [ref=e14]:
+              - option "Bateu o Pace" [selected]
+              - option "Oh My Dog"
+          - generic [ref=e15]:
+            - generic [ref=e16]: Período
+            - combobox [ref=e17]:
+              - option "7 dias"
+              - option "15 dias"
+              - option "30 dias" [selected]
+              - option "Mês atual"
+              - option "Todo período"
+          - generic [ref=e18]: 2 marca(s) acessível(is) • Últimos 30 dias
+    - main [ref=e19]:
+      - generic [ref=e21]:
+        - generic [ref=e23]:
+          - generic [ref=e24]:
+            - generic [ref=e25]:
+              - img [ref=e26]
+              - text: Superadmin
+            - generic [ref=e29]:
+              - heading "Lojas e convites" [level=1] [ref=e30]
+              - paragraph [ref=e31]: Organize marcas, publique dados institucionais e convide responsáveis com um painel que transmite ordem, clareza e confiança.
+          - generic [ref=e32]:
+            - generic [ref=e34]:
+              - generic [ref=e35]:
+                - paragraph [ref=e36]: Lojas
+                - paragraph [ref=e37]: "2"
+                - paragraph [ref=e38]: Cadastradas no workspace
+              - img [ref=e40]
+            - generic [ref=e45]:
+              - generic [ref=e46]:
+                - paragraph [ref=e47]: Membros
+                - paragraph [ref=e48]: "2"
+                - paragraph [ref=e49]: Vínculos ativos
+              - img [ref=e51]
+            - generic [ref=e56]:
+              - generic [ref=e57]:
+                - paragraph [ref=e58]: Com site
+                - paragraph [ref=e59]: "2"
+                - paragraph [ref=e60]: Com presença pública
+              - img [ref=e62]
+            - generic [ref=e66]:
+              - generic [ref=e67]:
+                - paragraph [ref=e68]: Com endereço
+                - paragraph [ref=e69]: "1"
+                - paragraph [ref=e70]: Dados completos
+              - img [ref=e72]
+        - generic [ref=e75]:
+          - complementary [ref=e76]:
+            - generic [ref=e77]:
+              - generic [ref=e79]:
+                - heading "Diretório de lojas" [level=2] [ref=e80]
+                - paragraph [ref=e81]: Selecione a loja que deseja editar.
+              - generic [ref=e82]:
+                - generic [ref=e83]:
+                  - generic [ref=e84]: Buscar loja
+                  - generic [ref=e85]:
+                    - img [ref=e86]
+                    - textbox "Nome, slug ou email" [ref=e89]
+                - generic [ref=e90]:
+                  - button "Bateu o Pace bateuopace • 1 membro(s) Online lojinhabateuopace@gmail.com Belo Horizonte, MG" [ref=e91]:
+                    - generic [ref=e92]:
+                      - generic [ref=e93]:
+                        - paragraph [ref=e94]: Bateu o Pace
+                        - paragraph [ref=e95]: bateuopace • 1 membro(s)
+                      - generic [ref=e96]: Online
+                    - generic [ref=e97]:
+                      - generic [ref=e98]: lojinhabateuopace@gmail.com
+                      - generic [ref=e99]: Belo Horizonte, MG
+                  - button "Oh My Dog Sem slug • 1 membro(s) Online" [ref=e100]:
+                    - generic [ref=e101]:
+                      - generic [ref=e102]:
+                        - paragraph [ref=e103]: Oh My Dog
+                        - paragraph [ref=e104]: Sem slug • 1 membro(s)
+                      - generic [ref=e105]: Online
+            - generic [ref=e106]:
+              - generic [ref=e108]:
+                - heading "Nova loja" [level=2] [ref=e109]
+                - paragraph [ref=e110]: Cadastre uma marca sem sair desta tela.
+              - generic [ref=e111]:
+                - generic [ref=e112]:
+                  - generic [ref=e113]:
+                    - heading "Identidade" [level=3] [ref=e114]
+                    - paragraph [ref=e115]: Campos públicos e de cadastro.
+                  - generic [ref=e116]:
+                    - generic [ref=e117]:
+                      - generic [ref=e118]: Nome da loja
+                      - textbox "Nome da loja" [ref=e119]:
+                        - /placeholder: Oh My Dog
+                    - generic [ref=e120]:
+                      - generic [ref=e121]: Slug
+                      - textbox "Slug" [ref=e122]:
+                        - /placeholder: ohmydog
+                    - generic [ref=e123]:
+                      - generic [ref=e124]: Site
+                      - textbox "Site" [ref=e125]:
+                        - /placeholder: https://...
+                    - generic [ref=e126]:
+                      - generic [ref=e127]: Logo
+                      - textbox "Logo" [ref=e128]:
+                        - /placeholder: https://...
+                - generic [ref=e129]:
+                  - generic [ref=e130]:
+                    - heading "Contato e presença" [level=3] [ref=e131]
+                    - paragraph [ref=e132]: Campos públicos e de cadastro.
+                  - generic [ref=e133]:
+                    - generic [ref=e134]:
+                      - generic [ref=e135]: Email de contato
+                      - textbox "Email de contato" [ref=e136]:
+                        - /placeholder: contato@marca.com
+                    - generic [ref=e137]:
+                      - generic [ref=e138]: Instagram
+                      - textbox "Instagram" [ref=e139]:
+                        - /placeholder: https://instagram.com/...
+                    - generic [ref=e140]:
+                      - generic [ref=e141]: Facebook
+                      - textbox "Facebook" [ref=e142]:
+                        - /placeholder: https://facebook.com/...
+                    - generic [ref=e143]:
+                      - generic [ref=e144]: CPF/CNPJ
+                      - textbox "CPF/CNPJ" [ref=e145]:
+                        - /placeholder: 000.000.000-00
+                - generic [ref=e146]:
+                  - generic [ref=e147]:
+                    - heading "Endereço" [level=3] [ref=e148]
+                    - paragraph [ref=e149]: Campos públicos e de cadastro.
+                  - generic [ref=e150]:
+                    - generic [ref=e151]:
+                      - generic [ref=e152]: Endereço
+                      - textbox "Endereço" [ref=e153]:
+                        - /placeholder: Rua, número, bairro
+                    - generic [ref=e154]:
+                      - generic [ref=e155]: Cidade
+                      - textbox "Cidade" [ref=e156]:
+                        - /placeholder: Belo Horizonte
+                    - generic [ref=e157]:
+                      - generic [ref=e158]: Estado
+                      - textbox "Estado" [ref=e159]:
+                        - /placeholder: MG
+                    - generic [ref=e160]:
+                      - generic [ref=e161]: CEP
+                      - textbox "CEP" [ref=e162]:
+                        - /placeholder: 00000-000
+                - generic [ref=e163]:
+                  - generic [ref=e164]:
+                    - generic [ref=e165]: Descrição
+                    - textbox "Descrição" [ref=e166]:
+                      - /placeholder: Resumo curto da marca
+                  - generic [ref=e167]:
+                    - generic [ref=e168]: Observações internas
+                    - textbox "Observações internas" [ref=e169]:
+                      - /placeholder: Observações da operação
+                - button "Criar loja" [ref=e170]:
+                  - img [ref=e171]
+                  - text: Criar loja
+          - generic [ref=e174]:
+            - generic [ref=e175]:
+              - generic [ref=e176]:
+                - generic [ref=e177]:
+                  - heading "Loja selecionada" [level=2] [ref=e178]
+                  - paragraph [ref=e179]: Atualize os dados públicos e mantenha a operação organizada.
+                - generic [ref=e180]: Atualizada em 20/03/2026, 20:04
+              - generic [ref=e181]:
+                - generic [ref=e182]:
+                  - generic [ref=e184]:
+                    - generic [ref=e185]: BA
+                    - generic [ref=e186]:
+                      - paragraph [ref=e187]: Identidade ativa
+                      - heading "Bateu o Pace" [level=2] [ref=e188]
+                      - paragraph [ref=e189]: Loja de camisetas para quem busca estampas autênticas e exclusivas. Trabalhamos com algodão de qualidade e impressão de alta tecnologia. Enviamos para todo o Brasil e a primeira troca é grátis.
+                  - generic [ref=e190]:
+                    - generic [ref=e191]:
+                      - paragraph [ref=e192]: Site
+                      - paragraph [ref=e193]: https://reserva.ink/bateuopace
+                    - generic [ref=e194]:
+                      - paragraph [ref=e195]: Email
+                      - paragraph [ref=e196]: lojinhabateuopace@gmail.com
+                - generic [ref=e197]:
+                  - generic [ref=e198]: Ajuste os dados abaixo. Os campos estão agrupados por contexto para reduzir fricção e acelerar revisões.
+                  - generic [ref=e199]:
+                    - generic [ref=e200]:
+                      - heading "Identidade" [level=3] [ref=e201]
+                      - paragraph [ref=e202]: Campos públicos e de cadastro.
+                    - generic [ref=e203]:
+                      - generic [ref=e204]:
+                        - generic [ref=e205]: Nome da loja
+                        - textbox "Nome da loja" [ref=e206]:
+                          - /placeholder: Oh My Dog
+                          - text: Bateu o Pace
+                      - generic [ref=e207]:
+                        - generic [ref=e208]: Slug
+                        - textbox "Slug" [ref=e209]:
+                          - /placeholder: ohmydog
+                          - text: bateuopace
+                      - generic [ref=e210]:
+                        - generic [ref=e211]: Site
+                        - textbox "Site" [ref=e212]:
+                          - /placeholder: https://...
+                          - text: https://reserva.ink/bateuopace
+                      - generic [ref=e213]:
+                        - generic [ref=e214]: Logo
+                        - textbox "Logo" [ref=e215]:
+                          - /placeholder: https://...
+                          - text: https://rsv-ink-images.ink.rsvcloud.com/images/store/logo_image/3b87a22516d3c24e208ed331cf135e8d.webp
+                  - generic [ref=e216]:
+                    - generic [ref=e217]:
+                      - heading "Contato e presença" [level=3] [ref=e218]
+                      - paragraph [ref=e219]: Campos públicos e de cadastro.
+                    - generic [ref=e220]:
+                      - generic [ref=e221]:
+                        - generic [ref=e222]: Email de contato
+                        - textbox "Email de contato" [ref=e223]:
+                          - /placeholder: contato@marca.com
+                          - text: lojinhabateuopace@gmail.com
+                      - generic [ref=e224]:
+                        - generic [ref=e225]: Instagram
+                        - textbox "Instagram" [ref=e226]:
+                          - /placeholder: https://instagram.com/...
+                          - text: https://www.instagram.com/lojabateuopace_ink
+                      - generic [ref=e227]:
+                        - generic [ref=e228]: Facebook
+                        - textbox "Facebook" [ref=e229]:
+                          - /placeholder: https://facebook.com/...
+                          - text: https://www.facebook.com/profile.php?id=61587836758715
+                      - generic [ref=e230]:
+                        - generic [ref=e231]: CPF/CNPJ
+                        - textbox "CPF/CNPJ" [ref=e232]:
+                          - /placeholder: 000.000.000-00
+                          - text: 100.124.736-18
+                  - generic [ref=e233]:
+                    - generic [ref=e234]:
+                      - heading "Endereço" [level=3] [ref=e235]
+                      - paragraph [ref=e236]: Campos públicos e de cadastro.
+                    - generic [ref=e237]:
+                      - generic [ref=e238]:
+                        - generic [ref=e239]: Endereço
+                        - textbox "Endereço" [ref=e240]:
+                          - /placeholder: Rua, número, bairro
+                          - text: Rua Monte Alverne, 146
+                      - generic [ref=e241]:
+                        - generic [ref=e242]: Cidade
+                        - textbox "Cidade" [ref=e243]:
+                          - /placeholder: Belo Horizonte
+                          - text: Belo Horizonte
+                      - generic [ref=e244]:
+                        - generic [ref=e245]: Estado
+                        - textbox "Estado" [ref=e246]:
+                          - /placeholder: MG
+                          - text: MG
+                      - generic [ref=e247]:
+                        - generic [ref=e248]: CEP
+                        - textbox "CEP" [ref=e249]:
+                          - /placeholder: 00000-000
+                          - text: 31015-400
+                  - generic [ref=e250]:
+                    - generic [ref=e251]:
+                      - generic [ref=e252]: Descrição
+                      - textbox "Descrição" [ref=e253]:
+                        - /placeholder: Resumo curto da marca
+                        - text: Loja de camisetas para quem busca estampas autênticas e exclusivas. Trabalhamos com algodão de qualidade e impressão de alta tecnologia. Enviamos para todo o Brasil e a primeira troca é grátis.
+                    - generic [ref=e254]:
+                      - generic [ref=e255]: Observações internas
+                      - textbox "Observações internas" [ref=e256]:
+                        - /placeholder: Observações da operação
+                        - text: Cadastro inicial preenchido com dados públicos do site da loja em 2026-03-20.
+                  - button "Salvar alterações" [ref=e257]:
+                    - img [ref=e258]
+                    - text: Salvar alterações
+            - generic [ref=e261]:
+              - generic [ref=e263]:
+                - heading "Convites e equipe" [level=2] [ref=e264]
+                - paragraph [ref=e265]: Convide responsáveis e acompanhe quem já está vinculado.
+              - generic [ref=e266]:
+                - generic [ref=e267]:
+                  - generic [ref=e268]:
+                    - img [ref=e269]
+                    - heading "Novo convite" [level=3] [ref=e272]
+                  - generic [ref=e273]:
+                    - textbox "Nome do responsável" [ref=e274]
+                    - textbox "email@cliente.com" [ref=e275]
+                    - combobox [ref=e276]:
+                      - option "Dono da marca" [selected]
+                      - option "Superadmin"
+                    - button "Enviar convite" [ref=e277]:
+                      - img [ref=e278]
+                      - text: Enviar convite
+                - generic [ref=e281]:
+                  - generic [ref=e282]:
+                    - img [ref=e283]
+                    - heading "Membros vinculados" [level=3] [ref=e287]
+                    - generic [ref=e288]: "1"
+                  - generic [ref=e291]:
+                    - generic [ref=e292]:
+                      - paragraph [ref=e293]: Ede Bueno
+                      - paragraph [ref=e294]: contato@ohmydogloja.com
+                    - generic [ref=e295]: SUPER_ADMIN
+  - status [ref=e296]:
+    - generic [ref=e297]:
+      - img [ref=e299]
+      - generic [ref=e301]:
+        - text: Static route
+        - button "Hide static indicator" [ref=e302] [cursor=pointer]:
+          - img [ref=e303]
+  - alert [ref=e3]

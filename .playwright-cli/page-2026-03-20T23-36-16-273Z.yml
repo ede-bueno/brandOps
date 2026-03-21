@@ -1,0 +1,31 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - paragraph [ref=e8]: Painel operacional
+          - heading "Nenhuma marca em foco" [level=2] [ref=e9]
+        - generic [ref=e10]:
+          - generic [ref=e11]:
+            - generic [ref=e12]: Marca em foco
+            - combobox [disabled] [ref=e13]:
+              - option "Nenhuma marca disponível" [selected]
+          - generic [ref=e14]:
+            - generic [ref=e15]: Período
+            - combobox [ref=e16]:
+              - option "7 dias"
+              - option "15 dias"
+              - option "30 dias" [selected]
+              - option "Mês atual"
+              - option "Todo período"
+          - generic [ref=e17]: 0 marca(s) acessível(is) • Últimos 30 dias
+    - main [ref=e18]:
+      - generic [ref=e19]:
+        - img [ref=e21]
+        - heading "Ainda não há mídia carregada" [level=3] [ref=e24]
+        - paragraph [ref=e25]: Importe o Meta Export.csv para analisar investimento, receita atribuída e desempenho por campanha.
+        - link "Importar dados" [ref=e26] [cursor=pointer]:
+          - /url: /import
+          - text: Importar dados
+          - img [ref=e27]
+  - alert [ref=e29]

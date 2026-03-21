@@ -1,0 +1,32 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - img [ref=e8]
+        - text: Acesso seguro
+      - heading "Entre no BrandOps para operar a marca com contexto completo." [level=1] [ref=e10]
+      - paragraph [ref=e11]: O acesso abre apenas as marcas e rotinas que pertencem ao seu perfil. A ideia aqui é reduzir retrabalho e manter cada responsável vendo o que realmente precisa acompanhar.
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - img [ref=e14]
+        - paragraph [ref=e17]: Acesso segregado por marca e por perfil.
+      - generic [ref=e18]:
+        - img [ref=e19]
+        - paragraph [ref=e22]: Atualização por CSV com histórico preservado.
+      - generic [ref=e23]:
+        - img [ref=e24]
+        - paragraph [ref=e27]: Leitura financeira, mídia e operação no mesmo ambiente.
+  - generic [ref=e28]:
+    - img [ref=e30]
+    - heading "Entrar no painel" [level=2] [ref=e34]
+    - paragraph [ref=e35]: Use o email cadastrado para abrir o seu workspace.
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - generic [ref=e38]: Email cadastrado
+        - textbox "contato@marca.com" [ref=e39]
+      - generic [ref=e40]:
+        - generic [ref=e41]: Senha
+        - textbox "Sua senha" [ref=e42]
+      - button "Entrar" [disabled] [ref=e43]:
+        - img [ref=e44]
+        - text: Entrar
