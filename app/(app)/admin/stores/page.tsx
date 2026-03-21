@@ -207,7 +207,7 @@ export default function AdminStoresPage() {
       </div>
 
       <div className="space-y-8">
-        <section className="rounded-[2rem] border border-outline bg-surface-container/95 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.25)] backdrop-blur xl:p-8">
+        <section className="brandops-panel rounded-[2rem] p-6 lg:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full border border-outline bg-background/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-secondary">
@@ -260,7 +260,7 @@ export default function AdminStoresPage() {
                       value={filter}
                       onChange={(event) => setFilter(event.target.value)}
                       placeholder="Nome, slug ou email"
-                      className="w-full bg-transparent text-sm text-on-surface outline-none placeholder:text-on-surface-variant/70"
+                      className="brandops-input w-full bg-transparent px-3 py-2 text-sm outline-none"
                     />
                   </div>
                 </div>
@@ -547,7 +547,7 @@ export default function AdminStoresPage() {
 
 function Panel({ title, description, children, actions }: { title: string; description: string; children: ReactNode; actions?: ReactNode }) {
   return (
-    <section className="rounded-[1.75rem] border border-outline bg-surface-container/95 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.18)] backdrop-blur">
+    <section className="brandops-panel rounded-[1.75rem] p-5">
       <div className="mb-5 flex items-start justify-between gap-4">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold text-on-surface">{title}</h2>
@@ -664,7 +664,7 @@ function Field({
   onChange: (value: string) => void;
   multiline?: boolean;
 }) {
-  const baseClassName = "w-full rounded-2xl border border-outline bg-background px-4 py-3 text-sm text-on-surface outline-none transition placeholder:text-on-surface-variant/70 focus:border-secondary/60";
+  const baseClassName = "brandops-input w-full rounded-2xl px-4 py-3 text-sm outline-none transition focus:border-secondary/60";
 
   return (
     <label className="space-y-2">

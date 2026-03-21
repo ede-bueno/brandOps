@@ -67,30 +67,49 @@ body {
 }
 
 .brandops-panel {
-  background: linear-gradient(180deg, rgba(13, 21, 40, 0.92), rgba(9, 16, 29, 0.92));
-  border: 1px solid rgba(34, 48, 74, 0.9);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(18px);
+  background: linear-gradient(180deg, rgba(13, 21, 40, 0.94), rgba(9, 16, 29, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.08); /* Lighter border for better contrast */
+  box-shadow: 
+    0 24px 80px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05); /* Subtle inner highlight */
+  backdrop-filter: blur(24px); /* Increased blur for more premium feel */
 }
 
 .brandops-panel-soft {
-  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.25);
 }
 
 .brandops-panel-strong {
   background:
-    radial-gradient(circle at top left, rgba(126, 224, 184, 0.12), transparent 30%),
+    radial-gradient(circle at top left, rgba(126, 224, 184, 0.15), transparent 30%),
     linear-gradient(180deg, rgba(16, 25, 46, 0.98), rgba(9, 16, 29, 0.98));
-  border: 1px solid rgba(126, 224, 184, 0.18);
-  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.36);
-  backdrop-filter: blur(18px);
+  border: 1px solid rgba(126, 224, 184, 0.22);
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(24px);
 }
 
 .brandops-card {
-  background: linear-gradient(180deg, rgba(13, 21, 40, 0.88), rgba(9, 16, 29, 0.88));
-  border: 1px solid rgba(34, 48, 74, 0.75);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(14px);
+  background: linear-gradient(180deg, rgba(13, 21, 40, 0.9), rgba(9, 16, 29, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 
+    0 18px 60px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.brandops-card:hover {
+  border-color: rgba(126, 224, 184, 0.3);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+.brandops-table-compact th,
+.brandops-table-compact td {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .brandops-input {
@@ -114,6 +133,50 @@ select:focus-visible,
 textarea:focus-visible {
   outline: 2px solid rgba(126, 224, 184, 0.9);
   outline-offset: 2px;
+}
+
+.brandops-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.brandops-button-primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.brandops-button-primary:hover {
+  background: #99ebcc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.brandops-button-secondary {
+  background: rgba(34, 48, 74, 0.4);
+  color: var(--color-on-surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.brandops-button-secondary:hover {
+  background: rgba(34, 48, 74, 0.6);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.brandops-table-container {
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  background: rgba(5, 11, 22, 0.3);
 }
 
 .brandops-navlink {

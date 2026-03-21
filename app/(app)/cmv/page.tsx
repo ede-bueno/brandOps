@@ -75,7 +75,7 @@ export default function CmvPage() {
             value={checkpointNote}
             onChange={(event) => setCheckpointNote(event.target.value)}
             placeholder="Ex.: atualização de tabela INK março/2026"
-            className="soft-input mt-5 min-h-28"
+            className="brandops-input mt-5 min-h-28 w-full p-3 rounded-xl"
           />
 
           <button
@@ -88,7 +88,7 @@ export default function CmvPage() {
                 setIsApplyingCheckpoint(false);
               }
             }}
-            className="soft-button soft-button-primary mt-4"
+            className="brandops-button brandops-button-primary mt-4 w-full"
           >
             {isApplyingCheckpoint ? "Aplicando..." : "Aplicar checkpoint agora"}
           </button>
@@ -118,8 +118,8 @@ export default function CmvPage() {
             description="Esta é a base principal da operação. Ela cobre os tipos da tabela de custo e serve como fallback do cálculo."
           />
 
-          <div className="mt-6 overflow-x-auto">
-            <table className="app-table min-w-[820px]">
+          <div className="brandops-table-container mt-6">
+            <table className="app-table brandops-table-compact min-w-[820px]">
               <thead>
                 <tr>
                   <th>Tipo</th>
@@ -132,11 +132,11 @@ export default function CmvPage() {
               <tbody>
                 {typeCandidates.map((candidate) => (
                   <tr key={candidate.typeKey}>
-                    <td className="font-semibold text-[var(--color-ink-strong)]">{candidate.typeLabel}</td>
-                    <td className="text-right text-[var(--color-ink-soft)]">
+                    <td className="font-semibold text-on-surface">{candidate.typeLabel}</td>
+                    <td className="text-right text-on-surface-variant">
                       {integerFormatter.format(candidate.quantity)}
                     </td>
-                    <td className="text-right text-[var(--color-ink-strong)]">
+                    <td className="text-right text-on-surface">
                       {currencyFormatter.format(candidate.revenue)}
                     </td>
                     <td className="text-right">
@@ -149,7 +149,7 @@ export default function CmvPage() {
                           }))
                         }
                         placeholder="0,00"
-                        className="soft-input max-w-32 text-right"
+                        className="brandops-input max-w-32 text-right p-1.5 rounded-lg"
                       />
                     </td>
                     <td className="text-right">
@@ -168,7 +168,7 @@ export default function CmvPage() {
                             unitCost,
                           );
                         }}
-                        className="soft-button soft-button-secondary"
+                        className="brandops-button brandops-button-secondary py-1.5 px-3"
                       >
                         Gravar
                       </button>
@@ -186,8 +186,8 @@ export default function CmvPage() {
           title="Overrides por produto"
           description="Use este bloco quando um produto específico fugir do custo padrão do tipo."
         />
-        <div className="mt-6 overflow-x-auto">
-          <table className="app-table min-w-[900px]">
+        <div className="brandops-table-container mt-6">
+          <table className="app-table brandops-table-compact min-w-[900px]">
             <thead>
               <tr>
                 <th>Produto</th>
@@ -202,15 +202,15 @@ export default function CmvPage() {
               {productCandidates.map((product) => (
                 <tr key={product.productId}>
                   <td>
-                    <p className="font-semibold text-[var(--color-ink-strong)]">{product.productName}</p>
+                    <p className="font-semibold text-on-surface">{product.productName}</p>
                   </td>
-                  <td className="text-[var(--color-ink-soft)]">
+                  <td className="text-on-surface-variant">
                     {product.productType ?? "Sem tipo detectado"}
                   </td>
-                  <td className="text-right text-[var(--color-ink-soft)]">
+                  <td className="text-right text-on-surface-variant">
                     {integerFormatter.format(product.quantity)}
                   </td>
-                  <td className="text-right text-[var(--color-ink-strong)]">
+                  <td className="text-right text-on-surface">
                     {currencyFormatter.format(product.revenue)}
                   </td>
                   <td className="text-right">
@@ -223,7 +223,7 @@ export default function CmvPage() {
                         }))
                       }
                       placeholder="0,00"
-                      className="soft-input max-w-32 text-right"
+                      className="brandops-input max-w-32 text-right p-1.5 rounded-lg"
                     />
                   </td>
                   <td className="text-right">
@@ -242,7 +242,7 @@ export default function CmvPage() {
                           unitCost,
                         );
                       }}
-                      className="soft-button soft-button-secondary"
+                      className="brandops-button brandops-button-secondary py-1.5 px-3"
                     >
                       Gravar
                     </button>

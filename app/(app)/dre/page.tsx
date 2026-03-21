@@ -162,15 +162,15 @@ export default function DrePage() {
             description="Snapshot financeiro para a marca e o período selecionado no topo do painel."
           />
 
-          <div className="mt-6 overflow-hidden rounded-[22px] border border-[var(--color-line-soft)]">
-            <table className="w-full text-left text-sm">
+          <div className="mt-6 overflow-hidden rounded-[22px] border border-outline/50 bg-surface-container-low/30">
+            <table className="brandops-table-compact w-full text-left text-sm">
               <tbody>
                 {baseRows.map((row) => {
                   const value = row.getValue(currentMetrics);
                   return (
                     <tr
                       key={row.label}
-                      className={row.highlight ? "bg-white/4" : "border-t border-[var(--color-line-soft)]"}
+                      className={row.highlight ? "bg-secondary/10" : "border-t border-outline/50"}
                     >
                       <td className="px-5 py-4 font-medium text-[var(--color-ink-strong)]">
                         {row.label}
@@ -251,11 +251,11 @@ export default function DrePage() {
           aside={`${annualReport.months.length} mês(es) com movimento`}
         />
 
-        <div className="mt-6 overflow-x-auto">
-          <table className="min-w-[1200px] border-separate border-spacing-0 text-sm">
+        <div className="mt-6 overflow-x-auto rounded-[22px] border border-outline/50">
+          <table className="brandops-table-compact min-w-[1200px] border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
-                <th className="sticky left-0 z-20 bg-[var(--color-surface-container)] px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-ink-muted)]">
+                <th className="sticky left-0 z-20 border-b border-outline bg-surface-container-high px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.22em] text-on-surface-variant">
                   DRE
                 </th>
                 {annualReport.months.map((month) => (
@@ -391,8 +391,8 @@ export default function DrePage() {
           description="Leitura operacional no estilo da planilha: mídia, volume real, CMV, ROAS, custos de aquisição e taxas de conversão."
         />
 
-        <div className="mt-6 overflow-x-auto">
-          <table className="app-table min-w-[1650px]">
+        <div className="mt-6 overflow-x-auto rounded-[22px] border border-outline/50">
+          <table className="brandops-table-compact min-w-[1650px] border-separate border-spacing-0">
             <thead>
               <tr>
                 <th>Período</th>

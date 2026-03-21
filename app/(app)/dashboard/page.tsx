@@ -136,8 +136,8 @@ export default function DashboardPage() {
           title="Marcas acessíveis"
           description="Marcas que este usuário pode abrir neste ambiente."
         />
-        <div className="mt-6 overflow-x-auto">
-          <table className="app-table">
+        <div className="mt-6 overflow-x-auto rounded-[22px] border border-outline/50">
+          <table className="brandops-table-compact w-full text-left text-sm border-separate border-spacing-0">
             <thead>
               <tr>
                 <th>Marca</th>

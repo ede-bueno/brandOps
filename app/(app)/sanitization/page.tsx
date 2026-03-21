@@ -57,8 +57,8 @@ export default function SanitizationPage() {
             </div>
           </div>
 
-          <div className="mt-6 overflow-x-auto">
-            <table className="app-table min-w-[980px]">
+          <div className="brandops-table-container mt-6">
+            <table className="app-table brandops-table-compact min-w-[980px]">
               <thead>
                 <tr>
                   <th>Alvo</th>
@@ -72,23 +72,23 @@ export default function SanitizationPage() {
                 {anomalies.map((anomaly) => (
                   <tr key={anomaly.id}>
                     <td>
-                      <p className="font-semibold text-[var(--color-ink-strong)]">
+                      <p className="font-semibold text-on-surface">
                         {anomaly.target === "MEDIA" ? "Linha de mídia" : "Pedido"}
                       </p>
-                      <p className="mt-1 text-sm text-[var(--color-ink-soft)]">{anomaly.date}</p>
+                      <p className="mt-1 text-sm text-on-surface-variant">{anomaly.date}</p>
                     </td>
                     <td>
-                      <p className="font-semibold text-[var(--color-ink-strong)]">{anomaly.campaignName}</p>
-                      <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+                      <p className="font-semibold text-on-surface">{anomaly.campaignName}</p>
+                      <p className="mt-1 text-sm text-on-surface-variant">
                         {anomaly.target === "ORDER"
                           ? anomaly.orderNumber
                           : `${anomaly.adsetName} • ${anomaly.adName}`}
                       </p>
                     </td>
-                    <td className="text-[var(--color-ink-strong)]">
+                    <td className="text-on-surface">
                       {anomaly.metric}: {anomaly.value}
                     </td>
-                    <td className="text-[var(--color-ink-soft)]">{anomaly.reason}</td>
+                    <td className="text-on-surface-variant">{anomaly.reason}</td>
                     <td>
                       <div className="space-y-3">
                         <textarea
@@ -100,7 +100,7 @@ export default function SanitizationPage() {
                             }))
                           }
                           placeholder="Justificativa da decisão"
-                          className="soft-input min-h-28"
+                          className="brandops-input min-h-24 w-full p-2 rounded-lg text-sm"
                         />
                         <div className="flex flex-wrap gap-2">
                           {anomaly.isIgnored ? (
@@ -114,7 +114,7 @@ export default function SanitizationPage() {
                                   void restoreOrder(activeBrand.id, anomaly.orderNumber);
                                 }
                               }}
-                              className="soft-button soft-button-secondary"
+                              className="brandops-button brandops-button-secondary py-1.5 px-3"
                             >
                               Restaurar
                             </button>
@@ -130,7 +130,7 @@ export default function SanitizationPage() {
                                   void ignoreOrder(activeBrand.id, anomaly.orderNumber, reason);
                                 }
                               }}
-                              className="soft-button soft-button-primary"
+                              className="brandops-button brandops-button-primary py-1.5 px-3"
                             >
                               Ignorar no cálculo
                             </button>

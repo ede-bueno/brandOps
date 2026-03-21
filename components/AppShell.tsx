@@ -146,7 +146,7 @@ export function AppShell({
     <div className="brandops-shell min-h-screen bg-background text-on-surface brandops-selection">
       <div className="flex min-h-screen gap-3 p-3 lg:gap-4 lg:p-4">
         <aside
-          className={`brandops-panel sticky top-4 hidden h-[calc(100vh-2rem)] shrink-0 flex-col overflow-hidden rounded-[28px] lg:flex ${
+          className={`brandops-panel sticky top-4 hidden h-[calc(100vh-2rem)] shrink-0 flex-col overflow-hidden rounded-[28px] lg:flex transition-all duration-300 ease-in-out ${
             isSidebarCollapsed ? "w-[88px]" : "w-[280px]"
           }`}
         >
@@ -247,7 +247,7 @@ export function AppShell({
                 </div>
               </div>
 
-              <div className="grid gap-2 md:grid-cols-[minmax(220px,1fr)_auto_auto] xl:min-w-[760px]">
+              <div className="grid gap-2 md:grid-cols-[minmax(180px,1fr)_auto_auto] xl:min-w-[760px]">
                 <div className="brandops-input flex items-center rounded-2xl px-3 py-2">
                   <div className="min-w-0 flex-1">
                     <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">

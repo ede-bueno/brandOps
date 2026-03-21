@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run check && next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "check": "npm run type-check && npm run lint"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.48.1",
