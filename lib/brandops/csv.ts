@@ -14,6 +14,7 @@ type CsvRecord = Record<string, string>;
 
 const META_REQUIRED = ["Nome da campanha", "Valor usado (BRL)", "Dia"];
 const FEED_REQUIRED = ["id", "title", "price", "image_link"];
+const CMV_REQUIRED = ["Produto", "CMV_Unit", "Tipo"];
 const PEDIDOS_REQUIRED = ["Número do pedido", "ID produto", "Descrição"];
 const LISTA_PEDIDOS_REQUIRED = [
   "Pedido",
@@ -76,6 +77,9 @@ export function detectCsvFileKind(headers: string[]): CsvFileKind {
   if (matchesRequired(headers, FEED_REQUIRED)) {
     return "feed";
   }
+  if (matchesRequired(headers, CMV_REQUIRED)) {
+    return "cmv_produtos";
+  }
   if (matchesRequired(headers, PEDIDOS_REQUIRED)) {
     return "pedidos_pagos";
   }
@@ -96,10 +100,6 @@ export function parseCurrencyLike(value: string | undefined) {
   const trimmed = value.trim();
   if (!trimmed) {
     return 0;
-  }
-
-  if (trimmed.includes(",") && !trimmed.includes(".")) {
-    return Number(trimmed.replace(/\./g, "").replace(",", ".")) || 0;
   }
 
   const normalized = trimmed
@@ -164,6 +164,15 @@ function parsePaidOrders(records: CsvRecord[]): PaidOrder[] {
     source: record.Origem,
     trackingUrl: record["Link de Rastreio"],
     shippingState: record["Estado da Entrega"],
+  }));
+}
+
+function parseCmvBase(records: CsvRecord[]) {
+  return records.map((record) => ({
+    productName: record.Produto,
+    sku: record.SKU,
+    productType: record.Tipo,
+    unitCost: parseCurrencyLike(record.CMV_Unit),
   }));
 }
 
@@ -243,6 +252,8 @@ export async function parseUploadedCsv(file: File) {
       switch (kind) {
         case "feed":
           return { catalog: parseFeed(records) };
+        case "cmv_produtos":
+          return { cmvBase: parseCmvBase(records) };
         case "lista_pedidos":
           return { paidOrders: parsePaidOrders(records) };
         case "pedidos_pagos":
@@ -279,5 +290,8 @@ export function mergeBrandDataset(
     orderItems: payload.orderItems ?? current?.orderItems ?? [],
     media: payload.media ?? current?.media ?? [],
     cmvEntries: current?.cmvEntries ?? [],
+    cmvCheckpoints: current?.cmvCheckpoints ?? [],
+    expenseCategories: current?.expenseCategories ?? [],
+    expenses: current?.expenses ?? [],
   };
 }

@@ -5,8 +5,18 @@ import { useDropzone } from "react-dropzone";
 import { AlertCircle, CheckCircle2, Loader2, UploadCloud } from "lucide-react";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { EmptyState } from "@/components/EmptyState";
+import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 
 type ImportStatus = "idle" | "running" | "success" | "error";
+
+const expectedFiles = [
+  "Meta Export.csv",
+  "feed_facebook.csv",
+  "Controle Financeiro - Oh, My Dog! - CMV_Produtos.csv",
+  "Pedidos Pagos.csv",
+  "Lista de Pedidos.csv",
+  "Lista de Itens.csv",
+];
 
 export default function ImportPage() {
   const { activeBrand, brands, importFiles } = useBrandOps();
@@ -32,19 +42,10 @@ export default function ImportPage() {
 
   const fileSummaries = useMemo(
     () =>
-      files.map((file) => {
-        let kind = "não reconhecido";
-        try {
-          const sample = file.name;
-          kind = sample;
-        } catch {
-          kind = "não reconhecido";
-        }
-        return {
-          file,
-          kind,
-        };
-      }),
+      files.map((file) => ({
+        file,
+        kind: file.name,
+      })),
     [files],
   );
 
@@ -65,27 +66,26 @@ export default function ImportPage() {
   const importedKinds = activeBrand ? Object.values(activeBrand.files) : [];
 
   return (
-    <div className="space-y-8">
-      <section>
-        <h1 className="text-3xl font-bold text-on-surface">Importação</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-on-surface-variant">
-          Envie os CSVs exportados da operação. O BrandOps identifica cada arquivo
-          pelos cabeçalhos e atualiza só o bloco correspondente da marca.
-        </p>
-      </section>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Atualização da base"
+        title="Importação"
+        description="Envie os CSVs exportados da operação. O sistema identifica o tipo pelo cabeçalho, atualiza só o bloco correspondente e reaplica checkpoint de CMV quando a base de custo já existe."
+      />
 
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr]">
         <div className="space-y-6">
-          <div className="rounded-3xl border border-outline bg-surface-container p-6">
-            <label className="block text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant">
-              Marca de destino
-            </label>
-            <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto]">
+          <SurfaceCard>
+            <SectionHeading
+              title="Destino da importação"
+              description="Você pode importar direto para a marca em foco ou selecionar outra já cadastrada."
+            />
+            <div className="mt-5 grid gap-3 md:grid-cols-[1fr_auto]">
               <input
                 value={brandName}
                 onChange={(event) => setBrandName(event.target.value)}
                 placeholder="Ex.: Oh My Dog"
-                className="rounded-xl border border-outline bg-background px-4 py-3 text-sm text-on-surface outline-none"
+                className="soft-input"
               />
               <select
                 value=""
@@ -94,7 +94,7 @@ export default function ImportPage() {
                     setBrandName(event.target.value);
                   }
                 }}
-                className="rounded-xl border border-outline bg-background px-4 py-3 text-sm text-on-surface outline-none"
+                className="soft-select md:min-w-64"
               >
                 <option value="">Selecionar marca existente</option>
                 {brands.map((brand) => (
@@ -104,58 +104,51 @@ export default function ImportPage() {
                 ))}
               </select>
             </div>
-          </div>
+          </SurfaceCard>
 
-          <div
+          <section
             {...getRootProps()}
-            className={`rounded-3xl border-2 border-dashed p-10 text-center transition-colors ${
-              isDragActive
-                ? "border-secondary bg-secondary/10"
-                : "border-outline bg-surface-container hover:border-secondary/40"
+            className={`panel-surface px-8 py-10 text-center ${
+              isDragActive ? "border-[rgba(215,249,120,0.4)] bg-[rgba(215,249,120,0.08)]" : ""
             }`}
           >
             <input {...getInputProps()} />
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-secondary/15 text-secondary">
-              <UploadCloud size={28} />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-white/6 text-[var(--color-secondary)]">
+              <UploadCloud size={30} />
             </div>
-            <h2 className="mt-5 text-xl font-semibold text-on-surface">
+            <h2 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-[var(--color-ink-strong)]">
               Solte os CSVs aqui
             </h2>
-            <p className="mt-2 text-sm text-on-surface-variant">
-              Você pode enviar um ou mais arquivos por vez. Os cabeçalhos definem
-              o tipo de cada importação.
+            <p className="mt-2 text-sm leading-7 text-[var(--color-ink-soft)]">
+              Você pode enviar um ou mais arquivos por vez. Os cabeçalhos definem o
+              tipo de cada importação.
             </p>
-          </div>
+          </section>
 
           {files.length ? (
-            <div className="rounded-3xl border border-outline bg-surface-container p-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-on-surface">
-                  Arquivos prontos para envio
-                </h2>
+            <SurfaceCard>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <SectionHeading title="Arquivos prontos para envio" description="Revise o pacote antes de atualizar a base." />
                 <button
                   onClick={handleImport}
                   disabled={status === "running" || !brandName.trim()}
-                  className="rounded-xl bg-secondary px-4 py-2 text-sm font-semibold text-on-secondary disabled:opacity-60"
+                  className="soft-button soft-button-primary disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {status === "running" ? "Enviando..." : "Importar"}
+                  {status === "running" ? "Enviando..." : "Importar agora"}
                 </button>
               </div>
-              <div className="mt-4 space-y-3">
+              <div className="mt-5 space-y-3">
                 {fileSummaries.map(({ file }) => (
-                  <div
-                    key={`${file.name}-${file.size}`}
-                    className="rounded-2xl border border-outline bg-background p-4"
-                  >
+                  <article key={`${file.name}-${file.size}`} className="panel-muted p-4">
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <p className="font-semibold text-on-surface">{file.name}</p>
-                        <p className="mt-1 text-sm text-on-surface-variant">
+                        <p className="font-semibold text-[var(--color-ink-strong)]">{file.name}</p>
+                        <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
                           {(file.size / 1024).toFixed(1)} KB
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </article>
                 ))}
               </div>
 
@@ -163,21 +156,21 @@ export default function ImportPage() {
                 <div
                   className={`mt-4 flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${
                     status === "error"
-                      ? "border-tertiary/40 bg-tertiary/10 text-tertiary"
-                      : "border-outline bg-background text-on-surface-variant"
+                      ? "border-[rgba(255,125,125,0.2)] bg-[rgba(255,125,125,0.08)] text-[var(--color-error)]"
+                      : "border-[var(--color-line-soft)] bg-black/20 text-[var(--color-ink-soft)]"
                   }`}
                 >
                   {status === "running" ? (
                     <Loader2 size={18} className="animate-spin" />
                   ) : status === "success" ? (
-                    <CheckCircle2 size={18} className="text-secondary" />
+                    <CheckCircle2 size={18} className="text-[var(--color-primary)]" />
                   ) : (
                     <AlertCircle size={18} />
                   )}
                   <span>{message}</span>
                 </div>
               ) : null}
-            </div>
+            </SurfaceCard>
           ) : (
             <EmptyState
               title="Nenhum arquivo selecionado"
@@ -189,44 +182,42 @@ export default function ImportPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-3xl border border-outline bg-surface-container p-6">
-            <h2 className="text-lg font-semibold text-on-surface">Arquivos esperados</h2>
-            <div className="mt-4 space-y-3 text-sm text-on-surface-variant">
-              <div className="rounded-2xl border border-outline bg-background p-4">Meta Export.csv</div>
-              <div className="rounded-2xl border border-outline bg-background p-4">feed_facebook.csv</div>
-              <div className="rounded-2xl border border-outline bg-background p-4">Pedidos Pagos.csv</div>
-              <div className="rounded-2xl border border-outline bg-background p-4">Lista de Pedidos.csv</div>
-              <div className="rounded-2xl border border-outline bg-background p-4">Lista de Itens.csv</div>
+          <SurfaceCard>
+            <SectionHeading
+              title="Arquivos esperados"
+              description="Você não precisa subir tudo em toda rodada, mas essa é a base padrão da operação."
+            />
+            <div className="mt-5 space-y-3 text-sm text-[var(--color-ink-soft)]">
+              {expectedFiles.map((file) => (
+                <div key={file} className="panel-muted p-4">
+                  {file}
+                </div>
+              ))}
             </div>
-          </div>
+          </SurfaceCard>
 
-          <div className="rounded-3xl border border-outline bg-surface-container p-6">
-            <h2 className="text-lg font-semibold text-on-surface">Marca carregada</h2>
+          <SurfaceCard>
+            <SectionHeading title="Marca carregada" description="Resumo rápido da base atual desta marca." />
             {activeBrand ? (
-              <div className="mt-4 space-y-3">
-                <div className="rounded-2xl border border-outline bg-background p-4">
-                  <p className="font-semibold text-on-surface">{activeBrand.name}</p>
-                  <p className="mt-1 text-sm text-on-surface-variant">
+              <div className="mt-5 space-y-3">
+                <div className="panel-muted p-4">
+                  <p className="font-semibold text-[var(--color-ink-strong)]">{activeBrand.name}</p>
+                  <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
                     {importedKinds.length} bloco(s) atualizados
                   </p>
                 </div>
                 {importedKinds.map((file) => (
-                  <div
-                    key={file.kind}
-                    className="rounded-2xl border border-outline bg-background p-4 text-sm text-on-surface-variant"
-                  >
-                    <span className="font-medium text-on-surface">{file.fileName}</span>
+                  <div key={file.kind} className="panel-muted p-4 text-sm text-[var(--color-ink-soft)]">
+                    <span className="font-medium text-[var(--color-ink-strong)]">{file.fileName}</span>
                     <br />
                     {file.rowCount} linhas
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="mt-4 text-sm text-on-surface-variant">
-                Nenhuma marca em foco.
-              </p>
+              <p className="mt-4 text-sm text-[var(--color-ink-soft)]">Nenhuma marca em foco.</p>
             )}
-          </div>
+          </SurfaceCard>
         </div>
       </section>
     </div>

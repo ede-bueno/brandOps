@@ -3,95 +3,246 @@
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { currencyFormatter, integerFormatter } from "@/lib/brandops/format";
-import { buildCmvCandidates } from "@/lib/brandops/metrics";
+import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import { currencyFormatter, formatLongDateTime, integerFormatter } from "@/lib/brandops/format";
+import { buildCmvCandidates, buildCmvTypeCandidates } from "@/lib/brandops/metrics";
 
 export default function CmvPage() {
-  const { activeBrand, saveCmvEntry } = useBrandOps();
+  const {
+    activeBrand,
+    filteredBrand,
+    saveCmvRule,
+    applyCmvCheckpoint,
+    selectedPeriodLabel,
+  } = useBrandOps();
   const [drafts, setDrafts] = useState<Record<string, string>>({});
-  const savedDrafts = useMemo(() => {
+  const [checkpointNote, setCheckpointNote] = useState("");
+  const [isApplyingCheckpoint, setIsApplyingCheckpoint] = useState(false);
+
+  const productDrafts = useMemo(() => {
     const nextDrafts: Record<string, string> = {};
-    activeBrand?.cmvEntries.forEach((entry) => {
-      nextDrafts[entry.productId] = String(entry.unitCost).replace(".", ",");
-    });
+    activeBrand?.cmvEntries
+      .filter((entry) => entry.matchType === "PRODUCT")
+      .forEach((entry) => {
+        nextDrafts[entry.matchValue] = String(entry.unitCost).replace(".", ",");
+      });
     return nextDrafts;
   }, [activeBrand]);
 
-  if (!activeBrand || !activeBrand.salesLines.length) {
+  const typeDrafts = useMemo(() => {
+    const nextDrafts: Record<string, string> = {};
+    activeBrand?.cmvEntries
+      .filter((entry) => entry.matchType === "TYPE")
+      .forEach((entry) => {
+        nextDrafts[entry.matchValue] = String(entry.unitCost).replace(".", ",");
+      });
+    return nextDrafts;
+  }, [activeBrand]);
+
+  if (!activeBrand || !filteredBrand || !filteredBrand.orderItems.length) {
     return (
       <EmptyState
-        title="Ainda não há produtos para CMV"
-        description="Importe o Pedidos Pagos.csv para carregar a base de itens vendidos e lançar custos."
+        title="Ainda não há itens para CMV"
+        description="Importe Lista de Itens.csv e, se quiser acelerar o processo, também a base Controle Financeiro - Oh, My Dog! - CMV_Produtos.csv."
       />
     );
   }
 
-  const products = buildCmvCandidates(activeBrand);
+  const productCandidates = buildCmvCandidates(filteredBrand).slice(0, 20);
+  const typeCandidates = buildCmvTypeCandidates(filteredBrand);
+  const latestCheckpoint = activeBrand.cmvCheckpoints[0] ?? null;
+
+  const parseCurrencyDraft = (value: string) =>
+    Number(value.trim().replace(/\./g, "").replace(",", "."));
 
   return (
-    <div className="space-y-8">
-      <section>
-        <h1 className="text-3xl font-bold text-on-surface">CMV</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-on-surface-variant">
-          Cadastre o custo unitário por produto para fechar margem e resultado
-          operacional. O custo vigente vale para o histórico importado.
-        </p>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Custo da mercadoria"
+        title="CMV"
+        description="Cadastre o custo por tipo de peça e crie overrides por produto quando necessário. O cálculo usa checkpoint para preservar o histórico das vendas já importadas."
+        badge={`Período analisado: ${selectedPeriodLabel}`}
+      />
+
+      <section className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
+        <SurfaceCard>
+          <SectionHeading
+            title="Checkpoint do CMV"
+            description="Sempre que o custo mudar, aplique um novo checkpoint para congelar o CMV nas vendas já importadas."
+          />
+
+          <textarea
+            value={checkpointNote}
+            onChange={(event) => setCheckpointNote(event.target.value)}
+            placeholder="Ex.: atualização de tabela INK março/2026"
+            className="soft-input mt-5 min-h-28"
+          />
+
+          <button
+            onClick={async () => {
+              setIsApplyingCheckpoint(true);
+              try {
+                await applyCmvCheckpoint(activeBrand.id, checkpointNote);
+                setCheckpointNote("");
+              } finally {
+                setIsApplyingCheckpoint(false);
+              }
+            }}
+            className="soft-button soft-button-primary mt-4"
+          >
+            {isApplyingCheckpoint ? "Aplicando..." : "Aplicar checkpoint agora"}
+          </button>
+
+          <div className="panel-muted mt-5 p-4 text-sm text-[var(--color-ink-soft)]">
+            {latestCheckpoint ? (
+              <>
+                <p className="font-semibold text-[var(--color-ink-strong)]">Último checkpoint</p>
+                <p className="mt-2">{formatLongDateTime(latestCheckpoint.createdAt)}</p>
+                <p className="mt-1">
+                  {integerFormatter.format(latestCheckpoint.itemsUpdated)} item(ns) recalculados
+                </p>
+                <p className="mt-1">
+                  {integerFormatter.format(latestCheckpoint.unmatchedItems)} item(ns) sem match
+                </p>
+                {latestCheckpoint.note ? <p className="mt-2">{latestCheckpoint.note}</p> : null}
+              </>
+            ) : (
+              "Nenhum checkpoint aplicado ainda."
+            )}
+          </div>
+        </SurfaceCard>
+
+        <SurfaceCard>
+          <SectionHeading
+            title="Base por tipo de peça"
+            description="Esta é a base principal da operação. Ela cobre os tipos da tabela de custo e serve como fallback do cálculo."
+          />
+
+          <div className="mt-6 overflow-x-auto">
+            <table className="app-table min-w-[820px]">
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th className="text-right">Qtde vendida</th>
+                  <th className="text-right">Receita bruta</th>
+                  <th className="text-right">CMV unitário</th>
+                  <th className="text-right">Salvar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {typeCandidates.map((candidate) => (
+                  <tr key={candidate.typeKey}>
+                    <td className="font-semibold text-[var(--color-ink-strong)]">{candidate.typeLabel}</td>
+                    <td className="text-right text-[var(--color-ink-soft)]">
+                      {integerFormatter.format(candidate.quantity)}
+                    </td>
+                    <td className="text-right text-[var(--color-ink-strong)]">
+                      {currencyFormatter.format(candidate.revenue)}
+                    </td>
+                    <td className="text-right">
+                      <input
+                        value={drafts[`type:${candidate.typeKey}`] ?? typeDrafts[candidate.typeKey] ?? ""}
+                        onChange={(event) =>
+                          setDrafts((current) => ({
+                            ...current,
+                            [`type:${candidate.typeKey}`]: event.target.value,
+                          }))
+                        }
+                        placeholder="0,00"
+                        className="soft-input max-w-32 text-right"
+                      />
+                    </td>
+                    <td className="text-right">
+                      <button
+                        onClick={() => {
+                          const raw = drafts[`type:${candidate.typeKey}`] ?? "";
+                          const unitCost = parseCurrencyDraft(raw);
+                          if (!Number.isFinite(unitCost)) {
+                            return;
+                          }
+                          void saveCmvRule(
+                            activeBrand.id,
+                            "TYPE",
+                            candidate.typeLabel,
+                            candidate.typeLabel,
+                            unitCost,
+                          );
+                        }}
+                        className="soft-button soft-button-secondary"
+                      >
+                        Gravar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </SurfaceCard>
       </section>
 
-      <div className="rounded-3xl border border-outline bg-surface-container p-6">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="text-xs uppercase tracking-[0.2em] text-on-surface-variant">
+      <SurfaceCard>
+        <SectionHeading
+          title="Overrides por produto"
+          description="Use este bloco quando um produto específico fugir do custo padrão do tipo."
+        />
+        <div className="mt-6 overflow-x-auto">
+          <table className="app-table min-w-[900px]">
+            <thead>
               <tr>
-                <th className="pb-3">Produto</th>
-                <th className="pb-3 text-right">Qtde vendida</th>
-                <th className="pb-3 text-right">Receita bruta</th>
-                <th className="pb-3 text-right">CMV unitário</th>
-                <th className="pb-3 text-right">Salvar</th>
+                <th>Produto</th>
+                <th>Tipo detectado</th>
+                <th className="text-right">Qtde vendida</th>
+                <th className="text-right">Receita bruta</th>
+                <th className="text-right">CMV unitário</th>
+                <th className="text-right">Salvar</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline">
-              {products.map((product) => (
+            <tbody>
+              {productCandidates.map((product) => (
                 <tr key={product.productId}>
-                  <td className="py-4">
-                    <p className="font-semibold text-on-surface">{product.productName}</p>
-                    <p className="mt-1 text-on-surface-variant">{product.productId}</p>
+                  <td>
+                    <p className="font-semibold text-[var(--color-ink-strong)]">{product.productName}</p>
                   </td>
-                  <td className="py-4 text-right text-on-surface-variant">
+                  <td className="text-[var(--color-ink-soft)]">
+                    {product.productType ?? "Sem tipo detectado"}
+                  </td>
+                  <td className="text-right text-[var(--color-ink-soft)]">
                     {integerFormatter.format(product.quantity)}
                   </td>
-                  <td className="py-4 text-right text-on-surface">
+                  <td className="text-right text-[var(--color-ink-strong)]">
                     {currencyFormatter.format(product.revenue)}
                   </td>
-                  <td className="py-4 text-right">
+                  <td className="text-right">
                     <input
-                      value={drafts[product.productId] ?? savedDrafts[product.productId] ?? ""}
+                      value={drafts[`product:${product.productId}`] ?? productDrafts[product.productId] ?? ""}
                       onChange={(event) =>
                         setDrafts((current) => ({
                           ...current,
-                          [product.productId]: event.target.value,
+                          [`product:${product.productId}`]: event.target.value,
                         }))
                       }
                       placeholder="0,00"
-                      className="w-28 rounded-xl border border-outline bg-background px-3 py-2 text-right text-on-surface outline-none"
+                      className="soft-input max-w-32 text-right"
                     />
                   </td>
-                  <td className="py-4 text-right">
+                  <td className="text-right">
                     <button
                       onClick={() => {
-                        const raw = (drafts[product.productId] ?? "").trim();
-                        const unitCost = Number(raw.replace(/\./g, "").replace(",", "."));
+                        const raw = drafts[`product:${product.productId}`] ?? "";
+                        const unitCost = parseCurrencyDraft(raw);
                         if (!Number.isFinite(unitCost)) {
                           return;
                         }
-                        saveCmvEntry(
+                        void saveCmvRule(
                           activeBrand.id,
-                          product.productId,
+                          "PRODUCT",
+                          product.productName,
                           product.productName,
                           unitCost,
                         );
                       }}
-                      className="rounded-xl bg-secondary px-4 py-2 text-sm font-semibold text-on-secondary"
+                      className="soft-button soft-button-secondary"
                     >
                       Gravar
                     </button>
@@ -101,7 +252,7 @@ export default function CmvPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </SurfaceCard>
     </div>
   );
 }

@@ -112,7 +112,7 @@ CREATE TABLE media_performance (
     ignored_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(brand_id, date, campaign_name, adset_name, ad_name)
+    UNIQUE(brand_id, date, campaign_name, adset_name, ad_name, platform, placement, device_platform)
 );
 
 -- 9. Import Logs

@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { Inter, Manrope } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import { BrandOpsProvider } from "@/components/BrandOpsProvider";
 import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-body",
 });
 
-const manrope = Manrope({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-manrope",
+  variable: "--font-headline",
 });
 
 export const metadata: Metadata = {
@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark">
       <body
-        className={`${inter.variable} ${manrope.variable} antialiased bg-background text-on-background`}
+        className={`${inter.variable} ${spaceGrotesk.variable} antialiased bg-background text-on-background`}
       >
         <BrandOpsProvider>{children}</BrandOpsProvider>
       </body>

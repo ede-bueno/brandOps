@@ -1,11 +1,16 @@
 export type CsvFileKind =
   | "meta"
   | "feed"
+  | "cmv_produtos"
   | "pedidos_pagos"
   | "lista_pedidos"
   | "lista_itens";
 
 export type UserRole = "SUPER_ADMIN" | "BRAND_OWNER";
+
+export type PeriodFilter = "7d" | "15d" | "30d" | "month" | "all";
+
+export type CmvMatchType = "SKU" | "PRODUCT" | "TYPE";
 
 export interface ImportedFileInfo {
   kind: CsvFileKind;
@@ -37,6 +42,7 @@ export interface CatalogProduct {
 }
 
 export interface PaidOrder {
+  id?: string;
   orderNumber: string;
   orderDate: string;
   paymentMethod: string;
@@ -49,9 +55,12 @@ export interface PaidOrder {
   source: string;
   trackingUrl?: string;
   shippingState?: string;
+  isIgnored?: boolean;
+  ignoreReason?: string | null;
 }
 
 export interface SalesLine {
+  id?: string;
   orderNumber: string;
   orderDate: string;
   productId: string;
@@ -62,19 +71,31 @@ export interface SalesLine {
   shippingValue: number;
   orderStatus: string;
   sku?: string;
+  isIgnored?: boolean;
+  ignoreReason?: string | null;
 }
 
 export interface OrderItem {
+  id?: string;
   orderNumber: string;
   orderDate: string;
   customerName?: string;
+  sku?: string;
   productName: string;
   productSpecs?: string;
+  productType?: string | null;
   quantity: number;
   grossValue: number;
+  cmvUnitApplied?: number;
+  cmvTotalApplied?: number;
+  cmvRuleType?: CmvMatchType | null;
+  cmvRuleLabel?: string | null;
+  isIgnored?: boolean;
+  ignoreReason?: string | null;
 }
 
 export interface MediaRow {
+  id?: string;
   date: string;
   campaignName: string;
   adsetName: string;
@@ -94,13 +115,43 @@ export interface MediaRow {
   ctrAll: number;
   ctrLink: number;
   addToCart: number;
+  isIgnored?: boolean;
+  ignoreReason?: string | null;
 }
 
 export interface CmvEntry {
-  productId: string;
-  productName: string;
+  id: string;
+  matchType: CmvMatchType;
+  matchValue: string;
+  matchLabel: string;
   unitCost: number;
+  source: string;
+  validFrom: string;
   updatedAt: string;
+}
+
+export interface CmvCheckpoint {
+  id: string;
+  createdAt: string;
+  note?: string | null;
+  itemsUpdated: number;
+  unmatchedItems: number;
+}
+
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  color: string;
+  isSystem: boolean;
+}
+
+export interface BrandExpense {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  incurredOn: string;
+  amount: number;
+  description: string;
 }
 
 export interface BrandDataset {
@@ -115,6 +166,9 @@ export interface BrandDataset {
   orderItems: OrderItem[];
   media: MediaRow[];
   cmvEntries: CmvEntry[];
+  cmvCheckpoints: CmvCheckpoint[];
+  expenseCategories: ExpenseCategory[];
+  expenses: BrandExpense[];
 }
 
 export interface WorkspaceState {
@@ -125,6 +179,7 @@ export interface WorkspaceState {
 export interface BrandSummaryMetrics {
   grossRevenue: number;
   netRevenue: number;
+  netAfterFees: number;
   discounts: number;
   orderCount: number;
   paidOrderCount: number;
@@ -132,11 +187,14 @@ export interface BrandSummaryMetrics {
   averageTicket: number;
   mediaSpend: number;
   grossRoas: number;
+  grossMargin: number;
   contributionAfterMedia: number;
   contributionMargin: number;
   commissionTotal: number;
   cmvTotal: number;
+  operatingExpensesTotal: number;
   operatingResult: number;
+  operatingMargin: number;
 }
 
 export interface CampaignPerformance {
@@ -172,6 +230,9 @@ export interface TopProductPerformance {
 
 export interface MediaAnomaly {
   id: string;
+  target: "MEDIA" | "ORDER";
+  targetId?: string;
+  orderNumber?: string;
   date: string;
   campaignName: string;
   adsetName: string;
@@ -180,4 +241,46 @@ export interface MediaAnomaly {
   value: string;
   reason: string;
   severity: "high" | "medium";
+  isIgnored: boolean;
+  ignoreReason?: string | null;
+}
+
+export interface MonthlyDreEntry {
+  monthKey: string;
+  label: string;
+  metrics: BrandSummaryMetrics;
+}
+
+export interface MonthlyExpenseBreakdown {
+  categoryId: string;
+  categoryName: string;
+  valuesByMonth: Record<string, number>;
+  total: number;
+}
+
+export interface AnnualDreReport {
+  months: MonthlyDreEntry[];
+  total: BrandSummaryMetrics;
+  expenseBreakdown: MonthlyExpenseBreakdown[];
+}
+
+export interface WeeklyPerformanceRow {
+  periodKey: string;
+  adsSpend: number;
+  impressions: number;
+  clicks: number;
+  metaPurchases: number;
+  realPieces: number;
+  grossRevenue: number;
+  cmv: number;
+  grossMargin: number;
+  adcostPerPiece: number;
+  averageTicket: number;
+  grossRoas: number;
+  netRoas: number;
+  ctr: number;
+  cpc: number;
+  cpm: number;
+  metaCvr: number;
+  realCvr: number;
 }

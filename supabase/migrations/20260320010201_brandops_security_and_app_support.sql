@@ -221,6 +221,8 @@ $$;
 
 DROP POLICY IF EXISTS "Super admins can do everything on brands" ON public.brands;
 DROP POLICY IF EXISTS "Brand owners can view their own brands" ON public.brands;
+DROP POLICY IF EXISTS "Super admins can manage brands" ON public.brands;
+DROP POLICY IF EXISTS "Brand members can view their brands" ON public.brands;
 CREATE POLICY "Super admins can manage brands"
   ON public.brands
   FOR ALL
@@ -233,6 +235,8 @@ CREATE POLICY "Brand members can view their brands"
 
 DROP POLICY IF EXISTS "Super admins can do everything on products" ON public.products;
 DROP POLICY IF EXISTS "Brand owners can view their own products" ON public.products;
+DROP POLICY IF EXISTS "Super admins can manage products" ON public.products;
+DROP POLICY IF EXISTS "Brand members can manage products" ON public.products;
 CREATE POLICY "Super admins can manage products"
   ON public.products
   FOR ALL
@@ -246,7 +250,6 @@ CREATE POLICY "Brand members can manage products"
 
 DROP POLICY IF EXISTS "Super admins can manage user profiles" ON public.user_profiles;
 DROP POLICY IF EXISTS "Users can view own profile" ON public.user_profiles;
-DROP POLICY IF EXISTS "Users can update own profile" ON public.user_profiles;
 CREATE POLICY "Super admins can manage user profiles"
   ON public.user_profiles
   FOR ALL
@@ -256,13 +259,9 @@ CREATE POLICY "Users can view own profile"
   ON public.user_profiles
   FOR SELECT
   USING (id = auth.uid());
-CREATE POLICY "Users can update own profile"
-  ON public.user_profiles
-  FOR UPDATE
-  USING (id = auth.uid())
-  WITH CHECK (id = auth.uid());
 
 DROP POLICY IF EXISTS "Super admins can manage brand members" ON public.brand_members;
+DROP POLICY IF EXISTS "Users can view accessible brand memberships" ON public.brand_members;
 DROP POLICY IF EXISTS "Users can view accessible brand memberships" ON public.brand_members;
 CREATE POLICY "Super admins can manage brand members"
   ON public.brand_members

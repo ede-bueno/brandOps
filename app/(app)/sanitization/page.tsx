@@ -1,94 +1,158 @@
 "use client";
 
+import { useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
+import { PageHeader, SurfaceCard } from "@/components/ui-shell";
 import { buildMediaAnomalies } from "@/lib/brandops/metrics";
 
 export default function SanitizationPage() {
-  const { activeBrand } = useBrandOps();
+  const {
+    activeBrand,
+    filteredBrand,
+    ignoreMediaRow,
+    restoreMediaRow,
+    ignoreOrder,
+    restoreOrder,
+    selectedPeriodLabel,
+  } = useBrandOps();
+  const [reasonDrafts, setReasonDrafts] = useState<Record<string, string>>({});
 
-  if (!activeBrand || !activeBrand.media.length) {
+  if (!activeBrand || !filteredBrand || (!filteredBrand.media.length && !filteredBrand.paidOrders.length)) {
     return (
       <EmptyState
-        title="Nenhum dado de mídia carregado"
-        description="Importe o Meta Export.csv para revisar as linhas que merecem checagem antes da leitura gerencial."
+        title="Nenhum dado carregado para saneamento"
+        description="Importe mídia e pedidos para revisar as linhas que merecem decisão operacional."
       />
     );
   }
 
-  const anomalies = buildMediaAnomalies(activeBrand);
+  const anomalies = buildMediaAnomalies(filteredBrand);
 
   return (
-    <div className="space-y-8">
-      <section>
-        <h1 className="text-3xl font-bold text-on-surface">Saneamento</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-on-surface-variant">
-          Esta fila destaca linhas com sinais de inconsistência para você revisar
-          antes de confiar nos números da mídia.
-        </p>
-      </section>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Decisão operacional"
+        title="Saneamento"
+        description="O sistema só aponta linhas suspeitas. A decisão final de ignorar ou restaurar fica com o operador, e essa escolha passa a valer nos relatórios."
+        badge={`Período analisado: ${selectedPeriodLabel}`}
+      />
 
       {anomalies.length === 0 ? (
-        <div className="rounded-3xl border border-outline bg-surface-container p-8 text-on-surface">
-          Nenhuma anomalia relevante foi encontrada na importação atual.
-        </div>
+        <SurfaceCard>
+          <p className="text-sm leading-7 text-[var(--color-ink-soft)]">
+            Nenhuma ocorrência relevante foi encontrada na base atual.
+          </p>
+        </SurfaceCard>
       ) : (
-        <div className="rounded-3xl border border-outline bg-surface-container p-6">
-          <div className="flex items-center justify-between">
+        <SurfaceCard>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-on-surface">
-                Anomalias encontradas
+              <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--color-ink-strong)]">
+                Ocorrências para decisão
               </h2>
-              <p className="mt-1 text-sm text-on-surface-variant">
-                {anomalies.length} ocorrência(s) marcadas para revisão.
+              <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+                {anomalies.length} item(ns) precisam de revisão humana.
               </p>
             </div>
           </div>
 
           <div className="mt-6 overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase tracking-[0.2em] text-on-surface-variant">
+            <table className="app-table min-w-[980px]">
+              <thead>
                 <tr>
-                  <th className="pb-3">Data</th>
-                  <th className="pb-3">Campanha</th>
-                  <th className="pb-3">Métrica</th>
-                  <th className="pb-3">Motivo</th>
-                  <th className="pb-3 text-right">Severidade</th>
+                  <th>Alvo</th>
+                  <th>Contexto</th>
+                  <th>Métrica</th>
+                  <th>Motivo</th>
+                  <th>Decisão</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-outline">
+              <tbody>
                 {anomalies.map((anomaly) => (
                   <tr key={anomaly.id}>
-                    <td className="py-4 text-on-surface">{anomaly.date}</td>
-                    <td className="py-4">
-                      <p className="font-semibold text-on-surface">
-                        {anomaly.campaignName}
+                    <td>
+                      <p className="font-semibold text-[var(--color-ink-strong)]">
+                        {anomaly.target === "MEDIA" ? "Linha de mídia" : "Pedido"}
                       </p>
-                      <p className="mt-1 text-on-surface-variant">
-                        {anomaly.adsetName} • {anomaly.adName}
+                      <p className="mt-1 text-sm text-[var(--color-ink-soft)]">{anomaly.date}</p>
+                    </td>
+                    <td>
+                      <p className="font-semibold text-[var(--color-ink-strong)]">{anomaly.campaignName}</p>
+                      <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+                        {anomaly.target === "ORDER"
+                          ? anomaly.orderNumber
+                          : `${anomaly.adsetName} • ${anomaly.adName}`}
                       </p>
                     </td>
-                    <td className="py-4 text-on-surface">
+                    <td className="text-[var(--color-ink-strong)]">
                       {anomaly.metric}: {anomaly.value}
                     </td>
-                    <td className="py-4 text-on-surface-variant">{anomaly.reason}</td>
-                    <td className="py-4 text-right">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          anomaly.severity === "high"
-                            ? "bg-tertiary/15 text-tertiary"
-                            : "bg-secondary/15 text-secondary"
-                        }`}
-                      >
-                        {anomaly.severity === "high" ? "Alta" : "Média"}
-                      </span>
+                    <td className="text-[var(--color-ink-soft)]">{anomaly.reason}</td>
+                    <td>
+                      <div className="space-y-3">
+                        <textarea
+                          value={reasonDrafts[anomaly.id] ?? anomaly.ignoreReason ?? ""}
+                          onChange={(event) =>
+                            setReasonDrafts((current) => ({
+                              ...current,
+                              [anomaly.id]: event.target.value,
+                            }))
+                          }
+                          placeholder="Justificativa da decisão"
+                          className="soft-input min-h-28"
+                        />
+                        <div className="flex flex-wrap gap-2">
+                          {anomaly.isIgnored ? (
+                            <button
+                              onClick={() => {
+                                if (anomaly.target === "MEDIA" && anomaly.targetId) {
+                                  void restoreMediaRow(anomaly.targetId);
+                                  return;
+                                }
+                                if (anomaly.target === "ORDER" && anomaly.orderNumber) {
+                                  void restoreOrder(activeBrand.id, anomaly.orderNumber);
+                                }
+                              }}
+                              className="soft-button soft-button-secondary"
+                            >
+                              Restaurar
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                const reason = reasonDrafts[anomaly.id] ?? "";
+                                if (anomaly.target === "MEDIA" && anomaly.targetId) {
+                                  void ignoreMediaRow(anomaly.targetId, reason);
+                                  return;
+                                }
+                                if (anomaly.target === "ORDER" && anomaly.orderNumber) {
+                                  void ignoreOrder(activeBrand.id, anomaly.orderNumber, reason);
+                                }
+                              }}
+                              className="soft-button soft-button-primary"
+                            >
+                              Ignorar no cálculo
+                            </button>
+                          )}
+                          <span
+                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                              anomaly.severity === "high"
+                                ? "bg-[rgba(255,142,110,0.14)] text-[var(--color-tertiary)]"
+                                : "bg-[rgba(139,225,255,0.12)] text-[var(--color-secondary)]"
+                            }`}
+                          >
+                            {anomaly.severity === "high" ? "Alta" : "Média"}
+                          </span>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </SurfaceCard>
       )}
     </div>
   );

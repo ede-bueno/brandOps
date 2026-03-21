@@ -1,95 +1,106 @@
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Upload, BarChart3 } from "lucide-react";
+import { ArrowRight, BarChart3, Building2, ShieldCheck, Upload } from "lucide-react";
+
+const highlights = [
+  {
+    icon: Building2,
+    title: "Operação multi-marca",
+    description: "Troque de marca sem trocar de contexto. Cada workspace preserva dados, acessos e histórico.",
+  },
+  {
+    icon: Upload,
+    title: "Atualização por export",
+    description: "Pedidos, itens, catálogo, mídia e CMV entram por CSV no fluxo que você já usa no dia a dia.",
+  },
+  {
+    icon: BarChart3,
+    title: "Leitura financeira útil",
+    description: "DRE, contribuição, custo, mídia e despesas entram na mesma conversa, sem planilha paralela.",
+  },
+];
+
+const steps = [
+  "Conecte a marca e organize quem pode operar ou apenas acompanhar.",
+  "Importe os arquivos da operação e saneie somente o que exigir decisão humana.",
+  "Acompanhe a evolução diária, por período e por centro de custo, em um painel único.",
+];
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background text-on-background">
-      <section className="mx-auto grid min-h-screen max-w-7xl gap-12 px-6 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-10">
-        <div className="space-y-8">
-          <div className="inline-flex rounded-full border border-outline bg-surface-container px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-secondary">
-            BrandOps
-          </div>
-
-          <div className="space-y-5">
-            <h1 className="max-w-3xl text-5xl font-bold tracking-tight text-on-surface lg:text-7xl">
-              Controle suas marcas POD com uma operação única.
-            </h1>
-            <p className="max-w-2xl text-lg leading-8 text-on-surface-variant">
-              Centralize vendas, mídia, CMV e importações em um painel pensado para
-              quem precisa acompanhar várias marcas sem perder o detalhe que importa.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-secondary px-5 py-3 text-sm font-semibold text-on-secondary"
-            >
-              Entrar no painel
-              <ArrowRight size={16} />
-            </Link>
-            <a
-              href="#como-funciona"
-              className="inline-flex items-center justify-center rounded-xl border border-outline px-5 py-3 text-sm font-semibold text-on-surface"
-            >
-              Ver como funciona
-            </a>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-outline bg-surface-container p-4">
-              <ShieldCheck className="text-secondary" size={20} />
-              <p className="mt-3 text-sm font-semibold text-on-surface">Acesso por perfil</p>
-              <p className="mt-1 text-sm text-on-surface-variant">
-                Super admin e dono de marca enxergam apenas o que precisam.
+    <main className="min-h-screen px-4 py-4 text-on-background lg:px-6 lg:py-6">
+      <div className="panel-surface panel-glow mx-auto max-w-7xl overflow-hidden px-6 py-8 lg:px-10 lg:py-10">
+        <div className="grid gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
+          <div className="space-y-8">
+            <div className="space-y-4">
+              <p className="eyebrow">BrandOps</p>
+              <h1 className="max-w-4xl text-5xl font-semibold tracking-[-0.07em] text-[var(--color-ink-strong)] lg:text-7xl">
+                A operação das suas marcas de print on demand, em um só cockpit.
+              </h1>
+              <p className="max-w-2xl text-base leading-8 text-[var(--color-ink-soft)] lg:text-lg">
+                BrandOps foi desenhado para centralizar o que mais pesa na gestão:
+                vendas, mídia, CMV, despesas e governança de acesso. Tudo em torno
+                do que acontece na operação real, não em torno da planilha.
               </p>
             </div>
-            <div className="rounded-2xl border border-outline bg-surface-container p-4">
-              <Upload className="text-secondary" size={20} />
-              <p className="mt-3 text-sm font-semibold text-on-surface">Atualização por CSV</p>
-              <p className="mt-1 text-sm text-on-surface-variant">
-                Suba os exports da operação e atualize os dados em lote.
-              </p>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link href="/login" className="soft-button soft-button-primary">
+                Entrar no painel
+                <ArrowRight size={16} />
+              </Link>
+              <a href="#como-funciona" className="soft-button soft-button-secondary">
+                Entender o fluxo
+              </a>
             </div>
-            <div className="rounded-2xl border border-outline bg-surface-container p-4">
-              <BarChart3 className="text-secondary" size={20} />
-              <p className="mt-3 text-sm font-semibold text-on-surface">Leitura executiva</p>
-              <p className="mt-1 text-sm text-on-surface-variant">
-                Veja a operação, a mídia e a margem em uma mesma visão.
-              </p>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              {highlights.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <article key={item.title} className="panel-muted p-5">
+                    <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/6 text-[var(--color-secondary)]">
+                      <Icon size={20} />
+                    </div>
+                    <h2 className="mt-4 text-lg font-semibold tracking-[-0.03em] text-[var(--color-ink-strong)]">
+                      {item.title}
+                    </h2>
+                    <p className="mt-2 text-sm leading-7 text-[var(--color-ink-soft)]">
+                      {item.description}
+                    </p>
+                  </article>
+                );
+              })}
             </div>
           </div>
+
+          <section id="como-funciona" className="panel-muted p-6 lg:p-7">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="eyebrow">Fluxo de uso</p>
+                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--color-ink-strong)]">
+                  Um sistema interno que organiza a gestão sem criar ruído.
+                </h2>
+              </div>
+              <div className="hidden h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(215,249,120,0.12)] text-[var(--color-primary)] sm:inline-flex">
+                <ShieldCheck size={24} />
+              </div>
+            </div>
+
+            <div className="mt-8 space-y-4">
+              {steps.map((step, index) => (
+                <div key={step} className="panel-surface px-5 py-5">
+                  <div className="flex gap-4">
+                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/6 text-sm font-bold text-[var(--color-primary)]">
+                      {index + 1}
+                    </span>
+                    <p className="pt-1 text-sm leading-7 text-[var(--color-ink-soft)]">{step}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
-
-        <div
-          id="como-funciona"
-          className="rounded-3xl border border-outline bg-surface-container p-8 shadow-2xl shadow-black/20"
-        >
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-secondary">
-            Fluxo de uso
-          </p>
-          <div className="mt-6 space-y-4">
-            <div className="rounded-2xl border border-outline bg-background p-4">
-              <p className="text-sm font-semibold text-on-surface">1. Entre na conta</p>
-              <p className="mt-1 text-sm text-on-surface-variant">
-                Use o login cadastrado para abrir o workspace da sua marca.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-outline bg-background p-4">
-              <p className="text-sm font-semibold text-on-surface">2. Envie os CSVs</p>
-              <p className="mt-1 text-sm text-on-surface-variant">
-                Atualize pedidos, catálogo, mídia e custos sem retrabalho manual.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-outline bg-background p-4">
-              <p className="text-sm font-semibold text-on-surface">3. Acompanhe o resultado</p>
-              <p className="mt-1 text-sm text-on-surface-variant">
-                Consulte receita, despesa, CMV e alertas em tempo de operação.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      </div>
     </main>
   );
 }

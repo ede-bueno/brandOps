@@ -1,93 +1,171 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #4edea3;
-  --color-on-primary: #070d1f;
-  --color-primary-container: #191f31;
-  --color-on-primary-container: #4edea3;
-  
-  --color-secondary: #4edea3;
-  --color-on-secondary: #070d1f;
-  --color-secondary-container: #191f31;
-  --color-on-secondary-container: #4edea3;
-  
-  --color-tertiary: #f43f5e;
+  --color-primary: #7ee0b8;
+  --color-on-primary: #06101c;
+  --color-primary-container: #12221d;
+  --color-on-primary-container: #7ee0b8;
+
+  --color-secondary: #8bc6ff;
+  --color-on-secondary: #06101c;
+  --color-secondary-container: #132238;
+  --color-on-secondary-container: #8bc6ff;
+
+  --color-tertiary: #f59e0b;
   --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #3f1d24;
-  --color-on-tertiary-container: #f43f5e;
-  
-  --color-error: #f43f5e;
+  --color-tertiary-container: #36240f;
+  --color-on-tertiary-container: #f59e0b;
+
+  --color-error: #fb7185;
   --color-on-error: #ffffff;
-  --color-error-container: #3f1d24;
-  --color-on-error-container: #f43f5e;
-  
-  --color-background: #070d1f;
-  --color-on-background: #bcc7de;
-  --color-surface: #0c1324;
-  --color-on-surface: #bcc7de;
-  --color-surface-variant: #191f31;
-  --color-on-surface-variant: #6b7a99;
-  
-  --color-outline: #23293c;
-  --color-outline-variant: #191f31;
-  
-  --color-surface-container-highest: #23293c;
-  --color-surface-container-high: #191f31;
-  --color-surface-container: #0c1324;
-  --color-surface-container-low: #070d1f;
-  --color-surface-container-lowest: #030712;
-  
-  --font-headline: 'Manrope', sans-serif;
+  --color-error-container: #37131b;
+  --color-on-error-container: #fb7185;
+
+  --color-background: #050b16;
+  --color-on-background: #cbd5e1;
+  --color-surface: #0a1222;
+  --color-on-surface: #e5eefc;
+  --color-surface-variant: #111a31;
+  --color-on-surface-variant: #94a3c2;
+
+  --color-outline: #22304a;
+  --color-outline-variant: #1a2740;
+
+  --color-surface-container-highest: #1a2740;
+  --color-surface-container-high: #132238;
+  --color-surface-container: #0d1528;
+  --color-surface-container-low: #09101d;
+  --color-surface-container-lowest: #050b16;
+
+  --font-headline: 'Space Grotesk', sans-serif;
   --font-body: 'Inter', sans-serif;
 }
 
+html {
+  color-scheme: dark;
+}
+
 body {
-  background-color: var(--color-background);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(126, 224, 184, 0.15), transparent 28%),
+    radial-gradient(circle at top right, rgba(139, 198, 255, 0.11), transparent 24%),
+    linear-gradient(180deg, #08101e 0%, #050b16 100%);
   color: var(--color-on-background);
   font-family: var(--font-body);
+  overflow-x: hidden;
 }
 
-.glass-effect {
-  background: rgba(12, 19, 36, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(35, 41, 60, 0.5);
+.font-headline {
+  font-family: var(--font-headline);
 }
 
-.glass-panel {
-  background: linear-gradient(145deg, rgba(25, 31, 49, 0.4) 0%, rgba(12, 19, 36, 0.8) 100%);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(78, 222, 163, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+.brandops-shell {
+  background:
+    radial-gradient(circle at top left, rgba(126, 224, 184, 0.05), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(139, 198, 255, 0.06), transparent 35%);
 }
 
-.metallic-sheen {
-  background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.03) 25%, transparent 30%);
-  background-size: 200% 100%;
-  animation: sheen 8s infinite linear;
+.brandops-panel {
+  background: linear-gradient(180deg, rgba(13, 21, 40, 0.92), rgba(9, 16, 29, 0.92));
+  border: 1px solid rgba(34, 48, 74, 0.9);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
 }
 
-@keyframes sheen {
-  0% { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
+.brandops-panel-soft {
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.2);
 }
 
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
+.brandops-panel-strong {
+  background:
+    radial-gradient(circle at top left, rgba(126, 224, 184, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(16, 25, 46, 0.98), rgba(9, 16, 29, 0.98));
+  border: 1px solid rgba(126, 224, 184, 0.18);
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(18px);
 }
 
-/* Custom Scrollbar for dark theme */
-::-webkit-scrollbar {
+.brandops-card {
+  background: linear-gradient(180deg, rgba(13, 21, 40, 0.88), rgba(9, 16, 29, 0.88));
+  border: 1px solid rgba(34, 48, 74, 0.75);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(14px);
+}
+
+.brandops-input {
+  background: rgba(5, 11, 22, 0.82);
+  border: 1px solid rgba(34, 48, 74, 0.85);
+  color: var(--color-on-surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.brandops-input::placeholder {
+  color: #7182a7;
+}
+
+.brandops-input:focus-visible,
+.brandops-button:focus-visible,
+.brandops-navlink:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(126, 224, 184, 0.9);
+  outline-offset: 2px;
+}
+
+.brandops-navlink {
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.brandops-navlink:hover {
+  transform: translateX(2px);
+}
+
+.brandops-navlink[title]:hover {
+  transform: none;
+}
+
+.brandops-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.brandops-selection::selection {
+  background: rgba(126, 224, 184, 0.28);
+  color: #effaf5;
+}
+
+body::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-::-webkit-scrollbar-track {
+
+body::-webkit-scrollbar-track {
   background: var(--color-surface-container-low);
 }
-::-webkit-scrollbar-thumb {
+
+body::-webkit-scrollbar-thumb {
   background: var(--color-outline);
   border-radius: 3px;
 }
-::-webkit-scrollbar-thumb:hover {
+
+body::-webkit-scrollbar-thumb:hover {
   background: var(--color-on-surface-variant);
+}
+
+@media (min-width: 1440px) {
+  .brandops-shell {
+    background:
+      radial-gradient(circle at top left, rgba(126, 224, 184, 0.04), transparent 26%),
+      radial-gradient(circle at bottom right, rgba(139, 198, 255, 0.05), transparent 28%);
+  }
 }
