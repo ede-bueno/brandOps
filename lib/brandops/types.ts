@@ -52,6 +52,7 @@ export interface PaidOrder {
   orderValue: number;
   discountValue: number;
   commissionValue: number;
+  couponName?: string | null;
   source: string;
   trackingUrl?: string;
   shippingState?: string;
@@ -178,7 +179,9 @@ export interface WorkspaceState {
 
 export interface BrandSummaryMetrics {
   grossRevenue: number;
+  rob: number; // Receita Operacional Bruta
   netRevenue: number;
+  rld: number; // Receita Líquida Disponível (netRevenue - discounts)
   netAfterFees: number;
   discounts: number;
   orderCount: number;
@@ -189,13 +192,27 @@ export interface BrandSummaryMetrics {
   grossRoas: number;
   grossMargin: number;
   contributionAfterMedia: number;
-  contributionMargin: number;
+  contributionMargin: number; // Margem de Contribuição (rld - cmv - mediaSpend)
   commissionTotal: number;
   cmvTotal: number;
+  fixedExpensesTotal: number; // Despesas Fixas
   operatingExpensesTotal: number;
   operatingResult: number;
+  netResult: number; // Resultado Líquido (Margem de Contribuição - Despesas Fixas)
   operatingMargin: number;
+  itemsPerOrder: number; // IPT - Peças por Pedido
+  revenuePerUnit: number; // RLD / Peças
+  avgMarkup: number; // RLD / CMV
+  breakEvenPoint: number; // Ponto de Equilíbrio
+  couponDiscounts: number;
+  inkProfit: number;
+  averageInkProfit: number;
+  hasItemDetailCoverage: boolean;
 }
+
+
+
+
 
 export interface CampaignPerformance {
   campaignName: string;

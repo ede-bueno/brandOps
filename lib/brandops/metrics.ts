@@ -56,7 +56,9 @@ function normalizeText(value?: string | null) {
 function buildEmptySummaryMetrics(): BrandSummaryMetrics {
   return {
     grossRevenue: 0,
+    rob: 0,
     netRevenue: 0,
+    rld: 0,
     netAfterFees: 0,
     discounts: 0,
     orderCount: 0,
@@ -70,39 +72,76 @@ function buildEmptySummaryMetrics(): BrandSummaryMetrics {
     contributionMargin: 0,
     commissionTotal: 0,
     cmvTotal: 0,
+    fixedExpensesTotal: 0,
     operatingExpensesTotal: 0,
     operatingResult: 0,
+    netResult: 0,
     operatingMargin: 0,
+    itemsPerOrder: 0,
+    revenuePerUnit: 0,
+    avgMarkup: 0,
+    breakEvenPoint: 0,
+    couponDiscounts: 0,
+    inkProfit: 0,
+    averageInkProfit: 0,
+    hasItemDetailCoverage: false,
   };
 }
 
+
+
 function finalizeSummaryMetrics(metrics: BrandSummaryMetrics): BrandSummaryMetrics {
-  const netAfterFees = metrics.netRevenue - metrics.commissionTotal;
-  const grossMargin = netAfterFees - metrics.cmvTotal;
-  const contributionAfterMedia = grossMargin - metrics.mediaSpend;
+  const rld = metrics.netRevenue; 
+  const rob = rld + metrics.discounts;
+  const netAfterFees = rld; // No POD, a comissão do lojista é a sobra após o CMV pago à Ink
+  const cmvTotal = metrics.cmvTotal;
+  
+  const contributionAfterMedia = rld - cmvTotal - metrics.mediaSpend;
+  const grossMargin = rld - cmvTotal; // Margem bruta = sobra após o custo de produção/logística
+  const marginPercentage = rld > 0 ? grossMargin / rld : 0;
   const operatingResult = contributionAfterMedia - metrics.operatingExpensesTotal;
+
+  // Ponto de Equilíbrio = Custos Fixos / Margem de Contribuição %
+  // Usando Margem Bruta % como proxy para Margem de Contribuição se não houver dados de variáveis extras
+  const breakEvenPoint = marginPercentage > 0 ? metrics.operatingExpensesTotal / marginPercentage : 0;
 
   return {
     grossRevenue: round(metrics.grossRevenue),
+    rob: round(rob),
     netRevenue: round(metrics.netRevenue),
+    rld: round(rld),
     netAfterFees: round(netAfterFees),
     discounts: round(metrics.discounts),
     orderCount: metrics.orderCount,
     paidOrderCount: metrics.paidOrderCount,
     unitsSold: metrics.unitsSold,
-    averageTicket: round(metrics.paidOrderCount ? metrics.netRevenue / metrics.paidOrderCount : 0),
+    averageTicket: round(metrics.paidOrderCount ? rld / metrics.paidOrderCount : 0),
     mediaSpend: round(metrics.mediaSpend),
     grossRoas: round(metrics.mediaSpend ? metrics.grossRevenue / metrics.mediaSpend : 0, 2),
     grossMargin: round(grossMargin),
     contributionAfterMedia: round(contributionAfterMedia),
-    contributionMargin: round(metrics.netRevenue ? contributionAfterMedia / metrics.netRevenue : 0, 4),
+    contributionMargin: round(rld ? contributionAfterMedia / rld : 0, 4),
     commissionTotal: round(metrics.commissionTotal),
     cmvTotal: round(metrics.cmvTotal),
+    fixedExpensesTotal: round(metrics.fixedExpensesTotal),
     operatingExpensesTotal: round(metrics.operatingExpensesTotal),
     operatingResult: round(operatingResult),
-    operatingMargin: round(metrics.netRevenue ? operatingResult / metrics.netRevenue : 0, 4),
+    netResult: round(operatingResult),
+    operatingMargin: round(rld ? operatingResult / rld : 0, 4),
+    itemsPerOrder: round(metrics.paidOrderCount ? metrics.unitsSold / metrics.paidOrderCount : 0, 2),
+    revenuePerUnit: round(metrics.unitsSold ? rld / metrics.unitsSold : 0),
+    avgMarkup: round(metrics.cmvTotal ? rld / metrics.cmvTotal : 0, 2),
+    breakEvenPoint: round(breakEvenPoint),
+    couponDiscounts: round(metrics.couponDiscounts),
+    inkProfit: round(metrics.inkProfit),
+    averageInkProfit: round(metrics.paidOrderCount ? metrics.inkProfit / metrics.paidOrderCount : 0),
+    hasItemDetailCoverage: metrics.hasItemDetailCoverage,
   };
 }
+
+
+
+
 
 function getIsoWeekParts(dateValue: string) {
   const date = new Date(`${dateValue}T00:00:00`);
@@ -263,30 +302,37 @@ function getActiveOrderItems(brand: BrandDataset) {
   );
 }
 
-function getActiveMediaRows(brand: BrandDataset) {
+export function getActiveMediaRows(brand: BrandDataset) {
   return brand.media.filter((row) => !row.isIgnored);
 }
+
 
 export function computeBrandMetrics(brand: BrandDataset): BrandSummaryMetrics {
   const paidOrders = getPaidOrders(brand);
   const paidItems = getActiveOrderItems(brand);
-  const grossRevenue = paidItems.reduce((sum, item) => sum + item.grossValue, 0);
+  const itemGrossRevenue = paidItems.reduce((sum, item) => sum + item.grossValue, 0);
   const netRevenue = paidOrders.reduce((sum, order) => sum + order.orderValue, 0);
   const discounts = paidOrders.reduce((sum, order) => sum + order.discountValue, 0);
-  const unitsSold = paidItems.reduce((sum, item) => sum + item.quantity, 0);
+  const itemUnitsSold = paidItems.reduce((sum, item) => sum + item.quantity, 0);
+  const unitsSold = itemUnitsSold || paidOrders.reduce((sum, order) => sum + order.itemsInOrder, 0);
   const mediaSpend = getActiveMediaRows(brand).reduce((sum, row) => sum + row.spend, 0);
   const commissionTotal = paidOrders.reduce(
     (sum, order) => sum + order.commissionValue,
     0,
   );
   const cmvTotal = paidItems.reduce((sum, item) => sum + (item.cmvTotalApplied ?? 0), 0);
+  const couponDiscounts = paidOrders.reduce((sum, order) => {
+    return order.couponName?.trim() ? sum + order.discountValue : sum;
+  }, 0);
   const operatingExpensesTotal = brand.expenses.reduce(
     (sum, expense) => sum + expense.amount,
     0,
   );
   return finalizeSummaryMetrics({
-    grossRevenue,
+    grossRevenue: itemGrossRevenue || netRevenue + discounts,
+    rob: netRevenue,
     netRevenue,
+    rld: netRevenue - discounts,
     netAfterFees: 0,
     discounts,
     orderCount: brand.paidOrders.length,
@@ -300,11 +346,25 @@ export function computeBrandMetrics(brand: BrandDataset): BrandSummaryMetrics {
     contributionMargin: 0,
     commissionTotal,
     cmvTotal,
+    fixedExpensesTotal: operatingExpensesTotal,
     operatingExpensesTotal,
     operatingResult: 0,
+    netResult: 0,
     operatingMargin: 0,
+    itemsPerOrder: 0,
+    revenuePerUnit: 0,
+    avgMarkup: 0,
+    breakEvenPoint: 0,
+    couponDiscounts,
+    inkProfit: commissionTotal,
+    averageInkProfit: 0,
+    hasItemDetailCoverage: paidItems.length > 0,
   });
 }
+
+
+
+
 
 export function buildDailySalesSeries(brand: BrandDataset): DailySalesPoint[] {
   const paidOrders = getPaidOrders(brand);
@@ -335,12 +395,12 @@ export function buildTopProducts(brand: BrandDataset): TopProductPerformance[] {
   const byProduct = new Map<string, TopProductPerformance>();
 
   getActiveOrderItems(brand).forEach((item) => {
-    const key = `${item.productName}__${item.productSpecs ?? ""}`;
+    // Agrupa por Nome do Produto (Estampa) removendo variações se necessário
+    // No BrandOps, o productName geralmente já é a Estampa, e productSpecs é o tamanho/cor
+    const key = item.productName;
     const current = byProduct.get(key) ?? {
       productKey: key,
-      productName: item.productSpecs
-        ? `${item.productName} • ${item.productSpecs}`
-        : item.productName,
+      productName: item.productName,
       quantity: 0,
       grossRevenue: 0,
     };
@@ -351,12 +411,13 @@ export function buildTopProducts(brand: BrandDataset): TopProductPerformance[] {
 
   return [...byProduct.values()]
     .sort((a, b) => b.grossRevenue - a.grossRevenue)
-    .slice(0, 10)
+    .slice(0, 15)
     .map((item) => ({
       ...item,
       grossRevenue: round(item.grossRevenue),
     }));
 }
+
 
 export function buildCampaignPerformance(brand: BrandDataset): CampaignPerformance[] {
   const byCampaign = new Map<string, CampaignPerformance>();
@@ -521,14 +582,15 @@ export function buildAnnualDreReport(brand: BrandDataset): AnnualDreReport {
     bucket.commissionTotal += order.commissionValue;
     bucket.paidOrderCount += 1;
     bucket.orderCount += 1;
+    bucket.unitsSold += order.itemsInOrder;
   });
 
   paidItems.forEach((item) => {
     const bucket = ensureMonth(toMonthKey(item.orderDate));
     bucket.grossRevenue += item.grossValue;
     bucket.cmvTotal += item.cmvTotalApplied ?? 0;
-    bucket.unitsSold += item.quantity;
   });
+
 
   activeMedia.forEach((row) => {
     const bucket = ensureMonth(toMonthKey(row.date));
@@ -572,7 +634,13 @@ export function buildAnnualDreReport(brand: BrandDataset): AnnualDreReport {
     accumulator.commissionTotal += month.metrics.commissionTotal;
     accumulator.cmvTotal += month.metrics.cmvTotal;
     accumulator.operatingExpensesTotal += month.metrics.operatingExpensesTotal;
+    accumulator.rob += month.metrics.rob;
+    accumulator.rld += month.metrics.rld;
+    accumulator.contributionMargin += month.metrics.contributionMargin;
+    accumulator.fixedExpensesTotal += month.metrics.fixedExpensesTotal;
+    accumulator.netResult += month.metrics.netResult;
     return accumulator;
+
   }, buildEmptySummaryMetrics());
 
   return {
@@ -833,6 +901,21 @@ export function buildCmvTypeCandidates(brand: BrandDataset) {
       .map((entry) => [normalizeText(entry.matchLabel), entry.unitCost]),
   );
 
+  // Primeiro, garante que todos os tipos do catálogo apareçam
+  brand.catalog.forEach((product) => {
+    const typeLabel = product.brand || detectProductType(product.title, product.id) || "Sem tipo detectado";
+    const typeKey = normalizeText(typeLabel);
+    if (!byType.has(typeKey)) {
+      byType.set(typeKey, {
+        typeKey,
+        typeLabel,
+        quantity: 0,
+        revenue: 0,
+        unitCost: typeRuleMap.get(typeKey) ?? null,
+      });
+    }
+  });
+
   getActiveOrderItems(brand).forEach((item) => {
     const typeLabel = item.productType ?? detectProductType(item.productName, item.sku) ?? "Sem tipo detectado";
     const typeKey = normalizeText(typeLabel);
@@ -847,6 +930,7 @@ export function buildCmvTypeCandidates(brand: BrandDataset) {
     current.revenue += item.grossValue;
     byType.set(typeKey, current);
   });
+
 
   return [...byType.values()]
     .sort((a, b) => b.revenue - a.revenue)

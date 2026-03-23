@@ -1,447 +1,279 @@
 "use client";
 
-import { Fragment } from "react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { EmptyState } from "@/components/EmptyState";
-import { MetricCard } from "@/components/MetricCard";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
-import {
-  currencyFormatter,
-  integerFormatter,
-  percentFormatter,
-} from "@/lib/brandops/format";
-import {
-  buildAnnualDreReport,
-  buildDailyContributionSeries,
-  buildExpenseSummary,
-  buildWeeklyPerformanceTable,
-  computeBrandMetrics,
-} from "@/lib/brandops/metrics";
-import type { BrandSummaryMetrics } from "@/lib/brandops/types";
+import { currencyFormatter, percentFormatter } from "@/lib/brandops/format";
+import { buildAnnualDreReport } from "@/lib/brandops/metrics";
+import { cn } from "@/lib/utils";
 
-type DreRowConfig = {
-  label: string;
-  getValue: (metrics: BrandSummaryMetrics) => number;
-  highlight?: boolean;
-  showPercent?: boolean;
-};
-
-const baseRows: DreRowConfig[] = [
-  {
-    label: "(=) Receita bruta",
-    getValue: (metrics) => metrics.grossRevenue,
-  },
-  {
-    label: "(-) Desconto",
-    getValue: (metrics) => -metrics.discounts,
-    showPercent: true,
-  },
-  {
-    label: "(=) Receita líquida",
-    getValue: (metrics) => metrics.netRevenue,
-    highlight: true,
-  },
-  {
-    label: "(-) Comissões / taxas",
-    getValue: (metrics) => -metrics.commissionTotal,
-    showPercent: true,
-  },
-  {
-    label: "(=) Receita líquida após taxas",
-    getValue: (metrics) => metrics.netAfterFees,
-    highlight: true,
-  },
-  {
-    label: "(-) CMV",
-    getValue: (metrics) => -metrics.cmvTotal,
-    showPercent: true,
-  },
-  {
-    label: "(=) Margem bruta",
-    getValue: (metrics) => metrics.grossMargin,
-    highlight: true,
-    showPercent: true,
-  },
-  {
-    label: "(-) Adcost",
-    getValue: (metrics) => -metrics.mediaSpend,
-    showPercent: true,
-  },
-  {
-    label: "(=) Margem de contribuição",
-    getValue: (metrics) => metrics.contributionAfterMedia,
-    highlight: true,
-    showPercent: true,
-  },
-  {
-    label: "(-) Despesas operacionais",
-    getValue: (metrics) => -metrics.operatingExpensesTotal,
-    showPercent: true,
-  },
-  {
-    label: "(=) Resultado",
-    getValue: (metrics) => metrics.operatingResult,
-    highlight: true,
-    showPercent: true,
-  },
-];
-
-function ratioText(value: number, base: number, enabled = true) {
-  if (!enabled || !base) {
-    return "-";
-  }
-  return percentFormatter.format(value / base);
-}
-
-function valueClass(value: number) {
-  if (value > 0) return "text-[var(--color-primary)]";
-  if (value < 0) return "text-[var(--color-tertiary)]";
-  return "text-on-surface";
-}
 
 export default function DrePage() {
   const { activeBrand, filteredBrand, selectedPeriodLabel } = useBrandOps();
 
-  if (!activeBrand || !filteredBrand || !filteredBrand.paidOrders.length) {
+  if (!activeBrand || !filteredBrand) {
     return (
       <EmptyState
-        title="Ainda não há dados suficientes para o DRE"
-        description="Importe pedidos, itens, mídia e complete a base de CMV para abrir uma leitura financeira mais confiável."
+        title="Nenhum dado para o DRE"
+        description="Importe vendas, mídia e despesas para visualizar o Demonstrativo de Resultados."
       />
     );
   }
 
-  const currentMetrics = computeBrandMetrics(filteredBrand);
-  const annualReport = buildAnnualDreReport(activeBrand);
-  const expenseSummary = buildExpenseSummary(filteredBrand);
-  const dailyContribution = buildDailyContributionSeries(filteredBrand)
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 10);
-  const weeklyPerformance = buildWeeklyPerformanceTable(activeBrand).slice(0, 18);
+  const report = buildAnnualDreReport(filteredBrand);
+
+  const rowStyles = {
+    header: "bg-surface-variant/30 font-bold text-on-surface uppercase tracking-wider text-[10px]",
+    metric: "text-on-surface font-medium",
+    subMetric: "text-on-surface-variant text-sm pl-6",
+    total: "font-bold text-on-surface border-t border-outline/30",
+    positive: "text-[var(--color-positive)]",
+    negative: "text-[var(--color-warning)]",
+    neutral: "text-on-surface-variant",
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Financeiro"
-        title="DRE e visões gerenciais"
-        description="Leitura do período em foco, visão acumulada mês a mês e performance comercial por semana para substituir a análise que antes vivia na planilha."
-        badge={`Período analisado: ${selectedPeriodLabel}`}
+        eyebrow="Relatório gerencial"
+        title="DRE Anual"
+        description="Visão matricial de performance financeira. Consolidação de receitas, custos diretos, mídia e despesas fixas para chegar ao resultado líquido."
+        badge={`Período: ${selectedPeriodLabel}`}
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          label="Receita líquida"
-          value={currencyFormatter.format(currentMetrics.netRevenue)}
-          help={`${integerFormatter.format(currentMetrics.paidOrderCount)} pedidos pagos`}
-          accent="positive"
-        />
-        <MetricCard
-          label="Margem bruta"
-          value={currencyFormatter.format(currentMetrics.grossMargin)}
-          help={`${percentFormatter.format(currentMetrics.netRevenue ? currentMetrics.grossMargin / currentMetrics.netRevenue : 0)}`}
-          accent={currentMetrics.grossMargin >= 0 ? "positive" : "warning"}
-        />
-        <MetricCard
-          label="Margem de contribuição"
-          value={currencyFormatter.format(currentMetrics.contributionAfterMedia)}
-          help={`${percentFormatter.format(currentMetrics.contributionMargin)}`}
-          accent={currentMetrics.contributionAfterMedia >= 0 ? "positive" : "warning"}
-        />
-        <MetricCard
-          label="Resultado"
-          value={currencyFormatter.format(currentMetrics.operatingResult)}
-          help={`${percentFormatter.format(currentMetrics.operatingMargin)}`}
-          accent={currentMetrics.operatingResult >= 0 ? "positive" : "warning"}
-        />
-      </section>
+      <SurfaceCard className="p-6">
 
-      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <SurfaceCard>
-          <SectionHeading
-            title="DRE do período em foco"
-            description="Snapshot financeiro para a marca e o período selecionado no topo do painel."
+        <SectionHeading 
+          title="Evolução de Resultado" 
+          description="Receita Líquida (RLD) vs CMV vs Resultado Líquido Final ao longo dos meses." 
+        />
+        <div className="h-[300px] mt-6">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={report.months.map(m => ({ 
+              name: m.label, 
+              rld: m.metrics.rld, 
+              cmv: m.metrics.cmvTotal,
+              result: m.metrics.netResult
+            }))}>
+              <defs>
+                <linearGradient id="colorRld" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorResult" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--color-secondary)" stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor="var(--color-secondary)" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline)" vertical={false} opacity={0.2} />
+              <XAxis 
+                dataKey="name" 
+                stroke="var(--color-on-surface-variant)" 
+                fontSize={10} 
+                tickLine={false} 
+                axisLine={false} 
+              />
+              <YAxis 
+                stroke="var(--color-on-surface-variant)" 
+                fontSize={10} 
+                tickLine={false} 
+                axisLine={false}
+                tickFormatter={(v) => `R$${Math.round(v/1000)}k`}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'var(--color-surface)', 
+                  borderRadius: '12px', 
+                  border: '1px solid var(--color-outline)',
+                  fontSize: '11px',
+                  boxShadow: '0 10px 30px -10px rgba(0,0,0,0.2)'
+                }} 
+              />
+              <Area 
+                type="monotone" 
+                dataKey="rld" 
+                name="Receita (RLD)"
+                stroke="var(--color-primary)" 
+                fillOpacity={1} 
+                fill="url(#colorRld)" 
+                strokeWidth={2}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="result" 
+                name="Result. Líquido"
+                stroke="var(--color-secondary)" 
+                fillOpacity={1} 
+                fill="url(#colorResult)" 
+                strokeWidth={2}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </SurfaceCard>
+
+      <SurfaceCard className="overflow-hidden p-0">
+        <div className="p-6 border-b border-outline/10">
+          <SectionHeading 
+            title="Demonstrativo de Resultados (DRE)" 
+            description="Visão contábil detalhada por competência (mês de faturamento)." 
           />
+        </div>
 
-          <div className="mt-6 overflow-hidden rounded-[22px] border border-outline/50 bg-surface-container-low/30">
-            <table className="brandops-table-compact w-full text-left text-sm">
-              <tbody>
-                {baseRows.map((row) => {
-                  const value = row.getValue(currentMetrics);
-                  return (
-                    <tr
-                      key={row.label}
-                      className={row.highlight ? "bg-secondary/10" : "border-t border-outline/50"}
-                    >
-                      <td className="px-5 py-4 font-medium text-on-surface">
-                        {row.label}
-                      </td>
-                      <td className={`px-5 py-4 text-right font-medium ${valueClass(value)}`}>
-                        {currencyFormatter.format(value)}
-                      </td>
-                      <td className="px-5 py-4 text-right text-on-surface-variant">
-                        {ratioText(value, currentMetrics.netRevenue, row.showPercent)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr className={rowStyles.header}>
+                <th className="sticky left-0 z-10 bg-surface p-4 min-w-[240px] border-r border-outline/10">Indicador</th>
+                {report.months.map((m) => (
+                  <th key={m.monthKey} className="p-4 text-center min-w-[120px]">{m.label}</th>
+                ))}
+                <th className="p-4 text-center min-w-[140px] bg-surface-variant/20">Acumulado</th>
+              </tr>
+
+            </thead>
+            <tbody className="divide-y divide-outline/10">
+              {/* RECEITA */}
+              <tr>
+                <td className={cn("p-4 sticky left-0 z-10 bg-surface border-r border-outline/10", rowStyles.metric)}>1. Receita Operacional Bruta (ROB)</td>
+                {report.months.map((m) => (
+                  <td key={m.monthKey} className="p-4 text-right">{currencyFormatter.format(m.metrics.rob)}</td>
+                ))}
+                <td className="p-4 text-right font-bold bg-surface-variant/10">{currencyFormatter.format(report.total.rob)}</td>
+              </tr>
+              <tr>
+                <td className={cn("p-4 sticky left-0 z-10 bg-surface border-r border-outline/10", rowStyles.subMetric)}>(-) Descontos</td>
+                {report.months.map((m) => (
+                  <td key={m.monthKey} className="p-4 text-right text-on-surface-variant">{currencyFormatter.format(m.metrics.discounts)}</td>
+                ))}
+                <td className="p-4 text-right text-on-surface-variant bg-surface-variant/10">{currencyFormatter.format(report.total.discounts)}</td>
+              </tr>
+              <tr className="bg-surface-variant/5">
+                <td className={cn("p-4 sticky left-0 z-10 bg-surface border-r border-outline/10", rowStyles.metric)}>2. Receita Líquida Disponível (RLD)</td>
+                {report.months.map((m) => (
+                  <td key={m.monthKey} className="p-4 text-right font-semibold">{currencyFormatter.format(m.metrics.rld)}</td>
+                ))}
+                <td className="p-4 text-right font-bold bg-surface-variant/20">{currencyFormatter.format(report.total.rld)}</td>
+              </tr>
+
+              {/* VARIÁVEIS */}
+              <tr>
+                <td className={cn("p-4 sticky left-0 z-10 bg-surface border-r border-outline/10", rowStyles.subMetric)}>(-) CMV (Custo de Mercadoria)</td>
+                {report.months.map((m) => (
+                  <td key={m.monthKey} className="p-4 text-right text-on-surface-variant">{currencyFormatter.format(m.metrics.cmvTotal)}</td>
+                ))}
+                <td className="p-4 text-right text-on-surface-variant bg-surface-variant/10">{currencyFormatter.format(report.total.cmvTotal)}</td>
+              </tr>
+              <tr>
+                <td className={cn("p-4 sticky left-0 z-10 bg-surface border-r border-outline/10", rowStyles.subMetric)}>(-) Mídia (Ads)</td>
+                {report.months.map((m) => (
+                  <td key={m.monthKey} className="p-4 text-right text-on-surface-variant">{currencyFormatter.format(m.metrics.mediaSpend)}</td>
+                ))}
+                <td className="p-4 text-right text-on-surface-variant bg-surface-variant/10">{currencyFormatter.format(report.total.mediaSpend)}</td>
+              </tr>
+
+              {/* MARGEM DE CONTRIBUIÇÃO */}
+              <tr className="bg-surface-variant/10">
+                <td className={cn("p-4 sticky left-0 z-10 bg-surface border-r border-outline/20 shadow-sm", rowStyles.metric)}>3. Margem de Contribuição</td>
+                {report.months.map((m) => (
+                  <td key={m.monthKey} className={cn("p-4 text-right font-bold", m.metrics.contributionAfterMedia >= 0 ? rowStyles.positive : rowStyles.negative)}>
+                    {currencyFormatter.format(m.metrics.contributionAfterMedia)}
+                  </td>
+                ))}
+                <td className={cn("p-4 text-right font-bold bg-surface-variant/30", report.total.contributionAfterMedia >= 0 ? rowStyles.positive : rowStyles.negative)}>
+                  {currencyFormatter.format(report.total.contributionAfterMedia)}
+                </td>
+              </tr>
+              <tr>
+                <td className={cn("p-4 sticky left-0 z-10 bg-surface border-r border-outline/10", rowStyles.subMetric)}>(%) Margem</td>
+                {report.months.map((m) => (
+                  <td key={m.monthKey} className="p-4 text-right text-xs text-on-surface-variant italic">
+                    {percentFormatter.format(m.metrics.contributionMargin)}
+                  </td>
+                ))}
+                <td className="p-4 text-right text-xs text-on-surface-variant italic bg-surface-variant/10">
+                  {percentFormatter.format(report.total.contributionMargin)}
+                </td>
+              </tr>
+
+              {/* DESPESAS FIXAS */}
+              <tr>
+                <td className={cn("p-4 sticky left-0 z-10 bg-surface border-r border-outline/10", rowStyles.metric)}>4. Despesas Fixas (Centro de Custo)</td>
+                {report.months.map((m) => (
+                  <td key={m.monthKey} className="p-4 text-right text-[var(--color-warning)]">{currencyFormatter.format(m.metrics.fixedExpensesTotal)}</td>
+                ))}
+                <td className="p-4 text-right font-bold text-[var(--color-warning)] bg-surface-variant/10">{currencyFormatter.format(report.total.fixedExpensesTotal)}</td>
+              </tr>
+
+              {/* BREAKDOWN FIXAS */}
+              {report.expenseBreakdown.map((cat) => (
+                <tr key={cat.categoryId}>
+                  <td className={cn("p-4 sticky left-0 z-10 bg-surface border-r border-outline/10", rowStyles.subMetric)}>{cat.categoryName}</td>
+                  {report.months.map((m) => (
+                    <td key={m.monthKey} className="p-4 text-right text-xs text-on-surface-variant">
+                      {currencyFormatter.format(cat.valuesByMonth[m.monthKey] ?? 0)}
+                    </td>
+                  ))}
+                  <td className="p-4 text-right text-xs text-on-surface-variant bg-surface-variant/5">{currencyFormatter.format(cat.total)}</td>
+                </tr>
+              ))}
+
+              {/* RESULTADO LÍQUIDO */}
+              <tr className="bg-primary/5">
+                <td className={cn("p-4 sticky left-0 z-10 bg-primary/10 border-r border-outline/10", rowStyles.metric, "text-base")}>RESULTADO LÍQUIDO FINAL</td>
+                {report.months.map((m) => (
+                  <td key={m.monthKey} className={cn("p-4 text-right text-lg font-bold", m.metrics.netResult >= 0 ? rowStyles.positive : rowStyles.negative)}>
+                    {currencyFormatter.format(m.metrics.netResult)}
+                  </td>
+                ))}
+                <td className={cn("p-4 text-right text-lg font-black bg-primary/20", report.total.netResult >= 0 ? rowStyles.positive : rowStyles.negative)}>
+                  {currencyFormatter.format(report.total.netResult)}
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      </SurfaceCard>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <SurfaceCard>
+          <h3 className="text-lg font-semibold text-on-surface">Ponto de Equilíbrio</h3>
+          <p className="mt-1 text-sm text-on-surface-variant">
+            Quanto a marca precisa vender (RLD) para pagar as despesas fixas mantendo a margem atual.
+          </p>
+          <div className="mt-6 flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-on-surface">
+              {currencyFormatter.format(report.total.contributionMargin > 0 
+                ? report.total.fixedExpensesTotal / report.total.contributionMargin 
+                : 0)}
+            </span>
+            <span className="text-sm text-on-surface-variant">em Receita Líquida (RLD)</span>
           </div>
         </SurfaceCard>
 
-        <div className="space-y-6">
-          <SurfaceCard>
-            <SectionHeading
-              title="Despesas do período"
-              description="Categorias lançadas no centro de custo que impactam o resultado."
-            />
-            <div className="mt-5 space-y-3">
-              {expenseSummary.length ? (
-                expenseSummary.map((expense) => (
-                  <div key={expense.categoryName} className="panel-muted flex items-center justify-between gap-4 p-4">
-                    <span className="font-medium text-on-surface">{expense.categoryName}</span>
-                    <span className="text-on-surface-variant">
-                      {currencyFormatter.format(expense.amount)}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-on-surface-variant">
-                  Nenhuma despesa operacional lançada neste período.
-                </p>
-              )}
-            </div>
-          </SurfaceCard>
-
-          <SurfaceCard>
-            <SectionHeading
-              title="Contribuição diária"
-              description="Leitura curta para investigar dias fora da curva."
-            />
-            <div className="mt-5 space-y-3">
-              {dailyContribution.map((day) => (
-                <article key={day.date} className="panel-muted p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="font-semibold text-on-surface">{day.date}</p>
-                      <p className="mt-1 text-sm text-on-surface-variant">
-                        RL {currencyFormatter.format(day.netRevenue)} • CMV {currencyFormatter.format(day.cmv)} • Adcost {currencyFormatter.format(day.mediaSpend)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className={`font-semibold ${valueClass(day.contribution)}`}>
-                        {currencyFormatter.format(day.contribution)}
-                      </p>
-                      <p className="mt-1 text-sm text-on-surface-variant">
-                        {day.netRevenue ? percentFormatter.format(day.contribution / day.netRevenue) : "-"}
-                      </p>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </SurfaceCard>
-        </div>
-      </section>
-
-      <SurfaceCard>
-        <SectionHeading
-          title="DRE anual mês a mês"
-          description="Estrutura acumulada da marca no tempo, com comparação por mês e coluna de acumulado ao final."
-          aside={`${annualReport.months.length} mês(es) com movimento`}
-        />
-
-        <div className="mt-6 overflow-x-auto rounded-[22px] border border-outline/50">
-          <table className="brandops-table-compact min-w-[1200px] border-separate border-spacing-0 text-sm">
-            <thead>
-              <tr>
-                <th className="sticky left-0 z-20 border-b border-outline bg-surface-container-high px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.22em] text-on-surface-variant">
-                  DRE
-                </th>
-                {annualReport.months.map((month) => (
-                  <th key={month.monthKey} colSpan={2} className="bg-surface-container px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.22em] text-on-surface-variant">
-                    {month.label}
-                  </th>
-                ))}
-                <th colSpan={2} className="bg-surface-container px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.22em] text-on-surface-variant">
-                  Acumulado
-                </th>
-              </tr>
-              <tr>
-                <th className="sticky left-0 z-20 border-b border-outline/40 bg-surface-container px-4 py-2 text-left text-[11px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">
-                  Linha
-                </th>
-                {annualReport.months.map((month) => (
-                  <Fragment key={`header-${month.monthKey}`}>
-                    <th key={`${month.monthKey}-value`} className="border-b border-outline/40 bg-surface-container px-3 py-2 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
-                      Valor
-                    </th>
-                    <th key={`${month.monthKey}-pct`} className="border-b border-outline/40 bg-surface-container px-3 py-2 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
-                      %
-                    </th>
-                  </Fragment>
-                ))}
-                <th className="border-b border-outline/40 bg-surface-container px-3 py-2 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
-                  Valor
-                </th>
-                <th className="border-b border-outline/40 bg-surface-container px-3 py-2 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
-                  %
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {baseRows.slice(0, 10).map((row) => {
-                const totalValue = row.getValue(annualReport.total);
-                return (
-                  <tr key={row.label} className={row.highlight ? "bg-white/4" : ""}>
-                    <td className="sticky left-0 z-10 border-b border-outline/40 bg-surface-container px-4 py-3 font-medium text-on-surface">
-                      {row.label}
-                    </td>
-                    {annualReport.months.map((month) => {
-                      const value = row.getValue(month.metrics);
-                      return (
-                        <Fragment key={`${row.label}-${month.monthKey}`}>
-                          <td
-                            className={`border-b border-outline/40 px-3 py-3 text-right font-medium ${valueClass(value)}`}
-                          >
-                            {currencyFormatter.format(value)}
-                          </td>
-                          <td
-                            className="border-b border-outline/40 px-3 py-3 text-right text-on-surface-variant"
-                          >
-                            {ratioText(value, month.metrics.netRevenue, row.showPercent)}
-                          </td>
-                        </Fragment>
-                      );
-                    })}
-                    <td className={`border-b border-outline/40 px-3 py-3 text-right font-semibold ${valueClass(totalValue)}`}>
-                      {currencyFormatter.format(totalValue)}
-                    </td>
-                    <td className="border-b border-outline/40 px-3 py-3 text-right text-on-surface-variant">
-                      {ratioText(totalValue, annualReport.total.netRevenue, row.showPercent)}
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {annualReport.expenseBreakdown.map((category) => (
-                <tr key={category.categoryId}>
-                  <td className="sticky left-0 z-10 border-b border-outline/40 bg-surface-container px-4 py-3 text-on-surface-variant">
-                    {category.categoryName}
-                  </td>
-                  {annualReport.months.map((month) => {
-                    const value = -(category.valuesByMonth[month.monthKey] ?? 0);
-                    return (
-                      <Fragment key={`${category.categoryId}-${month.monthKey}`}>
-                        <td
-                          className={`border-b border-outline/40 px-3 py-3 text-right ${valueClass(value)}`}
-                        >
-                          {currencyFormatter.format(value)}
-                        </td>
-                        <td
-                          className="border-b border-outline/40 px-3 py-3 text-right text-on-surface-variant"
-                        >
-                          {ratioText(value, month.metrics.netRevenue, true)}
-                        </td>
-                      </Fragment>
-                    );
-                  })}
-                  <td className={`border-b border-outline/40 px-3 py-3 text-right font-medium ${valueClass(-category.total)}`}>
-                    {currencyFormatter.format(-category.total)}
-                  </td>
-                  <td className="border-b border-outline/40 px-3 py-3 text-right text-on-surface-variant">
-                    {ratioText(-category.total, annualReport.total.netRevenue, true)}
-                  </td>
-                </tr>
-              ))}
-
-              <tr className="bg-white/6">
-                <td className="sticky left-0 z-10 border-b border-outline/40 bg-surface-container px-4 py-3 font-semibold text-on-surface">
-                  (=) Resultado
-                </td>
-                {annualReport.months.map((month) => (
-                  <Fragment key={`result-${month.monthKey}`}>
-                    <td
-                      className={`border-b border-outline/40 px-3 py-3 text-right font-semibold ${valueClass(month.metrics.operatingResult)}`}
-                    >
-                      {currencyFormatter.format(month.metrics.operatingResult)}
-                    </td>
-                    <td
-                      className="border-b border-outline/40 px-3 py-3 text-right text-on-surface-variant"
-                    >
-                      {ratioText(month.metrics.operatingResult, month.metrics.netRevenue, true)}
-                    </td>
-                  </Fragment>
-                ))}
-                <td className={`border-b border-outline/40 px-3 py-3 text-right font-semibold ${valueClass(annualReport.total.operatingResult)}`}>
-                  {currencyFormatter.format(annualReport.total.operatingResult)}
-                </td>
-                <td className="border-b border-outline/40 px-3 py-3 text-right text-on-surface-variant">
-                  {ratioText(annualReport.total.operatingResult, annualReport.total.netRevenue, true)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </SurfaceCard>
-
-      <SurfaceCard>
-        <SectionHeading
-          title="Performance gerencial por semana"
-          description="Leitura operacional no estilo da planilha: mídia, volume real, CMV, ROAS, custos de aquisição e taxas de conversão."
-        />
-
-        <div className="mt-6 overflow-x-auto rounded-[22px] border border-outline/50">
-          <table className="brandops-table-compact min-w-[1650px] border-separate border-spacing-0">
-            <thead>
-              <tr>
-                <th>Período</th>
-                <th className="text-right">Gasto Ads</th>
-                <th className="text-right">Impressões</th>
-                <th className="text-right">Cliques</th>
-                <th className="text-right">Compras (Meta)</th>
-                <th className="text-right">Peças reais</th>
-                <th className="text-right">Faturamento bruto</th>
-                <th className="text-right">CMV</th>
-                <th className="text-right">Margem bruta</th>
-                <th className="text-right">Adcost</th>
-                <th className="text-right">Ticket</th>
-                <th className="text-right">ROAS bruto</th>
-                <th className="text-right">ROAS líquido</th>
-                <th className="text-right">CTR</th>
-                <th className="text-right">CPC</th>
-                <th className="text-right">CPM</th>
-                <th className="text-right">CVR Meta</th>
-                <th className="text-right">CVR Real</th>
-              </tr>
-            </thead>
-            <tbody>
-              {weeklyPerformance.map((row) => (
-                <tr key={row.periodKey}>
-                  <td className="font-semibold text-on-surface">{row.periodKey}</td>
-                  <td className="text-right">{currencyFormatter.format(row.adsSpend)}</td>
-                  <td className="text-right text-on-surface-variant">{integerFormatter.format(row.impressions)}</td>
-                  <td className="text-right text-on-surface-variant">{integerFormatter.format(row.clicks)}</td>
-                  <td className="text-right text-on-surface-variant">{integerFormatter.format(row.metaPurchases)}</td>
-                  <td className="text-right text-on-surface">{integerFormatter.format(row.realPieces)}</td>
-                  <td className="text-right">{currencyFormatter.format(row.grossRevenue)}</td>
-                  <td className="text-right">{currencyFormatter.format(row.cmv)}</td>
-                  <td className={`text-right font-medium ${valueClass(row.grossMargin)}`}>{currencyFormatter.format(row.grossMargin)}</td>
-                  <td className="text-right">{currencyFormatter.format(row.adcostPerPiece)}</td>
-                  <td className="text-right">{currencyFormatter.format(row.averageTicket)}</td>
-                  <td className="text-right">{row.grossRoas.toFixed(1)}</td>
-                  <td className="text-right">{row.netRoas.toFixed(1)}</td>
-                  <td className="text-right">{percentFormatter.format(row.ctr)}</td>
-                  <td className="text-right">{currencyFormatter.format(row.cpc)}</td>
-                  <td className="text-right">{currencyFormatter.format(row.cpm)}</td>
-                  <td className="text-right">{percentFormatter.format(row.metaCvr)}</td>
-                  <td className="text-right">{percentFormatter.format(row.realCvr)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </SurfaceCard>
+        <SurfaceCard>
+          <h3 className="text-lg font-semibold text-on-surface">Eficiência de Mídia (MER)</h3>
+          <p className="mt-1 text-sm text-on-surface-variant">
+            Representatividade do investimento em anúncios sobre a receita líquida total.
+          </p>
+          <div className="mt-6 flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-on-surface">
+              {percentFormatter.format(report.total.rld > 0 ? report.total.mediaSpend / report.total.rld : 0)}
+            </span>
+            <span className="text-sm text-on-surface-variant">de investimento sobre RLD</span>
+          </div>
+        </SurfaceCard>
+      </div>
     </div>
   );
 }

@@ -13,20 +13,18 @@ function applyTheme(dark: boolean) {
 }
 
 export function ThemeToggle() {
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("brandops.theme");
+      if (saved) return saved === "dark";
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    return true; // default SSR
+  });
 
   useEffect(() => {
-    const saved = localStorage.getItem("brandops.theme");
-    if (saved) {
-      const dark = saved === "dark";
-      setIsDark(dark);
-      applyTheme(dark);
-    } else {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setIsDark(prefersDark);
-      applyTheme(prefersDark);
-    }
-  }, []);
+    applyTheme(isDark);
+  }, [isDark]);
 
   function toggle() {
     const next = !isDark;

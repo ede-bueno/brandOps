@@ -29,15 +29,15 @@ export default function CostCenterPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         eyebrow="Custos fixos e operacionais"
         title="Centro de custo"
         description="Lance aqui as despesas fora mídia: pró-labore, salários, IA, equipamentos, software e outras categorias que entram no DRE."
       />
 
-      <section className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
-        <div className="space-y-6">
+      <section className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+        <div className="space-y-4">
           <SurfaceCard>
             <SectionHeading title="Nova categoria" description="Crie grupos para organizar despesas e análises futuras." />
             <div className="mt-5 space-y-4">

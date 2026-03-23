@@ -1,0 +1,139 @@
+Pedido,Data,Método de Pagamento,Status de Pagamento,Cliente,Items no Pedido,Valor do Pedido,Nome do Cupom,Valor do Desconto,Comissao,Origem,Estado da Entrega,Rua da Entrega,Link de Rastreio
+INK1299214,23/09/2025,Pix,Pago,Eduardo  Felipe,1,95.45,DOG20-D1764719220,43.22,26.79,Loja,PR,Rua Ângelo Sgarbe,https://status.ondeestameupedido.com/tracking/11011/INK1299214
+INK1299240,24/09/2025,Pix,Pago,Ede  Bueno,3,169.49,OMDINTERNO,119.11,17.89,Loja,PR,Rua Ângelo Sgarbe,https://status.ondeestameupedido.com/tracking/11011/INK1299240
+INK1299248,24/09/2025,Pix,Pago,Herique Marçal,1,76.68,OMDINTERNO,51.17,8.83,Loja,PR,Rua Ângelo Sgarbe,https://status.ondeestameupedido.com/tracking/11011/INK1299248
+INK1309560,30/09/2025,Cartão de Crédito,Pago,Michele  Lemos,1,98.18,,0.0,52.0,Loja,PR,Rua Adir Pedroso,https://status.ondeestameupedido.com/tracking/11011/INK1309560
+INK1314742,03/10/2025,Pix,Vencido,Edevaldo Bueno de Oliveira,2,99.13,OMDINTERNO,89.0,0.0,Loja,PR,Rua Ângelo Sgarbe,https://status.ondeestameupedido.com/tracking/11011/INK1314742
+INK1314758,03/10/2025,Pix,Pago,Ede Bueno,1,54.01,OMDINTERNO,44.5,0.5,Loja,PR,Rua Ângelo Sgarbe,https://status.ondeestameupedido.com/tracking/11011/INK1314758
+INK1314770,03/10/2025,Pix,Vencido,Ede Bueno,1,54.01,OMDINTERNO,44.5,0.0,Loja,PR,Rua Ângelo Sgarbe,https://status.ondeestameupedido.com/tracking/11011/INK1314770
+INK1321002,07/10/2025,Cartão de Crédito,Pago,Juliana  Martins de Souza ,2,134.91,DOG20-D1764719220,53.4,36.6,Loja,PR,Rua João Mendes Batista,https://status.ondeestameupedido.com/tracking/11011/INK1321002
+INK1323520,08/10/2025,Boleto,Pago,Renato José Santini,1,83.1,OMD15-D1764719214,13.35,31.65,Loja,SP,Rua Miguel Tamburus,https://status.ondeestameupedido.com/tracking/11011/INK1323520
+INK1327300,10/10/2025,Cartão de Crédito,Pago,Priscila  Maia de S C Carvalho,2,169.86,PRIMEIRACOMPRA,17.8,72.2,Loja,SP,Avenida Doutor Gentil de Moura,https://status.ondeestameupedido.com/tracking/11011/INK1327300
+INK1333484,14/10/2025,Pix,Pago,Glaucia Piccoli,1,87.42,PRIMEIRACOMPRA,12.91,32.1,Loja,RS,Rua Olegário Mariano,https://status.ondeestameupedido.com/tracking/11011/INK1333484
+INK1340319,19/10/2025,Pix,Pago,Lilian Drigo,1,95.46,,2.7,43.2,Loja,SP,Rua Coronel Cavalheiros,https://status.ondeestameupedido.com/tracking/11011/INK1340319
+INK1341154,19/10/2025,Cartão de Crédito,Pago,Josemar demartini,1,100.76,,0.0,45.9,Loja,SC,Rua Alberto Bornschein,https://status.ondeestameupedido.com/tracking/11011/INK1341154
+INK1343388,21/10/2025,Pix,Vencido,REGINA HELENA FRIGO BERTHOLINI,2,182.74,,5.39,86.41,Loja,SP,Rua Oswaldo da Cruz Maduro,https://status.ondeestameupedido.com/tracking/11011/INK1343388
+INK1349426,25/10/2025,Cartão de Crédito,Pago,Ana Claudia  Duarte ,2,214.2,PRIMEIRACOMPRA,23.8,85.92,Loja,RJ,Rua Ronald de Carvalho,https://status.ondeestameupedido.com/tracking/11011/INK1349426
+INK1351128,26/10/2025,Cartão de Crédito,Pago,David Casado,2,200.73,PRIMEIRACOMPRA,20.89,85.01,Loja,SP,Avenida Ômega,https://status.ondeestameupedido.com/tracking/11011/INK1351128
+INK1352457,27/10/2025,Pix,Pago,Valkiria Veloso,1,89.88,PRIMEIRACOMPRA,11.42,34.48,Loja,MG,Praça São Francisco,https://status.ondeestameupedido.com/tracking/11011/INK1352457
+INK1355131,28/10/2025,Pix,Pago,João Paulo F Sampaio,1,134.44,,3.9,67.0,Loja,SP,Avenida Francisco Matarazzo,https://status.ondeestameupedido.com/tracking/11011/INK1355131
+INK1355343,29/10/2025,Cartão de Crédito,Pago,Márcia Fava,1,91.61,PRIMEIRACOMPRA,8.99,36.91,Loja,RS,Rua Vicente da Fontoura,https://status.ondeestameupedido.com/tracking/11011/INK1355343
+INK1359498,31/10/2025,Cartão de Crédito,Pago,Tallyson Aureliano,2,163.27,PRIMEIRACOMPRA,16.98,64.82,Loja,SP,Avenida Ômega,https://status.ondeestameupedido.com/tracking/11011/INK1359498
+INK1360865,01/11/2025,Pix,Pago,Helena Ely,1,93.02,,2.55,38.35,Loja,RS,Rua Barreto Leite,https://status.ondeestameupedido.com/tracking/11011/INK1360865
+INK1362004,02/11/2025,Pix,Pago,Sueli Pietrobom,1,90.58,,2.55,38.35,Loja,SP,Rua Croácia,https://status.ondeestameupedido.com/tracking/11011/INK1362004
+INK1365693,04/11/2025,Pix,Vencido,Ede Bueno,1,91.27,,2.55,38.35,Loja,PR,Rua Ângelo Sgarbe,https://status.ondeestameupedido.com/tracking/11011/INK1365693
+INK1384887,14/11/2025,Cartão de Crédito,Pago,Eliana Menabo,4,319.6,,0.0,133.74,Loja,SP,Rua Alice Manrique Gabriel,https://status.ondeestameupedido.com/tracking/11011/INK1384887
+INK1385552,14/11/2025,Pix,Pago,Claudia  Rodrigues ,1,83.65,,2.4,33.5,Loja,SP,Avenida Alberto Camus,https://status.ondeestameupedido.com/tracking/11011/INK1385552
+INK1386407,14/11/2025,Pix,Pago,SANDRA DE OLIVEIRA,2,143.08,,4.19,61.61,Loja,RJ,Rua Ouro Branco,https://status.ondeestameupedido.com/tracking/11011/INK1386407
+INK1387054,15/11/2025,Cartão de Crédito,Pago,Patrícia Floriano,1,116.65,,0.0,40.9,Loja,SP,Avenida dos Costas,https://status.ondeestameupedido.com/tracking/11011/INK1387054
+INK1388677,15/11/2025,Cartão de Crédito,Pago,Célia Regina Vioto,1,79.67,PRIMEIRACOMPRA,7.99,27.91,Loja,PR,Avenida Paraná,https://status.ondeestameupedido.com/tracking/11011/INK1388677
+INK1389065,16/11/2025,Pix,Vencido,Deleon  Gomes Rodrigues ,1,89.69,,2.4,33.5,Loja,MG,Rio Branco ,https://status.ondeestameupedido.com/tracking/11011/INK1389065
+INK1389383,16/11/2025,Pix,Pago,Glesiane Duarte Oliveira,2,179.41,,4.79,67.01,Loja,CE,Rua Doutor Paiva,https://status.ondeestameupedido.com/tracking/11011/INK1389383
+INK1393298,17/11/2025,Pix,Pago,Marcos Lael,1,84.78,,2.4,33.5,Loja,DF,Setor SHTN,https://status.ondeestameupedido.com/tracking/11011/INK1393298
+INK1394267,18/11/2025,Pix,Pago,Sergio Lapastina,4,279.01,PRIMEIRACOMPRA,40.59,91.32,Loja,SP,Rua Coelho de Carvalho,https://status.ondeestameupedido.com/tracking/11011/INK1394267
+INK1395214,18/11/2025,Cartão de Crédito,Pago,Anita Kokolakis,4,319.6,,0.0,131.25,Loja,RS,Marau,https://status.ondeestameupedido.com/tracking/11011/INK1395214
+INK1395653,19/11/2025,Cartão de Crédito,Não Autorizado,Felipe Farias,1,89.24,,0.0,35.9,Loja,PE,Rua Irmã Maria David,https://status.ondeestameupedido.com/tracking/11011/INK1395653
+INK1395655,19/11/2025,Cartão de Crédito,Pago,Felipe Farias,1,89.24,,0.0,35.9,Loja,PE,Rua Irmã Maria David,https://status.ondeestameupedido.com/tracking/11011/INK1395655
+INK1395697,19/11/2025,Pix,Pago,Guido  Fleming ,1,88.23,,2.4,33.5,Loja,GO,Rua T 28,https://status.ondeestameupedido.com/tracking/11011/INK1395697
+INK1397925,20/11/2025,Pix,Vencido,Syanne Silva,1,86.88,,2.4,33.5,Loja,PA,Avenida Dezesseis de Novembro,https://status.ondeestameupedido.com/tracking/11011/INK1397925
+INK1397944,20/11/2025,Cartão de Crédito,Pago,Alexandre  Takahashi,2,161.95,,0.0,68.8,Loja,DF,Quadra SHIN QI 10 Conjunto 9,https://status.ondeestameupedido.com/tracking/11011/INK1397944
+INK1398174,20/11/2025,Boleto,Vencido,Paulo Márcio,1,113.87,,0.0,40.9,Loja,MG,Travessa José Joaquim de Arantes,https://status.ondeestameupedido.com/tracking/11011/INK1398174
+INK1400476,21/11/2025,Pix,Pago,Elizabete Piva Rozin ,1,86.23,,2.4,33.5,Loja,RS,Av.Julio Borella ,https://status.ondeestameupedido.com/tracking/11011/INK1400476
+INK1401151,21/11/2025,Pix,Pago,Sueli Fonseca Santos Rodrigues,1,85.83,,2.4,33.5,Loja,MG,Rua Professor Pimenta da Veiga,https://status.ondeestameupedido.com/tracking/11011/INK1401151
+INK1401630,21/11/2025,Pix,Vencido,Julianna  Bastos,1,83.59,,2.4,33.5,Loja,ES,Rua Arquiteto Décio Thevenard,https://status.ondeestameupedido.com/tracking/11011/INK1401630
+INK1402002,22/11/2025,Cartão de Crédito,Pago,Paula Caldas,1,86.92,,0.0,35.9,Loja,MT,Rua General Pirineus de Souza,https://status.ondeestameupedido.com/tracking/11011/INK1402002
+INK1402248,22/11/2025,Pix,Pago,EVALDO CARLOS DA SILVA,1,79.58,PRIMEIRACOMPRA,10.15,25.75,Loja,MG,Rua Mario Neto,https://status.ondeestameupedido.com/tracking/11011/INK1402248
+INK1402322,22/11/2025,Pix,Pago,Maria Isabel Esteves Nunes,1,86.93,,2.4,33.5,Loja,RJ,Rua Laura Rafanelli,https://status.ondeestameupedido.com/tracking/11011/INK1402322
+INK1402664,22/11/2025,Pix,Pago,Sonia Ostiz,1,83.65,,2.4,33.5,Loja,SP,Avenida Pedroso de Morais,https://status.ondeestameupedido.com/tracking/11011/INK1402664
+INK1403538,22/11/2025,Pix,Pago,Monique Borba Cerqueira,1,84.66,,2.4,33.5,Loja,SP,Rua Santo Antônio,https://status.ondeestameupedido.com/tracking/11011/INK1403538
+INK1403918,23/11/2025,Pix,Pago,Lucelene scarabel mardegam me,2,163.29,,4.79,67.01,Loja,SP,Rua Bela Vista,https://status.ondeestameupedido.com/tracking/11011/INK1403918
+INK1404754,23/11/2025,Cartão de Crédito,Pago,Nelson José,1,86.05,,0.0,35.9,Loja,SP,Rua Cantagalo,https://status.ondeestameupedido.com/tracking/11011/INK1404754
+INK1405000,23/11/2025,Pix,Pago,Ivete  Sester,1,84.56,,2.4,33.5,Loja,SP,Rua Carlos Chagas,https://status.ondeestameupedido.com/tracking/11011/INK1405000
+INK1406237,24/11/2025,Pix,Pago,geovana cartaxo,1,87.47,,2.4,33.5,Loja,CE,Rua Bill Cartaxo,https://status.ondeestameupedido.com/tracking/11011/INK1406237
+INK1406475,24/11/2025,Cartão de Crédito,Pago,Ana Carolina  Agnoletti ,1,79.07,PRIMEIRACOMPRA,7.99,27.91,Loja,SP,Rua Arnaud Capuzzo,https://status.ondeestameupedido.com/tracking/11011/INK1406475
+INK1408013,24/11/2025,Pix,Pago,Liana Lana,1,85.83,,2.4,33.5,Loja,MG,Rua Gustavo Pena,https://status.ondeestameupedido.com/tracking/11011/INK1408013
+INK1408071,24/11/2025,Boleto,Vencido,Nena Lima,1,116.85,,0.0,40.9,Loja,DF,Quadra SHIS QI 13 Conjunto 7,https://status.ondeestameupedido.com/tracking/11011/INK1408071
+INK1408263,25/11/2025,Cartão de Crédito,Pago,Ricardo  Costa ,1,87.6,,0.0,35.9,Loja,RJ,Rua Almeida e Sousa,https://status.ondeestameupedido.com/tracking/11011/INK1408263
+INK1408449,25/11/2025,Cartão de Crédito,Pago,SERGIO LAPASTINA,4,219.6,PRESENTE100-D1764719164,100.0,34.74,Loja,SP,Rua Coelho de Carvalho,https://status.ondeestameupedido.com/tracking/11011/INK1408449
+INK1409764,25/11/2025,Pix,Pago,Dayse Novaes,1,83.9,,2.4,33.5,Loja,SP,Rua Nova Granada,https://status.ondeestameupedido.com/tracking/11011/INK1409764
+INK1410501,25/11/2025,Boleto,Pago,Margareth Lemos,1,86.59,,0.0,35.9,Loja,RJ,Rua André Cavalcanti,https://status.ondeestameupedido.com/tracking/11011/INK1410501
+INK1410753,26/11/2025,Pix,Pago,Denise Garbeloto,3,232.51,,7.19,88.56,Loja,SC,Rua Paulino José da Silva,https://status.ondeestameupedido.com/tracking/11011/INK1410753
+INK1410838,26/11/2025,Pix,Pago,Thereza Urban,1,84.7,,2.4,33.5,Loja,SP,Rua Nicolau Alonso Filho,https://status.ondeestameupedido.com/tracking/11011/INK1410838
+INK1410936,26/11/2025,Boleto,Vencido,Patricia Lima,1,87.38,,0.0,35.9,Loja,RJ,Estrada Pau-ferro,https://status.ondeestameupedido.com/tracking/11011/INK1410936
+INK1411377,26/11/2025,Cartão de Crédito,Pago,Luciano Roberto de Lara,2,170.32,,0.0,71.8,Loja,SP,Rua Mariana Ribeiro de Andrade,https://status.ondeestameupedido.com/tracking/11011/INK1411377
+INK1413395,27/11/2025,Pix,Pago,Lília Nogueira Junqueira,1,87.48,,2.4,36.0,Loja,RJ,Rua General Artigas,https://status.ondeestameupedido.com/tracking/11011/INK1413395
+INK1414155,27/11/2025,Cartão de Crédito,Pago,Luiz Bellotto,1,88.55,,0.0,38.4,Loja,SP,Rua Tagipuru,https://status.ondeestameupedido.com/tracking/11011/INK1414155
+INK1414165,27/11/2025,Pix,Pago,Marcelo Luiz  Anselmo,2,168.54,,4.79,69.51,Loja,RJ,Rua Passo da Pátria,https://status.ondeestameupedido.com/tracking/11011/INK1414165
+INK1414882,27/11/2025,Pix,Pago,Virginia  Horwatitsch ,2,169.94,,4.79,69.51,Loja,SC,Rua Bruno Hildebrand,https://status.ondeestameupedido.com/tracking/11011/INK1414882
+INK1416155,28/11/2025,Cartão de Crédito,Pago,Manoela Lima,1,92.37,,0.0,35.9,Loja,BA,Rua Manoel Gomes de Mendonça,https://status.ondeestameupedido.com/tracking/11011/INK1416155
+INK1416260,28/11/2025,Pix,Pago,Rodrigo Faria,2,188.31,,5.39,73.91,Loja,MG,Avenida Padre Teodoro Grond,https://status.ondeestameupedido.com/tracking/11011/INK1416260
+INK1416286,28/11/2025,Cartão de Crédito,Não Autorizado,Lucinete Alves Moraes Domingues Domingues ,1,89.95,,0.0,38.4,Loja,SP,Rua Sadi Santos Borges,https://status.ondeestameupedido.com/tracking/11011/INK1416286
+INK1416336,28/11/2025,Pix,Pago,Carlos pierotti,1,87.59,,2.4,36.0,Loja,SP,Estrada Municipal do Una,https://status.ondeestameupedido.com/tracking/11011/INK1416336
+INK1416507,28/11/2025,Cartão de Crédito,Reembolsado,Maria Beatriz Martins ferreira Beatriz Martins Ferreira,1,92.28,,0.0,0.0,Loja,MG,São José,https://status.ondeestameupedido.com/tracking/11011/INK1416507
+INK1417363,28/11/2025,Cartão de Crédito,Pago,Simone Antonietto,4,319.6,,0.0,133.74,Loja,SP,Rua Salesópolis,https://status.ondeestameupedido.com/tracking/11011/INK1417363
+INK1418629,28/11/2025,Pix,Pago,Ricardo Petrilli,1,86.15,,2.4,38.4,Loja,SP,Alameda Franca,https://status.ondeestameupedido.com/tracking/11011/INK1418629
+INK1418920,28/11/2025,Pix,Pago,Samantha Ramnarain,1,87.55,,2.4,36.0,Loja,SP,Rua Cotia,https://status.ondeestameupedido.com/tracking/11011/INK1418920
+INK1419288,28/11/2025,Pix,Pago,Isabel Verçoza,2,167.84,,4.79,69.51,Loja,RS,Rua Coronel Vicente,https://status.ondeestameupedido.com/tracking/11011/INK1419288
+INK1419874,29/11/2025,Cartão de Crédito,Pago,Sérgio Martins Vidal Jr,2,169.05,,0.0,74.3,Loja,SP,Rua Mercedes Salano Castineiras,https://status.ondeestameupedido.com/tracking/11011/INK1419874
+INK1419885,29/11/2025,Pix,Pago,LEAO AMPESSAN,1,108.49,,3.0,40.4,Loja,SC,Rua Leonel Mosele,https://status.ondeestameupedido.com/tracking/11011/INK1419885
+INK1420282,29/11/2025,Pix,Pago,Cristiana Almeida,1,86.88,,2.4,33.5,Loja,PA,Travessa Mauriti,https://status.ondeestameupedido.com/tracking/11011/INK1420282
+INK1420597,29/11/2025,Pix,Pago,Fabiana Damasce,1,108.3,,3.0,40.4,Loja,SC,Rua Mario Giocondo Crocetta,https://status.ondeestameupedido.com/tracking/11011/INK1420597
+INK1422182,29/11/2025,Pix,Pago,Dilcéia Venturin,2,166.43,,4.79,69.51,Loja,ES,Santo Andre,https://status.ondeestameupedido.com/tracking/11011/INK1422182
+INK1422621,30/11/2025,Cartão de Crédito,Pago,Maria Tereza  Diniz Garrido,2,157.81,DOG LOVER COMBO,15.98,58.32,Loja,MG,Rua Nonô Batista,https://status.ondeestameupedido.com/tracking/11011/INK1422621
+INK1424232,30/11/2025,Cartão de Crédito,Pago,Felipe Farias,1,89.24,,0.0,35.9,Loja,PE,Rua Irmã Maria David,https://status.ondeestameupedido.com/tracking/11011/INK1424232
+INK1424862,30/11/2025,Pix,Pago,Valéria Serrao,1,86.15,,2.4,36.0,Loja,SP,Avenida Fagundes Filho,https://status.ondeestameupedido.com/tracking/11011/INK1424862
+INK1425081,30/11/2025,Pix,Pago,Arthur  Cardoso ,1,87.48,,2.4,36.0,Loja,RJ,Rua Silva Rabelo,https://status.ondeestameupedido.com/tracking/11011/INK1425081
+INK1425123,30/11/2025,Cartão de Crédito,Pago,Paula Pinho,1,108.66,,0.0,43.4,Loja,SP,Rua Cipriano Barata,https://status.ondeestameupedido.com/tracking/11011/INK1425123
+INK1425806,01/12/2025,Pix,Pago,Juanita Battilani,1,115.83,,3.0,40.4,Loja,MS,Olívio jaques ,https://status.ondeestameupedido.com/tracking/11011/INK1425806
+INK1425985,01/12/2025,Pix,Pago,Fatima Causs da Santos,1,107.06,,3.0,40.4,Loja,SP,Rua Vitório Gobatto,https://status.ondeestameupedido.com/tracking/11011/INK1425985
+INK1427796,01/12/2025,Pix,Pago,Andréia de Cássia Hernandes Merli,1,79.41,PRIMEIRACOMPRA,10.15,28.25,Loja,SP,Rua Edmundo Juventino Fuentes,https://status.ondeestameupedido.com/tracking/11011/INK1427796
+INK1430029,02/12/2025,Pix,Pago,Elisa Gianni,1,116.54,,3.3,65.1,Loja,DF,SHIS QL 26 Conjunto 7,https://status.ondeestameupedido.com/tracking/11011/INK1430029
+INK1431308,02/12/2025,Pix,Pago,Sergio Ricardo Souza,1,110.34,DOG LOVER COMBO,8.63,59.77,Loja,SP,Rua Caminho do Pilar,https://status.ondeestameupedido.com/tracking/11011/INK1431308
+INK1433741,03/12/2025,Cartão de Crédito,Pago,Valeria  Ribeiro ,1,127.09,VALERIA10-D1766531510,12.99,60.41,Loja,RJ,Rua Capitão Macieira,https://status.ondeestameupedido.com/tracking/11011/INK1433741
+INK1435754,04/12/2025,Pix,Pago,Ana Prioli,2,210.84,DOG LOVER COMBO,21.52,112.78,Loja,SP,Avenida Rosa Belmiro Ramos,https://status.ondeestameupedido.com/tracking/11011/INK1435754
+INK1436311TC,04/12/2025,Troca,"",Anita Kokolakis,4,450.53,,0.0,0.0,Loja,RS,Rua Marau,https://status.ondeestameupedido.com/tracking/11011/INK1436311TC
+INK1437819,04/12/2025,Cartão de Crédito,Pago,Ruy Rosário Guimarães,1,116.68,DOG LOVER COMBO,5.5,62.91,Loja,RS,Avenida Otto Niemeyer,https://status.ondeestameupedido.com/tracking/11011/INK1437819
+INK1443422,06/12/2025,Cartão de Crédito,Pago,Marialba Mendes,2,217.47,DOG LOVER COMBO,15.39,118.91,Loja,RS,Rua Santa Catarina,https://status.ondeestameupedido.com/tracking/11011/INK1443422
+INK1444043,06/12/2025,Pix,Pago,SILVIO Neto,3,302.88,DOG LOVER COMBO,41.87,158.33,Loja,RJ,Rua Engenheiro Pinho de Magalhães,https://status.ondeestameupedido.com/tracking/11011/INK1444043
+INK1446072,07/12/2025,Pix,Pago,Luciana Gouveia Omena,1,127.87,PRIMEIRACOMPRA,10.2,60.7,Loja,AL,Avenida Brigadeiro Eduardo Gomes,https://status.ondeestameupedido.com/tracking/11011/INK1446072
+INK1449538,08/12/2025,Cartão de Crédito,Pago,Teresa Gandelman,2,239.33,PRIMEIRACOMPRA,11.99,127.31,Loja,SP,Rua Tomaz da Mota,https://status.ondeestameupedido.com/tracking/11011/INK1449538
+INK1450219,08/12/2025,Cartão de Crédito,Pago,Renata Pires Goncalves,1,116.9,PRIMEIRACOMPRA,5.5,62.91,Loja,MG,Avenida Peter Henry Rolfs,https://status.ondeestameupedido.com/tracking/11011/INK1450219
+INK1454768,09/12/2025,Pix,Pago,Tissiane  Igeski ,1,103.32,DOG LOVER COMBO,7.85,50.56,Loja,PR,Rua Joinville,https://status.ondeestameupedido.com/tracking/11011/INK1454768
+INK1456037,09/12/2025,Pix,Pago,Leila almeida,1,135.53,,3.9,69.5,Loja,RJ,Rua Deputado Soares Filho,https://status.ondeestameupedido.com/tracking/11011/INK1456037
+INK1456200,09/12/2025,Pix,Pago,Adriana Santos,1,130.76,DOG LOVER COMBO,10.2,63.2,Loja,MG,Rua Bernardo Guimarães,https://status.ondeestameupedido.com/tracking/11011/INK1456200
+INK1457936,10/12/2025,Cartão de Crédito,Pago,Renato  Minamisava ,1,104.65,DOG LOVER COMBO,5.0,53.41,Loja,SP,Rua Doutor Abelardo Vergueiro César,https://status.ondeestameupedido.com/tracking/11011/INK1457936
+INK1461636,11/12/2025,Cartão de Crédito,Pago,cristina perez gouveia,2,198.76,DOG LOVER COMBO,13.99,100.31,Loja,RS,Rua Tapajós,https://status.ondeestameupedido.com/tracking/11011/INK1461636
+INK1461804,11/12/2025,Cartão de Crédito,Pago,Sabrina Rocha,1,105.82,DOG LOVER COMBO,5.0,53.41,Loja,SP,Rua Santo Antônio,https://status.ondeestameupedido.com/tracking/11011/INK1461804
+INK1462790,11/12/2025,Cartão de Crédito,Pago,Lucas  de Oliveira ,2,214.11,,0.0,114.3,Loja,SP,Rua Reinaldo Bianchi,https://status.ondeestameupedido.com/tracking/11011/INK1462790
+INK1463222,11/12/2025,Cartão de Crédito,Pago,Emar Teodoro Gomes  Silvau,1,107.67,DOG LOVER COMBO,5.0,53.41,Loja,MG,Rua Minerais,https://status.ondeestameupedido.com/tracking/11011/INK1463222
+INK1463820,11/12/2025,Cartão de Crédito,Pago,Leoncio De Vasconcellos Pitanga Neto,1,107.17,PRIMEIRACOMPRA,5.0,53.41,Loja,ES,Rua Curitiba,https://status.ondeestameupedido.com/tracking/11011/INK1463820
+INK1465648,12/12/2025,Pix,Vencido,Janaina mroginski Bernardi ,2,194.59,PRIMEIRACOMPRA,14.9,103.4,Loja,RS,Raul Oliveira ,https://status.ondeestameupedido.com/tracking/11011/INK1465648
+INK1465713,12/12/2025,Pix,Pago,Mariana Velloso,1,110.05,PRIMEIRACOMPRA,8.63,59.77,Loja,SP,Rua Eulo Maroni,https://status.ondeestameupedido.com/tracking/11011/INK1465713
+INK1473199,13/12/2025,Cartão de Crédito,Pago,Willian  Bergamo,2,161.73,BERGAMO,60.0,71.3,Loja,PR,Rua Rio Azul,https://status.ondeestameupedido.com/tracking/11011/INK1473199
+INK1473246,13/12/2025,Pix,Pago,Mauricio Simioni,2,203.98,DOG LOVER COMBO,20.54,103.76,Loja,SP,Rua dos Ciclos,https://status.ondeestameupedido.com/tracking/11011/INK1473246
+INK1473798,13/12/2025,Pix,Pago,Paulo Cesar Della Barba,1,101.2,DOG LOVER COMBO,7.85,50.56,Loja,SP,Rua Caetano Peral Munhoz,https://status.ondeestameupedido.com/tracking/11011/INK1473798
+INK1474576,14/12/2025,Pix,Pago,Marlise Hostert,1,103.53,PRIMEIRACOMPRA,7.85,50.56,Loja,SC,Rua Paulo Nowasky,https://status.ondeestameupedido.com/tracking/11011/INK1474576
+INK1474600,14/12/2025,Pix,Pago,Rosana Maria Rangel dos Santos,1,106.4,DOG LOVER COMBO,7.85,50.56,Loja,RJ,Rua Agostinho dos Santos,https://status.ondeestameupedido.com/tracking/11011/INK1474600
+INK1475647,14/12/2025,Pix,Pago,Marina Helena Dias,2,192.44,DOG LOVER COMBO,19.56,94.74,Loja,MG,Avenida Protásio de Oliveira Penna,https://status.ondeestameupedido.com/tracking/11011/INK1475647
+INK1478935,14/12/2025,Cartão de Crédito,Pago,Scheila Cristina dos Santos,2,215.82,DOG LOVER COMBO,15.39,118.91,Loja,SP,Rua Genésio Arruda,https://status.ondeestameupedido.com/tracking/11011/INK1478935
+INK1479956,15/12/2025,Pix,Pago,Luiz Cláudio Gomes Cunha,1,104.07,PRIMEIRACOMPRA,7.85,50.56,Loja,RJ,Rua Desembargador Luiz Antônio Severo da Costa,https://status.ondeestameupedido.com/tracking/11011/INK1479956
+INK1480922,15/12/2025,Pix,Pago,Cora Sória,1,101.05,DOG LOVER COMBO,7.85,50.56,Loja,SP,Rua Riachuelo,https://status.ondeestameupedido.com/tracking/11011/INK1480922
+INK1483504,15/12/2025,Pix,Pago,Lucia Fujioka,2,202.11,DOG LOVER COMBO,20.54,103.76,Loja,RJ,Avenida Lúcio Costa,https://status.ondeestameupedido.com/tracking/11011/INK1483504
+INK1486562,16/12/2025,Pix,Vencido,Roberto Filho,3,284.09,DOG LOVER COMBO,39.33,140.87,Loja,RJ,Rua Riachuelo,https://status.ondeestameupedido.com/tracking/11011/INK1486562
+INK1486766,16/12/2025,Pix,Vencido,Edicler Pazza,1,104.12,PRIMEIRACOMPRA,7.85,50.56,Loja,RS,Rua Chico Pedro,https://status.ondeestameupedido.com/tracking/11011/INK1486766
+INK1486824,16/12/2025,Pix,Pago,Jose Pinhel Junior,1,131.13,DOG LOVER COMBO,10.2,63.2,Loja,SP,Avenida Alcindo Dell'Agnese,https://status.ondeestameupedido.com/tracking/11011/INK1486824
+INK1487914,16/12/2025,Cartão de Crédito,Pago,Valeria Nascimento,2,221.24,,0.0,124.3,Loja,SP,Rua Embuaçu,https://status.ondeestameupedido.com/tracking/11011/INK1487914
+INK1489415,17/12/2025,Pix,Pago,Priscila Bueno,1,101.99,DOG LOVER COMBO,7.85,50.56,Loja,PR,Rua Governador Agamenon Magalhães,https://status.ondeestameupedido.com/tracking/11011/INK1489415
+INK1489858,17/12/2025,Pix,Pago,Tatiana Sfalcin Silva,1,101.85,PRIMEIRACOMPRA,7.85,50.56,Loja,SP,Rua Jasson Marques,https://status.ondeestameupedido.com/tracking/11011/INK1489858
+INK1490783,17/12/2025,Cartão de Crédito,Pago,Lucia Helena Vilela Uba,1,158.31,DOG LOVER COMBO,6.5,66.91,Loja,MG,Marechal Floriano Peixoto ,https://status.ondeestameupedido.com/tracking/11011/INK1490783
+INK1491249,17/12/2025,Pix,Pago,Raphael G Feitosa,1,102.45,DOG LOVER COMBO,7.85,50.56,Loja,RJ,Rua Armando Silvestre,https://status.ondeestameupedido.com/tracking/11011/INK1491249
+INK1493817,18/12/2025,Pix,Vencido,Persio Deus,1,104.24,DOG LOVER COMBO,7.85,50.56,Loja,SP,Rua Mangabal,https://status.ondeestameupedido.com/tracking/11011/INK1493817
+INK1498313,19/12/2025,Cartão de Crédito,Pago,Ana Ligia Scott,1,102.2,DOG LOVER COMBO,5.0,50.91,Loja,SP,Travessa Azevedo Marques,https://status.ondeestameupedido.com/tracking/11011/INK1498313
+INK1501113,20/12/2025,Pix,Pago,Silvia Mara Laroca Dias Paulini ,1,98.55,PRIMEIRACOMPRA,7.85,48.06,Loja,SP,Rua Pátria,https://status.ondeestameupedido.com/tracking/11011/INK1501113
+INK1504466,21/12/2025,Pix,Pago,Roseli Leobet,2,210.96,DOG LOVER COMBO,21.52,110.28,Loja,SC,Irai Zilio ,https://status.ondeestameupedido.com/tracking/11011/INK1504466
+INK1505885,22/12/2025,Pix,Pago,Mônica Ramos,1,147.01,DOG LOVER COMBO,11.77,79.13,Loja,RJ,Rua Juliana Campos Neves,https://status.ondeestameupedido.com/tracking/11011/INK1505885
+INK1506668,22/12/2025,Pix,Pago,José Carlos,1,107.55,DOG LOVER COMBO,8.63,57.27,Loja,SP,Rua Ouvídio José Antônio Santana,https://status.ondeestameupedido.com/tracking/11011/INK1506668
+INK1506755,22/12/2025,Pix,Pago,José Carlos,1,107.55,DOG LOVER COMBO,8.63,57.27,Loja,SP,Rua Ouvídio José Antônio Santana,https://status.ondeestameupedido.com/tracking/11011/INK1506755
+INK1506840,22/12/2025,Cartão de Crédito,Não Autorizado,Valéria Nunes,2,217.72,PRIMEIRACOMPRA,10.99,120.81,Loja,SP,Avenida do Rio Bonito,https://status.ondeestameupedido.com/tracking/11011/INK1506840
+INK1516327,27/12/2025,Cartão de Crédito,Pago,Alberto Camardelli Cançado Petraconi,3,415.99,PRIMEIRACOMPRA,44.97,227.73,Loja,PR,Rua Daniel Cesário Pereira,https://status.ondeestameupedido.com/tracking/11011/INK1516327
+INK1519722,29/12/2025,Pix,Pago,Joziane Hoffelder,1,105.09,PRIMEIRACOMPRA,13.96,51.94,Loja,SC,Rua Dois IrmÃos,https://status.ondeestameupedido.com/tracking/11011/INK1519722

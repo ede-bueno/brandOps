@@ -1,0 +1,23 @@
+Pedido,Data,Método de Pagamento,Status de Pagamento,Cliente,Items no Pedido,Valor do Pedido,Nome do Cupom,Valor do Desconto,Comissao,Origem,Estado da Entrega,Rua da Entrega,Link de Rastreio
+INK1624670,01/03/2026,Pix,Pago,Violeta Jalfim,1,106.35,,3.0,52.9,Loja,PE,Rua Abel de Sá Bezerra Cavalcanti,https://status.ondeestameupedido.com/tracking/11011/INK1624670
+INK1625361,01/03/2026,Pix,Pago,Yamara  Diniz,1,107.29,,3.0,52.9,Loja,DF,Avenida Marechal Deodoro,https://status.ondeestameupedido.com/tracking/11011/INK1625361
+INK1625745,01/03/2026,Pix,Pago,Liliani Pitoli,1,139.28,PRIMEIRACOMPRA,19.04,71.86,Loja,SP,Avenida José Marques da Silva,https://status.ondeestameupedido.com/tracking/11011/INK1625745
+INK1628468,03/03/2026,Pix,Pago,Mariliza Carvalho,1,104.22,,3.0,47.0,Loja,SP,Avenida Joaquim Pompeu de Toledo,https://status.ondeestameupedido.com/tracking/11011/INK1628468
+INK1631706,05/03/2026,Cartão de Crédito,Pago,Nadiane Oliveira ,1,97.57,PRIMEIRACOMPRA,9.99,40.01,Loja,SP,Avenida Francisca Salles Damasco,https://status.ondeestameupedido.com/tracking/11011/INK1631706
+INK1633654,06/03/2026,Pix,Vencido,LUIZ CARLOS D CADO,1,147.5,PRIMEIRACOMPRA,20.31,70.59,Loja,SP,Rua Maranhão,https://status.ondeestameupedido.com/tracking/11011/INK1633654
+INK1634920TS,06/03/2026,Troca,"",Marcos Roxo Gibran,1,105.83,,0.0,0.0,Loja,SP,Rua Domingos Barbieri,https://status.ondeestameupedido.com/tracking/11011/INK1634920TS
+INK1635108,06/03/2026,Cartão de Crédito,Pago,Eric  Fernandes ,1,91.64,ORELHA,14.99,35.02,Loja,RJ,Rua Prudente de Morais,https://status.ondeestameupedido.com/tracking/11011/INK1635108
+INK1635536,06/03/2026,Pix,Pago,Alina Passos,1,94.36,PRIMEIRACOMPRA,12.69,37.31,Loja,MT,Rua das Brisas,https://status.ondeestameupedido.com/tracking/11011/INK1635536
+INK1636358,07/03/2026,Pix,Vencido,LUIZ CARLOS D CADO,1,163.01,,4.8,86.1,Loja,SP,Rua Maranhão,https://status.ondeestameupedido.com/tracking/11011/INK1636358
+INK1636993,07/03/2026,Pix,Vencido,MEIRE  CARVALHO ,1,146.68,PRIMEIRACOMPRA,20.31,70.59,Loja,SP,Rua Maranhão,https://status.ondeestameupedido.com/tracking/11011/INK1636993
+INK1637569,08/03/2026,Pix,Pago,LUIZ  CADO,1,163.1,,4.8,86.1,Loja,SP,Rua Maranhão,https://status.ondeestameupedido.com/tracking/11011/INK1637569
+INK1641035,09/03/2026,Cartão de Crédito,Pago,Angelica Toledo,2,208.69,,0.0,100.0,Loja,SP,Alameda Barão de Piracicaba,https://status.ondeestameupedido.com/tracking/11011/INK1641035
+INK1641808,10/03/2026,Pix,Pago,Paulo Roberto azevedo,1,152.96,,4.5,80.4,Loja,SP,Rua Ministro Sinésio Rocha,https://status.ondeestameupedido.com/tracking/11011/INK1641808
+INK1645649,12/03/2026,Cartão de Crédito,Pago,LUIZ LIMA,1,117.42,,0.0,60.0,Loja,PR,Avenida Visconde de Guarapuava,https://status.ondeestameupedido.com/tracking/11011/INK1645649
+INK1647866,13/03/2026,Cartão de Crédito,Pago,Priscila Regina Scariot,1,109.36,PRIMEIRACOMPRA,10.99,49.01,Loja,RS,Rua Domingos Bianco,https://status.ondeestameupedido.com/tracking/11011/INK1647866
+INK1648168,14/03/2026,Pix,Pago,Maria da Penha Santos de Mattos,1,116.26,,3.3,56.7,Loja,ES,Rua São Francisco,https://status.ondeestameupedido.com/tracking/11011/INK1648168
+INK1648532,14/03/2026,Pix,Vencido,Josias Zacarias,1,104.5,,3.0,47.0,Loja,SP,Rua Boa Visão,https://status.ondeestameupedido.com/tracking/11011/INK1648532
+INK1658617,20/03/2026,Cartão de Crédito,Pago,Valéria Regina,1,159.6,,0.0,84.9,Loja,SP,Rua Dona Margarida de Campos,https://status.ondeestameupedido.com/tracking/11011/INK1658617
+INK1659773,20/03/2026,Pix,Pago,Elisangela barreto,1,95.25,PRIMEIRACOMPRA,12.69,43.21,Loja,RJ,Estrada dos Menezes,https://status.ondeestameupedido.com/tracking/11011/INK1659773
+INK1662071,22/03/2026,Pix,Pago,Selma  Lemos ,1,114.02,,3.3,56.7,Loja,SP,Rua São Marçal,https://status.ondeestameupedido.com/tracking/11011/INK1662071
+INK1664184,23/03/2026,Pix,Pago,Sonia Maria Amaral Maia,1,116.75,,3.3,56.7,Loja,RJ,Rua Humberto de Campos,https://status.ondeestameupedido.com/tracking/11011/INK1664184

@@ -161,6 +161,7 @@ function parsePaidOrders(records: CsvRecord[]): PaidOrder[] {
     orderValue: parseCurrencyLike(record["Valor do Pedido"]),
     discountValue: parseCurrencyLike(record["Valor do Desconto"]),
     commissionValue: parseCurrencyLike(record.Comissao),
+    couponName: record["Nome do Cupom"]?.trim() || null,
     source: record.Origem,
     trackingUrl: record["Link de Rastreio"],
     shippingState: record["Estado da Entrega"],

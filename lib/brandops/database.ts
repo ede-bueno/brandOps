@@ -1,5 +1,13 @@
 import { parseUploadedCsv } from "@/lib/brandops/csv";
 import { supabase } from "@/lib/supabase";
+import {
+  ingestMetaRaw,
+  ingestOrderLines,
+  ingestOrdersPaid,
+  type MetaRowPayload,
+  type OrderLinePayload,
+  type OrderPayload,
+} from "@/lib/brandops/canonical-ingest";
 import type {
   BrandExpense,
   BrandDataset,
@@ -283,6 +291,7 @@ export async function fetchBrandDataset(brandId: string) {
       orderValue: Number(row.net_revenue ?? 0),
       discountValue: Number(row.discount ?? 0),
       commissionValue: Number(row.commission_value ?? 0),
+      couponName: row.coupon_name ?? null,
       source: row.source ?? "",
       trackingUrl: row.tracking_url ?? undefined,
       shippingState: row.shipping_state ?? undefined,
@@ -536,6 +545,7 @@ async function replaceProducts(
   return rows.length;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function upsertOrders(
   brandId: string,
   paidOrders: PaidOrder[],
@@ -554,7 +564,7 @@ async function upsertOrders(
       tracking_code: order.trackingUrl ?? null,
       payment_method: order.paymentMethod,
       items_in_order: order.itemsInOrder,
-      coupon_name: null,
+      coupon_name: order.couponName ?? null,
       commission_value: order.commissionValue,
       shipping_state: order.shippingState ?? null,
       shipping_street: null,
@@ -577,6 +587,7 @@ async function upsertOrders(
   return rows.length;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function replaceOrderItems(
   brandId: string,
   orderItems: OrderItem[],
@@ -612,14 +623,6 @@ async function replaceOrderItems(
     );
   }
 
-  const { error: deleteError } = await supabase
-    .from("order_items")
-    .delete()
-    .eq("brand_id", brandId);
-  if (deleteError) {
-    throw deleteError;
-  }
-
   const rowsToInsert = rows.map((item) => ({
     brand_id: brandId,
     order_id: orderMap.get(item.orderNumber),
@@ -644,6 +647,17 @@ async function replaceOrderItems(
     ignore_reason: null,
   }));
 
+  for (const chunk of chunkArray(orderNumbers)) {
+    const { error: deleteError } = await supabase
+      .from("order_items")
+      .delete()
+      .eq("brand_id", brandId)
+      .in("order_number", chunk);
+    if (deleteError) {
+      throw deleteError;
+    }
+  }
+
   for (const chunk of chunkArray(rowsToInsert)) {
     const { error } = await supabase.from("order_items").insert(chunk);
     if (error) {
@@ -654,6 +668,7 @@ async function replaceOrderItems(
   return rowsToInsert.length;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function replaceSalesLines(
   brandId: string,
   salesLines: SalesLine[],
@@ -689,12 +704,17 @@ async function replaceSalesLines(
       ].join("::"),
   );
 
-  const { error: deleteError } = await supabase
-    .from("sales_lines")
-    .delete()
-    .eq("brand_id", brandId);
-  if (deleteError) {
-    throw deleteError;
+  const orderNumbers = [...new Set(salesLines.map((line) => line.orderNumber))];
+
+  for (const chunk of chunkArray(orderNumbers)) {
+    const { error: deleteError } = await supabase
+      .from("sales_lines")
+      .delete()
+      .eq("brand_id", brandId)
+      .in("order_number", chunk);
+    if (deleteError) {
+      throw deleteError;
+    }
   }
 
   for (const chunk of chunkArray(rows)) {
@@ -707,6 +727,7 @@ async function replaceSalesLines(
   return rows.length;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function replaceMedia(
   brandId: string,
   media: MediaRow[],
@@ -898,34 +919,102 @@ export async function importFilesToBrand(
           replaceProducts(brandId, parsed.payload.catalog ?? []),
         );
         break;
+
       case "cmv_produtos":
         await runImportBlock(brandId, userId, parsed.fileInfo, () =>
           replaceCmvRulesFromBase(brandId, parsed.payload.cmvBase ?? []),
         );
         break;
-      case "lista_pedidos":
-        await runImportBlock(brandId, userId, parsed.fileInfo, () =>
-          upsertOrders(brandId, parsed.payload.paidOrders ?? []),
-        );
+
+      // --- Lista de Pedidos: base financeira do pedido (Receita Bruta / Desconto / RLD)
+      case "lista_pedidos": {
+        const paidOrders = parsed.payload.paidOrders ?? [];
+        await runImportBlock(brandId, userId, parsed.fileInfo, async () => {
+          const orderPayloads: OrderPayload[] = paidOrders.map((order) => ({
+            order_number: order.orderNumber,
+            order_date: toIsoTimestamp(order.orderDate) ?? new Date().toISOString(),
+            customer_name: order.customerName,
+            payment_method: order.paymentMethod,
+            net_revenue: order.orderValue,
+            discount: order.discountValue,
+            items_in_order: order.itemsInOrder,
+            coupon_name: order.couponName ?? undefined,
+            shipping_state: order.shippingState,
+            tracking_url: order.trackingUrl,
+          }));
+          const result = await ingestOrdersPaid(brandId, orderPayloads);
+          return result.inserted + (result.updated ?? 0);
+        });
         break;
-      case "lista_itens":
-        await runImportBlock(brandId, userId, parsed.fileInfo, () =>
-          replaceOrderItems(brandId, parsed.payload.orderItems ?? []),
-        );
+      }
+
+      // --- Lista de Itens: itens reais com CMV resolvido no banco (§7)
+      case "lista_itens": {
+        const orderItems = parsed.payload.orderItems ?? [];
+        await runImportBlock(brandId, userId, parsed.fileInfo, async () => {
+          const linePayloads: OrderLinePayload[] = orderItems.map((item) => ({
+            order_number: item.orderNumber,
+            order_date: toIsoTimestamp(item.orderDate) ?? new Date().toISOString(),
+            customer_name: item.customerName,
+            product_name: item.productName,
+            product_specs: item.productSpecs,
+            sku: deriveOrderItemsSku(item),
+            quantity: item.quantity,
+            unit_price: item.quantity ? item.grossValue / item.quantity : (item.grossValue ?? 0),
+          }));
+          const result = await ingestOrderLines(brandId, linePayloads);
+          return result.inserted;
+        });
         break;
-      case "pedidos_pagos":
-        await runImportBlock(brandId, userId, parsed.fileInfo, () =>
-          replaceSalesLines(brandId, parsed.payload.salesLines ?? []),
-        );
+      }
+
+      // --- Pedidos Pagos (CSV alternativo financeiro): tratado como ingestão de pedidos
+      case "pedidos_pagos": {
+        const salesLines = parsed.payload.salesLines ?? [];
+        await runImportBlock(brandId, userId, parsed.fileInfo, async () => {
+          const linePayloads: OrderLinePayload[] = salesLines.map((line) => ({
+            order_number: line.orderNumber,
+            order_date: toIsoTimestamp(line.orderDate) ?? new Date().toISOString(),
+            product_name: line.productName,
+            sku: line.sku ?? undefined,
+            quantity: line.quantity,
+            unit_price: line.unitPrice,
+          }));
+          const result = await ingestOrderLines(brandId, linePayloads);
+          return result.inserted;
+        });
         break;
-      case "meta":
-        await runImportBlock(brandId, userId, parsed.fileInfo, () =>
-          replaceMedia(brandId, parsed.payload.media ?? []),
-        );
+      }
+
+      // --- Meta Export: ingestão idempotente com hash por campanha+data (§8)
+      case "meta": {
+        const mediaRows = parsed.payload.media ?? [];
+        await runImportBlock(brandId, userId, parsed.fileInfo, async () => {
+          const metaPayloads: MetaRowPayload[] = mediaRows.map((row) => ({
+            report_start: row.date,
+            report_end: row.date,
+            campaign_name: row.campaignName,
+            adset_name: row.adsetName,
+            ad_name: row.adName,
+            account_name: row.accountName,
+            impressions: row.impressions,
+            clicks_all: row.clicksAll,
+            link_clicks: row.linkClicks,
+            spend: row.spend,
+            purchases: row.purchases,
+            revenue: row.purchaseValue,
+            ctr_all: row.ctrAll,
+            ctr_link: row.ctrLink,
+          }));
+          const result = await ingestMetaRaw(brandId, metaPayloads);
+          return result.inserted + (result.updated ?? 0);
+        });
         break;
+      }
     }
   }
 
+  // Aplica checkpoint de CMV automaticamente após qualquer ingestão
   await applyCmvCheckpoint(brandId, "Checkpoint automático após importação");
 }
 
@@ -969,11 +1058,13 @@ export async function saveCmvRule(
   return data;
 }
 
-export async function applyCmvCheckpoint(brandId: string, note?: string) {
+export async function applyCmvCheckpoint(brandId: string, note?: string, createdAt?: string) {
   const { data, error } = await supabase.rpc("apply_cmv_checkpoint", {
     p_brand_id: brandId,
     p_note: note ?? null,
+    p_created_at: createdAt ? `${createdAt}T00:00:00` : null,
   });
+
 
   if (error) {
     throw error;

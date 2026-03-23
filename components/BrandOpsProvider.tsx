@@ -58,7 +58,8 @@ interface BrandOpsContextValue {
     unitCost: number,
     validFrom?: string,
   ) => Promise<void>;
-  applyCmvCheckpoint: (brandId: string, note?: string) => Promise<void>;
+  applyCmvCheckpoint: (brandId: string, note?: string, createdAt?: string) => Promise<void>;
+
   ignoreMediaRow: (mediaRowId: string, reason?: string) => Promise<void>;
   restoreMediaRow: (mediaRowId: string) => Promise<void>;
   ignoreOrder: (brandId: string, orderNumber: string, reason?: string) => Promise<void>;
@@ -141,8 +142,12 @@ export function BrandOpsProvider({
           if (current && nextBrands.some((brand) => brand.id === current)) {
             return current;
           }
+          if (nextProfile.role === "SUPER_ADMIN") {
+            return null;
+          }
           return nextBrands[0]?.id ?? null;
         });
+
         setErrorMessage(null);
       } catch (error) {
         setProfile(null);

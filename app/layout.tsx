@@ -19,13 +19,14 @@ export const metadata: Metadata = {
     "Central de operação para acompanhar vendas, mídia e resultado financeiro por marca.",
 };
 
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className="dark">
+    <html lang="pt-BR" className="dark" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${spaceGrotesk.variable} antialiased bg-background text-on-background`}
       >

@@ -9,54 +9,36 @@ export function MetricCard({
   label: string;
   value: string;
   help?: string;
-  accent?: "default" | "positive" | "warning";
+  accent?: "default" | "positive" | "warning" | "secondary";
 }) {
   const accentMap = {
-    default: {
-      icon: Minus,
-      iconBg: "bg-surface-container-high text-on-surface-variant",
-      border: "border-outline/60",
-      bar: "bg-on-surface-variant/20",
-    },
-    positive: {
-      icon: ArrowUpRight,
-      iconBg: "bg-primary/12 text-primary",
-      border: "border-primary/20",
-      bar: "bg-primary/30",
-    },
-    warning: {
-      icon: ArrowDownRight,
-      iconBg: "bg-tertiary/12 text-tertiary",
-      border: "border-tertiary/20",
-      bar: "bg-tertiary/30",
-    },
+    default: { icon: Minus, iconColor: "text-on-surface-variant" },
+    positive: { icon: ArrowUpRight, iconColor: "text-primary" },
+    warning: { icon: ArrowDownRight, iconColor: "text-tertiary" },
+    secondary: { icon: ArrowUpRight, iconColor: "text-secondary" },
   } as const;
+
 
   const config = accentMap[accent];
   const Icon = config.icon;
 
   return (
-    <div
-      className={`brandops-card relative overflow-hidden rounded-[22px] border ${config.border} p-5`}
-    >
-      {/* Decorative top bar */}
-      <div className={`absolute inset-x-0 top-0 h-0.5 ${config.bar}`} />
-
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-on-surface-variant">
+    <div className="brandops-card p-4 flex flex-col justify-between">
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
           {label}
         </p>
-        <span className={`inline-flex shrink-0 rounded-xl p-2 ${config.iconBg}`}>
-          <Icon size={14} />
-        </span>
+        <Icon size={14} className={config.iconColor} />
       </div>
 
-      <p className="mt-4 font-headline text-[28px] font-semibold leading-none tracking-tight text-on-surface">
+      <p className="font-headline text-2xl font-semibold tracking-tight text-on-surface">
         {value}
       </p>
 
       {help && (
-        <p className="mt-2.5 text-xs leading-5 text-on-surface-variant">{help}</p>
+        <p className="mt-2 text-[11px] leading-4 text-on-surface-variant border-t border-outline/50 pt-2">
+          {help}
+        </p>
       )}
     </div>
   );

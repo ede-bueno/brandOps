@@ -16,18 +16,15 @@ export function PageHeader({
   badge?: ReactNode;
 }) {
   return (
-    <section className="brandops-panel brandops-panel-soft relative overflow-hidden rounded-[28px] px-5 py-5 lg:px-6 lg:py-6">
-      {/* Subtle top shimmer line */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-
-      <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <section className="brandops-panel p-4 mb-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-4xl">
-          {eyebrow && <p className="eyebrow">{eyebrow}</p>}
-          <h1 className="mt-2 font-headline text-3xl font-semibold tracking-[-0.03em] text-on-surface lg:text-[2rem]">
+          {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
+          <h1 className="font-headline text-2xl font-semibold tracking-tight text-on-surface">
             {title}
           </h1>
           {description && (
-            <div className="mt-2 max-w-3xl text-sm leading-7 text-on-surface-variant">
+            <div className="mt-1.5 max-w-3xl text-xs leading-5 text-on-surface-variant">
               {description}
             </div>
           )}
@@ -52,9 +49,7 @@ export function SurfaceCard({
   className?: string;
 }) {
   return (
-    <section
-      className={`brandops-panel brandops-panel-soft rounded-[28px] p-5 lg:p-6 ${className}`.trim()}
-    >
+    <section className={`brandops-panel p-4 ${className}`.trim()}>
       {children}
     </section>
   );
@@ -70,17 +65,21 @@ export function SectionHeading({
   aside?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between border-b border-outline pb-2.5">
       <div>
-        <h2 className="font-headline text-lg font-semibold tracking-[-0.025em] text-on-surface">
+        <h2 className="font-headline text-[15px] font-semibold tracking-tight text-on-surface">
           {title}
         </h2>
         {description && (
-          <div className="mt-1 text-sm leading-6 text-on-surface-variant">{description}</div>
+          <div className="mt-0.5 text-xs text-on-surface-variant leading-5">
+            {description}
+          </div>
         )}
       </div>
       {aside && (
-        <div className="shrink-0 text-sm text-on-surface-variant">{aside}</div>
+        <div className="shrink-0 text-xs text-on-surface-variant mt-2 sm:mt-0">
+          {aside}
+        </div>
       )}
     </div>
   );
