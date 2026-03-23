@@ -116,10 +116,10 @@ export default function ImportPage() {
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-white/6 text-[var(--color-secondary)]">
               <UploadCloud size={30} />
             </div>
-            <h2 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-[var(--color-ink-strong)]">
+            <h2 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-on-surface">
               Solte os CSVs aqui
             </h2>
-            <p className="mt-2 text-sm leading-7 text-[var(--color-ink-soft)]">
+            <p className="mt-2 text-sm leading-7 text-on-surface-variant">
               Você pode enviar um ou mais arquivos por vez. Os cabeçalhos definem o
               tipo de cada importação.
             </p>
@@ -142,8 +142,8 @@ export default function ImportPage() {
                   <article key={`${file.name}-${file.size}`} className="panel-muted p-4">
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <p className="font-semibold text-[var(--color-ink-strong)]">{file.name}</p>
-                        <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+                        <p className="font-semibold text-on-surface">{file.name}</p>
+                        <p className="mt-1 text-sm text-on-surface-variant">
                           {(file.size / 1024).toFixed(1)} KB
                         </p>
                       </div>
@@ -157,7 +157,7 @@ export default function ImportPage() {
                   className={`mt-4 flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${
                     status === "error"
                       ? "border-[rgba(255,125,125,0.2)] bg-[rgba(255,125,125,0.08)] text-[var(--color-error)]"
-                      : "border-[var(--color-line-soft)] bg-black/20 text-[var(--color-ink-soft)]"
+                      : "border-outline/40 bg-black/20 text-on-surface-variant"
                   }`}
                 >
                   {status === "running" ? (
@@ -187,7 +187,7 @@ export default function ImportPage() {
               title="Arquivos esperados"
               description="Você não precisa subir tudo em toda rodada, mas essa é a base padrão da operação."
             />
-            <div className="mt-5 space-y-3 text-sm text-[var(--color-ink-soft)]">
+            <div className="mt-5 space-y-3 text-sm text-on-surface-variant">
               {expectedFiles.map((file) => (
                 <div key={file} className="panel-muted p-4">
                   {file}
@@ -201,21 +201,21 @@ export default function ImportPage() {
             {activeBrand ? (
               <div className="mt-5 space-y-3">
                 <div className="panel-muted p-4">
-                  <p className="font-semibold text-[var(--color-ink-strong)]">{activeBrand.name}</p>
-                  <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+                  <p className="font-semibold text-on-surface">{activeBrand.name}</p>
+                  <p className="mt-1 text-sm text-on-surface-variant">
                     {importedKinds.length} bloco(s) atualizados
                   </p>
                 </div>
                 {importedKinds.map((file) => (
-                  <div key={file.kind} className="panel-muted p-4 text-sm text-[var(--color-ink-soft)]">
-                    <span className="font-medium text-[var(--color-ink-strong)]">{file.fileName}</span>
+                  <div key={file.kind} className="panel-muted p-4 text-sm text-on-surface-variant">
+                    <span className="font-medium text-on-surface">{file.fileName}</span>
                     <br />
                     {file.rowCount} linhas
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="mt-4 text-sm text-[var(--color-ink-soft)]">Nenhuma marca em foco.</p>
+              <p className="mt-4 text-sm text-on-surface-variant">Nenhuma marca em foco.</p>
             )}
           </SurfaceCard>
         </div>

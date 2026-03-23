@@ -1,127 +1,365 @@
 @import "tailwindcss";
 
+/* ============================================================
+   BRANDOPS — DESIGN SYSTEM
+   Dual theme: dark (default) + light (class .light on html)
+   Token convention: Material-You-inspired semantic tokens
+   ============================================================ */
+
 @theme {
-  --color-primary: #7ee0b8;
-  --color-on-primary: #06101c;
-  --color-primary-container: #12221d;
+  /* --- Primary (Teal/Mint) --- */
+  --color-primary: #5fd4a8;
+  --color-on-primary: #032b1e;
+  --color-primary-container: #0f2820;
   --color-on-primary-container: #7ee0b8;
 
-  --color-secondary: #8bc6ff;
+  /* --- Secondary (Sky Blue) --- */
+  --color-secondary: #7dbfff;
   --color-on-secondary: #06101c;
-  --color-secondary-container: #132238;
+  --color-secondary-container: #0f2034;
   --color-on-secondary-container: #8bc6ff;
 
+  /* --- Tertiary (Amber/Warning) --- */
   --color-tertiary: #f59e0b;
-  --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #36240f;
+  --color-on-tertiary: #1a0e00;
+  --color-tertiary-container: #2f1e00;
   --color-on-tertiary-container: #f59e0b;
 
-  --color-error: #fb7185;
-  --color-on-error: #ffffff;
-  --color-error-container: #37131b;
+  /* --- Error (Rose/Danger) --- */
+  --color-error: #f87171;
+  --color-on-error: #2d0a0a;
+  --color-error-container: #3a0f0f;
   --color-on-error-container: #fb7185;
 
-  --color-background: #050b16;
-  --color-on-background: #cbd5e1;
-  --color-surface: #0a1222;
-  --color-on-surface: #e5eefc;
-  --color-surface-variant: #111a31;
-  --color-on-surface-variant: #94a3c2;
+  /* --- Success --- */
+  --color-success: #4ade80;
+  --color-on-success: #042010;
 
-  --color-outline: #22304a;
-  --color-outline-variant: #1a2740;
+  /* --- Background & Surface (Dark) --- */
+  --color-background: #04080f;
+  --color-on-background: #c8d6ea;
+  --color-surface: #080f1c;
+  --color-on-surface: #e2ecf8;
+  --color-surface-variant: #0e1928;
+  --color-on-surface-variant: #8fa3bf;
 
-  --color-surface-container-highest: #1a2740;
-  --color-surface-container-high: #132238;
-  --color-surface-container: #0d1528;
-  --color-surface-container-low: #09101d;
-  --color-surface-container-lowest: #050b16;
+  /* --- Outlines --- */
+  --color-outline: #1e2f47;
+  --color-outline-variant: #172338;
 
+  /* --- Surface Containers (Dark) --- */
+  --color-surface-container-highest: #1c2d44;
+  --color-surface-container-high: #111e30;
+  --color-surface-container: #0b1525;
+  --color-surface-container-low: #070e1b;
+  --color-surface-container-lowest: #04080f;
+
+  /* --- Ink aliases (for readability in components) --- */
+  --color-ink-strong: #e2ecf8;
+  --color-ink-soft: #8fa3bf;
+  --color-ink-muted: #4a6180;
+  --color-ink-inverse: #04080f;
+
+  /* --- Fonts --- */
   --font-headline: 'Space Grotesk', sans-serif;
   --font-body: 'Inter', sans-serif;
 }
+
+/* ============================================================
+   BASE — DARK (default)
+   ============================================================ */
 
 html {
   color-scheme: dark;
 }
 
+html.light {
+  color-scheme: light;
+}
+
+/* ============================================================
+   LIGHT THEME OVERRIDE
+   Applied when <html class="light"> is present
+   ============================================================ */
+
+html.light {
+  /* Redefine surface tokens for light mode */
+  --color-background: #f0f4fa;
+  --color-on-background: #1a2840;
+  --color-surface: #ffffff;
+  --color-on-surface: #0d1b2e;
+  --color-surface-variant: #e8eef8;
+  --color-on-surface-variant: #4a6180;
+
+  --color-outline: #c5d2e4;
+  --color-outline-variant: #d8e2f0;
+
+  --color-surface-container-highest: #dce6f4;
+  --color-surface-container-high: #e4edf8;
+  --color-surface-container: #edf2fb;
+  --color-surface-container-low: #f4f7fd;
+  --color-surface-container-lowest: #ffffff;
+
+  /* Ink aliases — light */
+  --color-ink-strong: #0d1b2e;
+  --color-ink-soft: #4a6180;
+  --color-ink-muted: #7a93af;
+  --color-ink-inverse: #e2ecf8;
+}
+
+/* ============================================================
+   BODY
+   ============================================================ */
+
 body {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(126, 224, 184, 0.15), transparent 28%),
-    radial-gradient(circle at top right, rgba(139, 198, 255, 0.11), transparent 24%),
-    linear-gradient(180deg, #08101e 0%, #050b16 100%);
+  background: var(--color-background);
   color: var(--color-on-background);
   font-family: var(--font-body);
   overflow-x: hidden;
+  transition: background 0.3s ease, color 0.3s ease;
 }
+
+/* Dark body gradient */
+html:not(.light) body {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(95, 212, 168, 0.10) 0%, transparent 35%),
+    radial-gradient(circle at 85% 5%, rgba(125, 191, 255, 0.08) 0%, transparent 30%),
+    linear-gradient(180deg, #080f1c 0%, #04080f 100%);
+}
+
+/* Light body gradient */
+html.light body {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(95, 212, 168, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 85% 5%, rgba(125, 191, 255, 0.05) 0%, transparent 35%),
+    #f0f4fa;
+}
+
+/* ============================================================
+   TYPOGRAPHY UTILITIES
+   ============================================================ */
 
 .font-headline {
   font-family: var(--font-headline);
 }
 
-.brandops-shell {
-  background:
-    radial-gradient(circle at top left, rgba(126, 224, 184, 0.05), transparent 30%),
-    radial-gradient(circle at bottom right, rgba(139, 198, 255, 0.06), transparent 35%);
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-primary);
 }
 
+/* ============================================================
+   BRANDOPS SHELL
+   ============================================================ */
+
+.brandops-shell {
+  background:
+    radial-gradient(circle at top left, rgba(95, 212, 168, 0.04), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(125, 191, 255, 0.04), transparent 36%);
+}
+
+html.light .brandops-shell {
+  background: transparent;
+}
+
+/* ============================================================
+   PANELS & CARDS
+   ============================================================ */
+
 .brandops-panel {
-  background: linear-gradient(180deg, rgba(13, 21, 40, 0.94), rgba(9, 16, 29, 0.94));
-  border: 1px solid rgba(255, 255, 255, 0.08); /* Lighter border for better contrast */
-  box-shadow: 
-    0 24px 80px rgba(0, 0, 0, 0.4),
-    inset 0 1px 1px rgba(255, 255, 255, 0.05); /* Subtle inner highlight */
-  backdrop-filter: blur(24px); /* Increased blur for more premium feel */
+  background: linear-gradient(180deg, rgba(14, 25, 40, 0.95), rgba(8, 15, 28, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: relative;
+}
+
+html.light .brandops-panel {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow:
+    0 4px 24px rgba(13, 27, 46, 0.08),
+    0 1px 4px rgba(13, 27, 46, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .brandops-panel-soft {
-  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+html.light .brandops-panel-soft {
+  box-shadow: 0 2px 16px rgba(13, 27, 46, 0.06);
 }
 
 .brandops-panel-strong {
   background:
-    radial-gradient(circle at top left, rgba(126, 224, 184, 0.15), transparent 30%),
-    linear-gradient(180deg, rgba(16, 25, 46, 0.98), rgba(9, 16, 29, 0.98));
-  border: 1px solid rgba(126, 224, 184, 0.22);
-  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.45);
+    radial-gradient(circle at top left, rgba(95, 212, 168, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(18, 28, 48, 0.98), rgba(8, 15, 28, 0.98));
+  border: 1px solid rgba(95, 212, 168, 0.18);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(24px);
 }
 
+html.light .brandops-panel-strong {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(95, 212, 168, 0.3);
+  box-shadow: 0 8px 40px rgba(13, 27, 46, 0.12);
+}
+
 .brandops-card {
-  background: linear-gradient(180deg, rgba(13, 21, 40, 0.9), rgba(9, 16, 29, 0.9));
+  background: linear-gradient(180deg, rgba(14, 25, 40, 0.92), rgba(8, 15, 28, 0.92));
   border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 
-    0 18px 60px rgba(0, 0, 0, 0.25),
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(16px);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.brandops-card:hover {
-  border-color: rgba(126, 224, 184, 0.3);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+html.light .brandops-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(13, 27, 46, 0.07);
 }
 
-.brandops-table-compact th,
-.brandops-table-compact td {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
-  font-size: 0.8125rem;
+.brandops-card:hover {
+  border-color: rgba(95, 212, 168, 0.28);
+  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.28);
+  transform: translateY(-1px);
 }
+
+html.light .brandops-card:hover {
+  border-color: rgba(95, 212, 168, 0.4);
+  box-shadow: 0 8px 28px rgba(13, 27, 46, 0.12);
+}
+
+/* Muted surface panel — used in list items, data rows */
+.panel-muted {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+}
+
+html.light .panel-muted {
+  background: rgba(13, 27, 46, 0.03);
+  border: 1px solid rgba(13, 27, 46, 0.07);
+}
+
+/* ============================================================
+   INPUTS & FORM CONTROLS
+   ============================================================ */
 
 .brandops-input {
-  background: rgba(5, 11, 22, 0.82);
-  border: 1px solid rgba(34, 48, 74, 0.85);
+  background: rgba(4, 8, 15, 0.7);
+  border: 1px solid rgba(30, 47, 71, 0.9);
   color: var(--color-on-surface);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+html.light .brandops-input {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(197, 210, 228, 0.9);
+  color: var(--color-on-surface);
+  box-shadow: inset 0 1px 2px rgba(13, 27, 46, 0.04);
 }
 
 .brandops-input::placeholder {
-  color: #7182a7;
+  color: var(--color-ink-muted);
 }
+
+.brandops-input:focus,
+.brandops-input:focus-within {
+  border-color: rgba(95, 212, 168, 0.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.02),
+    0 0 0 3px rgba(95, 212, 168, 0.12);
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+.brandops-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.125rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0.625rem;
+  transition: all 0.18s ease;
+  cursor: pointer;
+  gap: 0.375rem;
+  white-space: nowrap;
+}
+
+.brandops-button-primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(95, 212, 168, 0.25);
+}
+
+.brandops-button-primary:hover {
+  background: #7ee0b8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(95, 212, 168, 0.35);
+}
+
+.brandops-button-primary:active {
+  transform: translateY(0);
+}
+
+.brandops-button-secondary {
+  background: rgba(28, 45, 68, 0.55);
+  color: var(--color-on-surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+html.light .brandops-button-secondary {
+  background: rgba(13, 27, 46, 0.06);
+  border: 1px solid rgba(13, 27, 46, 0.1);
+}
+
+.brandops-button-secondary:hover {
+  background: rgba(28, 45, 68, 0.75);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+html.light .brandops-button-secondary:hover {
+  background: rgba(13, 27, 46, 0.1);
+  border-color: rgba(13, 27, 46, 0.18);
+}
+
+.brandops-button-ghost {
+  background: transparent;
+  color: var(--color-on-surface-variant);
+  border: 1px solid transparent;
+}
+
+.brandops-button-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-on-surface);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+html.light .brandops-button-ghost:hover {
+  background: rgba(13, 27, 46, 0.05);
+}
+
+/* ============================================================
+   FOCUS RING (Accessibility)
+   ============================================================ */
 
 .brandops-input:focus-visible,
 .brandops-button:focus-visible,
@@ -131,60 +369,20 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid rgba(126, 224, 184, 0.9);
+  outline: 2px solid rgba(95, 212, 168, 0.8);
   outline-offset: 2px;
 }
 
-.brandops-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border-radius: 0.5rem;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.brandops-button-primary {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.brandops-button-primary:hover {
-  background: #99ebcc;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.brandops-button-secondary {
-  background: rgba(34, 48, 74, 0.4);
-  color: var(--color-on-surface);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(8px);
-}
-
-.brandops-button-secondary:hover {
-  background: rgba(34, 48, 74, 0.6);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-.brandops-table-container {
-  overflow-x: auto;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.75rem;
-  background: rgba(5, 11, 22, 0.3);
-}
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
 
 .brandops-navlink {
   transition:
-    background-color 160ms ease,
-    color 160ms ease,
-    border-color 160ms ease,
-    transform 160ms ease;
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
 }
 
 .brandops-navlink:hover {
@@ -195,40 +393,165 @@ textarea:focus-visible {
   transform: none;
 }
 
+/* ============================================================
+   TABLES
+   ============================================================ */
+
+.brandops-table-container {
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  background: rgba(4, 8, 15, 0.25);
+}
+
+html.light .brandops-table-container {
+  border: 1px solid rgba(13, 27, 46, 0.07);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.brandops-table-compact th,
+.brandops-table-compact td {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: 0.875rem;
+  padding-right: 0.875rem;
+  font-size: 0.8125rem;
+}
+
+/* ============================================================
+   BADGES & STATUS CHIPS
+   ============================================================ */
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--color-on-surface-variant);
+}
+
+html.light .status-chip {
+  background: rgba(13, 27, 46, 0.06);
+  border: 1px solid rgba(13, 27, 46, 0.1);
+}
+
+/* ============================================================
+   SECTION DIVIDER
+   ============================================================ */
+
+.app-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.07) 30%,
+    rgba(255, 255, 255, 0.07) 70%,
+    transparent
+  );
+  margin: 1.5rem 0;
+}
+
+html.light .app-divider {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(13, 27, 46, 0.08) 30%,
+    rgba(13, 27, 46, 0.08) 70%,
+    transparent
+  );
+}
+
+/* ============================================================
+   SKELETON LOADING
+   ============================================================ */
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton {
+  border-radius: 0.5rem;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+html.light .skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(13, 27, 46, 0.06) 25%,
+    rgba(13, 27, 46, 0.12) 50%,
+    rgba(13, 27, 46, 0.06) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* ============================================================
+   SELECTION
+   ============================================================ */
+
+.brandops-selection::selection {
+  background: rgba(95, 212, 168, 0.25);
+  color: #e2ecf8;
+}
+
+/* ============================================================
+   SCROLLBARS
+   ============================================================ */
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(13, 27, 46, 0.15);
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(13, 27, 46, 0.25);
+}
+
+/* ============================================================
+   GRID BACKGROUND (decorative)
+   ============================================================ */
+
 .brandops-grid {
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 
-.brandops-selection::selection {
-  background: rgba(126, 224, 184, 0.28);
-  color: #effaf5;
-}
-
-body::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-body::-webkit-scrollbar-track {
-  background: var(--color-surface-container-low);
-}
-
-body::-webkit-scrollbar-thumb {
-  background: var(--color-outline);
-  border-radius: 3px;
-}
-
-body::-webkit-scrollbar-thumb:hover {
-  background: var(--color-on-surface-variant);
-}
-
-@media (min-width: 1440px) {
-  .brandops-shell {
-    background:
-      radial-gradient(circle at top left, rgba(126, 224, 184, 0.04), transparent 26%),
-      radial-gradient(circle at bottom right, rgba(139, 198, 255, 0.05), transparent 28%);
-  }
+html.light .brandops-grid {
+  background-image:
+    linear-gradient(rgba(13, 27, 46, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(13, 27, 46, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
 }

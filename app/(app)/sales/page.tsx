@@ -84,8 +84,8 @@ export default function SalesPage() {
           <div className="mt-5 space-y-3">
             {topProducts.slice(0, 8).map((product) => (
               <article key={product.productKey} className="panel-muted p-4">
-                <p className="font-semibold text-[var(--color-ink-strong)]">{product.productName}</p>
-                <div className="mt-2 flex items-center justify-between text-sm text-[var(--color-ink-soft)]">
+                <p className="font-semibold text-on-surface">{product.productName}</p>
+                <div className="mt-2 flex items-center justify-between text-sm text-on-surface-variant">
                   <span>{integerFormatter.format(product.quantity)} unidade(s)</span>
                   <span>{currencyFormatter.format(product.grossRevenue)}</span>
                 </div>

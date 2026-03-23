@@ -1,0 +1,13 @@
+{
+    "project": "PARALLAX-Enterprise-Alpha",
+    "sop": "Operational-Domain-PDV",
+    "tasks": [
+        {
+            "id": "PDV-001",
+            "agent": "frontend",
+            "description": "Implement Action components para Abrir/Fechar Caixa e Checkout V2 na camada de write (TerminalView.tsx). Consumir rpc_open_cash_session, rpc_pos_checkout_v2 e rpc_close_cash_session.",
+            "priority": "P0",
+            "dependsOn": []
+        }
+    ]
+}

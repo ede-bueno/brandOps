@@ -157,13 +157,13 @@ export default function CostCenterPage() {
                 <article key={expense.id} className="panel-muted p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="font-semibold text-[var(--color-ink-strong)]">{expense.description}</p>
-                      <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+                      <p className="font-semibold text-on-surface">{expense.description}</p>
+                      <p className="mt-1 text-sm text-on-surface-variant">
                         {expense.categoryName} • {expense.incurredOn}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-[var(--color-ink-strong)]">
+                      <p className="font-semibold text-on-surface">
                         {currencyFormatter.format(expense.amount)}
                       </p>
                     </div>
@@ -171,7 +171,7 @@ export default function CostCenterPage() {
                 </article>
               ))
             ) : (
-              <p className="text-sm text-[var(--color-ink-soft)]">
+              <p className="text-sm text-on-surface-variant">
                 Nenhuma despesa lançada ainda para esta marca.
               </p>
             )}

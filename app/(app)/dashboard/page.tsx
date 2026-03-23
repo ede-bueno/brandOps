@@ -40,7 +40,7 @@ export default function DashboardPage() {
         }
         badge={`Período analisado: ${selectedPeriodLabel}`}
         actions={
-          <div className="panel-muted px-4 py-3 text-sm text-[var(--color-ink-soft)]">
+          <div className="panel-muted px-4 py-3 text-sm text-on-surface-variant">
             Última atualização: {formatLongDateTime(activeBrand.updatedAt)}
           </div>
         }
@@ -86,10 +86,10 @@ export default function DashboardPage() {
               { label: "Unidades vendidas", value: integerFormatter.format(metrics.unitsSold) },
             ].map((item) => (
               <div key={item.label} className="panel-muted p-5">
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--color-ink-muted)]">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-on-surface-variant">
                   {item.label}
                 </p>
-                <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[var(--color-ink-strong)]">
+                <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-on-surface">
                   {item.value}
                 </p>
               </div>
@@ -108,14 +108,14 @@ export default function DashboardPage() {
                 <article key={file.kind} className="panel-muted p-4">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-sm font-semibold text-[var(--color-ink-strong)]">
+                      <p className="text-sm font-semibold text-on-surface">
                         {file.fileName}
                       </p>
-                      <p className="mt-1 text-xs uppercase tracking-[0.2em] text-[var(--color-ink-muted)]">
+                      <p className="mt-1 text-xs uppercase tracking-[0.2em] text-on-surface-variant">
                         {file.kind.replaceAll("_", " ")}
                       </p>
                     </div>
-                    <div className="text-right text-sm text-[var(--color-ink-soft)]">
+                    <div className="text-right text-sm text-on-surface-variant">
                       <p>{integerFormatter.format(file.rowCount)} linhas</p>
                       <p>{formatLongDateTime(file.importedAt)}</p>
                     </div>
@@ -123,7 +123,7 @@ export default function DashboardPage() {
                 </article>
               ))
             ) : (
-              <p className="text-sm text-[var(--color-ink-soft)]">
+              <p className="text-sm text-on-surface-variant">
                 Ainda não houve importação nesta marca.
               </p>
             )}
@@ -150,16 +150,16 @@ export default function DashboardPage() {
               {brands.map((brand) => (
                 <tr key={brand.id}>
                   <td>
-                    <span className="font-semibold text-[var(--color-ink-strong)]">{brand.name}</span>
+                    <span className="font-semibold text-on-surface">{brand.name}</span>
                   </td>
-                  <td className="text-right text-[var(--color-ink-soft)]">
+                  <td className="text-right text-on-surface-variant">
                     {formatLongDateTime(brand.created_at)}
                   </td>
-                  <td className="text-right text-[var(--color-ink-soft)]">
+                  <td className="text-right text-on-surface-variant">
                     {formatLongDateTime(brand.updated_at)}
                   </td>
                   <td className="text-right">
-                    <span className="inline-flex rounded-full border border-white/8 bg-white/5 px-3 py-1 text-xs font-semibold text-[var(--color-ink-strong)]">
+                    <span className="inline-flex rounded-full border border-white/8 bg-white/5 px-3 py-1 text-xs font-semibold text-on-surface">
                       {brand.id === activeBrand.id ? "Em foco" : "Disponível"}
                     </span>
                   </td>

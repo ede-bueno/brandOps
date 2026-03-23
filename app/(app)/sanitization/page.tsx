@@ -40,7 +40,7 @@ export default function SanitizationPage() {
 
       {anomalies.length === 0 ? (
         <SurfaceCard>
-          <p className="text-sm leading-7 text-[var(--color-ink-soft)]">
+          <p className="text-sm leading-7 text-on-surface-variant">
             Nenhuma ocorrência relevante foi encontrada na base atual.
           </p>
         </SurfaceCard>
@@ -48,10 +48,10 @@ export default function SanitizationPage() {
         <SurfaceCard>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--color-ink-strong)]">
+              <h2 className="text-xl font-semibold tracking-[-0.03em] text-on-surface">
                 Ocorrências para decisão
               </h2>
-              <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+              <p className="mt-1 text-sm text-on-surface-variant">
                 {anomalies.length} item(ns) precisam de revisão humana.
               </p>
             </div>

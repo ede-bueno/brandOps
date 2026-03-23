@@ -96,7 +96,7 @@ function ratioText(value: number, base: number, enabled = true) {
 function valueClass(value: number) {
   if (value > 0) return "text-[var(--color-primary)]";
   if (value < 0) return "text-[var(--color-tertiary)]";
-  return "text-[var(--color-ink-strong)]";
+  return "text-on-surface";
 }
 
 export default function DrePage() {
@@ -172,13 +172,13 @@ export default function DrePage() {
                       key={row.label}
                       className={row.highlight ? "bg-secondary/10" : "border-t border-outline/50"}
                     >
-                      <td className="px-5 py-4 font-medium text-[var(--color-ink-strong)]">
+                      <td className="px-5 py-4 font-medium text-on-surface">
                         {row.label}
                       </td>
                       <td className={`px-5 py-4 text-right font-medium ${valueClass(value)}`}>
                         {currencyFormatter.format(value)}
                       </td>
-                      <td className="px-5 py-4 text-right text-[var(--color-ink-soft)]">
+                      <td className="px-5 py-4 text-right text-on-surface-variant">
                         {ratioText(value, currentMetrics.netRevenue, row.showPercent)}
                       </td>
                     </tr>
@@ -199,14 +199,14 @@ export default function DrePage() {
               {expenseSummary.length ? (
                 expenseSummary.map((expense) => (
                   <div key={expense.categoryName} className="panel-muted flex items-center justify-between gap-4 p-4">
-                    <span className="font-medium text-[var(--color-ink-strong)]">{expense.categoryName}</span>
-                    <span className="text-[var(--color-ink-soft)]">
+                    <span className="font-medium text-on-surface">{expense.categoryName}</span>
+                    <span className="text-on-surface-variant">
                       {currencyFormatter.format(expense.amount)}
                     </span>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-[var(--color-ink-soft)]">
+                <p className="text-sm text-on-surface-variant">
                   Nenhuma despesa operacional lançada neste período.
                 </p>
               )}
@@ -223,8 +223,8 @@ export default function DrePage() {
                 <article key={day.date} className="panel-muted p-4">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="font-semibold text-[var(--color-ink-strong)]">{day.date}</p>
-                      <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+                      <p className="font-semibold text-on-surface">{day.date}</p>
+                      <p className="mt-1 text-sm text-on-surface-variant">
                         RL {currencyFormatter.format(day.netRevenue)} • CMV {currencyFormatter.format(day.cmv)} • Adcost {currencyFormatter.format(day.mediaSpend)}
                       </p>
                     </div>
@@ -232,7 +232,7 @@ export default function DrePage() {
                       <p className={`font-semibold ${valueClass(day.contribution)}`}>
                         {currencyFormatter.format(day.contribution)}
                       </p>
-                      <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+                      <p className="mt-1 text-sm text-on-surface-variant">
                         {day.netRevenue ? percentFormatter.format(day.contribution / day.netRevenue) : "-"}
                       </p>
                     </div>
@@ -259,32 +259,32 @@ export default function DrePage() {
                   DRE
                 </th>
                 {annualReport.months.map((month) => (
-                  <th key={month.monthKey} colSpan={2} className="bg-[var(--color-surface-container)] px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-ink-muted)]">
+                  <th key={month.monthKey} colSpan={2} className="bg-surface-container px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.22em] text-on-surface-variant">
                     {month.label}
                   </th>
                 ))}
-                <th colSpan={2} className="bg-[var(--color-surface-container)] px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-ink-muted)]">
+                <th colSpan={2} className="bg-surface-container px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.22em] text-on-surface-variant">
                   Acumulado
                 </th>
               </tr>
               <tr>
-                <th className="sticky left-0 z-20 border-b border-[var(--color-line-soft)] bg-[var(--color-surface-container)] px-4 py-2 text-left text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-ink-muted)]">
+                <th className="sticky left-0 z-20 border-b border-outline/40 bg-surface-container px-4 py-2 text-left text-[11px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">
                   Linha
                 </th>
                 {annualReport.months.map((month) => (
                   <Fragment key={`header-${month.monthKey}`}>
-                    <th key={`${month.monthKey}-value`} className="border-b border-[var(--color-line-soft)] bg-[var(--color-surface-container)] px-3 py-2 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+                    <th key={`${month.monthKey}-value`} className="border-b border-outline/40 bg-surface-container px-3 py-2 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
                       Valor
                     </th>
-                    <th key={`${month.monthKey}-pct`} className="border-b border-[var(--color-line-soft)] bg-[var(--color-surface-container)] px-3 py-2 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+                    <th key={`${month.monthKey}-pct`} className="border-b border-outline/40 bg-surface-container px-3 py-2 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
                       %
                     </th>
                   </Fragment>
                 ))}
-                <th className="border-b border-[var(--color-line-soft)] bg-[var(--color-surface-container)] px-3 py-2 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+                <th className="border-b border-outline/40 bg-surface-container px-3 py-2 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
                   Valor
                 </th>
-                <th className="border-b border-[var(--color-line-soft)] bg-[var(--color-surface-container)] px-3 py-2 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+                <th className="border-b border-outline/40 bg-surface-container px-3 py-2 text-right text-[11px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
                   %
                 </th>
               </tr>
@@ -294,7 +294,7 @@ export default function DrePage() {
                 const totalValue = row.getValue(annualReport.total);
                 return (
                   <tr key={row.label} className={row.highlight ? "bg-white/4" : ""}>
-                    <td className="sticky left-0 z-10 border-b border-[var(--color-line-soft)] bg-[var(--color-surface-container)] px-4 py-3 font-medium text-[var(--color-ink-strong)]">
+                    <td className="sticky left-0 z-10 border-b border-outline/40 bg-surface-container px-4 py-3 font-medium text-on-surface">
                       {row.label}
                     </td>
                     {annualReport.months.map((month) => {
@@ -302,22 +302,22 @@ export default function DrePage() {
                       return (
                         <Fragment key={`${row.label}-${month.monthKey}`}>
                           <td
-                            className={`border-b border-[var(--color-line-soft)] px-3 py-3 text-right font-medium ${valueClass(value)}`}
+                            className={`border-b border-outline/40 px-3 py-3 text-right font-medium ${valueClass(value)}`}
                           >
                             {currencyFormatter.format(value)}
                           </td>
                           <td
-                            className="border-b border-[var(--color-line-soft)] px-3 py-3 text-right text-[var(--color-ink-soft)]"
+                            className="border-b border-outline/40 px-3 py-3 text-right text-on-surface-variant"
                           >
                             {ratioText(value, month.metrics.netRevenue, row.showPercent)}
                           </td>
                         </Fragment>
                       );
                     })}
-                    <td className={`border-b border-[var(--color-line-soft)] px-3 py-3 text-right font-semibold ${valueClass(totalValue)}`}>
+                    <td className={`border-b border-outline/40 px-3 py-3 text-right font-semibold ${valueClass(totalValue)}`}>
                       {currencyFormatter.format(totalValue)}
                     </td>
-                    <td className="border-b border-[var(--color-line-soft)] px-3 py-3 text-right text-[var(--color-ink-soft)]">
+                    <td className="border-b border-outline/40 px-3 py-3 text-right text-on-surface-variant">
                       {ratioText(totalValue, annualReport.total.netRevenue, row.showPercent)}
                     </td>
                   </tr>
@@ -326,7 +326,7 @@ export default function DrePage() {
 
               {annualReport.expenseBreakdown.map((category) => (
                 <tr key={category.categoryId}>
-                  <td className="sticky left-0 z-10 border-b border-[var(--color-line-soft)] bg-[var(--color-surface-container)] px-4 py-3 text-[var(--color-ink-soft)]">
+                  <td className="sticky left-0 z-10 border-b border-outline/40 bg-surface-container px-4 py-3 text-on-surface-variant">
                     {category.categoryName}
                   </td>
                   {annualReport.months.map((month) => {
@@ -334,49 +334,49 @@ export default function DrePage() {
                     return (
                       <Fragment key={`${category.categoryId}-${month.monthKey}`}>
                         <td
-                          className={`border-b border-[var(--color-line-soft)] px-3 py-3 text-right ${valueClass(value)}`}
+                          className={`border-b border-outline/40 px-3 py-3 text-right ${valueClass(value)}`}
                         >
                           {currencyFormatter.format(value)}
                         </td>
                         <td
-                          className="border-b border-[var(--color-line-soft)] px-3 py-3 text-right text-[var(--color-ink-soft)]"
+                          className="border-b border-outline/40 px-3 py-3 text-right text-on-surface-variant"
                         >
                           {ratioText(value, month.metrics.netRevenue, true)}
                         </td>
                       </Fragment>
                     );
                   })}
-                  <td className={`border-b border-[var(--color-line-soft)] px-3 py-3 text-right font-medium ${valueClass(-category.total)}`}>
+                  <td className={`border-b border-outline/40 px-3 py-3 text-right font-medium ${valueClass(-category.total)}`}>
                     {currencyFormatter.format(-category.total)}
                   </td>
-                  <td className="border-b border-[var(--color-line-soft)] px-3 py-3 text-right text-[var(--color-ink-soft)]">
+                  <td className="border-b border-outline/40 px-3 py-3 text-right text-on-surface-variant">
                     {ratioText(-category.total, annualReport.total.netRevenue, true)}
                   </td>
                 </tr>
               ))}
 
               <tr className="bg-white/6">
-                <td className="sticky left-0 z-10 border-b border-[var(--color-line-soft)] bg-[var(--color-surface-container)] px-4 py-3 font-semibold text-[var(--color-ink-strong)]">
+                <td className="sticky left-0 z-10 border-b border-outline/40 bg-surface-container px-4 py-3 font-semibold text-on-surface">
                   (=) Resultado
                 </td>
                 {annualReport.months.map((month) => (
                   <Fragment key={`result-${month.monthKey}`}>
                     <td
-                      className={`border-b border-[var(--color-line-soft)] px-3 py-3 text-right font-semibold ${valueClass(month.metrics.operatingResult)}`}
+                      className={`border-b border-outline/40 px-3 py-3 text-right font-semibold ${valueClass(month.metrics.operatingResult)}`}
                     >
                       {currencyFormatter.format(month.metrics.operatingResult)}
                     </td>
                     <td
-                      className="border-b border-[var(--color-line-soft)] px-3 py-3 text-right text-[var(--color-ink-soft)]"
+                      className="border-b border-outline/40 px-3 py-3 text-right text-on-surface-variant"
                     >
                       {ratioText(month.metrics.operatingResult, month.metrics.netRevenue, true)}
                     </td>
                   </Fragment>
                 ))}
-                <td className={`border-b border-[var(--color-line-soft)] px-3 py-3 text-right font-semibold ${valueClass(annualReport.total.operatingResult)}`}>
+                <td className={`border-b border-outline/40 px-3 py-3 text-right font-semibold ${valueClass(annualReport.total.operatingResult)}`}>
                   {currencyFormatter.format(annualReport.total.operatingResult)}
                 </td>
-                <td className="border-b border-[var(--color-line-soft)] px-3 py-3 text-right text-[var(--color-ink-soft)]">
+                <td className="border-b border-outline/40 px-3 py-3 text-right text-on-surface-variant">
                   {ratioText(annualReport.total.operatingResult, annualReport.total.netRevenue, true)}
                 </td>
               </tr>
@@ -418,12 +418,12 @@ export default function DrePage() {
             <tbody>
               {weeklyPerformance.map((row) => (
                 <tr key={row.periodKey}>
-                  <td className="font-semibold text-[var(--color-ink-strong)]">{row.periodKey}</td>
+                  <td className="font-semibold text-on-surface">{row.periodKey}</td>
                   <td className="text-right">{currencyFormatter.format(row.adsSpend)}</td>
-                  <td className="text-right text-[var(--color-ink-soft)]">{integerFormatter.format(row.impressions)}</td>
-                  <td className="text-right text-[var(--color-ink-soft)]">{integerFormatter.format(row.clicks)}</td>
-                  <td className="text-right text-[var(--color-ink-soft)]">{integerFormatter.format(row.metaPurchases)}</td>
-                  <td className="text-right text-[var(--color-ink-strong)]">{integerFormatter.format(row.realPieces)}</td>
+                  <td className="text-right text-on-surface-variant">{integerFormatter.format(row.impressions)}</td>
+                  <td className="text-right text-on-surface-variant">{integerFormatter.format(row.clicks)}</td>
+                  <td className="text-right text-on-surface-variant">{integerFormatter.format(row.metaPurchases)}</td>
+                  <td className="text-right text-on-surface">{integerFormatter.format(row.realPieces)}</td>
                   <td className="text-right">{currencyFormatter.format(row.grossRevenue)}</td>
                   <td className="text-right">{currencyFormatter.format(row.cmv)}</td>
                   <td className={`text-right font-medium ${valueClass(row.grossMargin)}`}>{currencyFormatter.format(row.grossMargin)}</td>

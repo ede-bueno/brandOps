@@ -90,8 +90,8 @@ export default function MediaPage() {
           <div className="mt-5 space-y-3">
             {campaigns.map((campaign) => (
               <article key={campaign.campaignName} className="panel-muted p-4">
-                <p className="font-semibold text-[var(--color-ink-strong)]">{campaign.campaignName}</p>
-                <div className="mt-3 grid grid-cols-2 gap-3 text-sm text-[var(--color-ink-soft)]">
+                <p className="font-semibold text-on-surface">{campaign.campaignName}</p>
+                <div className="mt-3 grid grid-cols-2 gap-3 text-sm text-on-surface-variant">
                   <span>Investimento: {currencyFormatter.format(campaign.spend)}</span>
                   <span>ROAS: {campaign.roas.toFixed(2)}x</span>
                   <span>Receita: {currencyFormatter.format(campaign.purchaseValue)}</span>

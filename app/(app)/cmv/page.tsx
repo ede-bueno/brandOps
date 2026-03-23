@@ -93,10 +93,10 @@ export default function CmvPage() {
             {isApplyingCheckpoint ? "Aplicando..." : "Aplicar checkpoint agora"}
           </button>
 
-          <div className="panel-muted mt-5 p-4 text-sm text-[var(--color-ink-soft)]">
+          <div className="panel-muted mt-5 p-4 text-sm text-on-surface-variant">
             {latestCheckpoint ? (
               <>
-                <p className="font-semibold text-[var(--color-ink-strong)]">Último checkpoint</p>
+                <p className="font-semibold text-on-surface">Último checkpoint</p>
                 <p className="mt-2">{formatLongDateTime(latestCheckpoint.createdAt)}</p>
                 <p className="mt-1">
                   {integerFormatter.format(latestCheckpoint.itemsUpdated)} item(ns) recalculados

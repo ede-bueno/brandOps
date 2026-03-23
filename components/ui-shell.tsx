@@ -16,26 +16,29 @@ export function PageHeader({
   badge?: ReactNode;
 }) {
   return (
-    <section className="brandops-panel brandops-panel-soft overflow-hidden rounded-[28px] px-5 py-5 lg:px-6 lg:py-5">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+    <section className="brandops-panel brandops-panel-soft relative overflow-hidden rounded-[28px] px-5 py-5 lg:px-6 lg:py-6">
+      {/* Subtle top shimmer line */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+
       <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-5xl">
-          {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
-          <h1 className="mt-2.5 font-headline text-3xl font-semibold tracking-tight text-[var(--color-ink-strong)] lg:text-4xl">
+        <div className="max-w-4xl">
+          {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+          <h1 className="mt-2 font-headline text-3xl font-semibold tracking-[-0.03em] text-on-surface lg:text-[2rem]">
             {title}
           </h1>
-          {description ? (
-            <div className="mt-2.5 max-w-4xl text-sm leading-7 text-[var(--color-ink-soft)]">
+          {description && (
+            <div className="mt-2 max-w-3xl text-sm leading-7 text-on-surface-variant">
               {description}
             </div>
-          ) : null}
+          )}
         </div>
-        {actions || badge ? (
-          <div className="flex flex-col items-start gap-3 lg:items-end">
-            {badge ? <div className="status-chip">{badge}</div> : null}
+
+        {(actions ?? badge) && (
+          <div className="flex flex-col items-start gap-2.5 lg:items-end">
+            {badge && <div className="status-chip">{badge}</div>}
             {actions}
           </div>
-        ) : null}
+        )}
       </div>
     </section>
   );
@@ -48,7 +51,13 @@ export function SurfaceCard({
   children: ReactNode;
   className?: string;
 }) {
-  return <section className={`brandops-panel brandops-panel-soft rounded-[28px] p-5 lg:p-6 ${className}`.trim()}>{children}</section>;
+  return (
+    <section
+      className={`brandops-panel brandops-panel-soft rounded-[28px] p-5 lg:p-6 ${className}`.trim()}
+    >
+      {children}
+    </section>
+  );
 }
 
 export function SectionHeading({
@@ -63,14 +72,16 @@ export function SectionHeading({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h2 className="font-headline text-xl font-semibold tracking-tight text-[var(--color-ink-strong)]">
+        <h2 className="font-headline text-lg font-semibold tracking-[-0.025em] text-on-surface">
           {title}
         </h2>
-        {description ? (
-          <div className="mt-1 text-sm leading-6 text-[var(--color-ink-soft)]">{description}</div>
-        ) : null}
+        {description && (
+          <div className="mt-1 text-sm leading-6 text-on-surface-variant">{description}</div>
+        )}
       </div>
-      {aside ? <div className="text-sm text-[var(--color-ink-soft)]">{aside}</div> : null}
+      {aside && (
+        <div className="shrink-0 text-sm text-on-surface-variant">{aside}</div>
+      )}
     </div>
   );
 }
