@@ -253,6 +253,45 @@ select:focus-visible {
   color: var(--color-on-surface-variant);
 }
 
+.brandops-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--color-outline);
+  border-radius: 0.75rem;
+  background: var(--color-surface-container-low);
+}
+
+.brandops-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 2.25rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.625rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-on-surface-variant);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.brandops-tab:hover {
+  background: var(--color-surface-container);
+  color: var(--color-on-surface);
+}
+
+.brandops-tab[data-active="true"] {
+  background: var(--color-surface);
+  border-color: var(--color-outline);
+  color: var(--color-secondary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
 /* ============================================================
    SECTION DIVIDER
    ============================================================ */

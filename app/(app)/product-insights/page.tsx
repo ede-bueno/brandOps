@@ -269,6 +269,7 @@ function exportInsightsCsv(insights: ProductInsightRow[]) {
 export default function ProductInsightsPage() {
   const { activeBrand, filteredBrand, selectedPeriodLabel } = useBrandOps();
   const [selectedInsightKey, setSelectedInsightKey] = useState<string>("");
+  const [activeView, setActiveView] = useState<"overview" | "trend" | "detail">("overview");
 
   const currentRows = useMemo(
     () => filteredBrand?.ga4ItemDailyPerformance ?? [],
@@ -293,6 +294,7 @@ export default function ProductInsightsPage() {
   );
   const scatterData = useMemo(() => buildScatterData(insights), [insights]);
   const suggestionBlocks = useMemo(() => buildSuggestions(insights), [insights]);
+  const highlightList = useMemo(() => insights.slice(0, 8), [insights]);
 
   const insightCounts = useMemo(() => {
     return {
@@ -392,7 +394,44 @@ export default function ProductInsightsPage() {
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+      <SurfaceCard>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <SectionHeading
+            title="Navegação da análise"
+            description="Alterne entre leitura executiva, tendência e detalhamento para reduzir rolagem e ruído visual."
+          />
+          <div className="brandops-tabs overflow-x-auto">
+            <button
+              type="button"
+              data-active={activeView === "overview"}
+              onClick={() => setActiveView("overview")}
+              className="brandops-tab"
+            >
+              Visão geral
+            </button>
+            <button
+              type="button"
+              data-active={activeView === "trend"}
+              onClick={() => setActiveView("trend")}
+              className="brandops-tab"
+            >
+              Tendência
+            </button>
+            <button
+              type="button"
+              data-active={activeView === "detail"}
+              onClick={() => setActiveView("detail")}
+              className="brandops-tab"
+            >
+              Detalhamento
+            </button>
+          </div>
+        </div>
+      </SurfaceCard>
+
+      {activeView === "overview" ? (
+      <>
+      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <SurfaceCard>
           <SectionHeading
             title="Matriz de estampa"
@@ -436,16 +475,20 @@ export default function ProductInsightsPage() {
                 />
                 <Tooltip
                   cursor={{ strokeDasharray: "3 3" }}
-                  formatter={(value, name) =>
-                    name === "y"
-                      ? `${Number(value ?? 0).toFixed(1)}%`
-                      : integerFormatter.format(Number(value ?? 0))
-                  }
-                  labelFormatter={() => ""}
-                  contentStyle={{
-                    borderRadius: 16,
-                    border: "1px solid var(--color-outline)",
-                    backgroundColor: "var(--color-surface)",
+                  content={({ active, payload }) => {
+                    const point = payload?.[0]?.payload as
+                      | { label?: string; x?: number; y?: number }
+                      | undefined;
+                    if (!active || !point) return null;
+                    return (
+                      <div className="rounded-2xl border border-outline bg-surface px-3 py-2 shadow-sm">
+                        <p className="text-sm font-semibold text-on-surface">{point.label}</p>
+                        <p className="mt-1 text-xs text-on-surface-variant">
+                          {integerFormatter.format(Number(point.x ?? 0))} views •{" "}
+                          {Number(point.y ?? 0).toFixed(1)}% add to cart
+                        </p>
+                      </div>
+                    );
                   }}
                 />
                 {Object.entries(classificationMeta).map(([classification, meta]) => (
@@ -463,10 +506,57 @@ export default function ProductInsightsPage() {
 
         <SurfaceCard>
           <SectionHeading
+            title="Estampas em foco"
+            description="Ranking curto para identificar quais pontos da matriz merecem atenção sem depender do tooltip."
+          />
+          <div className="mt-5 space-y-3">
+            {highlightList.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setSelectedInsightKey(item.key)}
+                className={`w-full rounded-2xl border p-3 text-left transition-colors ${
+                  resolvedInsightKey === item.key
+                    ? "border-secondary/40 bg-secondary/5"
+                    : "border-outline bg-surface-container-low hover:border-secondary/25"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-on-surface">{item.stampName}</p>
+                    <p className="mt-1 text-xs text-on-surface-variant">{item.productType}</p>
+                  </div>
+                  <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${classificationMeta[item.classification].chipClass}`}>
+                    {classificationMeta[item.classification].label}
+                  </span>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-on-surface-variant">
+                  <div>
+                    <p>Views</p>
+                    <p className="mt-1 font-semibold text-on-surface">{integerFormatter.format(item.views)}</p>
+                  </div>
+                  <div>
+                    <p>Tx. carrinho</p>
+                    <p className="mt-1 font-semibold text-on-surface">{percentFormatter.format(item.addToCartRate)}</p>
+                  </div>
+                  <div>
+                    <p>Receita</p>
+                    <p className="mt-1 font-semibold text-on-surface">{currencyFormatter.format(item.revenue)}</p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </SurfaceCard>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-2">
+        <SurfaceCard>
+          <SectionHeading
             title="Insights acionáveis"
             description="Leitura rápida do que escalar, do que testar e do que revisar visualmente."
           />
-          <div className="mt-5 space-y-4">
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
             {(Object.entries(classificationMeta) as Array<[ProductInsightClassification, (typeof classificationMeta)[ProductInsightClassification]]>).map(
               ([key, meta]) => (
                 <article key={key} className="rounded-2xl border border-outline bg-surface-container-low p-4">
@@ -491,62 +581,6 @@ export default function ProductInsightsPage() {
                 </article>
               ),
             )}
-          </div>
-        </SurfaceCard>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-2">
-        <SurfaceCard>
-          <SectionHeading
-            title="Tendências de visualizações"
-            description="Comparação contra a janela anterior para destacar quais estampas estão ganhando ou perdendo atenção."
-          />
-          <div className="mt-5 grid gap-4 xl:grid-cols-2">
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
-              <div className="flex items-center gap-2">
-                <TrendingUp size={16} className="text-emerald-700" />
-                <h3 className="text-base font-semibold text-emerald-950">Ganhando destaque</h3>
-              </div>
-              <div className="mt-4 space-y-3">
-                {gaining.map((item) => (
-                  <div key={item.key} className="flex items-start justify-between gap-4 text-sm">
-                    <div>
-                      <p className="font-medium text-on-surface">{item.stampName}</p>
-                      <p className="text-xs text-on-surface-variant">{item.productType}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-on-surface">{integerFormatter.format(item.views)} views</p>
-                      <p className="text-xs text-emerald-700">
-                        {percentFormatter.format(item.viewGrowth)} views
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-4">
-              <div className="flex items-center gap-2">
-                <TrendingDown size={16} className="text-rose-700" />
-                <h3 className="text-base font-semibold text-rose-950">Perdendo destaque</h3>
-              </div>
-              <div className="mt-4 space-y-3">
-                {losing.map((item) => (
-                  <div key={item.key} className="flex items-start justify-between gap-4 text-sm">
-                    <div>
-                      <p className="font-medium text-on-surface">{item.stampName}</p>
-                      <p className="text-xs text-on-surface-variant">{item.productType}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-on-surface">{integerFormatter.format(item.views)} views</p>
-                      <p className="text-xs text-rose-700">
-                        {percentFormatter.format(item.viewGrowth)} views
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </SurfaceCard>
 
@@ -585,6 +619,11 @@ export default function ProductInsightsPage() {
         </SurfaceCard>
       </section>
 
+      </>
+      ) : null}
+
+      {activeView === "trend" ? (
+      <>
       <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <SurfaceCard>
           <SectionHeading
@@ -668,11 +707,11 @@ export default function ProductInsightsPage() {
           </div>
         </SurfaceCard>
 
-        <SurfaceCard>
-          <SectionHeading
-            title="Foco do período"
-            description="Resumo rápido da estampa selecionada para tomada de decisão."
-          />
+            <SurfaceCard>
+              <SectionHeading
+                title="Foco do período"
+                description="Resumo rápido da estampa selecionada para tomada de decisão."
+              />
           {selectedInsight ? (
             <div className="mt-5 space-y-4">
               <div className="rounded-2xl border border-outline bg-surface-container-low p-4">
@@ -704,11 +743,11 @@ export default function ProductInsightsPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-outline bg-surface-container-low p-4">
-                <h3 className="flex items-center gap-2 text-sm font-semibold text-on-surface">
-                  <PackageSearch size={16} />
-                  Leituras recomendadas
-                </h3>
+                  <div className="rounded-2xl border border-outline bg-surface-container-low p-4">
+                    <h3 className="flex items-center gap-2 text-sm font-semibold text-on-surface">
+                      <PackageSearch size={16} />
+                      Leituras recomendadas
+                    </h3>
                 <ul className="mt-3 space-y-2 text-sm leading-6 text-on-surface-variant">
                   {classificationMeta[selectedInsight.classification].bullets.map((bullet) => (
                     <li key={bullet} className="flex items-start gap-2">
@@ -716,13 +755,59 @@ export default function ProductInsightsPage() {
                       <span>{bullet}</span>
                     </li>
                   ))}
-                </ul>
-              </div>
-            </div>
-          ) : null}
-        </SurfaceCard>
+                    </ul>
+                  </div>
+
+                  <div className="grid gap-3 xl:grid-cols-2">
+                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp size={16} className="text-emerald-700" />
+                        <h3 className="text-sm font-semibold text-emerald-950">Ganhando destaque</h3>
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {gaining.slice(0, 4).map((item) => (
+                          <div key={item.key} className="flex items-start justify-between gap-3 text-xs">
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-on-surface">{item.stampName}</p>
+                              <p className="text-on-surface-variant">{item.productType}</p>
+                            </div>
+                            <p className="shrink-0 font-semibold text-emerald-700">
+                              {percentFormatter.format(item.viewGrowth)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-4">
+                      <div className="flex items-center gap-2">
+                        <TrendingDown size={16} className="text-rose-700" />
+                        <h3 className="text-sm font-semibold text-rose-950">Perdendo destaque</h3>
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {losing.slice(0, 4).map((item) => (
+                          <div key={item.key} className="flex items-start justify-between gap-3 text-xs">
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-on-surface">{item.stampName}</p>
+                              <p className="text-on-surface-variant">{item.productType}</p>
+                            </div>
+                            <p className="shrink-0 font-semibold text-rose-700">
+                              {percentFormatter.format(item.viewGrowth)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </SurfaceCard>
       </section>
 
+      </>
+      ) : null}
+
+      {activeView === "detail" ? (
       <SurfaceCard className="p-0 overflow-hidden">
         <div className="border-b border-outline p-5">
           <SectionHeading
@@ -778,6 +863,7 @@ export default function ProductInsightsPage() {
           </table>
         </div>
       </SurfaceCard>
+      ) : null}
     </div>
   );
 }
