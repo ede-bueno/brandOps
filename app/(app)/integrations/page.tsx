@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   CheckCircle2,
-  KeyRound,
   Link2,
   Loader2,
   Radar,
@@ -195,6 +194,29 @@ export default function IntegrationsPage() {
   const current = integrationsMap.get(activeProvider);
   const currentState = formState[activeProvider];
   const options = getModeOptions(activeProvider);
+  const providerContextCard = {
+    ink: {
+      title: "Origem comercial manual",
+      body: `A loja ${activeBrand.name} continua usando importação manual da INK, porque a plataforma não oferece API operacional.`,
+      cta: null,
+    },
+    meta: {
+      title: "Fallback e contingência",
+      body:
+        currentState.mode === "api"
+          ? `A ${activeBrand.name} está preparada para operar Meta por API${currentState.manualFallback ? " com contingência manual" : ""}.`
+          : `A ${activeBrand.name} segue em fluxo manual da Meta, com possibilidade de migração futura para API.`,
+      cta: null,
+    },
+    ga4: {
+      title: "Propriedade configurada",
+      body:
+        currentState.propertyId
+          ? `A propriedade ${currentState.propertyId} está associada à marca ${activeBrand.name}.`
+          : `A marca ${activeBrand.name} ainda não possui Property ID informado para o GA4.`,
+      cta: currentState.propertyId ? "/traffic" : null,
+    },
+  }[activeProvider];
 
   const handleSave = async () => {
     if (!session?.access_token) {
@@ -391,8 +413,10 @@ export default function IntegrationsPage() {
             </div>
           </div>
 
-          <div className="mt-5 space-y-4">
-                <label className="space-y-2 text-sm">
+          <div className="mt-5 space-y-5">
+            <div className="rounded-3xl border border-outline bg-surface-container-low p-4 sm:p-5">
+              <div className="grid gap-4 lg:grid-cols-2">
+                <label className="space-y-2 text-sm lg:col-span-2">
                   <span className="font-medium text-on-surface">Origem principal</span>
                   <select
                     value={currentState.mode}
@@ -405,7 +429,7 @@ export default function IntegrationsPage() {
                         },
                       }))
                     }
-                    className="brandops-input"
+                    className="brandops-input w-full px-3 py-2.5"
                   >
                     {options.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -430,7 +454,7 @@ export default function IntegrationsPage() {
                             },
                           }))
                         }
-                        className="brandops-input"
+                        className="brandops-input w-full px-3 py-2.5"
                         placeholder="act_1234567890"
                       />
                     </label>
@@ -450,10 +474,10 @@ export default function IntegrationsPage() {
                             },
                           }))
                         }
-                        className="brandops-input"
+                        className="brandops-input w-full px-3 py-2.5"
                       />
                     </label>
-                    <label className="flex items-start gap-3 rounded-2xl border border-outline bg-surface-container-low p-4 text-sm text-on-surface-variant">
+                    <label className="flex items-start gap-3 rounded-2xl border border-outline bg-white p-4 text-sm text-on-surface-variant lg:col-span-2">
                       <input
                         type="checkbox"
                         checked={currentState.manualFallback}
@@ -490,7 +514,7 @@ export default function IntegrationsPage() {
                             },
                           }))
                         }
-                        className="brandops-input"
+                        className="brandops-input w-full px-3 py-2.5"
                         placeholder="506034252"
                       />
                     </label>
@@ -507,41 +531,45 @@ export default function IntegrationsPage() {
                             },
                           }))
                         }
-                        className="brandops-input"
+                        className="brandops-input w-full px-3 py-2.5"
                         placeholder="America/Sao_Paulo"
                       />
                     </label>
-                    <button
-                      type="button"
-                      onClick={handleGa4Sync}
-                      disabled={syncingGa4 || currentState.mode !== "api" || !currentState.propertyId}
-                      className="brandops-button brandops-button-secondary"
-                    >
-                      {syncingGa4 ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin" />
-                          Sincronizando GA4
-                        </>
-                      ) : (
-                        "Sincronizar GA4 agora"
-                      )}
-                    </button>
+                    <div className="flex items-end lg:col-span-2">
+                      <button
+                        type="button"
+                        onClick={handleGa4Sync}
+                        disabled={syncingGa4 || currentState.mode !== "api" || !currentState.propertyId}
+                        className="brandops-button brandops-button-secondary"
+                      >
+                        {syncingGa4 ? (
+                          <>
+                            <Loader2 size={16} className="animate-spin" />
+                            Sincronizando GA4
+                          </>
+                        ) : (
+                          "Sincronizar GA4 agora"
+                        )}
+                      </button>
+                    </div>
                   </>
                 ) : null}
-
-                <div className="rounded-2xl border border-outline bg-surface-container-low p-4 text-sm text-on-surface-variant">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-on-surface">Última sincronização</p>
-                      <p className="mt-1">{formatSyncLabel(current)}</p>
-                    </div>
-                    <span className="status-chip">{current?.lastSyncStatus ?? "idle"}</span>
-                  </div>
-                  {current?.lastSyncError ? (
-                    <p className="mt-3 text-error">{current.lastSyncError}</p>
-                  ) : null}
-                </div>
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-outline bg-surface-container-low p-4 text-sm text-on-surface-variant">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-medium text-on-surface">Última sincronização</p>
+                  <p className="mt-1">{formatSyncLabel(current)}</p>
+                </div>
+                <span className="status-chip">{current?.lastSyncStatus ?? "idle"}</span>
+              </div>
+              {current?.lastSyncError ? (
+                <p className="mt-3 text-error">{current.lastSyncError}</p>
+              ) : null}
+            </div>
+          </div>
         </SurfaceCard>
 
         <SurfaceCard>
@@ -559,15 +587,17 @@ export default function IntegrationsPage() {
                 </p>
               </div>
             </article>
-            <article className="panel-muted flex items-start gap-3 p-4">
-              <RefreshCcw size={18} className="mt-0.5 text-secondary" />
-              <div className="text-sm text-on-surface-variant">
-                <p className="font-medium text-on-surface">Fallback manual</p>
-                <p className="mt-1">
-                  A integração da Meta pode ficar em API com contingência manual, sem perder auditoria do CSV.
-                </p>
-              </div>
-            </article>
+            {activeProvider === "meta" ? (
+              <article className="panel-muted flex items-start gap-3 p-4">
+                <RefreshCcw size={18} className="mt-0.5 text-secondary" />
+                <div className="text-sm text-on-surface-variant">
+                  <p className="font-medium text-on-surface">Fallback manual</p>
+                  <p className="mt-1">
+                    A integração da Meta pode ficar em API com contingência manual, sem perder auditoria do CSV.
+                  </p>
+                </div>
+              </article>
+            ) : null}
             <article className="panel-muted flex items-start gap-3 p-4">
               <ShieldCheck size={18} className="mt-0.5 text-secondary" />
               <div className="text-sm text-on-surface-variant">
@@ -579,25 +609,15 @@ export default function IntegrationsPage() {
               </div>
             </article>
             <article className="panel-muted flex items-start gap-3 p-4">
-              <KeyRound size={18} className="mt-0.5 text-secondary" />
-              <div className="text-sm text-on-surface-variant">
-                <p className="font-medium text-on-surface">OMD já preparada para GA4</p>
-                <p className="mt-1">
-                  A propriedade <span className="font-medium text-on-surface">506034252</span> já
-                  pode ser associada à loja `Oh My Dog` assim que a service account estiver pronta.
-                </p>
-                <Link href="/traffic" className="mt-3 inline-flex text-secondary hover:underline">
-                  Abrir painel de tráfego →
-                </Link>
-              </div>
-            </article>
-            <article className="panel-muted flex items-start gap-3 p-4">
               <Radar size={18} className="mt-0.5 text-secondary" />
               <div className="text-sm text-on-surface-variant">
-                <p className="font-medium text-on-surface">Leitura por contexto</p>
-                <p className="mt-1">
-                  Use esta tela para definir a origem do dado. A navegação analítica continua consumindo a base consolidada da marca.
-                </p>
+                <p className="font-medium text-on-surface">{providerContextCard.title}</p>
+                <p className="mt-1">{providerContextCard.body}</p>
+                {providerContextCard.cta ? (
+                  <Link href={providerContextCard.cta} className="mt-3 inline-flex text-secondary hover:underline">
+                    Abrir painel de tráfego →
+                  </Link>
+                ) : null}
               </div>
             </article>
           </div>
