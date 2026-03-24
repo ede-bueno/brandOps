@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Activity,
   BarChart3,
   ChevronsLeft,
   ChevronsRight,
@@ -31,6 +32,7 @@ import type { PeriodFilter } from "@/lib/brandops/types";
 const analyticsNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/sales", label: "Vendas", icon: BarChart3 },
+  { href: "/traffic", label: "Tráfego", icon: Activity },
   { href: "/media", label: "Mídia", icon: TrendingUp },
   { href: "/dre", label: "DRE", icon: BarChart3 },
   { href: "/feed", label: "Feed de Produtos", icon: Images },

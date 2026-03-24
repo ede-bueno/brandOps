@@ -224,6 +224,22 @@ export interface BrandIntegrationConfig {
   lastSyncError?: string | null;
 }
 
+export interface Ga4DailyPerformanceRow {
+  id: string;
+  date: string;
+  sourceMedium: string;
+  campaignName: string;
+  landingPage: string;
+  sessions: number;
+  totalUsers: number;
+  pageViews: number;
+  addToCarts: number;
+  beginCheckouts: number;
+  purchases: number;
+  purchaseRevenue: number;
+  lastSyncedAt?: string | null;
+}
+
 export interface BrandDataset {
   id: string;
   name: string;
@@ -240,6 +256,7 @@ export interface BrandDataset {
   expenseCategories: ExpenseCategory[];
   expenses: BrandExpense[];
   integrations: BrandIntegrationConfig[];
+  ga4DailyPerformance: Ga4DailyPerformanceRow[];
 }
 
 export interface CustomDateRange {
@@ -378,4 +395,40 @@ export interface WeeklyPerformanceRow {
   cpm: number;
   metaCvr: number;
   realCvr: number;
+}
+
+export interface TrafficSummaryMetrics {
+  sessions: number;
+  totalUsers: number;
+  pageViews: number;
+  addToCarts: number;
+  beginCheckouts: number;
+  purchases: number;
+  purchaseRevenue: number;
+  sessionToCartRate: number;
+  checkoutRate: number;
+  purchaseRate: number;
+  revenuePerSession: number;
+}
+
+export interface TrafficTimeSeriesPoint {
+  date: string;
+  sessions: number;
+  totalUsers: number;
+  addToCarts: number;
+  beginCheckouts: number;
+  purchases: number;
+  purchaseRevenue: number;
+}
+
+export interface TrafficBreakdownRow {
+  key: string;
+  label: string;
+  sessions: number;
+  totalUsers: number;
+  pageViews: number;
+  addToCarts: number;
+  beginCheckouts: number;
+  purchases: number;
+  purchaseRevenue: number;
 }

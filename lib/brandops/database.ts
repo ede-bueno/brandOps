@@ -8,6 +8,7 @@ import type {
   CmvCheckpoint,
   CmvMatchType,
   CsvFileKind,
+  Ga4DailyPerformanceRow,
   ImportRunInfo,
   ExpenseCategory,
   ImportedFileInfo,
@@ -203,6 +204,7 @@ export async function fetchBrandDataset(brandId: string) {
     expenseCategoriesResult,
     expensesResult,
     integrationsResult,
+    ga4DailyPerformanceResult,
     importLogsResult,
   ] = await Promise.all([
     supabase
@@ -286,6 +288,16 @@ export async function fetchBrandDataset(brandId: string) {
       .order("provider"),
     fetchAllRows(async (from, to) =>
       supabase
+        .from("ga4_daily_performance")
+        .select(
+          "id, date, source_medium, campaign_name, landing_page, sessions, total_users, page_views, add_to_carts, begin_checkouts, purchases, purchase_revenue, last_synced_at",
+        )
+        .eq("brand_id", brandId)
+        .order("date", { ascending: true })
+        .range(from, to),
+    ),
+    fetchAllRows(async (from, to) =>
+      supabase
         .from("import_logs")
         .select("file_type, file_name, created_at, records_processed, records_inserted")
         .eq("brand_id", brandId)
@@ -310,6 +322,23 @@ export async function fetchBrandDataset(brandId: string) {
   if (integrationsResult.error) {
     throw integrationsResult.error;
   }
+
+  const ga4DailyPerformance: Ga4DailyPerformanceRow[] =
+    ga4DailyPerformanceResult.map((row) => ({
+      id: row.id,
+      date: row.date,
+      sourceMedium: row.source_medium ?? "",
+      campaignName: row.campaign_name ?? "",
+      landingPage: row.landing_page ?? "",
+      sessions: row.sessions ?? 0,
+      totalUsers: row.total_users ?? 0,
+      pageViews: row.page_views ?? 0,
+      addToCarts: row.add_to_carts ?? 0,
+      beginCheckouts: row.begin_checkouts ?? 0,
+      purchases: row.purchases ?? 0,
+      purchaseRevenue: Number(row.purchase_revenue ?? 0),
+      lastSyncedAt: row.last_synced_at ?? null,
+    }));
 
   const catalog: CatalogProduct[] =
     productsResult.map((row) => ({
@@ -503,6 +532,7 @@ export async function fetchBrandDataset(brandId: string) {
     expenseCategories,
     expenses,
     integrations,
+    ga4DailyPerformance,
   } satisfies BrandDataset;
 }
 

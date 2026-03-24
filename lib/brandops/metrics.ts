@@ -11,6 +11,9 @@ import type {
   MonthlyExpenseBreakdown,
   CustomDateRange,
   PeriodFilter,
+  TrafficBreakdownRow,
+  TrafficSummaryMetrics,
+  TrafficTimeSeriesPoint,
   TopProductPerformance,
   WeeklyPerformanceRow,
 } from "./types";
@@ -314,6 +317,7 @@ function getLatestDatasetDate(brand: BrandDataset) {
     ...brand.salesLines.map((item) => item.orderDate),
     ...brand.media.map((item) => item.date),
     ...brand.expenses.map((item) => item.incurredOn),
+    ...brand.ga4DailyPerformance.map((item) => item.date),
   ]
     .map(parseDateValue)
     .filter((item): item is Date => Boolean(item))
@@ -431,6 +435,7 @@ export function filterBrandDatasetByPeriod(
     ),
     media: brand.media.filter((item) => inRange(item.date, range)),
     expenses: brand.expenses.filter((item) => inRange(item.incurredOn, range)),
+    ga4DailyPerformance: brand.ga4DailyPerformance.filter((item) => inRange(item.date, range)),
   };
 }
 
@@ -1222,4 +1227,154 @@ export function buildCmvOrderDetails(brand: BrandDataset): CmvOrderDetail[] {
       };
     })
     .sort((left, right) => right.orderDate.localeCompare(left.orderDate));
+}
+
+function emptyTrafficSummary(): TrafficSummaryMetrics {
+  return {
+    sessions: 0,
+    totalUsers: 0,
+    pageViews: 0,
+    addToCarts: 0,
+    beginCheckouts: 0,
+    purchases: 0,
+    purchaseRevenue: 0,
+    sessionToCartRate: 0,
+    checkoutRate: 0,
+    purchaseRate: 0,
+    revenuePerSession: 0,
+  };
+}
+
+export function computeTrafficMetrics(brand: BrandDataset): TrafficSummaryMetrics {
+  if (!brand.ga4DailyPerformance.length) {
+    return emptyTrafficSummary();
+  }
+
+  const aggregate = brand.ga4DailyPerformance.reduce(
+    (accumulator, row) => {
+      accumulator.sessions += row.sessions;
+      accumulator.totalUsers += row.totalUsers;
+      accumulator.pageViews += row.pageViews;
+      accumulator.addToCarts += row.addToCarts;
+      accumulator.beginCheckouts += row.beginCheckouts;
+      accumulator.purchases += row.purchases;
+      accumulator.purchaseRevenue += row.purchaseRevenue;
+      return accumulator;
+    },
+    emptyTrafficSummary(),
+  );
+
+  return {
+    ...aggregate,
+    purchaseRevenue: round(aggregate.purchaseRevenue),
+    sessionToCartRate: round(
+      aggregate.sessions ? aggregate.addToCarts / aggregate.sessions : 0,
+      4,
+    ),
+    checkoutRate: round(
+      aggregate.addToCarts ? aggregate.beginCheckouts / aggregate.addToCarts : 0,
+      4,
+    ),
+    purchaseRate: round(
+      aggregate.sessions ? aggregate.purchases / aggregate.sessions : 0,
+      4,
+    ),
+    revenuePerSession: round(
+      aggregate.sessions ? aggregate.purchaseRevenue / aggregate.sessions : 0,
+    ),
+  };
+}
+
+export function buildTrafficTimeSeries(brand: BrandDataset): TrafficTimeSeriesPoint[] {
+  const byDate = new Map<string, TrafficTimeSeriesPoint>();
+
+  brand.ga4DailyPerformance.forEach((row) => {
+    const current = byDate.get(row.date) ?? {
+      date: row.date,
+      sessions: 0,
+      totalUsers: 0,
+      addToCarts: 0,
+      beginCheckouts: 0,
+      purchases: 0,
+      purchaseRevenue: 0,
+    };
+
+    current.sessions += row.sessions;
+    current.totalUsers += row.totalUsers;
+    current.addToCarts += row.addToCarts;
+    current.beginCheckouts += row.beginCheckouts;
+    current.purchases += row.purchases;
+    current.purchaseRevenue += row.purchaseRevenue;
+    byDate.set(row.date, current);
+  });
+
+  return [...byDate.values()]
+    .map((row) => ({
+      ...row,
+      purchaseRevenue: round(row.purchaseRevenue),
+    }))
+    .sort((left, right) => left.date.localeCompare(right.date));
+}
+
+function buildTrafficBreakdown(
+  brand: BrandDataset,
+  getKey: (row: BrandDataset["ga4DailyPerformance"][number]) => string,
+  getLabel: (row: BrandDataset["ga4DailyPerformance"][number]) => string,
+): TrafficBreakdownRow[] {
+  const byKey = new Map<string, TrafficBreakdownRow>();
+
+  brand.ga4DailyPerformance.forEach((row) => {
+    const key = getKey(row) || "sem-chave";
+    const current = byKey.get(key) ?? {
+      key,
+      label: getLabel(row) || "(não informado)",
+      sessions: 0,
+      totalUsers: 0,
+      pageViews: 0,
+      addToCarts: 0,
+      beginCheckouts: 0,
+      purchases: 0,
+      purchaseRevenue: 0,
+    };
+
+    current.sessions += row.sessions;
+    current.totalUsers += row.totalUsers;
+    current.pageViews += row.pageViews;
+    current.addToCarts += row.addToCarts;
+    current.beginCheckouts += row.beginCheckouts;
+    current.purchases += row.purchases;
+    current.purchaseRevenue += row.purchaseRevenue;
+    byKey.set(key, current);
+  });
+
+  return [...byKey.values()]
+    .map((row) => ({
+      ...row,
+      purchaseRevenue: round(row.purchaseRevenue),
+    }))
+    .sort((left, right) => right.sessions - left.sessions || right.purchaseRevenue - left.purchaseRevenue);
+}
+
+export function buildTrafficBySourceMedium(brand: BrandDataset) {
+  return buildTrafficBreakdown(
+    brand,
+    (row) => normalizeText(row.sourceMedium || "(direto)"),
+    (row) => row.sourceMedium || "(direto)",
+  );
+}
+
+export function buildTrafficByCampaign(brand: BrandDataset) {
+  return buildTrafficBreakdown(
+    brand,
+    (row) => normalizeText(row.campaignName || "(não informado)"),
+    (row) => row.campaignName || "(não informado)",
+  );
+}
+
+export function buildTrafficByLandingPage(brand: BrandDataset) {
+  return buildTrafficBreakdown(
+    brand,
+    (row) => row.landingPage || "/",
+    (row) => row.landingPage || "/",
+  );
 }

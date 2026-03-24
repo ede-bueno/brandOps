@@ -14,6 +14,7 @@ import {
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import Link from "next/link";
 import type {
   BrandIntegrationConfig,
   IntegrationMode,
@@ -546,6 +547,9 @@ export default function IntegrationsPage() {
                   A propriedade <span className="font-medium text-on-surface">506034252</span> já
                   pode ser associada à loja `Oh My Dog` assim que a service account estiver pronta.
                 </p>
+                <Link href="/traffic" className="mt-3 inline-flex text-secondary hover:underline">
+                  Abrir painel de tráfego →
+                </Link>
               </div>
             </article>
           </div>
