@@ -14,6 +14,12 @@ export type CmvMatchType = "SKU" | "PRODUCT" | "TYPE";
 
 export type SanitizationDecision = "PENDING" | "KEPT" | "IGNORED";
 
+export type IntegrationProvider = "ink" | "meta" | "ga4";
+
+export type IntegrationMode = "manual_csv" | "api" | "disabled";
+
+export type IntegrationSyncStatus = "idle" | "running" | "success" | "error";
+
 export interface ImportRunInfo {
   kind: CsvFileKind;
   fileName: string;
@@ -202,6 +208,22 @@ export interface BrandExpense {
   description: string;
 }
 
+export interface BrandIntegrationConfig {
+  id: string;
+  provider: IntegrationProvider;
+  mode: IntegrationMode;
+  settings: {
+    propertyId?: string;
+    timezone?: string;
+    adAccountId?: string;
+    manualFallback?: boolean;
+    syncWindowDays?: number;
+  };
+  lastSyncAt?: string | null;
+  lastSyncStatus: IntegrationSyncStatus;
+  lastSyncError?: string | null;
+}
+
 export interface BrandDataset {
   id: string;
   name: string;
@@ -217,6 +239,7 @@ export interface BrandDataset {
   cmvCheckpoints: CmvCheckpoint[];
   expenseCategories: ExpenseCategory[];
   expenses: BrandExpense[];
+  integrations: BrandIntegrationConfig[];
 }
 
 export interface CustomDateRange {

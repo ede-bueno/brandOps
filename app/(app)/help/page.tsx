@@ -67,6 +67,34 @@ const sanitizationTopics = [
   },
 ];
 
+const integrationTopics = [
+  {
+    title: "Origem por loja",
+    body: "Cada marca pode definir a origem de cada dado. Hoje o desenho recomendado é: INK manual por CSV, Meta em API com fallback manual e GA4 em API apenas onde existir propriedade configurada.",
+  },
+  {
+    title: "Meta Ads",
+    body: "A integração da Meta deve guardar no sistema apenas a configuração por loja, como modo de origem e ID da conta. Tokens e segredos ficam no backend, nunca no navegador.",
+  },
+  {
+    title: "GA4 por propriedade",
+    body: "A OMD usa a propriedade `506034252`. Se uma loja não tiver GA4 configurado, deixe o modo como `Desabilitado` até a propriedade existir e a credencial estar pronta.",
+  },
+];
+
+const serviceAccountSteps = [
+  "Acesse o Google Cloud Console com a conta que administra o GA4 da loja.",
+  "Crie ou selecione um projeto no Google Cloud. Um nome simples como `brandops-ga4` já resolve.",
+  "No menu lateral, entre em `APIs e serviços` > `Biblioteca` e habilite `Google Analytics Data API`.",
+  "Ainda em `APIs e serviços`, vá em `Credenciais` > `Criar credenciais` > `Conta de serviço`.",
+  "Dê um nome como `brandops-ga4-reader` e conclua a criação sem precisar dar papel amplo no projeto.",
+  "Abra a conta de serviço criada, entre em `Chaves` e gere uma nova chave JSON. Guarde esse arquivo em local seguro.",
+  "Copie o email da conta de serviço, algo como `brandops-ga4-reader@seu-projeto.iam.gserviceaccount.com`.",
+  "No Google Analytics, abra a propriedade da loja, entre em `Administrador` > `Controle de acesso da propriedade` e adicione esse email com papel de `Leitor`.",
+  "No BrandOps, abra `Integrações`, selecione a loja `Oh My Dog`, deixe `GA4` em `API` e confirme o `Property ID 506034252`.",
+  "Na etapa de backend, o JSON da service account deve ser guardado em variável segura do servidor para a sincronização automática.",
+];
+
 export default function HelpPage() {
   return (
     <div className="space-y-6">
@@ -143,6 +171,40 @@ export default function HelpPage() {
               para produzir e entregar a peça.
             </p>
           </div>
+        </SurfaceCard>
+      </section>
+
+      <section id="integrations" className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <SurfaceCard>
+          <SectionHeading
+            title="Integrações"
+            description="Como o sistema decide a origem dos dados por marca."
+          />
+          <div className="mt-5 grid gap-3">
+            {integrationTopics.map((topic) => (
+              <article key={topic.title} className="panel-muted p-4">
+                <h3 className="font-semibold text-on-surface">{topic.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-on-surface-variant">{topic.body}</p>
+              </article>
+            ))}
+          </div>
+        </SurfaceCard>
+
+        <SurfaceCard id="ga4-service-account">
+          <SectionHeading
+            title="Service account do GA4"
+            description="Passo a passo para conectar a propriedade da loja ao BrandOps."
+          />
+          <ol className="mt-5 space-y-3">
+            {serviceAccountSteps.map((step, index) => (
+              <li key={step} className="panel-muted flex gap-4 p-4">
+                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary-container text-sm font-semibold text-secondary">
+                  {index + 1}
+                </span>
+                <p className="text-sm leading-6 text-on-surface-variant">{step}</p>
+              </li>
+            ))}
+          </ol>
         </SurfaceCard>
       </section>
     </div>

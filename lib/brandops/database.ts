@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import type {
   BrandExpense,
   BrandDataset,
+  BrandIntegrationConfig,
   CatalogProduct,
   CmvCheckpoint,
   CmvMatchType,
@@ -201,6 +202,7 @@ export async function fetchBrandDataset(brandId: string) {
     checkpointResult,
     expenseCategoriesResult,
     expensesResult,
+    integrationsResult,
     importLogsResult,
   ] = await Promise.all([
     supabase
@@ -277,6 +279,11 @@ export async function fetchBrandDataset(brandId: string) {
       .select("id, category_id, description, amount, incurred_on, expense_categories(name)")
       .eq("brand_id", brandId)
       .order("incurred_on", { ascending: false }),
+    supabase
+      .from("brand_integrations")
+      .select("id, provider, mode, settings, last_sync_at, last_sync_status, last_sync_error")
+      .eq("brand_id", brandId)
+      .order("provider"),
     fetchAllRows(async (from, to) =>
       supabase
         .from("import_logs")
@@ -298,6 +305,10 @@ export async function fetchBrandDataset(brandId: string) {
 
   if (expensesResult.error) {
     throw expensesResult.error;
+  }
+
+  if (integrationsResult.error) {
+    throw integrationsResult.error;
   }
 
   const catalog: CatalogProduct[] =
@@ -462,6 +473,20 @@ export async function fetchBrandDataset(brandId: string) {
       description: row.description ?? "",
     }));
 
+  const integrations: BrandIntegrationConfig[] =
+    (integrationsResult.data ?? []).map((row) => ({
+      id: row.id,
+      provider: row.provider,
+      mode: row.mode,
+      settings:
+        row.settings && typeof row.settings === "object" && !Array.isArray(row.settings)
+          ? row.settings
+          : {},
+      lastSyncAt: row.last_sync_at ?? null,
+      lastSyncStatus: row.last_sync_status ?? "idle",
+      lastSyncError: row.last_sync_error ?? null,
+    })) as BrandIntegrationConfig[];
+
   return {
     id: brandResult.data.id,
     name: brandResult.data.name,
@@ -477,6 +502,7 @@ export async function fetchBrandDataset(brandId: string) {
     cmvCheckpoints,
     expenseCategories,
     expenses,
+    integrations,
   } satisfies BrandDataset;
 }
 

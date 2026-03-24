@@ -358,5 +358,6 @@ export function mergeBrandDataset(
     cmvCheckpoints: current?.cmvCheckpoints ?? [],
     expenseCategories: current?.expenseCategories ?? [],
     expenses: current?.expenses ?? [],
+    integrations: current?.integrations ?? [],
   };
 }

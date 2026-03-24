@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
-import type { CsvFileKind } from "@/lib/brandops/types";
+import type { CsvFileKind, IntegrationMode, IntegrationProvider } from "@/lib/brandops/types";
 
 type ImportStatus = "idle" | "running" | "success" | "error";
 
@@ -21,26 +21,31 @@ const sourceDefinitions: Array<{
   kind: CsvFileKind;
   label: string;
   description: string;
+  provider?: IntegrationProvider;
 }> = [
   {
     kind: "lista_pedidos",
     label: "Lista de Pedidos",
     description: "Fonte principal da camada comercial da INK.",
+    provider: "ink",
   },
   {
     kind: "lista_itens",
     label: "Lista de Itens",
     description: "Base real de peças vendidas e aplicação de CMV.",
+    provider: "ink",
   },
   {
     kind: "pedidos_pagos",
     label: "Pedidos Pagos",
     description: "Detalhamento operacional por linha/SKU.",
+    provider: "ink",
   },
   {
     kind: "meta",
     label: "Meta Export",
     description: "Investimento e performance de mídia paga.",
+    provider: "meta",
   },
   {
     kind: "feed",
@@ -56,6 +61,17 @@ function formatDate(value?: string | null) {
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
   }).format(new Date(`${value}T00:00:00`));
+}
+
+function getProviderMode(
+  activeBrand: ReturnType<typeof useBrandOps>["activeBrand"],
+  provider?: IntegrationProvider,
+) {
+  if (!provider || !activeBrand) {
+    return "manual_csv" as IntegrationMode;
+  }
+
+  return activeBrand.integrations.find((entry) => entry.provider === provider)?.mode ?? "manual_csv";
 }
 
 export default function ImportPage() {
@@ -107,12 +123,35 @@ export default function ImportPage() {
       totalInserted: importInfos.reduce((sum, info) => sum + info.totalInserted, 0),
       firstOrderDate: orderDates[0] ?? null,
       lastOrderDate: orderDates[orderDates.length - 1] ?? null,
-      completedSources: sourceDefinitions.filter((source) => activeBrand.files[source.kind]).length,
     };
   }, [activeBrand]);
 
+  const sourceChecklist = useMemo(() => {
+    if (!activeBrand) {
+      return sourceDefinitions;
+    }
+
+    return sourceDefinitions.filter((source) => {
+      if (!source.provider) {
+        return true;
+      }
+
+      const mode = getProviderMode(activeBrand, source.provider);
+      if (source.provider === "meta") {
+        return mode !== "disabled";
+      }
+
+      return true;
+    });
+  }, [activeBrand]);
+
+  const completedSources = useMemo(
+    () => sourceChecklist.filter((source) => activeBrand?.files[source.kind]).length,
+    [activeBrand?.files, sourceChecklist],
+  );
+
   const progressPercent = stats
-    ? Math.round((stats.completedSources / sourceDefinitions.length) * 100)
+    ? Math.round((completedSources / sourceChecklist.length) * 100)
     : 0;
 
   return (
@@ -192,22 +231,22 @@ export default function ImportPage() {
           </SurfaceCard>
 
           <SurfaceCard className="flex flex-col justify-between gap-4">
-            <SectionHeading
-              title="Regra operacional"
-              description="Você pode subir 2025 e 2026 em blocos. O sistema consolida por número do pedido e preserva saneamentos já registrados."
-            />
-            <div className="space-y-3 text-sm text-on-surface-variant">
-              <p>
-                `Lista de Pedidos` é a fonte principal da camada comercial da INK.
-              </p>
-              <p>
-                `Lista de Itens` é a base real de peças vendidas e do CMV histórico.
-              </p>
-              <p>
-                `Meta Export` mantém o histórico de decisões de saneamento por ocorrência.
-              </p>
-            </div>
-          </SurfaceCard>
+              <SectionHeading
+                title="Regra operacional"
+                description="Você pode subir 2025 e 2026 em blocos. O sistema consolida por número do pedido e preserva saneamentos já registrados."
+              />
+              <div className="space-y-3 text-sm text-on-surface-variant">
+                <p>
+                  `Lista de Pedidos` é a fonte principal da camada comercial da INK.
+                </p>
+                <p>
+                  `Lista de Itens` é a base real de peças vendidas e do CMV histórico.
+                </p>
+                <p>
+                  `Meta Export` continua aceito como contingência mesmo quando a loja estiver em modo API.
+                </p>
+              </div>
+            </SurfaceCard>
         </section>
       )}
 
@@ -310,8 +349,19 @@ export default function ImportPage() {
           </div>
 
           <div className="space-y-3 p-6">
-            {sourceDefinitions.map((source) => {
+            {sourceChecklist.map((source) => {
               const info = activeBrand?.files[source.kind];
+              const providerMode = getProviderMode(activeBrand, source.provider);
+              const modeHint =
+                source.provider === "meta" && providerMode === "api"
+                  ? "API ativa com fallback manual"
+                  : source.provider === "ga4" && providerMode === "api"
+                    ? "API ativa"
+                    : providerMode === "manual_csv"
+                      ? "Upload manual"
+                      : providerMode === "disabled"
+                        ? "Desabilitado"
+                        : null;
               return (
                 <article
                   key={source.kind}
@@ -338,6 +388,11 @@ export default function ImportPage() {
                           <p className="mt-1 text-sm text-on-surface-variant">
                             {source.description}
                           </p>
+                          {modeHint ? (
+                            <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-secondary">
+                              {modeHint}
+                            </p>
+                          ) : null}
                         </div>
                         <span className="status-chip">
                           {info ? `${info.totalRuns} rodada(s)` : "Pendente"}
