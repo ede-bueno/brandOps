@@ -177,7 +177,6 @@ export async function fetchGa4ItemDailyPerformance(
         { name: "itemsViewed" },
         { name: "itemsAddedToCart" },
         { name: "itemsCheckedOut" },
-        { name: "itemsPurchased" },
         { name: "itemPurchaseQuantity" },
         { name: "itemRevenue" },
         { name: "cartToViewRate" },
@@ -201,9 +200,9 @@ export async function fetchGa4ItemDailyPerformance(
     addToCarts: toInteger(row.metricValues?.[1]?.value),
     checkouts: toInteger(row.metricValues?.[2]?.value),
     ecommercePurchases: toInteger(row.metricValues?.[3]?.value),
-    itemPurchaseQuantity: toInteger(row.metricValues?.[4]?.value),
-    itemRevenue: toNumber(row.metricValues?.[5]?.value),
-    cartToViewRate: toNumber(row.metricValues?.[6]?.value),
-    purchaseToViewRate: toNumber(row.metricValues?.[7]?.value),
+    itemPurchaseQuantity: toInteger(row.metricValues?.[3]?.value),
+    itemRevenue: toNumber(row.metricValues?.[4]?.value),
+    cartToViewRate: toNumber(row.metricValues?.[5]?.value),
+    purchaseToViewRate: toNumber(row.metricValues?.[6]?.value),
   }));
 }
