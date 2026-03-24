@@ -120,6 +120,8 @@ Beneficios dessa abordagem:
 - manter acesso rapido sem esconder funcoes criticas
 - preservar comportamento do superadmin e de usuarios por marca
 - garantir responsividade e usabilidade no modo colapsado
+- padronizar o posicionamento de abas e controles de navegacao secundaria entre telas
+- revisar a tela de `Ajuda` para separar conteudo em abas, reduzindo rolagem e mantendo consistencia com outras areas
 
 ### Epic 3 - Areas analiticas
 
@@ -136,6 +138,14 @@ Beneficios dessa abordagem:
 - evitar crescimento linear da sidebar
 - permitir expansao com minimo retrabalho estrutural
 
+### Epic 5 - Saneamento e memoria operacional
+
+- revisar a persistencia real das decisoes de saneamento apos reimportacoes
+- manter historico perene de itens `ignorados` e `mantidos`, com data e justificativa
+- permitir reversao de decisao sem perder rastreabilidade
+- garantir que o painel continue mostrando o historico mesmo quando o mesmo CSV for importado novamente
+- validar a chave correta de reidentificacao da ocorrencia, usando `pedido`, `ocorrencia` ou outra combinacao estavel
+
 ## Criterios de sucesso
 
 - a sidebar fica mais curta e mais clara
@@ -149,6 +159,7 @@ Beneficios dessa abordagem:
 - nao esconder acessos importantes para operacao diaria
 - nao misturar em uma mesma tela metricas de fontes diferentes sem identificacao clara
 - preservar consistencia com o contexto multi-marca
+- nao perder memoria operacional do saneamento a cada nova importacao
 
 ## Regra de execucao futura
 
