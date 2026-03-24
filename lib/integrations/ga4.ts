@@ -175,9 +175,9 @@ export async function fetchGa4ItemDailyPerformance(
       ],
       metrics: [
         { name: "itemsViewed" },
-        { name: "addToCarts" },
-        { name: "checkouts" },
-        { name: "ecommercePurchases" },
+        { name: "itemsAddedToCart" },
+        { name: "itemsCheckedOut" },
+        { name: "itemsPurchased" },
         { name: "itemPurchaseQuantity" },
         { name: "itemRevenue" },
         { name: "cartToViewRate" },
