@@ -240,6 +240,24 @@ export interface Ga4DailyPerformanceRow {
   lastSyncedAt?: string | null;
 }
 
+export interface Ga4ItemDailyPerformanceRow {
+  id: string;
+  date: string;
+  itemId: string;
+  itemName: string;
+  itemBrand: string;
+  itemCategory: string;
+  itemViews: number;
+  addToCarts: number;
+  checkouts: number;
+  ecommercePurchases: number;
+  itemPurchaseQuantity: number;
+  itemRevenue: number;
+  cartToViewRate: number;
+  purchaseToViewRate: number;
+  lastSyncedAt?: string | null;
+}
+
 export interface BrandDataset {
   id: string;
   name: string;
@@ -257,6 +275,7 @@ export interface BrandDataset {
   expenses: BrandExpense[];
   integrations: BrandIntegrationConfig[];
   ga4DailyPerformance: Ga4DailyPerformanceRow[];
+  ga4ItemDailyPerformance: Ga4ItemDailyPerformanceRow[];
 }
 
 export interface CustomDateRange {
@@ -431,4 +450,30 @@ export interface TrafficBreakdownRow {
   beginCheckouts: number;
   purchases: number;
   purchaseRevenue: number;
+}
+
+export type ProductInsightClassification =
+  | "validated"
+  | "opportunity"
+  | "low_traffic"
+  | "review";
+
+export interface ProductInsightRow {
+  key: string;
+  itemIds: string[];
+  stampName: string;
+  productType: string;
+  views: number;
+  addToCarts: number;
+  checkouts: number;
+  purchases: number;
+  quantity: number;
+  revenue: number;
+  addToCartRate: number;
+  conversionRate: number;
+  classification: ProductInsightClassification;
+  previousViews: number;
+  previousAddToCartRate: number;
+  viewGrowth: number;
+  addToCartRateDelta: number;
 }

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/brandops/admin";
-import { fetchGa4DailyPerformance } from "@/lib/integrations/ga4";
+import {
+  fetchGa4DailyPerformance,
+  fetchGa4ItemDailyPerformance,
+} from "@/lib/integrations/ga4";
 
 function formatDateForGa4(value: string) {
   return value.slice(0, 10);
@@ -92,7 +95,10 @@ export async function POST(
       : fallbackStart.toISOString().slice(0, 10);
     const endDate = now.toISOString().slice(0, 10);
 
-    const rows = await fetchGa4DailyPerformance(propertyId, startDate, endDate);
+    const [rows, itemRows] = await Promise.all([
+      fetchGa4DailyPerformance(propertyId, startDate, endDate),
+      fetchGa4ItemDailyPerformance(propertyId, startDate, endDate),
+    ]);
     const syncedAt = new Date().toISOString();
 
     if (rows.length) {
@@ -132,6 +138,45 @@ export async function POST(
       }
     }
 
+    if (itemRows.length) {
+      const dates = [...new Set(itemRows.map((row) => row.date))];
+      const { error: deleteError } = await supabase
+        .from("ga4_item_daily_performance")
+        .delete()
+        .eq("brand_id", brandId)
+        .in("date", dates);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      const payload = itemRows.map((row) => ({
+        brand_id: brandId,
+        date: row.date,
+        item_id: row.itemId,
+        item_name: row.itemName,
+        item_brand: row.itemBrand,
+        item_category: row.itemCategory,
+        item_views: row.itemViews,
+        add_to_carts: row.addToCarts,
+        checkouts: row.checkouts,
+        ecommerce_purchases: row.ecommercePurchases,
+        item_purchase_quantity: row.itemPurchaseQuantity,
+        item_revenue: row.itemRevenue,
+        cart_to_view_rate: row.cartToViewRate,
+        purchase_to_view_rate: row.purchaseToViewRate,
+        last_synced_at: syncedAt,
+      }));
+
+      const { error: insertError } = await supabase
+        .from("ga4_item_daily_performance")
+        .insert(payload);
+
+      if (insertError) {
+        throw insertError;
+      }
+    }
+
     await supabase
       .from("brand_integrations")
       .update({
@@ -151,6 +196,7 @@ export async function POST(
       startDate,
       endDate,
       rows: rows.length,
+      itemRows: itemRows.length,
       syncedAt,
     });
   } catch (error) {

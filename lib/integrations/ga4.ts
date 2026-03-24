@@ -21,6 +21,22 @@ export type Ga4SyncRow = {
   purchaseRevenue: number;
 };
 
+export type Ga4ItemSyncRow = {
+  date: string;
+  itemId: string;
+  itemName: string;
+  itemBrand: string;
+  itemCategory: string;
+  itemViews: number;
+  addToCarts: number;
+  checkouts: number;
+  ecommercePurchases: number;
+  itemPurchaseQuantity: number;
+  itemRevenue: number;
+  cartToViewRate: number;
+  purchaseToViewRate: number;
+};
+
 function getGa4ServiceAccount() {
   const raw = process.env.GA4_SERVICE_ACCOUNT_JSON;
   if (!raw) {
@@ -122,5 +138,72 @@ export async function fetchGa4DailyPerformance(
     beginCheckouts: toInteger(row.metricValues?.[4]?.value),
     purchases: toInteger(row.metricValues?.[5]?.value),
     purchaseRevenue: toNumber(row.metricValues?.[6]?.value),
+  }));
+}
+
+export async function fetchGa4ItemDailyPerformance(
+  propertyId: string,
+  startDate: string,
+  endDate: string,
+): Promise<Ga4ItemSyncRow[]> {
+  const credentials = getGa4ServiceAccount();
+  const auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: ["https://www.googleapis.com/auth/analytics.readonly"],
+  });
+
+  const analyticsData = google.analyticsdata({
+    version: "v1beta",
+    auth,
+  });
+
+  const response = await analyticsData.properties.runReport({
+    property: `properties/${propertyId}`,
+    requestBody: {
+      dateRanges: [
+        {
+          startDate,
+          endDate,
+        },
+      ],
+      dimensions: [
+        { name: "date" },
+        { name: "itemId" },
+        { name: "itemName" },
+        { name: "itemBrand" },
+        { name: "itemCategory" },
+      ],
+      metrics: [
+        { name: "itemsViewed" },
+        { name: "addToCarts" },
+        { name: "checkouts" },
+        { name: "ecommercePurchases" },
+        { name: "itemPurchaseQuantity" },
+        { name: "itemRevenue" },
+        { name: "cartToViewRate" },
+        { name: "purchaseToViewRate" },
+      ],
+      keepEmptyRows: false,
+      limit: "100000",
+      returnPropertyQuota: true,
+    },
+  } as analyticsdata_v1beta.Params$Resource$Properties$Runreport);
+
+  const data = response.data;
+  const rows = data.rows ?? [];
+  return rows.map((row: analyticsdata_v1beta.Schema$Row) => ({
+    date: formatDateDimension(row.dimensionValues?.[0]?.value),
+    itemId: row.dimensionValues?.[1]?.value?.trim() ?? "",
+    itemName: row.dimensionValues?.[2]?.value?.trim() ?? "",
+    itemBrand: row.dimensionValues?.[3]?.value?.trim() ?? "",
+    itemCategory: row.dimensionValues?.[4]?.value?.trim() ?? "",
+    itemViews: toInteger(row.metricValues?.[0]?.value),
+    addToCarts: toInteger(row.metricValues?.[1]?.value),
+    checkouts: toInteger(row.metricValues?.[2]?.value),
+    ecommercePurchases: toInteger(row.metricValues?.[3]?.value),
+    itemPurchaseQuantity: toInteger(row.metricValues?.[4]?.value),
+    itemRevenue: toNumber(row.metricValues?.[5]?.value),
+    cartToViewRate: toNumber(row.metricValues?.[6]?.value),
+    purchaseToViewRate: toNumber(row.metricValues?.[7]?.value),
   }));
 }

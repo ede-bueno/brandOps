@@ -11,6 +11,8 @@ import type {
   MonthlyExpenseBreakdown,
   CustomDateRange,
   PeriodFilter,
+  ProductInsightClassification,
+  ProductInsightRow,
   TrafficBreakdownRow,
   TrafficSummaryMetrics,
   TrafficTimeSeriesPoint,
@@ -318,6 +320,7 @@ function getLatestDatasetDate(brand: BrandDataset) {
     ...brand.media.map((item) => item.date),
     ...brand.expenses.map((item) => item.incurredOn),
     ...brand.ga4DailyPerformance.map((item) => item.date),
+    ...brand.ga4ItemDailyPerformance.map((item) => item.date),
   ]
     .map(parseDateValue)
     .filter((item): item is Date => Boolean(item))
@@ -436,6 +439,9 @@ export function filterBrandDatasetByPeriod(
     media: brand.media.filter((item) => inRange(item.date, range)),
     expenses: brand.expenses.filter((item) => inRange(item.incurredOn, range)),
     ga4DailyPerformance: brand.ga4DailyPerformance.filter((item) => inRange(item.date, range)),
+    ga4ItemDailyPerformance: brand.ga4ItemDailyPerformance.filter((item) =>
+      inRange(item.date, range),
+    ),
   };
 }
 
@@ -1377,4 +1383,134 @@ export function buildTrafficByLandingPage(brand: BrandDataset) {
     (row) => row.landingPage || "/",
     (row) => row.landingPage || "/",
   );
+}
+
+function classifyProductInsight(
+  views: number,
+  addToCartRate: number,
+  conversionRate: number,
+): ProductInsightClassification {
+  if (views < 30) {
+    return "low_traffic";
+  }
+
+  if (views >= 250 && addToCartRate < 0.02) {
+    return "review";
+  }
+
+  if (addToCartRate >= 0.07 && conversionRate >= 0.01) {
+    return "validated";
+  }
+
+  if (addToCartRate >= 0.04 || conversionRate >= 0.008) {
+    return "opportunity";
+  }
+
+  return "review";
+}
+
+function aggregateProductInsights(rows: BrandDataset["ga4ItemDailyPerformance"]) {
+  const byKey = new Map<
+    string,
+    {
+      key: string;
+      stampName: string;
+      productType: string;
+      itemIds: Set<string>;
+      views: number;
+      addToCarts: number;
+      checkouts: number;
+      purchases: number;
+      quantity: number;
+      revenue: number;
+    }
+  >();
+
+  rows.forEach((row) => {
+    const stampName = extractPrintName(
+      row.itemName,
+      `${row.itemBrand} ${row.itemCategory} ${row.itemId}`,
+    );
+    const productType =
+      detectProductType(row.itemName, `${row.itemBrand} ${row.itemCategory}`) ?? "Sem tipo";
+    const key = `${normalizeText(stampName)}::${normalizeText(productType)}`;
+    const current = byKey.get(key) ?? {
+      key,
+      stampName,
+      productType,
+      itemIds: new Set<string>(),
+      views: 0,
+      addToCarts: 0,
+      checkouts: 0,
+      purchases: 0,
+      quantity: 0,
+      revenue: 0,
+    };
+
+    if (row.itemId?.trim()) {
+      current.itemIds.add(row.itemId.trim());
+    }
+
+    current.views += row.itemViews;
+    current.addToCarts += row.addToCarts;
+    current.checkouts += row.checkouts;
+    current.purchases += row.ecommercePurchases;
+    current.quantity += row.itemPurchaseQuantity;
+    current.revenue += row.itemRevenue;
+    byKey.set(key, current);
+  });
+
+  return byKey;
+}
+
+export function buildProductInsights(
+  brand: BrandDataset,
+  previousRows: BrandDataset["ga4ItemDailyPerformance"] = [],
+): ProductInsightRow[] {
+  const currentMap = aggregateProductInsights(brand.ga4ItemDailyPerformance);
+  const previousMap = aggregateProductInsights(previousRows);
+
+  return [...currentMap.values()]
+    .map((item) => {
+      const previous = previousMap.get(item.key);
+      const addToCartRate = item.views ? item.addToCarts / item.views : 0;
+      const conversionRate = item.views ? item.purchases / item.views : 0;
+      const previousViews = previous?.views ?? 0;
+      const previousAddToCartRate = previous?.views
+        ? previous.addToCarts / previous.views
+        : 0;
+      const viewGrowth =
+        previousViews > 0
+          ? (item.views - previousViews) / previousViews
+          : item.views > 0
+            ? 1
+            : 0;
+      const addToCartRateDelta = addToCartRate - previousAddToCartRate;
+
+      return {
+        key: item.key,
+        itemIds: [...item.itemIds].sort(),
+        stampName: item.stampName,
+        productType: item.productType,
+        views: item.views,
+        addToCarts: item.addToCarts,
+        checkouts: item.checkouts,
+        purchases: item.purchases,
+        quantity: item.quantity,
+        revenue: round(item.revenue),
+        addToCartRate: round(addToCartRate, 4),
+        conversionRate: round(conversionRate, 4),
+        classification: classifyProductInsight(item.views, addToCartRate, conversionRate),
+        previousViews,
+        previousAddToCartRate: round(previousAddToCartRate, 4),
+        viewGrowth: round(viewGrowth, 4),
+        addToCartRateDelta: round(addToCartRateDelta, 4),
+      };
+    })
+    .sort(
+      (left, right) =>
+        right.views - left.views ||
+        right.revenue - left.revenue ||
+        left.stampName.localeCompare(right.stampName),
+    );
 }

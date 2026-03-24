@@ -360,5 +360,6 @@ export function mergeBrandDataset(
     expenses: current?.expenses ?? [],
     integrations: current?.integrations ?? [],
     ga4DailyPerformance: current?.ga4DailyPerformance ?? [],
+    ga4ItemDailyPerformance: current?.ga4ItemDailyPerformance ?? [],
   };
 }

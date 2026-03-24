@@ -8,6 +8,7 @@ import type {
   CmvCheckpoint,
   CmvMatchType,
   CsvFileKind,
+  Ga4ItemDailyPerformanceRow,
   Ga4DailyPerformanceRow,
   ImportRunInfo,
   ExpenseCategory,
@@ -205,6 +206,7 @@ export async function fetchBrandDataset(brandId: string) {
     expensesResult,
     integrationsResult,
     ga4DailyPerformanceResult,
+    ga4ItemDailyPerformanceResult,
     importLogsResult,
   ] = await Promise.all([
     supabase
@@ -298,6 +300,16 @@ export async function fetchBrandDataset(brandId: string) {
     ),
     fetchAllRows(async (from, to) =>
       supabase
+        .from("ga4_item_daily_performance")
+        .select(
+          "id, date, item_id, item_name, item_brand, item_category, item_views, add_to_carts, checkouts, ecommerce_purchases, item_purchase_quantity, item_revenue, cart_to_view_rate, purchase_to_view_rate, last_synced_at",
+        )
+        .eq("brand_id", brandId)
+        .order("date", { ascending: true })
+        .range(from, to),
+    ),
+    fetchAllRows(async (from, to) =>
+      supabase
         .from("import_logs")
         .select("file_type, file_name, created_at, records_processed, records_inserted")
         .eq("brand_id", brandId)
@@ -337,6 +349,25 @@ export async function fetchBrandDataset(brandId: string) {
       beginCheckouts: row.begin_checkouts ?? 0,
       purchases: row.purchases ?? 0,
       purchaseRevenue: Number(row.purchase_revenue ?? 0),
+      lastSyncedAt: row.last_synced_at ?? null,
+    }));
+
+  const ga4ItemDailyPerformance: Ga4ItemDailyPerformanceRow[] =
+    ga4ItemDailyPerformanceResult.map((row) => ({
+      id: row.id,
+      date: row.date,
+      itemId: row.item_id ?? "",
+      itemName: row.item_name ?? "",
+      itemBrand: row.item_brand ?? "",
+      itemCategory: row.item_category ?? "",
+      itemViews: row.item_views ?? 0,
+      addToCarts: row.add_to_carts ?? 0,
+      checkouts: row.checkouts ?? 0,
+      ecommercePurchases: row.ecommerce_purchases ?? 0,
+      itemPurchaseQuantity: row.item_purchase_quantity ?? 0,
+      itemRevenue: Number(row.item_revenue ?? 0),
+      cartToViewRate: Number(row.cart_to_view_rate ?? 0),
+      purchaseToViewRate: Number(row.purchase_to_view_rate ?? 0),
       lastSyncedAt: row.last_synced_at ?? null,
     }));
 
@@ -533,6 +564,7 @@ export async function fetchBrandDataset(brandId: string) {
     expenses,
     integrations,
     ga4DailyPerformance,
+    ga4ItemDailyPerformance,
   } satisfies BrandDataset;
 }
 
