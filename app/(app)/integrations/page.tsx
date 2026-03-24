@@ -154,6 +154,7 @@ export default function IntegrationsPage() {
   const [formState, setFormState] = useState<IntegrationFormState>(emptyIntegrationForm);
   const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [syncingGa4, setSyncingGa4] = useState(false);
 
   useEffect(() => {
     setFormState(toFormState(activeBrand?.integrations ?? []));
@@ -245,6 +246,43 @@ export default function IntegrationsPage() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleGa4Sync = async () => {
+    if (!session?.access_token) {
+      setNotice({ kind: "error", text: "Sessão inválida para sincronizar o GA4." });
+      return;
+    }
+
+    try {
+      setSyncingGa4(true);
+      setNotice(null);
+
+      const response = await fetch(`/api/admin/brands/${activeBrand.id}/integrations/ga4/sync`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Falha ao sincronizar o GA4.");
+      }
+
+      await refreshActiveBrand();
+      setNotice({
+        kind: "success",
+        text: `GA4 sincronizado com sucesso. ${payload.rows} linha(s) consolidadas de ${payload.startDate} até ${payload.endDate}.`,
+      });
+    } catch (error) {
+      setNotice({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Falha ao sincronizar o GA4.",
+      });
+    } finally {
+      setSyncingGa4(false);
     }
   };
 
@@ -420,6 +458,21 @@ export default function IntegrationsPage() {
                         placeholder="America/Sao_Paulo"
                       />
                     </label>
+                    <button
+                      type="button"
+                      onClick={handleGa4Sync}
+                      disabled={syncingGa4 || currentState.mode !== "api" || !currentState.propertyId}
+                      className="brandops-button brandops-button-secondary"
+                    >
+                      {syncingGa4 ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          Sincronizando GA4
+                        </>
+                      ) : (
+                        "Sincronizar GA4 agora"
+                      )}
+                    </button>
                   </>
                 ) : null}
 

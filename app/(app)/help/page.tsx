@@ -92,7 +92,7 @@ const serviceAccountSteps = [
   "Copie o email da conta de serviço, algo como `brandops-ga4-reader@seu-projeto.iam.gserviceaccount.com`.",
   "No Google Analytics, abra a propriedade da loja, entre em `Administrador` > `Controle de acesso da propriedade` e adicione esse email com papel de `Leitor`.",
   "No BrandOps, abra `Integrações`, selecione a loja `Oh My Dog`, deixe `GA4` em `API` e confirme o `Property ID 506034252`.",
-  "Na etapa de backend, o JSON da service account deve ser guardado em variável segura do servidor para a sincronização automática.",
+  "Na etapa de backend, o JSON da service account deve ser guardado em variável segura do servidor, por exemplo `GA4_SERVICE_ACCOUNT_JSON`, para a sincronização automática.",
 ];
 
 export default function HelpPage() {

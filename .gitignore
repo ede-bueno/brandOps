@@ -30,6 +30,8 @@ yarn-error.log*
 
 # local env files
 .env*.local
+brandops-ga4-*.json
+*service-account*.json
 
 # vercel
 .vercel
