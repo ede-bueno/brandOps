@@ -163,7 +163,7 @@ export default function SanitizationPage() {
                           {anomaly.metric}
                         </p>
                         <p className="mt-1 font-semibold text-on-surface">{anomaly.value}</p>
-                        <p className="mt-2 max-w-[320px] text-xs leading-5 text-on-surface-variant">
+                        <p className="mt-2 max-w-[420px] whitespace-normal break-words text-xs leading-5 text-on-surface-variant">
                           {anomaly.reason}
                         </p>
                       </td>

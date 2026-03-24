@@ -9,9 +9,11 @@ import {
   ChevronsRight,
   FileUp,
   HelpCircle,
+  Images,
   LayoutDashboard,
   LogOut,
   Menu,
+  PlugZap,
   Receipt,
   Settings2,
   ShieldAlert,
@@ -31,6 +33,7 @@ const analyticsNav = [
   { href: "/sales", label: "Vendas", icon: BarChart3 },
   { href: "/media", label: "Mídia", icon: TrendingUp },
   { href: "/dre", label: "DRE", icon: BarChart3 },
+  { href: "/feed", label: "Feed de Produtos", icon: Images },
 ];
 
 const operationsNav = [
@@ -43,6 +46,7 @@ const operationsNav = [
 
 const adminNavigation = [
   { href: "/admin/stores", label: "Lojas e Pessoas", icon: Settings2 },
+  { href: "/integrations", label: "Integrações", icon: PlugZap },
 ];
 
 const periodOptions: Array<{ value: PeriodFilter; label: string }> = [

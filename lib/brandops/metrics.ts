@@ -179,28 +179,63 @@ function getIsoWeekParts(dateValue: string) {
 }
 
 export function detectProductType(title?: string | null, context?: string | null) {
-  const haystack = `${normalizeText(title)} ${normalizeText(context)}`.trim();
+  const normalizedTitle = normalizeText(title);
+  const normalizedContext = normalizeText(context);
+  const haystack = `${normalizedTitle} ${normalizedContext}`.trim();
   if (!haystack) {
     return null;
   }
 
-  if (haystack.includes("cropped moletom")) return "Cropped moletom";
-  if (haystack.includes("hoodie moletom") || haystack.includes(" moletom hoodie") || haystack.includes("hoodie")) {
+  if (normalizedTitle.includes("cropped moletom") || normalizedContext.includes("cropped moletom")) return "Cropped moletom";
+  if (
+    normalizedTitle.includes("hoodie moletom") ||
+    normalizedTitle.includes(" moletom hoodie") ||
+    normalizedTitle.includes("hoodie") ||
+    normalizedContext.includes("hoodie moletom") ||
+    normalizedContext.includes(" moletom hoodie") ||
+    normalizedContext.includes("hoodie")
+  ) {
     return "Hoodie moletom";
   }
-  if (haystack.includes("sueter moletom") || haystack.includes("sueter")) return "Suéter moletom";
-  if (haystack.includes("dad hat") || hasWord(haystack, "bone")) return "Bone Dad Hat";
-  if (haystack.includes("oversized")) return "Oversized";
-  if (haystack.includes("peruana") || haystack.includes("algodao peruano")) return "Camiseta Peruana";
-  if (haystack.includes("body infantil") || hasWord(haystack, "body")) return "Body";
-  if (hasWord(haystack, "infantil") || hasWord(haystack, "mini")) return "Mini";
-  if (hasWord(haystack, "regata")) return "Regata";
-  if (hasWord(haystack, "cropped")) return "Cropped";
   if (
-    hasWord(haystack, "camiseta") ||
-    hasWord(haystack, "masculino") ||
-    hasWord(haystack, "feminino") ||
-    hasWord(haystack, "unissex")
+    normalizedTitle.includes("sueter moletom") ||
+    normalizedTitle.includes("sueter") ||
+    normalizedContext.includes("sueter moletom") ||
+    normalizedContext.includes("sueter")
+  ) return "Suéter moletom";
+  if (
+    normalizedTitle.includes("dad hat") ||
+    hasWord(normalizedTitle, "bone") ||
+    normalizedContext.includes("dad hat") ||
+    hasWord(normalizedContext, "bone")
+  ) return "Bone Dad Hat";
+  if (normalizedTitle.includes("oversized") || normalizedContext.includes("oversized")) return "Oversized";
+  if (
+    normalizedTitle.includes("peruana") ||
+    normalizedTitle.includes("algodao peruano") ||
+    normalizedContext.includes("peruana") ||
+    normalizedContext.includes("algodao peruano")
+  ) return "Camiseta Peruana";
+  if (normalizedTitle.includes("body infantil") || hasWord(normalizedTitle, "body")) return "Body";
+  if (hasWord(normalizedTitle, "regata")) return "Regata";
+  if (hasWord(normalizedTitle, "cropped")) return "Cropped";
+  if (
+    hasWord(normalizedTitle, "camiseta") ||
+    hasWord(normalizedTitle, "masculino") ||
+    hasWord(normalizedTitle, "feminino") ||
+    hasWord(normalizedTitle, "unissex")
+  ) {
+    return "Camiseta";
+  }
+  if (normalizedContext.includes("body infantil") || hasWord(normalizedContext, "body")) return "Body";
+  if (hasWord(normalizedContext, "regata")) return "Regata";
+  if (hasWord(normalizedContext, "cropped")) return "Cropped";
+  if (hasWord(normalizedContext, "infantil") || hasWord(normalizedContext, "mini")) return "Mini";
+  if (
+    hasWord(normalizedContext, "camiseta") ||
+    hasWord(normalizedContext, "masculino") ||
+    hasWord(normalizedContext, "feminino") ||
+    hasWord(normalizedContext, "unissex")
   ) {
     return "Camiseta";
   }

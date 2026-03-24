@@ -166,18 +166,34 @@ export function toIsoDate(value: string | undefined) {
 }
 
 function parseFeed(records: CsvRecord[]): CatalogProduct[] {
+  const parseList = (value: string | undefined) =>
+    (value ?? "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
   return records.map((record) => ({
     id: record.id,
     title: record.title,
     description: record.description,
     imageUrl: record.image_link,
+    additionalImageUrls: parseList(record.additional_image_link),
     link: record.link,
     price: parseCurrencyLike(record.price),
     salePrice: record.sale_price ? parseCurrencyLike(record.sale_price) : null,
+    availability: record.availability,
+    condition: record.condition,
+    mpn: record.mpn,
+    googleProductCategory: record.google_product_category,
+    fbProductCategory: record.fb_product_category,
     brand: record.brand,
+    productType: record.custom_label_0,
+    collections: parseList(record.custom_label_1),
+    keywords: parseList(record.custom_label_2),
     color: record.color,
     gender: record.gender,
     material: record.material,
+    ageGroup: record.age_group,
     size: record.size,
   }));
 }

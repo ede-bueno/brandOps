@@ -49,13 +49,23 @@ export interface CatalogProduct {
   title: string;
   description?: string;
   imageUrl?: string;
+  additionalImageUrls?: string[];
   link?: string;
   price: number;
   salePrice: number | null;
+  availability?: string;
+  condition?: string;
+  mpn?: string;
+  googleProductCategory?: string;
+  fbProductCategory?: string;
   brand?: string;
+  productType?: string;
+  collections?: string[];
+  keywords?: string[];
   color?: string;
   gender?: string;
   material?: string;
+  ageGroup?: string;
   size?: string;
 }
 

@@ -39,6 +39,9 @@ const OFFICIAL_CMV_FROM_MARCH = [
   ["Oversized", 75],
   ["Regata", 46],
   ["Cropped", 44],
+  ["Cropped moletom", 69],
+  ["Suéter moletom", 90],
+  ["Hoodie moletom", 110],
   ["Bone Dad Hat", 46],
 ] as const;
 
@@ -342,7 +345,7 @@ export default function CmvPage() {
         <div className="border-b border-outline p-5">
           <SectionHeading
             title="Produtos vendidos por categoria"
-            description="Auditoria rápida para conferir quais estampas e peças entram em cada tipo."
+            description="Auditoria rápida da base completa para conferir quais estampas e peças entram em cada tipo."
           />
         </div>
         <div className="grid gap-4 p-5 xl:grid-cols-2">
