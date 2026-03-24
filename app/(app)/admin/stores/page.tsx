@@ -137,7 +137,12 @@ export default function AdminStoresPage() {
   const [selectedBrandId, setSelectedBrandId] = useState("");
   const [selectedForm, setSelectedForm] = useState<BrandFormState>(emptyBrandForm);
   const [createForm, setCreateForm] = useState<BrandFormState>(emptyBrandForm);
-  const [inviteForm, setInviteForm] = useState({ email: "", fullName: "" });
+  const [inviteForm, setInviteForm] = useState({ email: "", fullName: "", password: "" });
+  const [lastProvisionedAccess, setLastProvisionedAccess] = useState<{
+    email: string;
+    password: string;
+    alreadyExisted: boolean;
+  } | null>(null);
   const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(true);
@@ -320,7 +325,7 @@ export default function AdminStoresPage() {
               <div className="border-b border-outline bg-surface-container/20 px-5 py-4 sm:px-6">
                 <SectionHeading
                   title="Cadastrar nova loja"
-                  description="Preencha os dados principais da marca para liberar a operação e o envio de acessos."
+                  description="Preencha os dados principais da marca para liberar a operação e o cadastro de acessos."
                 />
               </div>
               <div className="px-5 py-5 sm:px-6">
@@ -482,9 +487,31 @@ export default function AdminStoresPage() {
                   <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
                     <div className="space-y-4">
                       <SectionHeading
-                        title="Enviar acesso"
-                        description="Convide um responsável. O acesso sempre fica isolado apenas nesta marca."
+                        title="Criar acesso"
+                        description="Cadastre um responsável com senha definida. O acesso fica isolado apenas nesta marca."
                       />
+                      {lastProvisionedAccess ? (
+                        <div className="rounded-xl border border-secondary/25 bg-secondary/6 p-4">
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-secondary">
+                            Credencial pronta
+                          </p>
+                          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                            <div className="rounded-lg border border-outline bg-background px-3 py-2.5">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">Email</p>
+                              <p className="mt-1 text-sm font-semibold text-on-surface">{lastProvisionedAccess.email}</p>
+                            </div>
+                            <div className="rounded-lg border border-outline bg-background px-3 py-2.5">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">Senha inicial</p>
+                              <p className="mt-1 text-sm font-semibold text-on-surface">{lastProvisionedAccess.password}</p>
+                            </div>
+                          </div>
+                          <p className="mt-3 text-xs text-on-surface-variant">
+                            {lastProvisionedAccess.alreadyExisted
+                              ? "O usuário já existia e a senha foi redefinida."
+                              : "O usuário foi criado e já pode entrar com essa senha."}
+                          </p>
+                        </div>
+                      ) : null}
                       <div className="space-y-3 rounded-xl border border-outline bg-surface-container/20 p-4">
                         <input
                           value={inviteForm.fullName}
@@ -498,8 +525,14 @@ export default function AdminStoresPage() {
                           placeholder="Email corporativo..."
                           className="w-full rounded-lg border border-outline bg-background px-3 py-2.5 text-sm text-on-surface outline-none transition focus:border-secondary/60 focus:bg-surface-container/50"
                         />
+                        <input
+                          value={inviteForm.password}
+                          onChange={(event) => setInviteForm((current) => ({ ...current, password: event.target.value }))}
+                          placeholder="Senha inicial (opcional)"
+                          className="w-full rounded-lg border border-outline bg-background px-3 py-2.5 text-sm text-on-surface outline-none transition focus:border-secondary/60 focus:bg-surface-container/50"
+                        />
                         <div className="rounded-lg border border-outline bg-background px-3 py-2.5 text-sm text-on-surface-variant">
-                          Perfil enviado: <span className="font-semibold text-on-surface">acesso da marca</span>
+                          Perfil criado: <span className="font-semibold text-on-surface">acesso da marca</span>
                         </div>
                         <button
                           type="button"
@@ -508,6 +541,7 @@ export default function AdminStoresPage() {
                             if (!session?.access_token || !selectedBrandId) return;
                             setSending(true);
                             setNotice(null);
+                            setLastProvisionedAccess(null);
                             try {
                               const response = await fetch("/api/admin/invitations", {
                                 method: "POST",
@@ -518,14 +552,19 @@ export default function AdminStoresPage() {
                                 body: JSON.stringify({ ...inviteForm, brandId: selectedBrandId }),
                               });
                               const payload = await response.json();
-                              if (!response.ok) throw new Error(payload.error ?? "Falha ao enviar convite.");
-                              setNotice({ kind: "success", text: `Convite enviado para ${payload.invited.email}.` });
-                              setInviteForm({ email: "", fullName: "" });
+                              if (!response.ok) throw new Error(payload.error ?? "Falha ao criar acesso.");
+                              setNotice({ kind: "success", text: `Acesso liberado para ${payload.invited.email}.` });
+                              setLastProvisionedAccess({
+                                email: payload.invited.email,
+                                password: payload.invited.password,
+                                alreadyExisted: Boolean(payload.invited.alreadyExisted),
+                              });
+                              setInviteForm({ email: "", fullName: "", password: "" });
                               await loadBrands(selectedBrandId);
                             } catch (error) {
                               setNotice({
                                 kind: "error",
-                                text: error instanceof Error ? error.message : "Falha ao enviar convite.",
+                                text: error instanceof Error ? error.message : "Falha ao criar acesso.",
                               });
                             } finally {
                               setSending(false);
@@ -534,7 +573,7 @@ export default function AdminStoresPage() {
                           className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold tracking-wide text-on-secondary transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <MailPlus size={16} />
-                          {sending ? "Enviando..." : "Enviar convite"}
+                          {sending ? "Criando acesso..." : "Criar acesso"}
                         </button>
                       </div>
                     </div>

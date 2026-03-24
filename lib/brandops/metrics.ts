@@ -55,6 +55,14 @@ function normalizeText(value?: string | null) {
     .replace(/\s+/g, " ");
 }
 
+function toTitleCase(value: string) {
+  return value
+    .split(" ")
+    .filter(Boolean)
+    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
+    .join(" ");
+}
+
 function hasWord(haystack: string, needle: string) {
   const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`(^|[^a-z])${escaped}([^a-z]|$)`).test(haystack);
@@ -198,6 +206,70 @@ export function detectProductType(title?: string | null, context?: string | null
   }
 
   return null;
+}
+
+export function extractPrintName(title?: string | null, context?: string | null) {
+  const originalTitle = (title ?? "").trim();
+  if (!originalTitle) {
+    return "Sem estampa identificada";
+  }
+
+  const normalizedTitle = normalizeText(originalTitle);
+  const productType = detectProductType(title, context);
+
+  const replacementsByType: Partial<Record<NonNullable<ReturnType<typeof detectProductType>>, string[]>> = {
+    "Camiseta Peruana": [
+      "camiseta algodao peruano ",
+      "camiseta peruana ",
+      "camiseta algadao peruano ",
+    ],
+    Camiseta: [
+      "camiseta ",
+    ],
+    Cropped: [
+      "cropped ",
+    ],
+    Regata: [
+      "regata ",
+    ],
+    Body: [
+      "body infantil ",
+      "body ",
+    ],
+    Mini: [
+      "mini ",
+      "infantil ",
+    ],
+    Oversized: [
+      "oversized ",
+    ],
+    "Cropped moletom": [
+      "cropped moletom ",
+    ],
+    "Suéter moletom": [
+      "sueter moletom ",
+      "sueter ",
+    ],
+    "Hoodie moletom": [
+      "hoodie moletom ",
+      "hoodie ",
+    ],
+    "Bone Dad Hat": [
+      "bone dad hat ",
+      "bone ",
+      "dad hat ",
+    ],
+  };
+
+  const candidates = productType ? replacementsByType[productType] ?? [] : [];
+  for (const prefix of candidates) {
+    if (normalizedTitle.startsWith(prefix)) {
+      const cleaned = normalizedTitle.slice(prefix.length).trim();
+      return cleaned ? toTitleCase(cleaned) : originalTitle;
+    }
+  }
+
+  return originalTitle;
 }
 
 function getLatestDatasetDate(brand: BrandDataset) {
@@ -947,6 +1019,60 @@ export function buildCmvCandidates(brand: BrandDataset) {
       ...product,
       revenue: round(product.revenue),
     }));
+}
+
+export function buildCmvStampGroups(brand: BrandDataset) {
+  const byGroup = new Map<
+    string,
+    {
+      typeLabel: string;
+      products: Map<
+        string,
+        {
+          printName: string;
+          quantity: number;
+          revenue: number;
+        }
+      >;
+    }
+  >();
+
+  getActiveOrderItems(brand).forEach((item) => {
+    const typeLabel =
+      item.productType ??
+      detectProductType(item.productName, `${item.productSpecs ?? ""} ${item.sku ?? ""}`) ??
+      "Sem tipo detectado";
+    const typeKey = normalizeText(typeLabel);
+    const printName = extractPrintName(item.productName, `${item.productSpecs ?? ""} ${item.sku ?? ""}`);
+    const printKey = normalizeText(printName);
+
+    const currentGroup = byGroup.get(typeKey) ?? {
+      typeLabel,
+      products: new Map(),
+    };
+    const currentPrint = currentGroup.products.get(printKey) ?? {
+      printName,
+      quantity: 0,
+      revenue: 0,
+    };
+
+    currentPrint.quantity += item.quantity;
+    currentPrint.revenue += item.grossValue;
+    currentGroup.products.set(printKey, currentPrint);
+    byGroup.set(typeKey, currentGroup);
+  });
+
+  return [...byGroup.values()]
+    .map((group) => ({
+      typeLabel: group.typeLabel,
+      products: [...group.products.values()]
+        .map((product) => ({
+          ...product,
+          revenue: round(product.revenue),
+        }))
+        .sort((left, right) => right.quantity - left.quantity || right.revenue - left.revenue || left.printName.localeCompare(right.printName)),
+    }))
+    .sort((left, right) => left.typeLabel.localeCompare(right.typeLabel));
 }
 
 export function buildCmvTypeCandidates(brand: BrandDataset) {

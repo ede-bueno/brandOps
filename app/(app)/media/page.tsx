@@ -14,7 +14,12 @@ import { EmptyState } from "@/components/EmptyState";
 import { MetricCard } from "@/components/MetricCard";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
-import { currencyFormatter, formatCompactDate, integerFormatter } from "@/lib/brandops/format";
+import {
+  currencyFormatter,
+  formatCompactDate,
+  integerFormatter,
+  percentFormatter,
+} from "@/lib/brandops/format";
 import {
   buildCampaignPerformance,
   buildDailyMediaSeries,
@@ -41,7 +46,13 @@ export default function MediaPage() {
   const totalPurchases = activeMedia.reduce((sum, row) => sum + row.purchases, 0);
   const totalClicks = activeMedia.reduce((sum, row) => sum + (row.linkClicks || row.clicksAll), 0);
   const attributedRevenue = activeMedia.reduce((sum, row) => sum + row.purchaseValue, 0);
+  const totalReach = activeMedia.reduce((sum, row) => sum + row.reach, 0);
+  const totalImpressions = activeMedia.reduce((sum, row) => sum + row.impressions, 0);
   const attributedRoas = metrics.mediaSpend ? attributedRevenue / metrics.mediaSpend : 0;
+  const ctrLink = totalImpressions ? totalClicks / totalImpressions : 0;
+  const cpc = totalClicks ? metrics.mediaSpend / totalClicks : 0;
+  const cpm = totalImpressions ? (metrics.mediaSpend / totalImpressions) * 1000 : 0;
+  const cpa = totalPurchases ? metrics.mediaSpend / totalPurchases : 0;
 
   return (
     <div className="space-y-6">
@@ -58,15 +69,64 @@ export default function MediaPage() {
       />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <MetricCard label="Investimento" value={currencyFormatter.format(metrics.mediaSpend)} />
+        <MetricCard
+          label="Investimento"
+          value={currencyFormatter.format(metrics.mediaSpend)}
+          help="Gasto ativo da Meta no período saneado."
+        />
         <MetricCard
           label="Receita atribuída"
           value={currencyFormatter.format(attributedRevenue)}
           accent="positive"
+          help="Valor de conversão da compra exportado pela Meta."
         />
-        <MetricCard label="Compras Meta" value={integerFormatter.format(totalPurchases)} />
-        <MetricCard label="Cliques" value={integerFormatter.format(totalClicks)} />
-        <MetricCard label="ROAS atribuído" value={`${attributedRoas.toFixed(2)}x`} />
+        <MetricCard
+          label="Compras Meta"
+          value={integerFormatter.format(totalPurchases)}
+          help="Volume de compras atribuídas pela plataforma."
+        />
+        <MetricCard
+          label="Cliques no link"
+          value={integerFormatter.format(totalClicks)}
+          help="Base usada para CTR e CPC."
+        />
+        <MetricCard
+          label="ROAS atribuído"
+          value={`${attributedRoas.toFixed(2)}x`}
+          help="Receita atribuída dividida pelo investimento."
+          accent={attributedRoas >= 1 ? "positive" : "warning"}
+        />
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <MetricCard
+          label="Alcance"
+          value={integerFormatter.format(totalReach)}
+          help="Pessoas alcançadas no período."
+        />
+        <MetricCard
+          label="Impressões"
+          value={integerFormatter.format(totalImpressions)}
+          help="Entrega bruta registrada pela Meta."
+        />
+        <MetricCard
+          label="CTR link"
+          value={percentFormatter.format(ctrLink)}
+          help="Cliques no link divididos por impressões."
+          accent={ctrLink >= 0.02 ? "positive" : "default"}
+        />
+        <MetricCard
+          label="CPC"
+          value={currencyFormatter.format(cpc)}
+          help="Investimento dividido por cliques no link."
+          accent={cpc <= 1.5 && cpc > 0 ? "positive" : "default"}
+        />
+        <MetricCard
+          label="CPM"
+          value={currencyFormatter.format(cpm)}
+          help="Investimento por mil impressões."
+          accent={cpm <= 30 && cpm > 0 ? "positive" : "default"}
+        />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
@@ -112,41 +172,89 @@ export default function MediaPage() {
           <div className="border-b border-outline p-5">
             <SectionHeading
               title="Campanhas"
-              description="Ranking por gasto, receita atribuída e volume de compras."
+              description="Ranking por gasto, resultado atribuído e eficiência operacional."
             />
           </div>
           <div className="brandops-table-container rounded-none border-0">
-            <table className="brandops-table-compact min-w-[760px] w-full">
+            <table className="brandops-table-compact min-w-[1080px] w-full">
               <thead>
                 <tr>
                   <th>Campanha</th>
                   <th className="text-right">Investimento</th>
+                  <th className="text-right">Cliques</th>
+                  <th className="text-right">CTR</th>
+                  <th className="text-right">CPC</th>
                   <th className="text-right">Compras</th>
+                  <th className="text-right">CPA</th>
                   <th className="text-right">Receita</th>
                   <th className="text-right">ROAS</th>
                 </tr>
               </thead>
               <tbody>
-                {campaigns.map((campaign) => (
-                  <tr key={campaign.campaignName}>
-                    <td className="max-w-[360px] truncate font-semibold text-on-surface">
-                      {campaign.campaignName}
-                    </td>
-                    <td className="text-right">{currencyFormatter.format(campaign.spend)}</td>
-                    <td className="text-right">{integerFormatter.format(campaign.purchases)}</td>
-                    <td className="text-right">
-                      {currencyFormatter.format(campaign.purchaseValue)}
-                    </td>
-                    <td className="text-right font-semibold text-on-surface">
-                      {campaign.roas.toFixed(2)}x
-                    </td>
-                  </tr>
-                ))}
+                {campaigns.map((campaign) => {
+                  const campaignCtr = campaign.impressions ? campaign.clicks / campaign.impressions : 0;
+                  const campaignCpc = campaign.clicks ? campaign.spend / campaign.clicks : 0;
+                  const campaignCpa = campaign.purchases ? campaign.spend / campaign.purchases : 0;
+
+                  return (
+                    <tr key={campaign.campaignName}>
+                      <td className="max-w-[320px] truncate font-semibold text-on-surface">
+                        {campaign.campaignName}
+                      </td>
+                      <td className="text-right">{currencyFormatter.format(campaign.spend)}</td>
+                      <td className="text-right">{integerFormatter.format(campaign.clicks)}</td>
+                      <td className="text-right">{percentFormatter.format(campaignCtr)}</td>
+                      <td className="text-right">{currencyFormatter.format(campaignCpc)}</td>
+                      <td className="text-right">{integerFormatter.format(campaign.purchases)}</td>
+                      <td className="text-right">
+                        {campaign.purchases ? currencyFormatter.format(campaignCpa) : "-"}
+                      </td>
+                      <td className="text-right">
+                        {currencyFormatter.format(campaign.purchaseValue)}
+                      </td>
+                      <td className="text-right font-semibold text-on-surface">
+                        {campaign.roas.toFixed(2)}x
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </SurfaceCard>
       </section>
+
+      <SurfaceCard>
+        <SectionHeading
+          title="Leitura rápida de eficiência"
+          description="Indicadores auxiliares para entender qualidade do tráfego e custo de aquisição no período."
+        />
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <div className="panel-muted p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">CPC atual</p>
+            <p className="mt-2 text-xl font-semibold text-on-surface">{currencyFormatter.format(cpc)}</p>
+            <p className="mt-2 text-xs text-on-surface-variant">
+              Quanto você paga, em média, por clique no link.
+            </p>
+          </div>
+          <div className="panel-muted p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">CTR link</p>
+            <p className="mt-2 text-xl font-semibold text-on-surface">{percentFormatter.format(ctrLink)}</p>
+            <p className="mt-2 text-xs text-on-surface-variant">
+              Sinal de aderência do anúncio com a audiência entregue.
+            </p>
+          </div>
+          <div className="panel-muted p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">CPA meta</p>
+            <p className="mt-2 text-xl font-semibold text-on-surface">
+              {totalPurchases ? currencyFormatter.format(cpa) : "-"}
+            </p>
+            <p className="mt-2 text-xs text-on-surface-variant">
+              Investimento dividido pelas compras atribuídas pela Meta.
+            </p>
+          </div>
+        </div>
+      </SurfaceCard>
     </div>
   );
 }

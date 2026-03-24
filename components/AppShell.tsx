@@ -165,8 +165,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="skeleton h-8 w-8 rounded-full" />
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-outline bg-surface px-7 py-6 shadow-sm">
+          <div className="brandops-loader" aria-hidden="true" />
+          <div className="text-center">
+            <p className="text-sm font-semibold text-on-surface">Carregando workspace</p>
+            <p className="mt-1 text-xs text-on-surface-variant">Preparando dados da marca e permissões de acesso.</p>
+          </div>
         </div>
       </div>
     );

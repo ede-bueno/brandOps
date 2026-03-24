@@ -140,7 +140,7 @@ export function BrandOpsProvider({
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
-      setIsLoading(Boolean(nextSession));
+      setIsLoading(false);
     });
 
     return () => {
@@ -157,6 +157,7 @@ export function BrandOpsProvider({
         setActiveBrandId(null);
         setActiveBrand(null);
         setErrorMessage(null);
+        setIsLoading(false);
         return;
       }
 
@@ -230,6 +231,7 @@ export function BrandOpsProvider({
     async function loadBrand() {
       if (!userId || !activeBrandId) {
         setActiveBrand(null);
+        setIsLoading(false);
         return;
       }
 
@@ -251,6 +253,39 @@ export function BrandOpsProvider({
     }
 
     void loadBrand();
+  }, [activeBrandId, userId]);
+
+  useEffect(() => {
+    if (typeof document === "undefined" || !userId || !activeBrandId) {
+      return;
+    }
+
+    const reloadVisibleBrand = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void fetchBrandDataset(activeBrandId)
+        .then((dataset) => {
+          setActiveBrand(dataset);
+          setErrorMessage(null);
+        })
+        .catch((error) => {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : "Não foi possível atualizar os dados da marca.",
+          );
+        });
+    };
+
+    document.addEventListener("visibilitychange", reloadVisibleBrand);
+    window.addEventListener("focus", reloadVisibleBrand);
+
+    return () => {
+      document.removeEventListener("visibilitychange", reloadVisibleBrand);
+      window.removeEventListener("focus", reloadVisibleBrand);
+    };
   }, [activeBrandId, userId]);
 
   const value = useMemo<BrandOpsContextValue>(

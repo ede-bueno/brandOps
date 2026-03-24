@@ -1,5 +1,43 @@
+import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/brandops/admin";
+
+const brandAccessRole = "BRAND_OWNER";
+
+function buildTemporaryPassword() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+  const source = randomBytes(12);
+  return Array.from(source, (value) => alphabet[value % alphabet.length]).join("");
+}
+
+async function findAuthUserByEmail(
+  supabase: Awaited<ReturnType<typeof requireSuperAdmin>>["supabase"],
+  email: string,
+) {
+  let page = 1;
+
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: 200,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    const user = data.users.find((item) => item.email?.toLowerCase() === email);
+    if (user) {
+      return user;
+    }
+
+    if (data.users.length < 200) {
+      return null;
+    }
+
+    page += 1;
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -9,14 +47,15 @@ export async function POST(request: Request) {
     const email = String(body.email ?? "").trim().toLowerCase();
     const fullName = String(body.fullName ?? "").trim();
     const brandId = String(body.brandId ?? "").trim();
-    const inviteRole = "BRAND_OWNER";
+    const providedPassword = String(body.password ?? "").trim();
+    const password = providedPassword || buildTemporaryPassword();
 
     if (!email) {
       throw new Error("Email é obrigatório.");
     }
 
     if (!brandId) {
-      throw new Error("Selecione a loja para o convite.");
+      throw new Error("Selecione a loja para criar o acesso.");
     }
 
     const { data: existingProfile } = await supabase
@@ -25,74 +64,67 @@ export async function POST(request: Request) {
       .eq("email", email)
       .maybeSingle();
 
-    if (existingProfile?.id) {
-      const { error: profileError } = await supabase.from("user_profiles").update({
-        full_name: fullName || email,
-        role: existingProfile.role === "SUPER_ADMIN" ? "SUPER_ADMIN" : inviteRole,
-      }).eq("id", existingProfile.id);
+    const authUser =
+      existingProfile?.id
+        ? { id: existingProfile.id }
+        : await findAuthUserByEmail(supabase, email);
 
-      if (profileError) {
-        throw profileError;
-      }
+    let userId = existingProfile?.id ?? authUser?.id ?? null;
+    const role = existingProfile?.role === "SUPER_ADMIN" ? "SUPER_ADMIN" : brandAccessRole;
 
-      const { error: membershipError } = await supabase.from("brand_members").upsert({
-        brand_id: brandId,
-        user_id: existingProfile.id,
-      }, {
-        onConflict: "brand_id,user_id",
-      });
-
-      if (membershipError) {
-        throw membershipError;
-      }
-
-      return NextResponse.json({
-        invited: {
-          id: existingProfile.id,
-          email,
-          role: existingProfile.role === "SUPER_ADMIN" ? "SUPER_ADMIN" : inviteRole,
-          alreadyExisted: true,
-        },
-      });
-    }
-
-    const origin = new URL(request.url).origin;
-    const { data: invitation, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
-      email,
-      {
-        data: {
+    if (userId) {
+      const { error: authUpdateError } = await supabase.auth.admin.updateUserById(userId, {
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
           full_name: fullName || email,
         },
-        redirectTo: `${origin}/login`,
-      },
-    );
+      });
 
-    if (inviteError) {
-      throw inviteError;
-    }
+      if (authUpdateError) {
+        throw authUpdateError;
+      }
+    } else {
+      const { data: createdUser, error: createUserError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: fullName || email,
+        },
+      });
 
-    const invitedUserId = invitation.user?.id;
-    if (!invitedUserId) {
-      throw new Error("Convite criado sem usuário retornado pela Supabase.");
+      if (createUserError) {
+        throw createUserError;
+      }
+
+      userId = createdUser.user?.id ?? null;
+      if (!userId) {
+        throw new Error("Usuário criado sem ID retornado pela Supabase.");
+      }
     }
 
     const { error: profileError } = await supabase.from("user_profiles").upsert({
-      id: invitedUserId,
+      id: userId,
       email,
       full_name: fullName || email,
-      role: inviteRole,
+      role,
     });
 
     if (profileError) {
       throw profileError;
     }
 
-    const { error: membershipError } = await supabase.from("brand_members").upsert({
-      brand_id: brandId,
-      user_id: invitedUserId,
-    }, {
-      onConflict: "brand_id,user_id",
-    });
+    const { error: membershipError } = await supabase.from("brand_members").upsert(
+      {
+        brand_id: brandId,
+        user_id: userId,
+      },
+      {
+        onConflict: "brand_id,user_id",
+      },
+    );
 
     if (membershipError) {
       throw membershipError;
@@ -100,9 +132,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       invited: {
-        id: invitedUserId,
+        id: userId,
         email,
-        role: inviteRole,
+        role,
+        alreadyExisted: Boolean(existingProfile?.id || authUser?.id),
+        password,
       },
     });
   } catch (error) {
@@ -113,7 +147,7 @@ export async function POST(request: Request) {
             ? error.message
             : typeof error === "object" && error && "message" in error
               ? String(error.message)
-              : "Falha ao enviar convite.",
+              : "Falha ao criar acesso.",
       },
       { status: 400 },
     );

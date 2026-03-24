@@ -14,6 +14,7 @@ import {
 import {
   buildCmvCandidates,
   buildCmvOrderDetails,
+  buildCmvStampGroups,
   buildCmvTypeCandidates,
 } from "@/lib/brandops/metrics";
 
@@ -93,30 +94,10 @@ export default function CmvPage() {
       .sort((left, right) => right.validFrom.localeCompare(left.validFrom));
   }, [activeBrand, selectedType]);
 
-  const productsByType = useMemo(() => {
-    const groups = new Map<
-      string,
-      Array<{ productName: string; quantity: number; revenue: number }>
-    >();
-
-    soldProducts.forEach((product) => {
-      const key = product.productType ?? "Sem tipo detectado";
-      const current = groups.get(key) ?? [];
-      current.push({
-        productName: product.productName,
-        quantity: product.quantity,
-        revenue: product.revenue,
-      });
-      groups.set(key, current);
-    });
-
-    return [...groups.entries()]
-      .map(([typeLabel, products]) => ({
-        typeLabel,
-        products: products.sort((a, b) => b.quantity - a.quantity),
-      }))
-      .sort((a, b) => a.typeLabel.localeCompare(b.typeLabel));
-  }, [soldProducts]);
+  const productsByType = useMemo(
+    () => (activeBrand ? buildCmvStampGroups(activeBrand) : []),
+    [activeBrand],
+  );
 
   if (!activeBrand || !activeBrand.orderItems.length) {
     return (
@@ -371,11 +352,11 @@ export default function CmvPage() {
               <div className="mt-3 space-y-2">
                 {group.products.slice(0, 5).map((product) => (
                   <div
-                    key={`${group.typeLabel}-${product.productName}`}
+                    key={`${group.typeLabel}-${product.printName}`}
                     className="flex items-start justify-between gap-4 text-sm"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-on-surface">{product.productName}</p>
+                      <p className="truncate text-on-surface">{product.printName}</p>
                       <p className="text-xs text-on-surface-variant">
                         {integerFormatter.format(product.quantity)} peças
                       </p>
