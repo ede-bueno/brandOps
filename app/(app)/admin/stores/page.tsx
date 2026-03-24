@@ -417,34 +417,24 @@ export default function AdminStoresPage() {
                 </div>
               </div>
 
-              <div className="flex overflow-x-auto border-b border-outline bg-surface-container/10 px-5 pt-1.5 sm:px-6">
+              <div className="border-b border-outline bg-surface-container/10 px-5 py-3 sm:px-6">
+                <div className="brandops-tabs overflow-x-auto">
                 <button
                   onClick={() => setActiveTab("general")}
-                  className={`relative px-3 py-3 text-sm font-semibold transition-colors ${
-                    activeTab === "general"
-                      ? "text-secondary"
-                      : "text-on-surface-variant hover:text-on-surface"
-                  }`}
+                  data-active={activeTab === "general"}
+                  className="brandops-tab"
                 >
                   Configurações
-                  {activeTab === "general" && (
-                     <div className="absolute bottom-0 left-0 h-[2px] w-full rounded-t-full bg-secondary" />
-                  )}
                 </button>
                 <button
                   onClick={() => setActiveTab("team")}
-                  className={`relative flex items-center gap-2 px-3 py-3 text-sm font-semibold transition-colors ${
-                    activeTab === "team"
-                      ? "text-secondary"
-                      : "text-on-surface-variant hover:text-on-surface"
-                  }`}
+                  data-active={activeTab === "team"}
+                  className="brandops-tab"
                 >
                   Membros do Time
                   <span className="rounded-full bg-surface-container-high px-2 py-0.5 text-[10px]">{selectedMemberCount}</span>
-                  {activeTab === "team" && (
-                     <div className="absolute bottom-0 left-0 h-[2px] w-full rounded-t-full bg-secondary" />
-                  )}
                 </button>
+                </div>
               </div>
 
               <div className="px-5 py-5 sm:px-6">

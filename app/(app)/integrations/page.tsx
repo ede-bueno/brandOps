@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   CheckCircle2,
-  KeyRound,
   Link2,
   Loader2,
   Radar,
@@ -156,6 +155,7 @@ export default function IntegrationsPage() {
   const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [syncingGa4, setSyncingGa4] = useState(false);
+  const [activeProvider, setActiveProvider] = useState<IntegrationProvider>("ink");
 
   useEffect(() => {
     setFormState(toFormState(activeBrand?.integrations ?? []));
@@ -190,6 +190,33 @@ export default function IntegrationsPage() {
       />
     );
   }
+
+  const current = integrationsMap.get(activeProvider);
+  const currentState = formState[activeProvider];
+  const options = getModeOptions(activeProvider);
+  const providerContextCard = {
+    ink: {
+      title: "Origem comercial manual",
+      body: `A loja ${activeBrand.name} continua usando importação manual da INK, porque a plataforma não oferece API operacional.`,
+      cta: null,
+    },
+    meta: {
+      title: "Fallback e contingência",
+      body:
+        currentState.mode === "api"
+          ? `A ${activeBrand.name} está preparada para operar Meta por API${currentState.manualFallback ? " com contingência manual" : ""}.`
+          : `A ${activeBrand.name} segue em fluxo manual da Meta, com possibilidade de migração futura para API.`,
+      cta: null,
+    },
+    ga4: {
+      title: "Propriedade configurada",
+      body:
+        currentState.propertyId
+          ? `A propriedade ${currentState.propertyId} está associada à marca ${activeBrand.name}.`
+          : `A marca ${activeBrand.name} ainda não possui Property ID informado para o GA4.`,
+      cta: currentState.propertyId ? "/traffic" : null,
+    },
+  }[activeProvider];
 
   const handleSave = async () => {
     if (!session?.access_token) {
@@ -325,35 +352,84 @@ export default function IntegrationsPage() {
         </div>
       ) : null}
 
-      <section className="grid gap-4 xl:grid-cols-3">
+      <section className="grid gap-4 lg:grid-cols-3">
         {(["ink", "meta", "ga4"] as const).map((provider) => {
-          const current = integrationsMap.get(provider);
-          const currentState = formState[provider];
-              const options = getModeOptions(provider);
+          const integration = integrationsMap.get(provider);
+          const isActive = activeProvider === provider;
 
-              return (
-                <SurfaceCard key={provider}>
-                  <p className="eyebrow mb-2">{providerEyebrows[provider]}</p>
-                  <SectionHeading
-                    title={providerLabels[provider]}
-                    description={providerDescriptions[provider]}
-                  />
+          return (
+            <button
+              key={provider}
+              type="button"
+              onClick={() => setActiveProvider(provider)}
+              className={`brandops-panel p-4 text-left transition-colors ${
+                isActive ? "border-secondary/40 bg-secondary/5" : "hover:border-secondary/25"
+              }`}
+            >
+              <p className="eyebrow mb-2">{providerEyebrows[provider]}</p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-semibold text-on-surface">{providerLabels[provider]}</h3>
+                  <p className="mt-1 text-xs text-on-surface-variant">
+                    {integration?.mode === "api"
+                      ? "API ativa"
+                      : integration?.mode === "disabled"
+                        ? "Integração desligada"
+                        : "Operação manual"}
+                  </p>
+                </div>
+                <span className="status-chip">{integration?.lastSyncStatus ?? "idle"}</span>
+              </div>
+              <p className="mt-4 text-xs text-on-surface-variant">
+                Última sync: {formatSyncLabel(integration)}
+              </p>
+            </button>
+          );
+        })}
+      </section>
 
-              <div className="mt-5 space-y-4">
-                <label className="space-y-2 text-sm">
+      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <SurfaceCard>
+          <div className="flex flex-col gap-4 border-b border-outline pb-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="eyebrow mb-2">{providerEyebrows[activeProvider]}</p>
+              <h2 className="text-xl font-semibold text-on-surface">{providerLabels[activeProvider]}</h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-on-surface-variant">
+                {providerDescriptions[activeProvider]}
+              </p>
+            </div>
+            <div className="brandops-tabs overflow-x-auto">
+              {(["ink", "meta", "ga4"] as const).map((provider) => (
+                <button
+                  key={provider}
+                  type="button"
+                  data-active={activeProvider === provider}
+                  onClick={() => setActiveProvider(provider)}
+                  className="brandops-tab"
+                >
+                  {providerLabels[provider]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-5">
+            <div className="rounded-3xl border border-outline bg-surface-container-low p-4 sm:p-5">
+              <div className="grid gap-4 lg:grid-cols-2">
+                <label className="space-y-2 text-sm lg:col-span-2">
                   <span className="font-medium text-on-surface">Origem principal</span>
                   <select
                     value={currentState.mode}
                     onChange={(event) =>
                       setFormState((previous) => ({
                         ...previous,
-                        [provider]: {
-                          ...previous[provider],
+                        [activeProvider]: {
+                          ...previous[activeProvider],
                           mode: event.target.value as IntegrationMode,
                         },
                       }))
                     }
-                    className="brandops-input"
+                    className="brandops-input w-full px-3 py-2.5"
                   >
                     {options.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -363,7 +439,7 @@ export default function IntegrationsPage() {
                   </select>
                 </label>
 
-                {provider === "meta" ? (
+                {activeProvider === "meta" ? (
                   <>
                     <label className="space-y-2 text-sm">
                       <span className="font-medium text-on-surface">ID da conta de anúncios</span>
@@ -378,7 +454,7 @@ export default function IntegrationsPage() {
                             },
                           }))
                         }
-                        className="brandops-input"
+                        className="brandops-input w-full px-3 py-2.5"
                         placeholder="act_1234567890"
                       />
                     </label>
@@ -398,10 +474,10 @@ export default function IntegrationsPage() {
                             },
                           }))
                         }
-                        className="brandops-input"
+                        className="brandops-input w-full px-3 py-2.5"
                       />
                     </label>
-                    <label className="flex items-start gap-3 rounded-2xl border border-outline bg-surface-container-low p-4 text-sm text-on-surface-variant">
+                    <label className="flex items-start gap-3 rounded-2xl border border-outline bg-white p-4 text-sm text-on-surface-variant lg:col-span-2">
                       <input
                         type="checkbox"
                         checked={currentState.manualFallback}
@@ -423,7 +499,7 @@ export default function IntegrationsPage() {
                   </>
                 ) : null}
 
-                {provider === "ga4" ? (
+                {activeProvider === "ga4" ? (
                   <>
                     <label className="space-y-2 text-sm">
                       <span className="font-medium text-on-surface">Property ID do GA4</span>
@@ -438,7 +514,7 @@ export default function IntegrationsPage() {
                             },
                           }))
                         }
-                        className="brandops-input"
+                        className="brandops-input w-full px-3 py-2.5"
                         placeholder="506034252"
                       />
                     </label>
@@ -455,80 +531,73 @@ export default function IntegrationsPage() {
                             },
                           }))
                         }
-                        className="brandops-input"
+                        className="brandops-input w-full px-3 py-2.5"
                         placeholder="America/Sao_Paulo"
                       />
                     </label>
-                    <button
-                      type="button"
-                      onClick={handleGa4Sync}
-                      disabled={syncingGa4 || currentState.mode !== "api" || !currentState.propertyId}
-                      className="brandops-button brandops-button-secondary"
-                    >
-                      {syncingGa4 ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin" />
-                          Sincronizando GA4
-                        </>
-                      ) : (
-                        "Sincronizar GA4 agora"
-                      )}
-                    </button>
+                    <div className="flex items-end lg:col-span-2">
+                      <button
+                        type="button"
+                        onClick={handleGa4Sync}
+                        disabled={syncingGa4 || currentState.mode !== "api" || !currentState.propertyId}
+                        className="brandops-button brandops-button-secondary"
+                      >
+                        {syncingGa4 ? (
+                          <>
+                            <Loader2 size={16} className="animate-spin" />
+                            Sincronizando GA4
+                          </>
+                        ) : (
+                          "Sincronizar GA4 agora"
+                        )}
+                      </button>
+                    </div>
                   </>
                 ) : null}
-
-                <div className="rounded-2xl border border-outline bg-surface-container-low p-4 text-sm text-on-surface-variant">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-on-surface">Última sincronização</p>
-                      <p className="mt-1">{formatSyncLabel(current)}</p>
-                    </div>
-                    <span className="status-chip">{current?.lastSyncStatus ?? "idle"}</span>
-                  </div>
-                  {current?.lastSyncError ? (
-                    <p className="mt-3 text-error">{current.lastSyncError}</p>
-                  ) : null}
-                </div>
               </div>
-            </SurfaceCard>
-          );
-        })}
-      </section>
+            </div>
 
-      <section className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
-        <SurfaceCard>
-          <SectionHeading
-            title="Regras de operação"
-            description="O dado consolidado continua indo para o mesmo banco. O que muda é a origem de cada bloco por loja."
-          />
-          <div className="mt-5 space-y-4 text-sm text-on-surface-variant">
-            <div className="flex items-start gap-3">
-              <Link2 size={16} className="mt-1 text-secondary" />
-              <p>
-                `INK` segue manual por CSV, porque a plataforma não oferece API operacional hoje.
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <RefreshCcw size={16} className="mt-1 text-secondary" />
-              <p>
-                `Meta` pode ficar em API e manter o CSV como fallback para contingência e auditoria.
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <Radar size={16} className="mt-1 text-secondary" />
-              <p>
-                `GA4` é configurado por propriedade. Se uma loja não tem GA4, deixe desabilitado.
-              </p>
+            <div className="rounded-2xl border border-outline bg-surface-container-low p-4 text-sm text-on-surface-variant">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-medium text-on-surface">Última sincronização</p>
+                  <p className="mt-1">{formatSyncLabel(current)}</p>
+                </div>
+                <span className="status-chip">{current?.lastSyncStatus ?? "idle"}</span>
+              </div>
+              {current?.lastSyncError ? (
+                <p className="mt-3 text-error">{current.lastSyncError}</p>
+              ) : null}
             </div>
           </div>
         </SurfaceCard>
 
         <SurfaceCard>
           <SectionHeading
-            title="Segurança e próximos passos"
-            description="Segredos e tokens continuam fora do frontend."
+            title="Modelo operacional"
+            description="Resumo visual das regras, fallback e segurança desta área."
           />
           <div className="mt-5 grid gap-3">
+            <article className="panel-muted flex items-start gap-3 p-4">
+              <Link2 size={18} className="mt-0.5 text-secondary" />
+              <div className="text-sm text-on-surface-variant">
+                <p className="font-medium text-on-surface">Fonte por loja</p>
+                <p className="mt-1">
+                  Cada marca pode combinar `INK` manual, `Meta` por API e `GA4` desabilitado sem misturar contextos de origem.
+                </p>
+              </div>
+            </article>
+            {activeProvider === "meta" ? (
+              <article className="panel-muted flex items-start gap-3 p-4">
+                <RefreshCcw size={18} className="mt-0.5 text-secondary" />
+                <div className="text-sm text-on-surface-variant">
+                  <p className="font-medium text-on-surface">Fallback manual</p>
+                  <p className="mt-1">
+                    A integração da Meta pode ficar em API com contingência manual, sem perder auditoria do CSV.
+                  </p>
+                </div>
+              </article>
+            ) : null}
             <article className="panel-muted flex items-start gap-3 p-4">
               <ShieldCheck size={18} className="mt-0.5 text-secondary" />
               <div className="text-sm text-on-surface-variant">
@@ -540,16 +609,15 @@ export default function IntegrationsPage() {
               </div>
             </article>
             <article className="panel-muted flex items-start gap-3 p-4">
-              <KeyRound size={18} className="mt-0.5 text-secondary" />
+              <Radar size={18} className="mt-0.5 text-secondary" />
               <div className="text-sm text-on-surface-variant">
-                <p className="font-medium text-on-surface">OMD já preparada para GA4</p>
-                <p className="mt-1">
-                  A propriedade <span className="font-medium text-on-surface">506034252</span> já
-                  pode ser associada à loja `Oh My Dog` assim que a service account estiver pronta.
-                </p>
-                <Link href="/traffic" className="mt-3 inline-flex text-secondary hover:underline">
-                  Abrir painel de tráfego →
-                </Link>
+                <p className="font-medium text-on-surface">{providerContextCard.title}</p>
+                <p className="mt-1">{providerContextCard.body}</p>
+                {providerContextCard.cta ? (
+                  <Link href={providerContextCard.cta} className="mt-3 inline-flex text-secondary hover:underline">
+                    Abrir painel de tráfego →
+                  </Link>
+                ) : null}
               </div>
             </article>
           </div>
