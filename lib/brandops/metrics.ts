@@ -3,11 +3,13 @@ import type {
   BrandDataset,
   BrandSummaryMetrics,
   CampaignPerformance,
+  CmvOrderDetail,
   DailyMediaPoint,
   DailySalesPoint,
   MediaAnomaly,
   MonthlyDreEntry,
   MonthlyExpenseBreakdown,
+  CustomDateRange,
   PeriodFilter,
   TopProductPerformance,
   WeeklyPerformanceRow,
@@ -53,6 +55,11 @@ function normalizeText(value?: string | null) {
     .replace(/\s+/g, " ");
 }
 
+function hasWord(haystack: string, needle: string) {
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-z])${escaped}([^a-z]|$)`).test(haystack);
+}
+
 function buildEmptySummaryMetrics(): BrandSummaryMetrics {
   return {
     grossRevenue: 0,
@@ -91,22 +98,22 @@ function buildEmptySummaryMetrics(): BrandSummaryMetrics {
 
 
 function finalizeSummaryMetrics(metrics: BrandSummaryMetrics): BrandSummaryMetrics {
-  const rld = metrics.netRevenue; 
-  const rob = rld + metrics.discounts;
-  const netAfterFees = rld; // No POD, a comissão do lojista é a sobra após o CMV pago à Ink
+  const grossRevenue = metrics.grossRevenue || metrics.rob || metrics.netRevenue;
+  const rob = metrics.rob || grossRevenue;
+  const rld = metrics.rld || Math.max(rob - metrics.discounts, 0);
+  const netAfterFees = rld;
   const cmvTotal = metrics.cmvTotal;
-  
   const contributionAfterMedia = rld - cmvTotal - metrics.mediaSpend;
-  const grossMargin = rld - cmvTotal; // Margem bruta = sobra após o custo de produção/logística
-  const marginPercentage = rld > 0 ? grossMargin / rld : 0;
+  const grossMargin = rld - cmvTotal;
+  const contributionMargin = rld > 0 ? contributionAfterMedia / rld : 0;
   const operatingResult = contributionAfterMedia - metrics.operatingExpensesTotal;
 
-  // Ponto de Equilíbrio = Custos Fixos / Margem de Contribuição %
-  // Usando Margem Bruta % como proxy para Margem de Contribuição se não houver dados de variáveis extras
-  const breakEvenPoint = marginPercentage > 0 ? metrics.operatingExpensesTotal / marginPercentage : 0;
+  // Ponto de equilíbrio usa a margem de contribuição real após CMV e mídia.
+  const breakEvenPoint =
+    contributionMargin > 0 ? metrics.operatingExpensesTotal / contributionMargin : 0;
 
   return {
-    grossRevenue: round(metrics.grossRevenue),
+    grossRevenue: round(grossRevenue),
     rob: round(rob),
     netRevenue: round(metrics.netRevenue),
     rld: round(rld),
@@ -115,12 +122,12 @@ function finalizeSummaryMetrics(metrics: BrandSummaryMetrics): BrandSummaryMetri
     orderCount: metrics.orderCount,
     paidOrderCount: metrics.paidOrderCount,
     unitsSold: metrics.unitsSold,
-    averageTicket: round(metrics.paidOrderCount ? rld / metrics.paidOrderCount : 0),
+    averageTicket: round(metrics.paidOrderCount ? grossRevenue / metrics.paidOrderCount : 0),
     mediaSpend: round(metrics.mediaSpend),
-    grossRoas: round(metrics.mediaSpend ? metrics.grossRevenue / metrics.mediaSpend : 0, 2),
+    grossRoas: round(metrics.mediaSpend ? grossRevenue / metrics.mediaSpend : 0, 2),
     grossMargin: round(grossMargin),
     contributionAfterMedia: round(contributionAfterMedia),
-    contributionMargin: round(rld ? contributionAfterMedia / rld : 0, 4),
+    contributionMargin: round(contributionMargin, 4),
     commissionTotal: round(metrics.commissionTotal),
     cmvTotal: round(metrics.cmvTotal),
     fixedExpensesTotal: round(metrics.fixedExpensesTotal),
@@ -129,12 +136,12 @@ function finalizeSummaryMetrics(metrics: BrandSummaryMetrics): BrandSummaryMetri
     netResult: round(operatingResult),
     operatingMargin: round(rld ? operatingResult / rld : 0, 4),
     itemsPerOrder: round(metrics.paidOrderCount ? metrics.unitsSold / metrics.paidOrderCount : 0, 2),
-    revenuePerUnit: round(metrics.unitsSold ? rld / metrics.unitsSold : 0),
-    avgMarkup: round(metrics.cmvTotal ? rld / metrics.cmvTotal : 0, 2),
+    revenuePerUnit: round(metrics.unitsSold ? grossRevenue / metrics.unitsSold : 0),
+    avgMarkup: round(metrics.cmvTotal ? grossRevenue / metrics.cmvTotal : 0, 2),
     breakEvenPoint: round(breakEvenPoint),
     couponDiscounts: round(metrics.couponDiscounts),
     inkProfit: round(metrics.inkProfit),
-    averageInkProfit: round(metrics.paidOrderCount ? metrics.inkProfit / metrics.paidOrderCount : 0),
+    averageInkProfit: round(metrics.unitsSold ? metrics.inkProfit / metrics.unitsSold : metrics.paidOrderCount ? metrics.inkProfit / metrics.paidOrderCount : 0),
     hasItemDetailCoverage: metrics.hasItemDetailCoverage,
   };
 }
@@ -163,8 +170,8 @@ function getIsoWeekParts(dateValue: string) {
   };
 }
 
-export function detectProductType(title?: string | null, sku?: string | null) {
-  const haystack = `${normalizeText(title)} ${normalizeText(sku)}`.trim();
+export function detectProductType(title?: string | null, context?: string | null) {
+  const haystack = `${normalizeText(title)} ${normalizeText(context)}`.trim();
   if (!haystack) {
     return null;
   }
@@ -174,13 +181,21 @@ export function detectProductType(title?: string | null, sku?: string | null) {
     return "Hoodie moletom";
   }
   if (haystack.includes("sueter moletom") || haystack.includes("sueter")) return "Suéter moletom";
+  if (haystack.includes("dad hat") || hasWord(haystack, "bone")) return "Bone Dad Hat";
   if (haystack.includes("oversized")) return "Oversized";
-  if (haystack.includes("peruana") || haystack.includes("algodao peruano")) return "Peruana";
-  if (haystack.includes("body infantil") || haystack.includes("body")) return "Body Infantil";
-  if (haystack.includes("infantil")) return "Infantil (tee)";
-  if (haystack.includes("regata")) return "Regata";
-  if (haystack.includes("cropped")) return "Cropped (tee)";
-  if (haystack.includes("camiseta")) return "Camiseta clássica/fem";
+  if (haystack.includes("peruana") || haystack.includes("algodao peruano")) return "Camiseta Peruana";
+  if (haystack.includes("body infantil") || hasWord(haystack, "body")) return "Body";
+  if (hasWord(haystack, "infantil") || hasWord(haystack, "mini")) return "Mini";
+  if (hasWord(haystack, "regata")) return "Regata";
+  if (hasWord(haystack, "cropped")) return "Cropped";
+  if (
+    hasWord(haystack, "camiseta") ||
+    hasWord(haystack, "masculino") ||
+    hasWord(haystack, "feminino") ||
+    hasWord(haystack, "unissex")
+  ) {
+    return "Camiseta";
+  }
 
   return null;
 }
@@ -200,7 +215,11 @@ function getLatestDatasetDate(brand: BrandDataset) {
   return values[0] ?? null;
 }
 
-function buildPeriodRange(referenceDate: Date, period: PeriodFilter) {
+function buildPeriodRange(
+  referenceDate: Date,
+  period: PeriodFilter,
+  customRange?: CustomDateRange,
+) {
   const end = new Date(referenceDate);
   end.setHours(0, 0, 0, 0);
 
@@ -208,7 +227,22 @@ function buildPeriodRange(referenceDate: Date, period: PeriodFilter) {
     return null;
   }
 
+  if (period === "custom") {
+    const start = customRange?.from || toDateKey(end);
+    const customEnd = customRange?.to || toDateKey(end);
+    return start <= customEnd
+      ? { start, end: customEnd }
+      : { start: customEnd, end: start };
+  }
+
   const start = new Date(end);
+
+  if (period === "today") {
+    return {
+      start: toDateKey(start),
+      end: toDateKey(end),
+    };
+  }
 
   if (period === "month") {
     start.setDate(1);
@@ -218,7 +252,7 @@ function buildPeriodRange(referenceDate: Date, period: PeriodFilter) {
     };
   }
 
-  const days = period === "7d" ? 7 : period === "15d" ? 15 : 30;
+  const days = period === "7d" ? 7 : period === "14d" ? 14 : 30;
   start.setDate(start.getDate() - (days - 1));
 
   return {
@@ -235,24 +269,32 @@ function inRange(date: string, range: { start: string; end: string } | null) {
   return date >= range.start && date <= range.end;
 }
 
-export function getPeriodLabel(period: PeriodFilter) {
+export function getPeriodLabel(period: PeriodFilter, customRange?: CustomDateRange) {
   switch (period) {
+    case "today":
+      return "Hoje";
     case "7d":
       return "Últimos 7 dias";
-    case "15d":
-      return "Últimos 15 dias";
+    case "14d":
+      return "Últimos 14 dias";
     case "30d":
       return "Últimos 30 dias";
     case "month":
       return "Mês atual";
     case "all":
       return "Todo o período";
+    case "custom":
+      if (customRange?.from && customRange?.to) {
+        return `${customRange.from} até ${customRange.to}`;
+      }
+      return "Período livre";
   }
 }
 
 export function filterBrandDatasetByPeriod(
   brand: BrandDataset,
   period: PeriodFilter,
+  customRange?: CustomDateRange,
 ): BrandDataset {
   if (period === "all") {
     return brand;
@@ -263,7 +305,7 @@ export function filterBrandDatasetByPeriod(
     return brand;
   }
 
-  const range = buildPeriodRange(referenceDate, period);
+  const range = buildPeriodRange(referenceDate, period, customRange);
   const paidOrders = brand.paidOrders.filter((item) => inRange(item.orderDate, range));
   const paidOrderNumbers = new Set(paidOrders.map((item) => item.orderNumber));
 
@@ -310,11 +352,12 @@ export function getActiveMediaRows(brand: BrandDataset) {
 export function computeBrandMetrics(brand: BrandDataset): BrandSummaryMetrics {
   const paidOrders = getPaidOrders(brand);
   const paidItems = getActiveOrderItems(brand);
-  const itemGrossRevenue = paidItems.reduce((sum, item) => sum + item.grossValue, 0);
-  const netRevenue = paidOrders.reduce((sum, order) => sum + order.orderValue, 0);
+  const grossRevenue = paidOrders.reduce((sum, order) => sum + order.orderValue, 0);
   const discounts = paidOrders.reduce((sum, order) => sum + order.discountValue, 0);
+  const rld = grossRevenue - discounts;
+  const commercialUnitsSold = paidOrders.reduce((sum, order) => sum + order.itemsInOrder, 0);
   const itemUnitsSold = paidItems.reduce((sum, item) => sum + item.quantity, 0);
-  const unitsSold = itemUnitsSold || paidOrders.reduce((sum, order) => sum + order.itemsInOrder, 0);
+  const unitsSold = commercialUnitsSold || itemUnitsSold;
   const mediaSpend = getActiveMediaRows(brand).reduce((sum, row) => sum + row.spend, 0);
   const commissionTotal = paidOrders.reduce(
     (sum, order) => sum + order.commissionValue,
@@ -329,10 +372,10 @@ export function computeBrandMetrics(brand: BrandDataset): BrandSummaryMetrics {
     0,
   );
   return finalizeSummaryMetrics({
-    grossRevenue: itemGrossRevenue || netRevenue + discounts,
-    rob: netRevenue,
-    netRevenue,
-    rld: netRevenue - discounts,
+    grossRevenue,
+    rob: grossRevenue,
+    netRevenue: grossRevenue,
+    rld,
     netAfterFees: 0,
     discounts,
     orderCount: brand.paidOrders.length,
@@ -491,8 +534,9 @@ export function buildDailyContributionSeries(brand: BrandDataset) {
       mediaSpend: 0,
       contribution: 0,
     };
+    current.grossRevenue += order.orderValue;
     current.discounts += order.discountValue;
-    current.netRevenue += order.orderValue;
+    current.netRevenue += order.orderValue - order.discountValue;
     byDate.set(order.orderDate, current);
   });
 
@@ -506,7 +550,6 @@ export function buildDailyContributionSeries(brand: BrandDataset) {
       mediaSpend: 0,
       contribution: 0,
     };
-    current.grossRevenue += item.grossValue;
     current.cmv += item.cmvTotalApplied ?? 0;
     byDate.set(item.orderDate, current);
   });
@@ -577,17 +620,19 @@ export function buildAnnualDreReport(brand: BrandDataset): AnnualDreReport {
 
   paidOrders.forEach((order) => {
     const bucket = ensureMonth(toMonthKey(order.orderDate));
+    bucket.grossRevenue += order.orderValue;
+    bucket.rob += order.orderValue;
     bucket.netRevenue += order.orderValue;
+    bucket.rld += order.orderValue - order.discountValue;
     bucket.discounts += order.discountValue;
     bucket.commissionTotal += order.commissionValue;
     bucket.paidOrderCount += 1;
     bucket.orderCount += 1;
-    bucket.unitsSold += order.itemsInOrder;
   });
 
   paidItems.forEach((item) => {
     const bucket = ensureMonth(toMonthKey(item.orderDate));
-    bucket.grossRevenue += item.grossValue;
+    bucket.unitsSold += item.quantity;
     bucket.cmvTotal += item.cmvTotalApplied ?? 0;
   });
 
@@ -601,6 +646,7 @@ export function buildAnnualDreReport(brand: BrandDataset): AnnualDreReport {
     const monthKey = toMonthKey(expense.incurredOn);
     const bucket = ensureMonth(monthKey);
     bucket.operatingExpensesTotal += expense.amount;
+    bucket.fixedExpensesTotal += expense.amount;
 
     const currentCategory = expenseByCategory.get(expense.categoryId) ?? {
       categoryId: expense.categoryId,
@@ -709,8 +755,15 @@ export function buildWeeklyPerformanceTable(brand: BrandDataset): WeeklyPerforma
       return;
     }
     bucket.realPieces += item.quantity;
-    bucket.grossRevenue += item.grossValue;
     bucket.cmv += item.cmvTotalApplied ?? 0;
+  });
+
+  getPaidOrders(brand).forEach((order) => {
+    const bucket = ensureRow(order.orderDate);
+    if (!bucket) {
+      return;
+    }
+    bucket.grossRevenue += order.orderValue;
   });
 
   return [...rows.values()]
@@ -751,7 +804,7 @@ export function buildMediaAnomalies(brand: BrandDataset): MediaAnomaly[] {
   brand.media.forEach((row, index) => {
     if (row.impressions === 0 && row.spend > 0) {
       anomalies.push({
-        id: `media-spend-without-impression-${row.id}-${index}`,
+        id: `media-spend-without-impression-${row.id ?? index}`,
         target: "MEDIA",
         targetId: row.id,
         date: row.date,
@@ -764,12 +817,15 @@ export function buildMediaAnomalies(brand: BrandDataset): MediaAnomaly[] {
         severity: "medium",
         isIgnored: Boolean(row.isIgnored),
         ignoreReason: row.ignoreReason ?? null,
+        sanitizationStatus: row.sanitizationStatus ?? "PENDING",
+        sanitizationNote: row.sanitizationNote ?? null,
+        sanitizedAt: row.sanitizedAt ?? null,
       });
     }
 
     if (row.clicksAll > row.impressions && row.impressions > 0) {
       anomalies.push({
-        id: `media-clicks-over-impressions-${row.id}-${index}`,
+        id: `media-clicks-over-impressions-${row.id ?? index}`,
         target: "MEDIA",
         targetId: row.id,
         date: row.date,
@@ -782,6 +838,9 @@ export function buildMediaAnomalies(brand: BrandDataset): MediaAnomaly[] {
         severity: "high",
         isIgnored: Boolean(row.isIgnored),
         ignoreReason: row.ignoreReason ?? null,
+        sanitizationStatus: row.sanitizationStatus ?? "PENDING",
+        sanitizationNote: row.sanitizationNote ?? null,
+        sanitizedAt: row.sanitizedAt ?? null,
       });
     }
 
@@ -789,7 +848,7 @@ export function buildMediaAnomalies(brand: BrandDataset): MediaAnomaly[] {
       const valuePerPurchase = row.purchaseValue / row.purchases;
       if (valuePerPurchase > averageTicket * 4) {
         anomalies.push({
-          id: `media-conversion-outlier-${row.id}-${index}`,
+          id: `media-conversion-outlier-${row.id ?? index}`,
           target: "MEDIA",
           targetId: row.id,
           date: row.date,
@@ -802,6 +861,9 @@ export function buildMediaAnomalies(brand: BrandDataset): MediaAnomaly[] {
           severity: "high",
           isIgnored: Boolean(row.isIgnored),
           ignoreReason: row.ignoreReason ?? null,
+          sanitizationStatus: row.sanitizationStatus ?? "PENDING",
+          sanitizationNote: row.sanitizationNote ?? null,
+          sanitizedAt: row.sanitizedAt ?? null,
         });
       }
     }
@@ -814,7 +876,7 @@ export function buildMediaAnomalies(brand: BrandDataset): MediaAnomaly[] {
   brand.paidOrders.forEach((order, index) => {
     if (order.orderValue > Math.max(averageOrderValue * 3.5, averageTicket * 3.5) && order.orderValue > 300) {
       anomalies.push({
-        id: `order-high-value-${order.id}-${index}`,
+        id: `order-high-value-${order.orderNumber}-${order.id ?? index}`,
         target: "ORDER",
         targetId: order.id,
         orderNumber: order.orderNumber,
@@ -828,6 +890,9 @@ export function buildMediaAnomalies(brand: BrandDataset): MediaAnomaly[] {
         severity: "high",
         isIgnored: Boolean(order.isIgnored),
         ignoreReason: order.ignoreReason ?? null,
+        sanitizationStatus: order.sanitizationStatus ?? "PENDING",
+        sanitizationNote: order.sanitizationNote ?? null,
+        sanitizedAt: order.sanitizedAt ?? null,
       });
     }
   });
@@ -841,6 +906,7 @@ export function buildMediaAnomalies(brand: BrandDataset): MediaAnomaly[] {
 }
 
 export function buildCmvCandidates(brand: BrandDataset) {
+  const activeEntries = brand.cmvEntries.filter((entry) => !entry.validTo);
   const byProduct = new Map<
     string,
     {
@@ -854,9 +920,9 @@ export function buildCmvCandidates(brand: BrandDataset) {
   >();
 
   const productRuleMap = new Map(
-    brand.cmvEntries
+    activeEntries
       .filter((entry) => entry.matchType === "PRODUCT")
-      .map((entry) => [normalizeText(entry.matchLabel), entry.unitCost]),
+      .map((entry) => [normalizeText(entry.matchValue), entry.unitCost]),
   );
 
   getActiveOrderItems(brand).forEach((item) => {
@@ -868,7 +934,7 @@ export function buildCmvCandidates(brand: BrandDataset) {
       quantity: 0,
       revenue: 0,
       unitCost: productRuleMap.get(normalizeText(item.productName)) ?? null,
-      productType: item.productType ?? detectProductType(item.productName, item.sku),
+      productType: item.productType ?? detectProductType(item.productName, `${item.productSpecs ?? ""} ${item.sku ?? ""}`),
     };
     current.quantity += item.quantity;
     current.revenue += item.grossValue;
@@ -884,6 +950,7 @@ export function buildCmvCandidates(brand: BrandDataset) {
 }
 
 export function buildCmvTypeCandidates(brand: BrandDataset) {
+  const activeEntries = brand.cmvEntries.filter((entry) => !entry.validTo);
   const byType = new Map<
     string,
     {
@@ -896,14 +963,14 @@ export function buildCmvTypeCandidates(brand: BrandDataset) {
   >();
 
   const typeRuleMap = new Map(
-    brand.cmvEntries
+    activeEntries
       .filter((entry) => entry.matchType === "TYPE")
-      .map((entry) => [normalizeText(entry.matchLabel), entry.unitCost]),
+      .map((entry) => [normalizeText(entry.matchValue), entry.unitCost]),
   );
 
   // Primeiro, garante que todos os tipos do catálogo apareçam
   brand.catalog.forEach((product) => {
-    const typeLabel = product.brand || detectProductType(product.title, product.id) || "Sem tipo detectado";
+    const typeLabel = detectProductType(product.title, `${product.brand ?? ""} ${product.id}`) || "Sem tipo detectado";
     const typeKey = normalizeText(typeLabel);
     if (!byType.has(typeKey)) {
       byType.set(typeKey, {
@@ -917,7 +984,10 @@ export function buildCmvTypeCandidates(brand: BrandDataset) {
   });
 
   getActiveOrderItems(brand).forEach((item) => {
-    const typeLabel = item.productType ?? detectProductType(item.productName, item.sku) ?? "Sem tipo detectado";
+    const typeLabel =
+      item.productType ??
+      detectProductType(item.productName, `${item.productSpecs ?? ""} ${item.sku ?? ""}`) ??
+      "Sem tipo detectado";
     const typeKey = normalizeText(typeLabel);
     const current = byType.get(typeKey) ?? {
       typeKey,
@@ -938,4 +1008,57 @@ export function buildCmvTypeCandidates(brand: BrandDataset) {
       ...item,
       revenue: round(item.revenue),
     }));
+}
+
+export function buildCmvOrderDetails(brand: BrandDataset): CmvOrderDetail[] {
+  const activeItems = getActiveOrderItems(brand);
+  const itemMap = new Map<
+    string,
+    {
+      units: number;
+      cmvTotal: number;
+      productMap: Map<string, number>;
+    }
+  >();
+
+  activeItems.forEach((item) => {
+    const descriptor = item.productSpecs
+      ? `${item.productName} (${item.productSpecs})`
+      : item.productName;
+    const current = itemMap.get(item.orderNumber) ?? {
+      units: 0,
+      cmvTotal: 0,
+      productMap: new Map<string, number>(),
+    };
+
+    current.units += item.quantity;
+    current.cmvTotal += item.cmvTotalApplied ?? 0;
+    current.productMap.set(
+      descriptor,
+      (current.productMap.get(descriptor) ?? 0) + item.quantity,
+    );
+    itemMap.set(item.orderNumber, current);
+  });
+
+  return getPaidOrders(brand)
+    .map((order) => {
+      const current = itemMap.get(order.orderNumber);
+      const itemsSummary = current
+        ? [...current.productMap.entries()]
+            .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+            .map(([label, quantity]) => `${quantity}x ${label}`)
+            .join(" • ")
+        : "Sem itens conciliados";
+
+      return {
+        orderNumber: order.orderNumber,
+        orderDate: order.orderDate,
+        customerName: order.customerName,
+        units: current?.units ?? order.itemsInOrder,
+        orderValue: round(order.orderValue),
+        cmvTotal: round(current?.cmvTotal ?? 0),
+        itemsSummary,
+      };
+    })
+    .sort((left, right) => right.orderDate.localeCompare(left.orderDate));
 }

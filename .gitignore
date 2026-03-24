@@ -19,6 +19,9 @@
 .DS_Store
 *.pem
 .codex/
+.playwright/
+.playwright-cli/
+/output/
 
 # debug
 npm-debug.log*

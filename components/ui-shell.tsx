@@ -44,12 +44,14 @@ export function PageHeader({
 export function SurfaceCard({
   children,
   className = "",
+  id,
 }: {
   children: ReactNode;
   className?: string;
+  id?: string;
 }) {
   return (
-    <section className={`brandops-panel p-4 ${className}`.trim()}>
+    <section id={id} className={`brandops-panel p-4 ${className}`.trim()}>
       {children}
     </section>
   );

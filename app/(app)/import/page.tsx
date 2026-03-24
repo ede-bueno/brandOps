@@ -1,21 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { AlertCircle, CheckCircle2, Loader2, UploadCloud, DatabaseZap, Clock, FileCheck2 } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock3,
+  DatabaseZap,
+  FileCheck2,
+  Loader2,
+  UploadCloud,
+} from "lucide-react";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import type { CsvFileKind } from "@/lib/brandops/types";
 
 type ImportStatus = "idle" | "running" | "success" | "error";
 
-const expectedFiles = [
-  "Meta Export.csv",
-  "feed_facebook.csv",
-  "Controle Financeiro - Oh, My Dog! - CMV_Produtos.csv",
-  "Pedidos Pagos.csv",
-  "Lista de Pedidos.csv",
-  "Lista de Itens.csv",
+const sourceDefinitions: Array<{
+  kind: CsvFileKind;
+  label: string;
+  description: string;
+}> = [
+  {
+    kind: "lista_pedidos",
+    label: "Lista de Pedidos",
+    description: "Fonte principal da camada comercial da INK.",
+  },
+  {
+    kind: "lista_itens",
+    label: "Lista de Itens",
+    description: "Base real de peças vendidas e aplicação de CMV.",
+  },
+  {
+    kind: "pedidos_pagos",
+    label: "Pedidos Pagos",
+    description: "Detalhamento operacional por linha/SKU.",
+  },
+  {
+    kind: "meta",
+    label: "Meta Export",
+    description: "Investimento e performance de mídia paga.",
+  },
+  {
+    kind: "feed",
+    label: "Feed Facebook",
+    description: "Catálogo de apoio para produtos e criativos.",
+  },
 ];
+
+function formatDate(value?: string | null) {
+  if (!value) {
+    return "—";
+  }
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+  }).format(new Date(`${value}T00:00:00`));
+}
 
 export default function ImportPage() {
   const { activeBrand, importFiles } = useBrandOps();
@@ -38,10 +79,10 @@ export default function ImportPage() {
   const handleImport = async () => {
     try {
       setStatus("running");
-      setMessage("Importando arquivos e atualizando a marca...");
+      setMessage("Importando arquivos, cruzando duplicados e atualizando a base da marca...");
       await importFiles(activeBrand?.name || "", files);
       setStatus("success");
-      setMessage("Importação concluída com sucesso.");
+      setMessage("Importação concluída com sucesso. Os CSVs duplicados foram consolidados pela chave de pedido/ocorrência.");
       setFiles([]);
     } catch (error) {
       setStatus("error");
@@ -49,200 +90,273 @@ export default function ImportPage() {
     }
   };
 
-  const importedKinds = activeBrand ? Object.values(activeBrand.files) : [];
-  const importedCount = importedKinds.length;
-  const progressPercent = Math.round((importedCount / expectedFiles.length) * 100);
+  const stats = useMemo(() => {
+    if (!activeBrand) {
+      return null;
+    }
+
+    const importInfos = Object.values(activeBrand.files);
+    const orderDates = activeBrand.paidOrders
+      .map((order) => order.orderDate)
+      .filter(Boolean)
+      .sort((left, right) => left.localeCompare(right));
+
+    return {
+      totalRuns: importInfos.reduce((sum, info) => sum + info.totalRuns, 0),
+      totalRows: importInfos.reduce((sum, info) => sum + info.totalRows, 0),
+      totalInserted: importInfos.reduce((sum, info) => sum + info.totalInserted, 0),
+      firstOrderDate: orderDates[0] ?? null,
+      lastOrderDate: orderDates[orderDates.length - 1] ?? null,
+      completedSources: sourceDefinitions.filter((source) => activeBrand.files[source.kind]).length,
+    };
+  }, [activeBrand]);
+
+  const progressPercent = stats
+    ? Math.round((stats.completedSources / sourceDefinitions.length) * 100)
+    : 0;
 
   return (
-    <div className="relative isolate overflow-hidden space-y-6 lg:space-y-8">
-      {/* Background patterns */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-20 right-[-6rem] h-96 w-96 rounded-full bg-secondary/10 blur-[120px]" />
-        <div className="absolute left-[-7rem] top-40 h-80 w-80 rounded-full bg-primary/10 blur-[100px]" />
-      </div>
-
+    <div className="space-y-6">
       <PageHeader
-        eyebrow="Integração de Dados"
-        title="Upload & Saneamento"
-        description="Abasteça o ecossistema com os CSVs exportados da operação. O sistema os reconhece pela estrutura de colunas e atualiza a base da marca ativa automaticamente."
+        eyebrow="Integração de dados"
+        title="Importação"
+        description="Suba os CSVs exportados por janela de tempo. O BrandOps consolida os arquivos por chave de pedido/ocorrência, evita duplicidade e mantém o histórico já saneado no banco."
       />
 
-      {activeBrand && (
-        <SurfaceCard className="p-0 overflow-hidden bg-background/50 border-secondary/10 shadow-sm">
-           <div className="p-5 sm:p-6 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-outline bg-surface-container/20">
-              <div className="flex items-center gap-5">
-                 <div className="flex h-14 w-14 items-center justify-center rounded-[1rem] bg-secondary/10 text-secondary border border-secondary/20 shadow-inner">
-                    <DatabaseZap size={24} />
-                 </div>
-                 <div>
-                    <div className="flex items-center gap-2 mb-1">
-                       <span className="relative flex h-2.5 w-2.5">
-                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
-                         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-secondary"></span>
-                       </span>
-                       <p className="text-[10px] font-bold uppercase tracking-widest text-secondary">Destino Conectado</p>
-                    </div>
-                    <h2 className="text-2xl font-black text-on-surface tracking-tight">{activeBrand.name}</h2>
-                 </div>
+      {activeBrand && stats && (
+        <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+          <SurfaceCard className="p-0 overflow-hidden">
+            <div className="flex flex-col gap-5 border-b border-outline p-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary-container text-secondary">
+                  <DatabaseZap size={24} />
+                </div>
+                <div>
+                  <p className="eyebrow">Base ativa</p>
+                  <h2 className="font-headline text-2xl font-semibold tracking-tight text-on-surface">
+                    {activeBrand.name}
+                  </h2>
+                  <p className="mt-1 text-sm text-on-surface-variant">
+                    {progressPercent}% do checklist padrão já consolidado.
+                  </p>
+                </div>
               </div>
+              <div className="min-w-[220px]">
+                <div className="mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                  <span>Saúde da base</span>
+                  <span>{progressPercent}%</span>
+                </div>
+                <div className="h-2.5 overflow-hidden rounded-full bg-surface-container-high">
+                  <div
+                    className="h-full rounded-full bg-secondary transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
 
-              <div className="flex-1 max-w-md w-full">
-                 <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest mb-2">
-                    <span className="text-on-surface-variant">Saúde da Base</span>
-                    <span className="text-secondary">{progressPercent}% Completo</span>
-                 </div>
-                 <div className="h-2.5 w-full bg-surface-container rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-secondary transition-all duration-1000 ease-out" 
-                      style={{ width: `${progressPercent}%` }} 
-                    />
-                 </div>
-              </div>
-           </div>
-        </SurfaceCard>
+            <div className="grid gap-3 p-5 sm:grid-cols-2 xl:grid-cols-4">
+              <article className="panel-muted p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                  Rodadas importadas
+                </p>
+                <p className="mt-2 font-headline text-2xl font-semibold text-on-surface">
+                  {stats.totalRuns}
+                </p>
+              </article>
+              <article className="panel-muted p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                  Linhas processadas
+                </p>
+                <p className="mt-2 font-headline text-2xl font-semibold text-on-surface">
+                  {stats.totalRows.toLocaleString("pt-BR")}
+                </p>
+              </article>
+              <article className="panel-muted p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                  Primeiro pedido
+                </p>
+                <p className="mt-2 text-lg font-semibold text-on-surface">
+                  {formatDate(stats.firstOrderDate)}
+                </p>
+              </article>
+              <article className="panel-muted p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                  Último pedido
+                </p>
+                <p className="mt-2 text-lg font-semibold text-on-surface">
+                  {formatDate(stats.lastOrderDate)}
+                </p>
+              </article>
+            </div>
+          </SurfaceCard>
+
+          <SurfaceCard className="flex flex-col justify-between gap-4">
+            <SectionHeading
+              title="Regra operacional"
+              description="Você pode subir 2025 e 2026 em blocos. O sistema consolida por número do pedido e preserva saneamentos já registrados."
+            />
+            <div className="space-y-3 text-sm text-on-surface-variant">
+              <p>
+                `Lista de Pedidos` é a fonte principal da camada comercial da INK.
+              </p>
+              <p>
+                `Lista de Itens` é a base real de peças vendidas e do CMV histórico.
+              </p>
+              <p>
+                `Meta Export` mantém o histórico de decisões de saneamento por ocorrência.
+              </p>
+            </div>
+          </SurfaceCard>
+        </section>
       )}
 
-      <section className="grid gap-6 lg:gap-8 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-6 lg:space-y-8 flex flex-col">
+      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <SurfaceCard className="p-0 overflow-hidden">
           <div
             {...getRootProps()}
-            className={`group relative overflow-hidden rounded-[2.5rem] border-2 border-dashed transition-all duration-300 p-10 sm:p-14 text-center cursor-pointer flex-1 flex flex-col justify-center min-h-[300px] ${
-              isDragActive 
-                ? "border-secondary bg-secondary/5 scale-100 shadow-[0_0_40px_-10px_rgba(78,222,163,0.2)]" 
-                : "border-outline bg-surface-container/30 hover:border-secondary/30 hover:bg-surface-container/50"
+            className={`cursor-pointer border-b border-outline px-6 py-10 text-center transition-all ${
+              isDragActive
+                ? "bg-secondary-container/50"
+                : "bg-surface-container-low hover:bg-surface-container"
             }`}
           >
             <input {...getInputProps()} />
-            
-            <div className={`mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-[2rem] shadow-sm transition-all duration-500 ${isDragActive ? "bg-secondary text-on-secondary scale-110 shadow-secondary/30" : "bg-background border border-outline text-on-surface-variant/70 group-hover:scale-105 group-hover:text-secondary"}`}>
-              <UploadCloud size={40} className={isDragActive ? "animate-pulse" : ""} />
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-surface text-secondary shadow-sm">
+              <UploadCloud size={34} />
             </div>
-
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-on-surface">
-              Arraste os CSVs da Operação
+            <h2 className="mt-5 font-headline text-2xl font-semibold tracking-tight text-on-surface">
+              Arraste os CSVs da operação
             </h2>
-            <p className="mt-4 max-w-sm mx-auto text-sm leading-relaxed text-on-surface-variant">
-              Você pode importar arquivos unificados ou múltiplos de uma vez. O sistema reconhecerá Shopify, Meta, ou planilhas de CMV.
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-on-surface-variant">
+              Suba quantos arquivos forem necessários. O BrandOps identifica o tipo pelo cabeçalho, consolida janelas sobrepostas e evita duplicações no banco.
             </p>
-            
-            <div className="mt-8 flex justify-center gap-2">
-              <span className="rounded-full bg-background border border-outline px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-                CSVs em UTF-8
-              </span>
-            </div>
           </div>
 
-          {files.length > 0 && (
-            <SurfaceCard className="p-6 sm:p-8 animate-in slide-in-from-bottom-4 duration-500 fade-in border-secondary/20 shadow-lg shadow-black/5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <div>
-                  <h3 className="text-lg font-bold text-on-surface">Fila de Processamento</h3>
-                  <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest mt-1">
-                    {files.length} arquivo(s) na rampa
-                  </p>
-                </div>
-                <button
-                  onClick={handleImport}
-                  disabled={status === "running" || !activeBrand}
-                  className="brandops-button brandops-button-primary px-8 py-3 rounded-xl shadow-md min-w-[200px]"
-                >
-                  {status === "running" ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 size={18} className="animate-spin" />
-                      <span>Processando Base...</span>
-                    </div>
-                  ) : "Iniciar Importação"}
-                </button>
-              </div>
-              
-              <div className="grid gap-3 sm:grid-cols-2">
+          <div className="p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <SectionHeading
+                title="Fila pronta para processar"
+                description="Os arquivos enviados ficam aqui até o disparo da importação."
+              />
+              <button
+                onClick={handleImport}
+                disabled={status === "running" || !activeBrand || files.length === 0}
+                className="brandops-button brandops-button-primary"
+              >
+                {status === "running" ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Importando
+                  </>
+                ) : (
+                  "Iniciar importação"
+                )}
+              </button>
+            </div>
+
+            {files.length ? (
+              <div className="grid gap-3 md:grid-cols-2">
                 {files.map((file) => (
-                  <div key={`${file.name}-${file.size}`} className="flex items-center gap-4 p-4 rounded-2xl border border-outline bg-background/50">
-                    <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-surface-container text-secondary">
-                      <FileCheck2 size={20} />
+                  <article
+                    key={`${file.name}-${file.size}`}
+                    className="panel-muted flex items-center gap-4 p-4"
+                  >
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary-container text-secondary">
+                      <FileCheck2 size={18} />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-on-surface text-sm truncate">{file.name}</p>
-                      <p className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant mt-0.5">
+                      <p className="truncate font-semibold text-on-surface">{file.name}</p>
+                      <p className="mt-1 text-xs text-on-surface-variant">
                         {(file.size / 1024).toFixed(1)} KB
                       </p>
                     </div>
-                  </div>
+                  </article>
                 ))}
               </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-outline p-5 text-sm text-on-surface-variant">
+                Nenhum arquivo selecionado ainda.
+              </div>
+            )}
 
-              {message && (
-                <div
-                  className={`mt-6 flex items-center gap-3 rounded-2xl border px-5 py-4 text-sm font-bold ${
-                    status === "error"
-                      ? "border-tertiary/20 bg-tertiary/5 text-tertiary"
-                      : "border-secondary/20 bg-secondary/5 text-secondary"
+            {message && (
+              <div
+                className={`mt-4 flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm ${
+                  status === "error"
+                    ? "border-error/20 bg-error-container/30 text-on-error-container"
+                    : "border-secondary/20 bg-secondary-container/30 text-on-secondary-container"
+                }`}
+              >
+                {status === "running" ? (
+                  <Loader2 size={18} className="mt-0.5 animate-spin" />
+                ) : status === "success" ? (
+                  <CheckCircle2 size={18} className="mt-0.5" />
+                ) : (
+                  <AlertCircle size={18} className="mt-0.5" />
+                )}
+                <span>{message}</span>
+              </div>
+            )}
+          </div>
+        </SurfaceCard>
+
+        <SurfaceCard className="p-0 overflow-hidden">
+          <div className="border-b border-outline p-6">
+            <SectionHeading
+              title="Checklist consolidado"
+              description="Soma de todas as importações bem-sucedidas por grupo de arquivo."
+            />
+          </div>
+
+          <div className="space-y-3 p-6">
+            {sourceDefinitions.map((source) => {
+              const info = activeBrand?.files[source.kind];
+              return (
+                <article
+                  key={source.kind}
+                  className={`rounded-2xl border p-4 ${
+                    info
+                      ? "border-secondary/20 bg-surface-container-low"
+                      : "border-dashed border-outline bg-transparent"
                   }`}
                 >
-                  {status === "running" ? (
-                    <Loader2 size={20} className="animate-spin" />
-                  ) : status === "success" ? (
-                    <CheckCircle2 size={20} />
-                  ) : (
-                    <AlertCircle size={20} />
-                  )}
-                  <span>{message}</span>
-                </div>
-              )}
-            </SurfaceCard>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <SurfaceCard className="p-0 overflow-hidden flex flex-col h-full bg-surface-container/10 border-outline">
-             <div className="p-6 sm:p-8 border-b border-outline bg-background">
-                <SectionHeading
-                  title="Checklist de Arquivos"
-                  description="Verifique quais conjuntos de dados já alimentam a marca."
-                />
-             </div>
-             
-             <div className="p-6 sm:p-8 flex-1 space-y-3 bg-surface-container/20">
-               {expectedFiles.map((fileName) => {
-                 const importedFile = importedKinds.find(k => k.fileName === fileName);
-                 const isImported = !!importedFile;
-                 return (
-                   <div 
-                     key={fileName} 
-                     className={`flex flex-col p-4 rounded-2xl border transition-all ${
-                       isImported 
-                         ? "border-secondary/30 bg-background shadow-sm hover:border-secondary/50" 
-                         : "border-outline border-dashed bg-transparent opacity-60"
-                     }`}
-                   >
-                     <div className="flex items-center gap-4">
-                        <div className={`h-10 w-10 shrink-0 flex items-center justify-center rounded-[1rem] border ${
-                          isImported ? "bg-secondary text-on-secondary border-secondary/20" : "bg-surface-container text-on-surface-variant/40 border-outline"
-                        }`}>
-                          {isImported ? <CheckCircle2 size={20} /> : <div className="h-1.5 w-1.5 rounded-full bg-current" />}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className={`text-sm font-bold truncate ${isImported ? "text-on-surface" : "text-on-surface-variant"}`}>
-                            {fileName}
+                  <div className="flex items-start gap-4">
+                    <div
+                      className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
+                        info
+                          ? "bg-secondary-container text-secondary"
+                          : "bg-surface-container-high text-on-surface-variant"
+                      }`}
+                    >
+                      {info ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-on-surface">{source.label}</p>
+                          <p className="mt-1 text-sm text-on-surface-variant">
+                            {source.description}
                           </p>
-                          {isImported ? (
-                             <p className="text-[10px] font-bold uppercase tracking-wider text-secondary mt-1 flex items-center gap-1.5">
-                               <Clock size={10} />
-                               {importedFile.rowCount} REGISTROS GRAVADOS
-                             </p>
-                          ) : (
-                             <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mt-1">
-                               Pendente de upload
-                             </p>
-                          )}
                         </div>
-                     </div>
-                   </div>
-                 );
-               })}
-             </div>
-          </SurfaceCard>
-        </div>
+                        <span className="status-chip">
+                          {info ? `${info.totalRuns} rodada(s)` : "Pendente"}
+                        </span>
+                      </div>
+                      {info ? (
+                        <div className="mt-3 grid gap-2 text-sm text-on-surface-variant sm:grid-cols-3">
+                          <p>{info.totalRows.toLocaleString("pt-BR")} linhas lidas</p>
+                          <p>{info.totalInserted.toLocaleString("pt-BR")} linhas consolidadas</p>
+                          <p>Última em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(info.lastImportedAt))}</p>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </SurfaceCard>
       </section>
     </div>
   );

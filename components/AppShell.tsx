@@ -8,6 +8,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   FileUp,
+  HelpCircle,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -19,7 +20,6 @@ import {
   X,
 } from "lucide-react";
 import { useBrandOps } from "./BrandOpsProvider";
-import { ThemeToggle } from "./ThemeToggle";
 import type { PeriodFilter } from "@/lib/brandops/types";
 
 /* -------------------------------------------------------
@@ -38,6 +38,7 @@ const operationsNav = [
   { href: "/cmv", label: "CMV", icon: Tags },
   { href: "/import", label: "Importação", icon: FileUp },
   { href: "/sanitization", label: "Saneamento", icon: ShieldAlert },
+  { href: "/help", label: "Ajuda", icon: HelpCircle },
 ];
 
 const adminNavigation = [
@@ -45,11 +46,13 @@ const adminNavigation = [
 ];
 
 const periodOptions: Array<{ value: PeriodFilter; label: string }> = [
+  { value: "today", label: "Hoje" },
   { value: "7d", label: "7 dias" },
-  { value: "15d", label: "15 dias" },
+  { value: "14d", label: "14 dias" },
   { value: "30d", label: "30 dias" },
   { value: "month", label: "Mês atual" },
   { value: "all", label: "Todo período" },
+  { value: "custom", label: "Período livre" },
 ];
 
 /* -------------------------------------------------------
@@ -136,6 +139,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     activeBrand,
     activeBrandId,
     brands,
+    customDateRange,
     errorMessage,
     profile,
     selectedPeriod,
@@ -143,6 +147,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     session,
     isLoading,
     setActiveBrandId,
+    setCustomDateRange,
     setSelectedPeriod,
     signOut,
   } = useBrandOps();
@@ -291,7 +296,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             )}
             <div className={`flex gap-1 ${isSidebarCollapsed ? "flex-col items-center" : "items-center"}`}>
-              <ThemeToggle />
               <button
                 onClick={() => void signOut()}
                 className={`brandops-button-ghost flex flex-1 items-center justify-center rounded-md px-2 py-1.5 text-xs ${
@@ -348,7 +352,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   >
                     {!brands.length && <option value="">Nenhuma marca...</option>}
                     {brands.map((brand) => (
-                      <option key={brand.id} value={brand.id} className="text-black dark:text-white bg-surface">
+                      <option key={brand.id} value={brand.id} className="bg-surface text-on-surface">
                         {brand.name}
                       </option>
                     ))}
@@ -362,7 +366,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     className="w-full bg-transparent text-xs p-1.5 outline-none"
                   >
                     {periodOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value} className="text-black dark:text-white bg-surface">
+                      <option key={opt.value} value={opt.value} className="bg-surface text-on-surface">
                         {opt.label}
                       </option>
                     ))}
@@ -370,6 +374,39 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
             </div>
+
+            {selectedPeriod === "custom" && (
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:max-w-[360px] xl:ml-auto">
+                <label className="brandops-input flex items-center gap-2 px-2 py-1.5 text-xs">
+                  <span className="whitespace-nowrap font-semibold text-on-surface-variant">De</span>
+                  <input
+                    type="date"
+                    value={customDateRange.from}
+                    onChange={(event) =>
+                      setCustomDateRange({
+                        ...customDateRange,
+                        from: event.target.value,
+                      })
+                    }
+                    className="w-full bg-transparent outline-none"
+                  />
+                </label>
+                <label className="brandops-input flex items-center gap-2 px-2 py-1.5 text-xs">
+                  <span className="whitespace-nowrap font-semibold text-on-surface-variant">Até</span>
+                  <input
+                    type="date"
+                    value={customDateRange.to}
+                    onChange={(event) =>
+                      setCustomDateRange({
+                        ...customDateRange,
+                        to: event.target.value,
+                      })
+                    }
+                    className="w-full bg-transparent outline-none"
+                  />
+                </label>
+              </div>
+            )}
 
             {/* Mobile Nav */}
             {isMobileMenuOpen && (

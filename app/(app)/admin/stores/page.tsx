@@ -65,8 +65,6 @@ type BrandFormState = {
   notes: string;
 };
 
-type InviteRole = "BRAND_OWNER" | "SUPER_ADMIN";
-
 const emptyBrandForm: BrandFormState = {
   name: "",
   slug: "",
@@ -139,7 +137,7 @@ export default function AdminStoresPage() {
   const [selectedBrandId, setSelectedBrandId] = useState("");
   const [selectedForm, setSelectedForm] = useState<BrandFormState>(emptyBrandForm);
   const [createForm, setCreateForm] = useState<BrandFormState>(emptyBrandForm);
-  const [inviteForm, setInviteForm] = useState({ email: "", fullName: "", role: "BRAND_OWNER" as InviteRole });
+  const [inviteForm, setInviteForm] = useState({ email: "", fullName: "" });
   const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(true);
@@ -204,25 +202,21 @@ export default function AdminStoresPage() {
 
   const totalMembers = brands.reduce((count, brand) => count + (brand.brand_members?.length ?? 0), 0);
   const selectedMemberCount = selectedBrand?.brand_members?.length ?? 0;
+  const selectedLocation = [selectedBrand?.city, selectedBrand?.state].filter(Boolean).join(", ");
 
   return (
-    <div className="relative isolate overflow-hidden space-y-6">
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-20 right-[-6rem] h-72 w-72 rounded-full bg-secondary/12 blur-3xl" />
-        <div className="absolute left-[-7rem] top-40 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
-      </div>
-
+    <div className="space-y-4">
       <PageHeader
         eyebrow="Superadmin"
         title="Lojas e Convites"
-        description="Organize marcas do grupo, atualize dados institucionais e convide os responsáveis. Visão completa da operação B2B em um só lugar."
+        description="Gerencie marcas, dados institucionais e acessos sem sair do workspace."
         actions={
           <button
             onClick={() => {
               setIsCreating(true);
               setNotice(null);
             }}
-            className="brandops-button brandops-button-primary px-5 py-2.5 rounded-xl shadow-lg shadow-secondary/20 flex items-center transition-transform hover:scale-105"
+            className="brandops-button brandops-button-primary flex items-center rounded-lg px-4 py-2"
           >
             <CopyPlus size={16} className="mr-2" />
             Nova Loja
@@ -230,7 +224,7 @@ export default function AdminStoresPage() {
         }
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={Building2} label="Lojas Ativas" value={brands.length} hint="Cadastradas no workspace" />
         <StatCard icon={Users2} label="Membros Totais" value={totalMembers} hint="Vínculos vigentes" />
         <StatCard icon={Link2} label="Lojas Online" value={brands.filter((brand) => Boolean(brand.website_url)).length} hint="Com portal vinculado" />
@@ -239,7 +233,7 @@ export default function AdminStoresPage() {
 
       {notice ? (
         <div
-          className={`flex items-center gap-3 p-4 rounded-2xl border text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300 ${
+          className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium ${
             notice.kind === "success"
               ? "border-secondary/20 bg-secondary/5 text-secondary"
               : "border-tertiary/20 bg-tertiary/5 text-tertiary"
@@ -250,16 +244,16 @@ export default function AdminStoresPage() {
         </div>
       ) : null}
 
-      <section className="grid gap-6 xl:grid-cols-[340px_1fr]">
+      <section className="grid gap-4 xl:grid-cols-[300px_1fr]">
         <aside className="space-y-4">
-          <SurfaceCard className="p-4 flex flex-col max-h-[700px]">
-            <div className="mb-4 relative">
+          <SurfaceCard className="flex max-h-[720px] flex-col p-3">
+            <div className="mb-3 relative">
               <Search size={16} className="absolute left-4 top-3.5 text-on-surface-variant/50" />
               <input
                 value={filter}
                 onChange={(event) => setFilter(event.target.value)}
                 placeholder="Buscar por nome, slug..."
-                className="w-full bg-surface-container/50 border border-outline rounded-[1.25rem] pl-11 pr-4 py-3 text-sm focus:border-secondary/50 focus:bg-surface-container transition-all outline-none text-on-surface"
+                className="w-full rounded-lg border border-outline bg-surface-container/50 py-2.5 pl-10 pr-3 text-sm text-on-surface outline-none transition focus:border-secondary/50 focus:bg-surface-container"
               />
             </div>
 
@@ -282,30 +276,37 @@ export default function AdminStoresPage() {
                         setIsCreating(false);
                         setActiveTab("general");
                       }}
-                      className={`w-full group flex items-center gap-4 rounded-[1.25rem] border p-3 text-left transition-all ${
+                      className={`w-full group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all ${
                         isSelected
-                          ? "border-secondary/40 bg-secondary/5 shadow-[0_4px_24px_-8px_rgba(78,222,163,0.15)]"
+                          ? "border-secondary/40 bg-secondary/5"
                           : "border-outline bg-transparent hover:border-secondary/30 hover:bg-surface-container/40"
                       }`}
                     >
-                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[1rem] border font-bold text-lg shadow-sm transition-colors ${
-                        isSelected ? "bg-secondary text-on-secondary border-secondary/20" : "bg-surface-container text-secondary border-outline group-hover:bg-background"
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-sm font-bold transition-colors ${
+                        isSelected ? "border-secondary/20 bg-secondary text-on-secondary" : "border-outline bg-surface-container text-secondary group-hover:bg-background"
                       }`}>
                         {brand.name.slice(0, 1).toUpperCase()}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className={`truncate text-sm font-bold ${isSelected ? "text-secondary" : "text-on-surface"}`}>
-                          {brand.name}
-                        </p>
-                        <p className="mt-0.5 truncate text-[10px] uppercase font-semibold tracking-widest text-on-surface-variant opacity-70">
-                          {brand.slug ?? "S/ SLUG"}
-                        </p>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`truncate text-sm font-semibold ${isSelected ? "text-secondary" : "text-on-surface"}`}>
+                            {brand.name}
+                          </p>
+                          <span className="status-chip shrink-0">
+                            {brand.brand_members?.length ?? 0}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/70">
+                          <span className="truncate">{brand.slug ?? "S/ slug"}</span>
+                          {brand.website_url ? <span className="h-1 w-1 rounded-full bg-secondary/70" /> : null}
+                          {brand.website_url ? <span className="truncate">site ativo</span> : null}
+                        </div>
                       </div>
                     </button>
                   );
                 })
               ) : (
-                <div className="rounded-2xl border border-dashed border-outline bg-surface-container/30 px-4 py-8 text-center text-sm font-medium text-on-surface-variant">
+                <div className="rounded-xl border border-dashed border-outline bg-surface-container/30 px-4 py-6 text-center text-sm font-medium text-on-surface-variant">
                   Nenhuma loja encontrada.
                 </div>
               )}
@@ -315,14 +316,14 @@ export default function AdminStoresPage() {
 
         <div className="min-w-0">
           {isCreating ? (
-            <SurfaceCard className="p-0 border-primary/20 bg-background shadow-2xl">
-              <div className="p-6 sm:p-8 bg-surface-container/20 border-b border-outline">
+            <SurfaceCard className="overflow-hidden p-0">
+              <div className="border-b border-outline bg-surface-container/20 px-5 py-4 sm:px-6">
                 <SectionHeading
-                  title="Cadastrar Nova Loja"
-                  description="Preencha os identificadores da marca e prossiga para o registro. Assim que criada, ela aparecerá na barra lateral para gestão de membros e atualizações."
+                  title="Cadastrar nova loja"
+                  description="Preencha os dados principais da marca para liberar a operação e o envio de acessos."
                 />
               </div>
-              <div className="p-6 sm:p-8">
+              <div className="px-5 py-5 sm:px-6">
                 <BrandForm
                   form={createForm}
                   onChange={setCreateForm}
@@ -355,7 +356,7 @@ export default function AdminStoresPage() {
                       setCreating(false);
                     }
                   }}
-                  submitLabel={creating ? "Criando ambiente..." : "Concluir Cadastro"}
+                  submitLabel={creating ? "Criando ambiente..." : "Concluir cadastro"}
                   disabled={creating}
                   mode="create"
                   onCancel={() => setIsCreating(false)}
@@ -363,36 +364,58 @@ export default function AdminStoresPage() {
               </div>
             </SurfaceCard>
           ) : !selectedBrand ? (
-            <div className="h-full flex flex-col items-center justify-center rounded-[2.5rem] border border-dashed border-outline bg-surface-container/20 p-12 text-center text-on-surface-variant opacity-70">
-               <Store size={48} className="mb-4 opacity-30" />
-               <p className="text-sm font-semibold uppercase tracking-widest mb-1">Nada selecionado</p>
+            <div className="flex h-full min-h-[360px] flex-col items-center justify-center rounded-2xl border border-dashed border-outline bg-surface-container/20 p-10 text-center text-on-surface-variant opacity-70">
+               <Store size={40} className="mb-4 opacity-30" />
+               <p className="mb-1 text-sm font-semibold uppercase tracking-widest">Nada selecionado</p>
                <p className="max-w-xs text-xs">Escolha uma loja na lista ao lado ou crie uma nova para visualizar seus detalhes.</p>
             </div>
           ) : (
-            <SurfaceCard className="p-0 overflow-hidden shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 p-6 sm:p-8 bg-surface-container/20 border-b border-outline">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-[1.25rem] border border-outline bg-background text-2xl font-black text-secondary shadow-inner">
-                    {selectedBrand.name.slice(0, 2).toUpperCase()}
+            <SurfaceCard className="overflow-hidden p-0 shadow-sm">
+              <div className="border-b border-outline bg-surface-container/20 px-5 py-4 sm:px-6">
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-outline bg-background text-lg font-black text-secondary">
+                      {selectedBrand.name.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-secondary/80">
+                          ID: {selectedBrand.id.split("-")[0]}
+                        </p>
+                        {selectedBrand.slug ? <span className="status-chip">{selectedBrand.slug}</span> : null}
+                      </div>
+                      <h2 className="mt-1 truncate text-2xl font-bold tracking-tight text-on-surface">
+                        {selectedBrand.name}
+                      </h2>
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-on-surface-variant">
+                        {selectedBrand.contact_email ? <MetaChip icon={MailPlus} text={selectedBrand.contact_email} /> : null}
+                        {selectedLocation ? <MetaChip icon={MapPin} text={selectedLocation} /> : null}
+                        {selectedBrand.website_url ? (
+                          <a
+                            href={selectedBrand.website_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 rounded-md border border-outline bg-background px-2 py-1 font-medium text-on-surface transition hover:border-secondary/40 hover:text-secondary"
+                          >
+                            Site
+                          </a>
+                        ) : null}
+                      </div>
+                    </div>
                   </div>
-                  <div className="min-w-0 pr-4">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-secondary/80">
-                      ID: {selectedBrand.id.split("-")[0]}
-                    </p>
-                    <h2 className="mt-1 truncate text-3xl font-black text-on-surface tracking-tight">
-                      {selectedBrand.name}
-                    </h2>
-                    <p className="mt-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">
-                      <ClockIcon className="h-3 w-3" /> Atualizado {formatLongDateTime(selectedBrand.updated_at)}
-                    </p>
+
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    <MiniStat label="Membros" value={selectedMemberCount.toString()} />
+                    <MiniStat label="Site" value={selectedBrand.website_url ? "ativo" : "pendente"} />
+                    <MiniStat label="Atualizado" value={formatLongDateTime(selectedBrand.updated_at)} className="col-span-2 sm:col-span-1" />
                   </div>
                 </div>
               </div>
 
-              <div className="flex overflow-x-auto bg-surface-container/10 border-b border-outline px-6 pt-2">
+              <div className="flex overflow-x-auto border-b border-outline bg-surface-container/10 px-5 pt-1.5 sm:px-6">
                 <button
                   onClick={() => setActiveTab("general")}
-                  className={`relative px-4 pb-4 pt-2 text-sm font-bold uppercase tracking-widest transition-colors ${
+                  className={`relative px-3 py-3 text-sm font-semibold transition-colors ${
                     activeTab === "general"
                       ? "text-secondary"
                       : "text-on-surface-variant hover:text-on-surface"
@@ -400,26 +423,26 @@ export default function AdminStoresPage() {
                 >
                   Configurações
                   {activeTab === "general" && (
-                     <div className="absolute bottom-0 left-0 w-full h-[3px] bg-secondary rounded-t-full" />
+                     <div className="absolute bottom-0 left-0 h-[2px] w-full rounded-t-full bg-secondary" />
                   )}
                 </button>
                 <button
                   onClick={() => setActiveTab("team")}
-                  className={`relative px-4 pb-4 pt-2 text-sm font-bold uppercase tracking-widest transition-colors flex items-center gap-2 ${
+                  className={`relative flex items-center gap-2 px-3 py-3 text-sm font-semibold transition-colors ${
                     activeTab === "team"
                       ? "text-secondary"
                       : "text-on-surface-variant hover:text-on-surface"
                   }`}
                 >
                   Membros do Time
-                  <span className="bg-surface-container-high px-2 py-0.5 rounded-full text-[10px]">{selectedMemberCount}</span>
+                  <span className="rounded-full bg-surface-container-high px-2 py-0.5 text-[10px]">{selectedMemberCount}</span>
                   {activeTab === "team" && (
-                     <div className="absolute bottom-0 left-0 w-full h-[3px] bg-secondary rounded-t-full" />
+                     <div className="absolute bottom-0 left-0 h-[2px] w-full rounded-t-full bg-secondary" />
                   )}
                 </button>
               </div>
 
-              <div className="p-6 sm:p-8">
+              <div className="px-5 py-5 sm:px-6">
                 {activeTab === "general" ? (
                   <BrandForm
                     form={selectedForm}
@@ -451,38 +474,33 @@ export default function AdminStoresPage() {
                         setSaving(false);
                       }
                     }}
-                    submitLabel={saving ? "Salvando Alterações..." : "Salvar Configurações"}
+                    submitLabel={saving ? "Salvando alterações..." : "Salvar configurações"}
                     disabled={saving}
                     mode="edit"
                   />
                 ) : (
-                  <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
-                    <div className="space-y-6">
+                  <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
+                    <div className="space-y-4">
                       <SectionHeading
-                        title="Enviar Acesso"
-                        description="Gere um convite seguro. O usuário receberá um link de acesso atrelado diretamente à marca."
+                        title="Enviar acesso"
+                        description="Convide um responsável. O acesso sempre fica isolado apenas nesta marca."
                       />
-                      <div className="p-5 rounded-2xl border border-outline bg-surface-container/20 space-y-4">
+                      <div className="space-y-3 rounded-xl border border-outline bg-surface-container/20 p-4">
                         <input
                           value={inviteForm.fullName}
                           onChange={(event) => setInviteForm((current) => ({ ...current, fullName: event.target.value }))}
                           placeholder="Nome completo..."
-                          className="w-full rounded-xl border border-outline bg-background px-4 py-3 text-sm text-on-surface outline-none transition focus:border-secondary/60 focus:bg-surface-container/50"
+                          className="w-full rounded-lg border border-outline bg-background px-3 py-2.5 text-sm text-on-surface outline-none transition focus:border-secondary/60 focus:bg-surface-container/50"
                         />
                         <input
                           value={inviteForm.email}
                           onChange={(event) => setInviteForm((current) => ({ ...current, email: event.target.value }))}
                           placeholder="Email corporativo..."
-                          className="w-full rounded-xl border border-outline bg-background px-4 py-3 text-sm text-on-surface outline-none transition focus:border-secondary/60 focus:bg-surface-container/50"
+                          className="w-full rounded-lg border border-outline bg-background px-3 py-2.5 text-sm text-on-surface outline-none transition focus:border-secondary/60 focus:bg-surface-container/50"
                         />
-                        <select
-                          value={inviteForm.role}
-                          onChange={(event) => setInviteForm((current) => ({ ...current, role: event.target.value as InviteRole }))}
-                          className="w-full rounded-xl border border-outline bg-background px-4 py-3 text-sm text-on-surface outline-none transition focus:border-secondary/60 focus:bg-surface-container/50 font-semibold appearance-none"
-                        >
-                          <option value="BRAND_OWNER">Dono da Empresa</option>
-                          <option value="SUPER_ADMIN">Acesso Irrestrito (Superadmin)</option>
-                        </select>
+                        <div className="rounded-lg border border-outline bg-background px-3 py-2.5 text-sm text-on-surface-variant">
+                          Perfil enviado: <span className="font-semibold text-on-surface">acesso da marca</span>
+                        </div>
                         <button
                           type="button"
                           disabled={sending || !selectedBrandId}
@@ -502,7 +520,7 @@ export default function AdminStoresPage() {
                               const payload = await response.json();
                               if (!response.ok) throw new Error(payload.error ?? "Falha ao enviar convite.");
                               setNotice({ kind: "success", text: `Convite enviado para ${payload.invited.email}.` });
-                              setInviteForm({ email: "", fullName: "", role: "BRAND_OWNER" });
+                              setInviteForm({ email: "", fullName: "" });
                               await loadBrands(selectedBrandId);
                             } catch (error) {
                               setNotice({
@@ -513,45 +531,45 @@ export default function AdminStoresPage() {
                               setSending(false);
                             }
                           }}
-                          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-3 text-sm font-bold tracking-wide text-on-secondary transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 shadow-md shadow-secondary/20"
+                          className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold tracking-wide text-on-secondary transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <MailPlus size={16} />
-                          {sending ? "Disparando..." : "Despachar Convite"}
+                          {sending ? "Enviando..." : "Enviar convite"}
                         </button>
                       </div>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                       <SectionHeading
-                        title="Time Constituído"
-                        description="Equipe operacional que possui plenos direitos sobre a marca."
+                        title="Time da loja"
+                        description="Pessoas com acesso ativo ao workspace desta marca."
                       />
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {selectedBrand?.brand_members?.length ? (
                           selectedBrand.brand_members.map((member) => (
-                            <div key={`${selectedBrand.id}-${member.user_id}`} className="rounded-2xl border border-outline bg-background p-4 flex items-center justify-between group hover:border-secondary/40 transition-colors">
+                            <div key={`${selectedBrand.id}-${member.user_id}`} className="group flex items-center justify-between rounded-xl border border-outline bg-background px-4 py-3 transition-colors hover:border-secondary/40">
                               <div className="flex items-center gap-4">
-                                 <div className="h-10 w-10 flex-shrink-0 bg-surface-container flex items-center justify-center rounded-xl font-bold text-on-surface-variant group-hover:bg-secondary/10 group-hover:text-secondary transition-colors">
+                                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-container font-bold text-on-surface-variant transition-colors group-hover:bg-secondary/10 group-hover:text-secondary">
                                     {(member.user_profiles?.full_name || member.user_profiles?.email || member.user_id).slice(0, 1).toUpperCase()}
                                  </div>
-                                 <div>
-                                   <p className="text-sm font-bold text-on-surface">
-                                     {member.user_profiles?.full_name || "Membro Confirmado"}
+                                 <div className="min-w-0">
+                                   <p className="truncate text-sm font-semibold text-on-surface">
+                                     {member.user_profiles?.full_name || "Membro confirmado"}
                                    </p>
-                                   <p className="text-xs text-on-surface-variant font-medium mt-0.5">
+                                   <p className="mt-0.5 truncate text-xs font-medium text-on-surface-variant">
                                      {member.user_profiles?.email ?? "Email ocultado"}
                                    </p>
                                  </div>
                               </div>
-                              <span className="rounded-md bg-surface-container-high px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/80">
-                                {member.user_profiles?.role === "SUPER_ADMIN" ? "S-ADMIN" : (member.user_profiles?.role ?? "OWNER")}
+                              <span className="status-chip shrink-0">
+                                {member.user_profiles?.role === "SUPER_ADMIN" ? "S-ADMIN" : "MARCA"}
                               </span>
                             </div>
                           ))
                         ) : (
-                          <div className="rounded-2xl border border-dashed border-outline bg-surface-container/30 px-6 py-8 text-center">
-                            <p className="text-sm font-bold text-on-surface-variant/70 uppercase tracking-widest">Workspace Indefinido</p>
-                            <p className="text-xs text-on-surface-variant/50 mt-1 max-w-[200px] mx-auto">Ninguém possui acesso direto a este ambiente no momento.</p>
+                          <div className="rounded-xl border border-dashed border-outline bg-surface-container/30 px-6 py-8 text-center">
+                            <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant/70">Workspace indefinido</p>
+                            <p className="mx-auto mt-1 max-w-[220px] text-xs text-on-surface-variant/50">Ninguém possui acesso direto a este ambiente no momento.</p>
                           </div>
                         )}
                       </div>
@@ -569,15 +587,15 @@ export default function AdminStoresPage() {
 
 function StatCard({ icon: Icon, label, value, hint }: { icon: ComponentType<{ size?: number; className?: string }>; label: string; value: number; hint: string; }) {
   return (
-    <SurfaceCard className="p-4 flex flex-col justify-between">
+    <SurfaceCard className="flex flex-col justify-between p-3.5">
       <div className="flex items-start justify-between">
         <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{label}</p>
-        <div className="rounded-xl border border-outline bg-background/50 p-2.5 text-secondary">
-          <Icon size={16} />
+        <div className="rounded-lg border border-outline bg-background/50 p-2 text-secondary">
+          <Icon size={15} />
         </div>
       </div>
       <div>
-        <p className="mt-4 text-3xl font-black text-on-surface tracking-tighter">{value}</p>
+        <p className="mt-3 text-2xl font-bold tracking-tight text-on-surface">{value}</p>
         <p className="mt-1 text-xs font-semibold text-on-surface-variant/60 uppercase tracking-widest">{hint}</p>
       </div>
     </SurfaceCard>
@@ -604,15 +622,14 @@ function BrandForm({
   void _mode;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {formSections.map((section) => (
-        <div key={section.title} className="space-y-4">
+        <div key={section.title} className="space-y-3">
           <div className="flex items-center gap-3">
-             <div className="flex-1 h-px bg-outline" />
-             <h3 className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant shrink-0">{section.title}</h3>
-             <div className="flex-[3] h-px bg-outline" />
+             <h3 className="shrink-0 text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">{section.title}</h3>
+             <div className="h-px flex-1 bg-outline" />
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2">
             {section.fields.map(([key, label, placeholder]) => (
               <Field
                 key={key}
@@ -626,25 +643,24 @@ function BrandForm({
         </div>
       ))}
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex items-center gap-3">
-           <div className="flex-1 h-px bg-outline" />
-           <h3 className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant shrink-0">Comentários & SEO</h3>
-           <div className="flex-[3] h-px bg-outline" />
+           <h3 className="shrink-0 text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">Comentários e SEO</h3>
+           <div className="h-px flex-1 bg-outline" />
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-           <Field label="Descrição Curta" value={form.description} placeholder="Proposta de valor" onChange={(value) => onChange({ ...form, description: value })} multiline />
-           <Field label="Anotações Internas" value={form.notes} placeholder="Condições, tarifas, links" onChange={(value) => onChange({ ...form, notes: value })} multiline />
+        <div className="grid gap-3 md:grid-cols-2">
+           <Field label="Descrição curta" value={form.description} placeholder="Proposta de valor" onChange={(value) => onChange({ ...form, description: value })} multiline />
+           <Field label="Anotações internas" value={form.notes} placeholder="Condições, tarifas, links" onChange={(value) => onChange({ ...form, notes: value })} multiline />
         </div>
       </div>
 
-      <div className="pt-4 flex gap-3 flex-col-reverse sm:flex-row">
+      <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row">
         {onCancel && (
            <button
              type="button"
              disabled={disabled}
              onClick={onCancel}
-             className="w-full sm:w-auto px-6 py-3 rounded-xl border border-outline bg-surface-container/50 text-sm font-bold text-on-surface-variant transition hover:bg-surface-container hover:text-on-surface disabled:opacity-50"
+             className="w-full rounded-lg border border-outline bg-surface-container/50 px-5 py-2.5 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container hover:text-on-surface disabled:opacity-50 sm:w-auto"
            >
              Cancelar
            </button>
@@ -653,7 +669,7 @@ function BrandForm({
           type="button"
           disabled={disabled}
           onClick={() => void onSubmit()}
-          className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-secondary px-6 py-3 text-sm font-bold tracking-wide text-on-secondary shadow-md shadow-secondary/20 transition hover:bg-secondary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-secondary px-5 py-2.5 text-sm font-semibold tracking-wide text-on-secondary transition hover:bg-secondary/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Settings2 size={18} />
           {submitLabel}
@@ -676,7 +692,7 @@ function Field({
   onChange: (value: string) => void;
   multiline?: boolean;
 }) {
-  const baseClassName = "brandops-input w-full rounded-xl border border-outline bg-background/50 px-4 py-2.5 text-sm font-medium text-on-surface outline-none transition focus:border-secondary focus:bg-background";
+  const baseClassName = "brandops-input w-full rounded-lg border border-outline bg-background/50 px-3 py-2.5 text-sm font-medium text-on-surface outline-none transition focus:border-secondary focus:bg-background";
   return (
     <label className="space-y-1.5 block">
       <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant flex items-center justify-between">
@@ -705,9 +721,9 @@ function Field({
 
 function SkeletonCard() {
   return (
-    <div className="animate-pulse rounded-[1.25rem] border border-outline bg-background p-4">
+    <div className="animate-pulse rounded-xl border border-outline bg-background p-3">
       <div className="flex gap-4">
-         <div className="h-11 w-11 rounded-[1rem] bg-surface-container shrink-0" />
+         <div className="h-10 w-10 rounded-lg bg-surface-container shrink-0" />
          <div className="flex-1 py-1">
             <div className="h-4 w-3/5 rounded bg-surface-container" />
             <div className="mt-2 h-3 w-2/5 rounded bg-surface-container opacity-50" />
@@ -717,11 +733,26 @@ function SkeletonCard() {
   );
 }
 
-function ClockIcon({ className }: { className?: string }) {
+function MiniStat({ label, value, className = "" }: { label: string; value: string; className?: string }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
+    <div className={`rounded-lg border border-outline bg-background px-3 py-2 ${className}`.trim()}>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{label}</p>
+      <p className="mt-1 truncate text-sm font-semibold text-on-surface">{value}</p>
+    </div>
+  );
+}
+
+function MetaChip({
+  icon: Icon,
+  text,
+}: {
+  icon: ComponentType<{ size?: number; className?: string }>;
+  text: string;
+}) {
+  return (
+    <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-outline bg-background px-2 py-1 font-medium text-on-surface">
+      <Icon size={13} className="shrink-0 text-on-surface-variant" />
+      <span className="truncate">{text}</span>
+    </span>
   );
 }

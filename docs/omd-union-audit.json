@@ -1,0 +1,27 @@
+{
+  "listaPedidos": {
+    "totalRows": 160,
+    "uniqueOrders": 160,
+    "paidOrders": 136,
+    "paidItemsFromPedido": 189,
+    "faturadoPago": 18050.02,
+    "descontoPago": 1395.51,
+    "lucroInkPago": 7990.55
+  },
+  "listaItens": {
+    "totalRows": 187,
+    "uniqueOrders": 136,
+    "paidRows": 187,
+    "paidItemsQty": 189,
+    "paidGrossValue": 18126.7
+  },
+  "pedidosPagos": {
+    "totalRows": 187,
+    "uniqueOrders": 136,
+    "quantityTotal": 189,
+    "unitValueTotal": 9327.8,
+    "allStatus": [
+      "Em aberto"
+    ]
+  }
+}

@@ -8,15 +8,33 @@ export type CsvFileKind =
 
 export type UserRole = "SUPER_ADMIN" | "BRAND_OWNER";
 
-export type PeriodFilter = "7d" | "15d" | "30d" | "month" | "all";
+export type PeriodFilter = "today" | "7d" | "14d" | "30d" | "month" | "all" | "custom";
 
 export type CmvMatchType = "SKU" | "PRODUCT" | "TYPE";
 
-export interface ImportedFileInfo {
+export type SanitizationDecision = "PENDING" | "KEPT" | "IGNORED";
+
+export interface ImportRunInfo {
   kind: CsvFileKind;
   fileName: string;
   importedAt: string;
   rowCount: number;
+}
+
+export interface ImportedFileRun {
+  fileName: string;
+  importedAt: string;
+  rowCount: number;
+  insertedCount: number;
+}
+
+export interface ImportedFileInfo {
+  kind: CsvFileKind;
+  totalRuns: number;
+  totalRows: number;
+  totalInserted: number;
+  lastImportedAt: string;
+  runs: ImportedFileRun[];
 }
 
 export interface UserProfile {
@@ -58,6 +76,10 @@ export interface PaidOrder {
   shippingState?: string;
   isIgnored?: boolean;
   ignoreReason?: string | null;
+  sanitizationStatus?: SanitizationDecision;
+  sanitizationNote?: string | null;
+  sanitizedAt?: string | null;
+  sanitizedBy?: string | null;
 }
 
 export interface SalesLine {
@@ -118,6 +140,10 @@ export interface MediaRow {
   addToCart: number;
   isIgnored?: boolean;
   ignoreReason?: string | null;
+  sanitizationStatus?: SanitizationDecision;
+  sanitizationNote?: string | null;
+  sanitizedAt?: string | null;
+  sanitizedBy?: string | null;
 }
 
 export interface CmvEntry {
@@ -128,6 +154,7 @@ export interface CmvEntry {
   unitCost: number;
   source: string;
   validFrom: string;
+  validTo?: string | null;
   updatedAt: string;
 }
 
@@ -137,6 +164,16 @@ export interface CmvCheckpoint {
   note?: string | null;
   itemsUpdated: number;
   unmatchedItems: number;
+}
+
+export interface CmvOrderDetail {
+  orderNumber: string;
+  orderDate: string;
+  customerName: string;
+  units: number;
+  orderValue: number;
+  cmvTotal: number;
+  itemsSummary: string;
 }
 
 export interface ExpenseCategory {
@@ -170,6 +207,11 @@ export interface BrandDataset {
   cmvCheckpoints: CmvCheckpoint[];
   expenseCategories: ExpenseCategory[];
   expenses: BrandExpense[];
+}
+
+export interface CustomDateRange {
+  from: string;
+  to: string;
 }
 
 export interface WorkspaceState {
@@ -260,6 +302,9 @@ export interface MediaAnomaly {
   severity: "high" | "medium";
   isIgnored: boolean;
   ignoreReason?: string | null;
+  sanitizationStatus: SanitizationDecision;
+  sanitizationNote?: string | null;
+  sanitizedAt?: string | null;
 }
 
 export interface MonthlyDreEntry {

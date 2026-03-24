@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     const email = String(body.email ?? "").trim().toLowerCase();
     const fullName = String(body.fullName ?? "").trim();
     const brandId = String(body.brandId ?? "").trim();
-    const role = body.role === "SUPER_ADMIN" ? "SUPER_ADMIN" : "BRAND_OWNER";
+    const inviteRole = "BRAND_OWNER";
 
     if (!email) {
       throw new Error("Email é obrigatório.");
@@ -21,14 +21,14 @@ export async function POST(request: Request) {
 
     const { data: existingProfile } = await supabase
       .from("user_profiles")
-      .select("id, email")
+      .select("id, email, role")
       .eq("email", email)
       .maybeSingle();
 
     if (existingProfile?.id) {
       const { error: profileError } = await supabase.from("user_profiles").update({
         full_name: fullName || email,
-        role,
+        role: existingProfile.role === "SUPER_ADMIN" ? "SUPER_ADMIN" : inviteRole,
       }).eq("id", existingProfile.id);
 
       if (profileError) {
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         invited: {
           id: existingProfile.id,
           email,
-          role,
+          role: existingProfile.role === "SUPER_ADMIN" ? "SUPER_ADMIN" : inviteRole,
           alreadyExisted: true,
         },
       });
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
       id: invitedUserId,
       email,
       full_name: fullName || email,
-      role,
+      role: inviteRole,
     });
 
     if (profileError) {
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
       invited: {
         id: invitedUserId,
         email,
-        role,
+        role: inviteRole,
       },
     });
   } catch (error) {

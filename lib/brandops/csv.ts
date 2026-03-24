@@ -3,6 +3,7 @@ import type {
   BrandDataset,
   CatalogProduct,
   CsvFileKind,
+  ImportRunInfo,
   ImportedFileInfo,
   MediaRow,
   OrderItem,
@@ -56,6 +57,7 @@ function parseCsvMatrix(text: string) {
   const result = Papa.parse<string[]>(text, {
     header: false,
     skipEmptyLines: true,
+    delimitersToGuess: [",", ";", "\t", "|"],
   });
 
   if (result.errors.length > 0) {
@@ -97,17 +99,47 @@ export function parseCurrencyLike(value: string | undefined) {
     return 0;
   }
 
-  const trimmed = value.trim();
+  const trimmed = value.trim().replace(/\u00A0/g, " ");
   if (!trimmed) {
     return 0;
   }
 
-  const normalized = trimmed
-    .replace(/[^\d,.-]/g, "")
-    .replace(/,(?=\d{3}(?:\D|$))/g, "")
-    .replace(",", ".");
+  const isNegative = /^\(.*\)$/.test(trimmed) || trimmed.startsWith("-");
+  const sanitized = trimmed
+    .replace(/[R$\s%]/g, "")
+    .replace(/[()]/g, "")
+    .replace(/[^\d,.-]/g, "");
 
-  return Number(normalized) || 0;
+  if (!sanitized) {
+    return 0;
+  }
+
+  const lastComma = sanitized.lastIndexOf(",");
+  const lastDot = sanitized.lastIndexOf(".");
+  let normalized = sanitized;
+
+  if (lastComma >= 0 && lastDot >= 0) {
+    if (lastComma > lastDot) {
+      normalized = sanitized.replace(/\./g, "").replace(",", ".");
+    } else {
+      normalized = sanitized.replace(/,/g, "");
+    }
+  } else if (lastComma >= 0) {
+    const decimalDigits = sanitized.length - lastComma - 1;
+    normalized =
+      decimalDigits > 0 && decimalDigits <= 2
+        ? sanitized.replace(/\./g, "").replace(",", ".")
+        : sanitized.replace(/,/g, "");
+  } else if ((sanitized.match(/\./g) ?? []).length > 1) {
+    normalized = sanitized.replace(/\./g, "");
+  }
+
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) {
+    return 0;
+  }
+
+  return isNegative ? -Math.abs(parsed) : parsed;
 }
 
 export function parseIntegerLike(value: string | undefined) {
@@ -239,7 +271,7 @@ export async function parseUploadedCsv(file: File) {
   const kind = detectCsvFileKind(headers);
   const records = toObjects(matrix);
 
-  const fileInfo: ImportedFileInfo = {
+  const fileInfo: ImportRunInfo = {
     kind,
     fileName: file.name,
     importedAt: new Date().toISOString(),
@@ -272,10 +304,26 @@ export function mergeBrandDataset(
   current: BrandDataset | undefined,
   brandId: string,
   brandName: string,
-  fileInfo: ImportedFileInfo,
+  fileInfo: ImportRunInfo,
   payload: Partial<BrandDataset>,
 ): BrandDataset {
   const now = new Date().toISOString();
+  const aggregateInfo: ImportedFileInfo = {
+    kind: fileInfo.kind,
+    totalRuns: (current?.files[fileInfo.kind]?.totalRuns ?? 0) + 1,
+    totalRows: (current?.files[fileInfo.kind]?.totalRows ?? 0) + fileInfo.rowCount,
+    totalInserted: (current?.files[fileInfo.kind]?.totalInserted ?? 0) + fileInfo.rowCount,
+    lastImportedAt: fileInfo.importedAt,
+    runs: [
+      {
+        fileName: fileInfo.fileName,
+        importedAt: fileInfo.importedAt,
+        rowCount: fileInfo.rowCount,
+        insertedCount: fileInfo.rowCount,
+      },
+      ...(current?.files[fileInfo.kind]?.runs ?? []),
+    ],
+  };
   return {
     id: current?.id ?? brandId,
     name: brandName,
@@ -283,7 +331,7 @@ export function mergeBrandDataset(
     updatedAt: now,
     files: {
       ...(current?.files ?? {}),
-      [fileInfo.kind]: fileInfo,
+      [fileInfo.kind]: aggregateInfo,
     },
     catalog: payload.catalog ?? current?.catalog ?? [],
     paidOrders: payload.paidOrders ?? current?.paidOrders ?? [],

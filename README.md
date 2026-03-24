@@ -1,27 +1,79 @@
 # BrandOps
 
-Plataforma operacional para consolidar vendas, mídia e saúde financeira de marcas
-print on demand.
+Plataforma interna para gestão multi-marca de operações print on demand.
 
-## Escopo atual
+## O que o sistema cobre hoje
 
-- Importação real dos CSVs padrão da operação:
-  - `Meta Export.csv`
-  - `feed_facebook.csv`
-  - `Pedidos Pagos.csv`
+- autenticação real com Supabase
+- workspace multi-marca com `SUPER_ADMIN` e acesso isolado por marca
+- importação incremental de:
   - `Lista de Pedidos.csv`
   - `Lista de Itens.csv`
-- Workspace local com múltiplas marcas
-- Dashboard, vendas, mídia, DRE, saneamento e CMV lendo dados importados
-- Base preparada para conexão posterior com autenticação e persistência no Supabase
+  - `Pedidos Pagos.csv`
+  - `Meta Export.csv`
+  - `feed_facebook.csv`
+- deduplicação por chaves de negócio para suportar reimportações por janela
+- saneamento persistente de linhas de mídia e pedidos fora da curva
+- CMV por tipo de peça com vigência histórica e checkpoint
+- centro de custo com lançamento, edição e exclusão de despesas
+- dashboard, vendas, mídia, DRE, ajuda e gestão administrativa
+
+## Stack
+
+- `Next.js 15`
+- `React 19`
+- `TypeScript`
+- `Supabase`
+- `Tailwind CSS v4`
 
 ## Rodando localmente
 
-1. Instale as dependências com `npm install`
-2. Rode o projeto com `npm run dev`
-3. Acesse `http://localhost:3000`
+1. Instale dependências:
 
-## Observações
+```bash
+npm install
+```
 
-- O schema SQL inicial está em `supabase-schema.sql`
-- O projeto já está pronto para receber a etapa de migrations e integração real com Supabase
+2. Configure o ambiente:
+
+```bash
+cp .env.example .env.local
+```
+
+3. Preencha no `.env.local`:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+4. Rode em desenvolvimento:
+
+```bash
+npm run dev
+```
+
+5. Ou valide build de produção:
+
+```bash
+npm run build
+npm run start
+```
+
+## Validações recomendadas antes de deploy
+
+```bash
+npm run check
+npm run build
+```
+
+## Estrutura importante
+
+- `app/` rotas e telas
+- `components/` shell, provider e UI compartilhada
+- `lib/brandops/` parsing CSV, acesso a dados e métricas
+- `supabase/migrations/` fonte de verdade do schema aplicado
+- `docs/` auditorias, handoff e documentação operacional
+
+## Deploy
+
+Guia objetivo em [docs/DEPLOY_VERCEL.md](C:\BrandOps\BrandOps-new\docs\DEPLOY_VERCEL.md).

@@ -1,119 +1,252 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CheckCircle2, Save, CalendarClock, Info } from "lucide-react";
+import { CheckCircle2, PencilLine, X } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
-import { currencyFormatter, formatLongDateTime, integerFormatter } from "@/lib/brandops/format";
-import { buildCmvCandidates, buildCmvTypeCandidates } from "@/lib/brandops/metrics";
+import {
+  currencyFormatter,
+  formatCompactDate,
+  formatLongDateTime,
+  integerFormatter,
+} from "@/lib/brandops/format";
+import {
+  buildCmvCandidates,
+  buildCmvOrderDetails,
+  buildCmvTypeCandidates,
+} from "@/lib/brandops/metrics";
+
+const OFFICIAL_CMV_BEFORE_MARCH = [
+  ["Regata", 37],
+  ["Cropped", 37],
+  ["Mini", 37],
+  ["Body", 37],
+  ["Camiseta", 44],
+  ["Camiseta Peruana", 59],
+  ["Oversized", 69],
+  ["Cropped moletom", 69],
+  ["Suéter moletom", 90],
+  ["Hoodie moletom", 110],
+] as const;
+
+const OFFICIAL_CMV_FROM_MARCH = [
+  ["Camiseta", 49.9],
+  ["Camiseta Peruana", 65],
+  ["Mini", 46],
+  ["Body", 46],
+  ["Oversized", 75],
+  ["Regata", 46],
+  ["Cropped", 44],
+  ["Bone Dad Hat", 46],
+] as const;
+
+function toDraftValue(value: number | null | undefined) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  return value.toFixed(2).replace(".", ",");
+}
+
+function parseCurrencyDraft(value: string) {
+  return Number(value.trim().replace(/\./g, "").replace(",", "."));
+}
 
 export default function CmvPage() {
-  const {
-    activeBrand,
-    filteredBrand,
-    saveCmvRule,
-    applyCmvCheckpoint,
-    selectedPeriodLabel,
-  } = useBrandOps();
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
-  const [checkpointNote, setCheckpointNote] = useState("");
+  const { activeBrand, saveCmvRule, applyCmvCheckpoint } = useBrandOps();
+  const [activeView, setActiveView] = useState<"types" | "orders">("types");
+  const [editorTypeKey, setEditorTypeKey] = useState<string | null>(null);
+  const [effectiveDate, setEffectiveDate] = useState("2026-03-01");
+  const [draftCost, setDraftCost] = useState("");
   const [checkpointDate, setCheckpointDate] = useState(new Date().toISOString().slice(0, 10));
+  const [checkpointNote, setCheckpointNote] = useState("");
+  const [isSavingRule, setIsSavingRule] = useState(false);
   const [isApplyingCheckpoint, setIsApplyingCheckpoint] = useState(false);
 
+  const typeCandidates = useMemo(
+    () => (activeBrand ? buildCmvTypeCandidates(activeBrand).filter((item) => item.quantity > 0) : []),
+    [activeBrand],
+  );
 
-  const productDrafts = useMemo(() => {
-    const nextDrafts: Record<string, string> = {};
-    activeBrand?.cmvEntries
-      .filter((entry) => entry.matchType === "PRODUCT")
-      .forEach((entry) => {
-        nextDrafts[entry.matchValue] = String(entry.unitCost).replace(".", ",");
+  const soldProducts = useMemo(
+    () => (activeBrand ? buildCmvCandidates(activeBrand) : []),
+    [activeBrand],
+  );
+  const orderDetails = useMemo(
+    () => (activeBrand ? buildCmvOrderDetails(activeBrand) : []),
+    [activeBrand],
+  );
+
+  const selectedType = typeCandidates.find((item) => item.typeKey === editorTypeKey) ?? null;
+  const latestCheckpoint = activeBrand?.cmvCheckpoints[0] ?? null;
+
+  const typeHistory = useMemo(() => {
+    if (!activeBrand || !selectedType) {
+      return [];
+    }
+    return activeBrand.cmvEntries
+      .filter(
+        (entry) =>
+          entry.matchType === "TYPE" &&
+          entry.matchValue === selectedType.typeKey,
+      )
+      .sort((left, right) => right.validFrom.localeCompare(left.validFrom));
+  }, [activeBrand, selectedType]);
+
+  const productsByType = useMemo(() => {
+    const groups = new Map<
+      string,
+      Array<{ productName: string; quantity: number; revenue: number }>
+    >();
+
+    soldProducts.forEach((product) => {
+      const key = product.productType ?? "Sem tipo detectado";
+      const current = groups.get(key) ?? [];
+      current.push({
+        productName: product.productName,
+        quantity: product.quantity,
+        revenue: product.revenue,
       });
-    return nextDrafts;
-  }, [activeBrand]);
+      groups.set(key, current);
+    });
 
-  const typeDrafts = useMemo(() => {
-    const nextDrafts: Record<string, string> = {};
-    activeBrand?.cmvEntries
-      .filter((entry) => entry.matchType === "TYPE")
-      .forEach((entry) => {
-        nextDrafts[entry.matchValue] = String(entry.unitCost).replace(".", ",");
-      });
-    return nextDrafts;
-  }, [activeBrand]);
+    return [...groups.entries()]
+      .map(([typeLabel, products]) => ({
+        typeLabel,
+        products: products.sort((a, b) => b.quantity - a.quantity),
+      }))
+      .sort((a, b) => a.typeLabel.localeCompare(b.typeLabel));
+  }, [soldProducts]);
 
-  if (!activeBrand || !filteredBrand || !filteredBrand.orderItems.length) {
+  if (!activeBrand || !activeBrand.orderItems.length) {
     return (
       <EmptyState
         title="Ainda não há itens para CMV"
-        description="Importe Lista de Itens.csv e, se quiser acelerar o processo, também a base Controle Financeiro - Oh, My Dog! - CMV_Produtos.csv."
+        description="Importe Lista de Itens.csv para listar os tipos vendidos e cadastrar o custo por peça com histórico."
       />
     );
   }
 
-  const productCandidates = buildCmvCandidates(filteredBrand).slice(0, 20);
-  const typeCandidates = buildCmvTypeCandidates(filteredBrand);
-  const latestCheckpoint = activeBrand.cmvCheckpoints[0] ?? null;
-
-  const parseCurrencyDraft = (value: string) =>
-    Number(value.trim().replace(/\./g, "").replace(",", "."));
+  const openEditor = (typeKey: string, currentCost: number | null) => {
+    setEditorTypeKey(typeKey);
+    setDraftCost(toDraftValue(currentCost));
+  };
 
   return (
-    <div className="relative isolate overflow-hidden space-y-6 lg:space-y-8">
-      {/* Background patterns */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-20 right-[-6rem] h-96 w-96 rounded-full bg-secondary/10 blur-[120px]" />
-        <div className="absolute left-[-5rem] top-64 h-80 w-80 rounded-full bg-primary/10 blur-[100px]" />
-      </div>
-
+    <div className="space-y-6">
       <PageHeader
-        eyebrow="Custos & Precificação"
-        title="Gestão de CMV"
-        description="Defina e reajuste os custos base de cada categoria de produto ou crie exceções por SKU. Utilize checkpoints para proteger dados de fechamentos anteriores."
-        badge={
-          <div className="flex items-center gap-2 bg-secondary/10 text-secondary px-3 py-1 rounded-full border border-secondary/20">
-            <span className="text-[10px] font-bold uppercase tracking-wider">{selectedPeriodLabel}</span>
-          </div>
-        }
+        eyebrow="CMV histórico"
+        title="Gestão de custo por tipo"
+        description="O custo é mantido por tipo de peça, com vigência histórica para preservar períodos já fechados. A alteração de 01/03/2026 já está refletida nesta base."
       />
 
-      <section className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-        <SurfaceCard className="p-0 overflow-hidden bg-background">
-          <div className="p-6 border-b border-outline bg-surface-container/20 flex items-center justify-between">
-            <SectionHeading
-              title="Novo Checkpoint"
-              description="Trave o custo das vendas até uma data limite. Essencial para fechamentos."
-            />
-            <CalendarClock className="text-secondary/50" />
-          </div>
-          <div className="p-6 sm:p-8 grid gap-6 md:grid-cols-2">
-            <div className="space-y-4">
-              <label className="block">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant flex items-center gap-2 mb-2">
-                  <CalendarClock size={12} /> Data do Fechamento
-                </span>
-                <input
-                  type="date"
-                  value={checkpointDate}
-                  onChange={(event) => setCheckpointDate(event.target.value)}
-                  className="brandops-input w-full p-3.5 text-sm rounded-xl border border-outline bg-surface-container/30 focus:bg-background focus:border-secondary transition-all outline-none"
-                />
-              </label>
-              <label className="block">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 block">Motivo / Observação</span>
-                <textarea
-                  value={checkpointNote}
-                  onChange={(event) => setCheckpointNote(event.target.value)}
-                  placeholder="Ex.: Fechamento contábil Mar/2026..."
-                  className="brandops-input w-full p-3.5 text-sm rounded-xl border border-outline bg-surface-container/30 focus:bg-background focus:border-secondary transition-all outline-none resize-none h-20"
-                />
-              </label>
+      <section className="flex flex-wrap gap-2">
+        {[
+          { key: "types", label: "Gestão por tipo" },
+          { key: "orders", label: "Detalhamento por pedido" },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveView(tab.key as "types" | "orders")}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+              activeView === tab.key
+                ? "bg-secondary-container text-on-secondary-container"
+                : "bg-surface-container text-on-surface-variant hover:text-on-surface"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-3">
+        <SurfaceCard>
+          <p className="text-sm text-on-surface-variant">Tipos vendidos</p>
+          <p className="mt-3 text-3xl font-semibold text-on-surface">
+            {integerFormatter.format(typeCandidates.length)}
+          </p>
+        </SurfaceCard>
+        <SurfaceCard>
+          <p className="text-sm text-on-surface-variant">Produtos conciliados</p>
+          <p className="mt-3 text-3xl font-semibold text-on-surface">
+            {integerFormatter.format(soldProducts.length)}
+          </p>
+        </SurfaceCard>
+        <SurfaceCard>
+          <p className="text-sm text-on-surface-variant">Último checkpoint</p>
+          <p className="mt-3 text-lg font-semibold text-on-surface">
+            {latestCheckpoint ? formatLongDateTime(latestCheckpoint.createdAt) : "Base ainda aberta"}
+          </p>
+        </SurfaceCard>
+      </section>
+
+      {activeView === "types" ? (
+        <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <SurfaceCard className="p-0 overflow-hidden">
+            <div className="border-b border-outline p-5">
+              <SectionHeading
+                title="Tipos de peça vendidos"
+                description="Atualize o custo por tipo quando houver mudança de tabela. O histórico fica preservado por vigência."
+              />
             </div>
-            <div className="flex flex-col justify-end">
-              <div className="p-4 rounded-xl border border-secondary/20 bg-secondary/5 text-xs text-on-surface-variant mb-4 flex items-start gap-3">
-                 <Info size={16} className="text-secondary shrink-0 mt-0.5" />
-                 <p>Qualquer pedido fechado <strong>antes ou na data escolhida</strong> receberá um "carimbo" impossibilitando que alterações futuras de regra mudem retroativamente o histórico de lucro deste período.</p>
-              </div>
+            <div className="brandops-table-container rounded-none border-0">
+              <table className="brandops-table-compact min-w-[760px] w-full">
+                <thead>
+                  <tr>
+                    <th>Tipo</th>
+                    <th className="text-right">Peças</th>
+                    <th className="text-right">Faturado</th>
+                    <th className="text-right">Regras</th>
+                    <th className="text-right">Ação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {typeCandidates.map((candidate) => {
+                    const rulesCount = activeBrand.cmvEntries.filter(
+                      (entry) =>
+                        entry.matchType === "TYPE" && entry.matchValue === candidate.typeKey,
+                    ).length;
+                    return (
+                      <tr key={candidate.typeKey}>
+                        <td className="font-semibold text-on-surface">{candidate.typeLabel}</td>
+                        <td className="text-right">{integerFormatter.format(candidate.quantity)}</td>
+                        <td className="text-right">{currencyFormatter.format(candidate.revenue)}</td>
+                        <td className="text-right">{rulesCount}</td>
+                        <td className="text-right">
+                          <button
+                            onClick={() => openEditor(candidate.typeKey, candidate.unitCost)}
+                            className="brandops-button brandops-button-secondary px-3 py-1.5 text-xs"
+                          >
+                            <PencilLine size={14} />
+                            Atualizar custo
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </SurfaceCard>
+
+          <SurfaceCard>
+            <SectionHeading
+              title="Checkpoint de fechamento"
+              description="Use o checkpoint depois de revisar os custos para congelar a aplicação do CMV."
+            />
+            <div className="mt-5 space-y-4">
+              <input
+                type="date"
+                value={checkpointDate}
+                onChange={(event) => setCheckpointDate(event.target.value)}
+                className="brandops-input w-full px-3 py-2.5"
+              />
+              <textarea
+                value={checkpointNote}
+                onChange={(event) => setCheckpointNote(event.target.value)}
+                placeholder="Ex.: Fechamento CMV março/2026"
+                className="brandops-input min-h-[96px] w-full p-3"
+              />
               <button
                 onClick={async () => {
                   setIsApplyingCheckpoint(true);
@@ -124,255 +257,260 @@ export default function CmvPage() {
                     setIsApplyingCheckpoint(false);
                   }
                 }}
+                className="brandops-button brandops-button-primary w-full"
                 disabled={isApplyingCheckpoint}
-                className="brandops-button brandops-button-primary w-full py-4 text-sm rounded-xl shadow-lg shadow-secondary/20 flex items-center justify-center gap-2"
               >
-                {isApplyingCheckpoint ? (
-                  <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-on-secondary border-t-transparent" />
-                    Processando Pedidos...
-                  </>
-                ) : (
-                  <>
-                    <Save size={16} /> 
-                    <span>Congelar Histórico</span>
-                  </>
-                )}
+                {isApplyingCheckpoint ? "Aplicando checkpoint..." : "Aplicar checkpoint"}
               </button>
+              {latestCheckpoint ? (
+                <div className="rounded-2xl border border-secondary/20 bg-secondary-container/40 p-4 text-sm text-on-surface-variant">
+                  <div className="flex items-center gap-2 font-semibold text-on-surface">
+                    <CheckCircle2 size={16} />
+                    Último fechamento registrado
+                  </div>
+                  <p className="mt-2">{formatLongDateTime(latestCheckpoint.createdAt)}</p>
+                  <p className="mt-1">
+                    {integerFormatter.format(latestCheckpoint.itemsUpdated)} itens atualizados e{" "}
+                    {integerFormatter.format(latestCheckpoint.unmatchedItems)} sem match.
+                  </p>
+                </div>
+              ) : null}
             </div>
+          </SurfaceCard>
+        </section>
+      ) : (
+        <SurfaceCard className="p-0 overflow-hidden">
+          <div className="border-b border-outline p-5">
+            <SectionHeading
+              title="Detalhamento de CMV por pedido"
+              description="Auditoria direta para conferir número do pedido, itens conciliados, valor de venda e CMV aplicado em cada venda."
+            />
+          </div>
+          <div className="brandops-table-container rounded-none border-0">
+            <table className="brandops-table-compact min-w-[1040px] w-full">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Pedido</th>
+                  <th>Itens do pedido</th>
+                  <th className="text-right">Peças</th>
+                  <th className="text-right">Valor de venda</th>
+                  <th className="text-right">CMV do pedido</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orderDetails.map((order) => (
+                  <tr key={order.orderNumber}>
+                    <td>{formatCompactDate(order.orderDate)}</td>
+                    <td className="font-semibold text-on-surface">{order.orderNumber}</td>
+                    <td className="max-w-[520px]">
+                      <p className="line-clamp-3 text-sm leading-6 text-on-surface">
+                        {order.itemsSummary}
+                      </p>
+                    </td>
+                    <td className="text-right">{integerFormatter.format(order.units)}</td>
+                    <td className="text-right">{currencyFormatter.format(order.orderValue)}</td>
+                    <td className="text-right font-semibold text-on-surface">
+                      {currencyFormatter.format(order.cmvTotal)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </SurfaceCard>
+      )}
+
+      <section className="grid gap-6 xl:grid-cols-2">
+        <SurfaceCard>
+          <SectionHeading
+            title="Referência oficial até 28/02/2026"
+            description="Tabela vigente antes do reajuste da INK."
+          />
+          <div className="mt-5 space-y-3">
+            {OFFICIAL_CMV_BEFORE_MARCH.map(([label, value]) => (
+              <div key={label} className="panel-muted flex items-center justify-between p-4">
+                <span className="font-medium text-on-surface">{label}</span>
+                <span className="font-semibold text-on-surface">
+                  {currencyFormatter.format(value)}
+                </span>
+              </div>
+            ))}
           </div>
         </SurfaceCard>
 
-        <SurfaceCard className="p-0 overflow-hidden bg-background">
-          <div className="p-6 border-b border-outline bg-surface-container/20">
-             <SectionHeading title="Último Checkpoint" description="Fechamento mais recente gravado." />
-          </div>
-          <div className="p-6 sm:p-8 flex flex-col justify-center h-[calc(100%-80px)]">
-             {latestCheckpoint ? (
-              <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-14 w-14 flex shrink-0 items-center justify-center rounded-2xl bg-secondary/10 border border-secondary/20 text-secondary">
-                    <CheckCircle2 size={24} />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-on-surface">{formatLongDateTime(latestCheckpoint.createdAt).split(' às ')[0]}</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70 mt-1">Às {formatLongDateTime(latestCheckpoint.createdAt).split(' às ')[1]}</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl bg-surface-container/30 border border-outline">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant opacity-70 mb-1">Pedidos Travados</p>
-                    <p className="text-2xl font-black text-on-surface">{integerFormatter.format(latestCheckpoint.itemsUpdated)}</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-tertiary/5 border border-tertiary/20">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-tertiary/70 mb-1">Sem Preço</p>
-                    <p className="text-2xl font-black text-tertiary">{integerFormatter.format(latestCheckpoint.unmatchedItems)}</p>
-                  </div>
-                </div>
-                
-                {latestCheckpoint.note && (
-                  <div className="p-3 rounded-xl bg-surface-container/20 border border-outline text-xs text-on-surface-variant italic relative">
-                    <span className="absolute -top-2 left-4 px-1 bg-background text-[9px] font-bold uppercase tracking-widest text-on-surface-variant/50">Motivo</span>
-                    "{latestCheckpoint.note}"
-                  </div>
-                )}
+        <SurfaceCard>
+          <SectionHeading
+            title="Referência oficial a partir de 01/03/2026"
+            description="Tabela vigente após o reajuste da INK."
+          />
+          <div className="mt-5 space-y-3">
+            {OFFICIAL_CMV_FROM_MARCH.map(([label, value]) => (
+              <div key={label} className="panel-muted flex items-center justify-between p-4">
+                <span className="font-medium text-on-surface">{label}</span>
+                <span className="font-semibold text-on-surface">
+                  {currencyFormatter.format(value)}
+                </span>
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center h-full space-y-3 opacity-60">
-                <CalendarClock size={40} className="text-on-surface-variant/40" />
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant">Base Aberta</p>
-                  <p className="text-xs text-on-surface-variant/70 mt-2 max-w-[200px]">Nenhum período foi congelado. Regras afetam todo o histórico.</p>
-                </div>
-              </div>
-            )}
+            ))}
           </div>
         </SurfaceCard>
       </section>
 
-      <SurfaceCard className="p-0 overflow-hidden shadow-sm">
-        <div className="p-6 border-b border-outline bg-surface-container/20">
+      <SurfaceCard className="p-0 overflow-hidden">
+        <div className="border-b border-outline p-5">
           <SectionHeading
-            title="Custo Padrão por Categoria"
-            description="Defina as regras bases (Fallback) aplicadas a todos os itens que compartilharem da mesma tipificação."
+            title="Produtos vendidos por categoria"
+            description="Auditoria rápida para conferir quais estampas e peças entram em cada tipo."
           />
         </div>
-
-        <div className="brandops-table-container">
-          <table className="app-table brandops-table-compact w-full">
-            <thead>
-              <tr className="bg-surface-container/10">
-                <th className="pl-6">Tipo / Categoria</th>
-                <th className="text-right">Volume</th>
-                <th className="text-right">Bruto Base</th>
-                <th className="text-right w-44">Tabela Praticada (R$)</th>
-                <th className="pr-6 text-right w-32">Ação</th>
-              </tr>
-            </thead>
-            <tbody>
-              {typeCandidates.map((candidate) => {
-                const storedValue = typeDrafts[candidate.typeKey];
-                const currentDraft = drafts[`type:${candidate.typeKey}`];
-                const isModified = currentDraft !== undefined && currentDraft !== storedValue;
-                
-                return (
-                  <tr key={candidate.typeKey} className="group hover:bg-secondary/[0.02] border-b border-outline/50 last:border-0">
-                    <td className="pl-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-on-surface text-sm">{candidate.typeLabel}</span>
-                        {storedValue && (
-                          <span className="text-[10px] text-secondary font-bold uppercase tracking-widest mt-1">
-                            Vigente: {currencyFormatter.format(Number(storedValue.replace(",", ".")))}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="text-right text-on-surface-variant font-medium text-sm">
-                      {integerFormatter.format(candidate.quantity)}
-                    </td>
-                    <td className="text-right text-on-surface font-semibold text-sm">
-                      {currencyFormatter.format(candidate.revenue)}
-                    </td>
-                    <td className="text-right">
-                      <input
-                        value={currentDraft ?? storedValue ?? ""}
-                        onChange={(event) =>
-                          setDrafts((current) => ({
-                            ...current,
-                            [`type:${candidate.typeKey}`]: event.target.value,
-                          }))
-                        }
-                        placeholder="Ex: 45,90"
-                        className={`brandops-input w-full text-right p-2.5 text-sm font-semibold rounded-xl border-2 transition-all outline-none ${
-                          isModified ? "border-secondary/60 bg-secondary/5 text-secondary" : "border-outline bg-surface-container/30 text-on-surface focus:border-secondary"
-                        }`}
-                      />
-                    </td>
-                    <td className="pr-6 text-right">
-                      <button
-                        onClick={() => {
-                          const raw = currentDraft ?? "";
-                          const unitCost = parseCurrencyDraft(raw);
-                          if (!Number.isFinite(unitCost)) return;
-                          void saveCmvRule(
-                            activeBrand.id,
-                            "TYPE",
-                            candidate.typeLabel,
-                            candidate.typeLabel,
-                            unitCost,
-                          );
-                        }}
-                        disabled={!isModified}
-                        className={`brandops-button px-4 py-2.5 rounded-xl text-xs font-bold w-full transition-all ${
-                          isModified 
-                            ? "brandops-button-secondary scale-100 opacity-100 shadow-md shadow-secondary/20" 
-                            : "opacity-40 scale-[0.98] bg-surface-container text-on-surface-variant"
-                        }`}
-                      >
-                        {isModified ? "Gravar" : "Salvo"}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="grid gap-4 p-5 xl:grid-cols-2">
+          {productsByType.map((group) => (
+            <article key={group.typeLabel} className="panel-muted p-4">
+              <p className="font-semibold text-on-surface">{group.typeLabel}</p>
+              <div className="mt-3 space-y-2">
+                {group.products.slice(0, 5).map((product) => (
+                  <div
+                    key={`${group.typeLabel}-${product.productName}`}
+                    className="flex items-start justify-between gap-4 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-on-surface">{product.productName}</p>
+                      <p className="text-xs text-on-surface-variant">
+                        {integerFormatter.format(product.quantity)} peças
+                      </p>
+                    </div>
+                    <p className="whitespace-nowrap font-medium text-on-surface">
+                      {currencyFormatter.format(product.revenue)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ))}
         </div>
       </SurfaceCard>
 
-      <SurfaceCard className="p-0 overflow-hidden shadow-sm">
-        <div className="p-6 border-b border-outline bg-surface-container/20">
-          <SectionHeading
-            title="Exceções Individuais (Overrides)"
-            description="Custos específicos por produto que prevalecem sobre a categoria padrão."
-          />
-        </div>
-        <div className="brandops-table-container">
-          <table className="app-table brandops-table-compact w-full">
-            <thead>
-              <tr className="bg-surface-container/10">
-                <th className="pl-6">Produto</th>
-                <th>Categoria</th>
-                <th className="text-right">Pedidos</th>
-                <th className="text-right w-44">Custo Unit. (R$)</th>
-                <th className="pr-6 text-right w-32">Ação</th>
-              </tr>
-            </thead>
-            <tbody>
-              {productCandidates.map((product) => {
-                const storedValue = productDrafts[product.productId];
-                const currentDraft = drafts[`product:${product.productId}`];
-                const isModified = currentDraft !== undefined && currentDraft !== storedValue;
+      {selectedType ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-[2px]">
+          <div className="w-full max-w-3xl rounded-3xl border border-outline bg-surface shadow-2xl">
+            <div className="flex items-center justify-between border-b border-outline px-6 py-5">
+              <div>
+                <p className="eyebrow">Atualização por vigência</p>
+                <h2 className="font-headline text-2xl font-semibold text-on-surface">
+                  {selectedType.typeLabel}
+                </h2>
+              </div>
+              <button
+                onClick={() => setEditorTypeKey(null)}
+                className="brandops-button brandops-button-ghost h-9 w-9 rounded-full p-0"
+              >
+                <X size={16} />
+              </button>
+            </div>
 
-                return (
-                  <tr key={product.productId} className="group hover:bg-secondary/[0.02] border-b border-outline/50 last:border-0">
-                    <td className="pl-6 py-4 max-w-[300px]">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-on-surface text-sm truncate" title={product.productName}>
-                           {product.productName}
-                        </span>
-                        {storedValue && (
-                          <span className="text-[10px] text-tertiary font-bold uppercase tracking-widest mt-1">
-                            Override Ativo: {currencyFormatter.format(Number(storedValue.replace(",", ".")))}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="text-on-surface-variant font-medium text-xs">
-                      {product.productType ? (
-                         <span className="px-2 py-1 rounded bg-surface-container-high">{product.productType}</span>
-                      ) : <span className="opacity-30">—</span>}
-                    </td>
-                    <td className="text-right text-on-surface-variant font-medium text-sm">
-                      {integerFormatter.format(product.quantity)}
-                    </td>
-                    <td className="text-right">
-                      <input
-                        value={currentDraft ?? storedValue ?? ""}
-                        onChange={(event) =>
-                          setDrafts((current) => ({
-                            ...current,
-                            [`product:${product.productId}`]: event.target.value,
-                          }))
-                        }
-                        placeholder="Ex: 85,00"
-                        className={`brandops-input w-full text-right p-2.5 text-sm font-semibold rounded-xl border-2 transition-all outline-none ${
-                          isModified ? "border-tertiary/60 bg-tertiary/5 text-tertiary" : "border-outline bg-surface-container/30 text-on-surface focus:border-tertiary/50"
-                        }`}
-                      />
-                    </td>
-                    <td className="pr-6 text-right">
-                      <button
-                        onClick={() => {
-                          const raw = currentDraft ?? "";
-                          const unitCost = parseCurrencyDraft(raw);
-                          if (!Number.isFinite(unitCost)) return;
-                          void saveCmvRule(
-                            activeBrand.id,
-                            "PRODUCT",
-                            product.productName,
-                            product.productName,
-                            unitCost,
-                          );
-                        }}
-                        disabled={!isModified}
-                        className={`brandops-button px-4 py-2.5 rounded-xl text-xs font-bold w-full transition-all ${
-                          isModified 
-                            ? "bg-tertiary text-on-secondary shadow-md shadow-tertiary/20 scale-100 opacity-100 hover:opacity-90" 
-                            : "opacity-40 scale-[0.98] bg-surface-container text-on-surface-variant"
-                        }`}
-                      >
-                        {isModified ? "Sobrescrever" : "Salvo"}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+            <div className="grid gap-6 p-6 lg:grid-cols-[0.9fr_1.1fr]">
+              <div className="space-y-4">
+                <div className="panel-muted p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    Peças vendidas
+                  </p>
+                  <p className="mt-2 font-headline text-2xl font-semibold text-on-surface">
+                    {integerFormatter.format(selectedType.quantity)}
+                  </p>
+                </div>
+                <div className="panel-muted p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    Faturado
+                  </p>
+                  <p className="mt-2 font-headline text-2xl font-semibold text-on-surface">
+                    {currencyFormatter.format(selectedType.revenue)}
+                  </p>
+                </div>
+                <label className="block">
+                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    Vigência
+                  </span>
+                  <input
+                    type="date"
+                    value={effectiveDate}
+                    onChange={(event) => setEffectiveDate(event.target.value)}
+                    className="brandops-input w-full px-3 py-2.5"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    Novo custo unitário
+                  </span>
+                  <input
+                    value={draftCost}
+                    onChange={(event) => setDraftCost(event.target.value)}
+                    placeholder="0,00"
+                    className="brandops-input w-full px-3 py-2.5"
+                  />
+                </label>
+                <button
+                  onClick={async () => {
+                    const unitCost = parseCurrencyDraft(draftCost);
+                    if (!Number.isFinite(unitCost)) {
+                      return;
+                    }
+                    setIsSavingRule(true);
+                    try {
+                      await saveCmvRule(
+                        activeBrand.id,
+                        "TYPE",
+                        selectedType.typeKey,
+                        selectedType.typeLabel,
+                        unitCost,
+                        effectiveDate,
+                      );
+                      setEditorTypeKey(null);
+                    } finally {
+                      setIsSavingRule(false);
+                    }
+                  }}
+                  className="brandops-button brandops-button-primary w-full"
+                  disabled={isSavingRule}
+                >
+                  {isSavingRule ? "Salvando..." : "Salvar nova vigência"}
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <SectionHeading
+                  title="Histórico desse tipo"
+                  description="Cada alteração cria uma nova vigência e encerra a anterior."
+                />
+                <div className="space-y-3">
+                  {typeHistory.length ? (
+                    typeHistory.map((entry) => (
+                      <article key={entry.id} className="panel-muted p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="font-semibold text-on-surface">{entry.matchLabel}</p>
+                            <p className="mt-1 text-sm text-on-surface-variant">
+                              {entry.validFrom.slice(0, 10)}
+                              {entry.validTo ? ` até ${entry.validTo.slice(0, 10)}` : " em diante"}
+                            </p>
+                          </div>
+                          <p className="font-semibold text-on-surface">
+                            {currencyFormatter.format(entry.unitCost)}
+                          </p>
+                        </div>
+                      </article>
+                    ))
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-outline p-4 text-sm text-on-surface-variant">
+                      Nenhuma regra histórica cadastrada ainda para este tipo.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </SurfaceCard>
+      ) : null}
     </div>
   );
 }

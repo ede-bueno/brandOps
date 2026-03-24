@@ -1,13 +1,5 @@
 import { parseUploadedCsv } from "@/lib/brandops/csv";
 import { supabase } from "@/lib/supabase";
-import {
-  ingestMetaRaw,
-  ingestOrderLines,
-  ingestOrdersPaid,
-  type MetaRowPayload,
-  type OrderLinePayload,
-  type OrderPayload,
-} from "@/lib/brandops/canonical-ingest";
 import type {
   BrandExpense,
   BrandDataset,
@@ -15,12 +7,14 @@ import type {
   CmvCheckpoint,
   CmvMatchType,
   CsvFileKind,
+  ImportRunInfo,
   ExpenseCategory,
   ImportedFileInfo,
   MediaRow,
   OrderItem,
   PaidOrder,
   SalesLine,
+  SanitizationDecision,
   UserProfile,
 } from "./types";
 
@@ -103,21 +97,64 @@ function mapLatestImportFiles(
     file_name: string;
     created_at: string;
     records_processed: number | null;
+    records_inserted: number | null;
   }>,
 ): Partial<Record<CsvFileKind, ImportedFileInfo>> {
   return rows.reduce((acc, row) => {
     const kind = row.file_type as CsvFileKind;
-    if (acc[kind]) {
-      return acc;
-    }
-    acc[kind] = {
+    const current: ImportedFileInfo = acc[kind] ?? {
       kind,
+      totalRuns: 0,
+      totalRows: 0,
+      totalInserted: 0,
+      lastImportedAt: row.created_at,
+      runs: [],
+    };
+
+    current.totalRuns += 1;
+    current.totalRows += row.records_processed ?? 0;
+    current.totalInserted += row.records_inserted ?? 0;
+    current.lastImportedAt =
+      current.lastImportedAt > row.created_at ? current.lastImportedAt : row.created_at;
+    current.runs.push({
       fileName: row.file_name,
       importedAt: row.created_at,
       rowCount: row.records_processed ?? 0,
-    };
+      insertedCount: row.records_inserted ?? 0,
+    });
+    current.runs.sort((left, right) => right.importedAt.localeCompare(left.importedAt));
+    acc[kind] = current;
     return acc;
   }, {} as Partial<Record<CsvFileKind, ImportedFileInfo>>);
+}
+
+function resolveSanitizationStatus(value: string | null | undefined, isIgnored?: boolean) {
+  if (value === "PENDING" || value === "KEPT" || value === "IGNORED") {
+    return value satisfies SanitizationDecision;
+  }
+  return isIgnored ? "IGNORED" : "PENDING";
+}
+
+function buildMediaConflictKey(row: {
+  brand_id: string;
+  date: string;
+  campaign_name: string;
+  adset_name: string;
+  ad_name: string;
+  platform: string;
+  placement: string;
+  device_platform: string;
+}) {
+  return [
+    row.brand_id,
+    row.date,
+    row.campaign_name,
+    row.adset_name,
+    row.ad_name,
+    row.platform,
+    row.placement,
+    row.device_platform,
+  ].join("::");
 }
 
 export async function fetchUserProfile(userId: string) {
@@ -182,7 +219,7 @@ export async function fetchBrandDataset(brandId: string) {
       supabase
         .from("orders")
         .select(
-          "id, order_number, order_date, payment_method, payment_status, customer_name, items_in_order, net_revenue, discount, commission_value, source, tracking_url, shipping_state, coupon_name, is_ignored, ignore_reason",
+          "id, order_number, order_date, payment_method, payment_status, customer_name, items_in_order, net_revenue, discount, commission_value, source, tracking_url, shipping_state, coupon_name, is_ignored, ignore_reason, ignored_by, ignored_at, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
         )
         .eq("brand_id", brandId)
         .range(from, to),
@@ -209,7 +246,7 @@ export async function fetchBrandDataset(brandId: string) {
       supabase
         .from("media_performance")
         .select(
-          "id, date, campaign_name, adset_name, account_name, ad_name, platform, placement, device_platform, delivery, reach, impressions, clicks_all, spend, purchases, conversion_value, link_clicks, ctr_all, ctr_link, add_to_cart, is_ignored, ignore_reason",
+          "id, date, campaign_name, adset_name, account_name, ad_name, platform, placement, device_platform, delivery, reach, impressions, clicks_all, spend, purchases, conversion_value, link_clicks, ctr_all, ctr_link, add_to_cart, is_ignored, ignore_reason, ignored_by, ignored_at, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
         )
         .eq("brand_id", brandId)
         .range(from, to),
@@ -217,9 +254,9 @@ export async function fetchBrandDataset(brandId: string) {
     fetchAllRows(async (from, to) =>
       supabase
         .from("cmv_history")
-        .select("id, match_type, match_value, match_label, cmv_unit, source, valid_from, updated_at")
+        .select("id, match_type, match_value, match_label, cmv_unit, source, valid_from, valid_to, updated_at")
         .eq("brand_id", brandId)
-        .is("valid_to", null)
+        .order("valid_from", { ascending: false })
         .range(from, to),
     ),
     fetchAllRows(async (from, to) =>
@@ -243,7 +280,7 @@ export async function fetchBrandDataset(brandId: string) {
     fetchAllRows(async (from, to) =>
       supabase
         .from("import_logs")
-        .select("file_type, file_name, created_at, records_processed")
+        .select("file_type, file_name, created_at, records_processed, records_inserted")
         .eq("brand_id", brandId)
         .eq("status", "SUCCESS")
         .order("created_at", { ascending: false })
@@ -297,6 +334,10 @@ export async function fetchBrandDataset(brandId: string) {
       shippingState: row.shipping_state ?? undefined,
       isIgnored: Boolean(row.is_ignored),
       ignoreReason: row.ignore_reason ?? null,
+      sanitizationStatus: resolveSanitizationStatus(row.sanitization_status, row.is_ignored),
+      sanitizationNote: row.sanitization_note ?? null,
+      sanitizedAt: row.sanitized_at ?? row.ignored_at ?? null,
+      sanitizedBy: row.sanitized_by ?? row.ignored_by ?? null,
     }));
 
   const orderItems: OrderItem[] =
@@ -360,6 +401,10 @@ export async function fetchBrandDataset(brandId: string) {
       addToCart: row.add_to_cart ?? 0,
       isIgnored: Boolean(row.is_ignored),
       ignoreReason: row.ignore_reason ?? null,
+      sanitizationStatus: resolveSanitizationStatus(row.sanitization_status, row.is_ignored),
+      sanitizationNote: row.sanitization_note ?? null,
+      sanitizedAt: row.sanitized_at ?? row.ignored_at ?? null,
+      sanitizedBy: row.sanitized_by ?? row.ignored_by ?? null,
     }));
 
   const cmvEntries =
@@ -371,6 +416,7 @@ export async function fetchBrandDataset(brandId: string) {
       unitCost: Number(row.cmv_unit ?? 0),
       source: row.source ?? "manual",
       validFrom: row.valid_from,
+      validTo: row.valid_to ?? null,
       updatedAt: row.updated_at,
     }));
 
@@ -448,7 +494,7 @@ export async function createBrandIfNeeded(
 async function writeImportLog(
   brandId: string,
   userId: string,
-  fileInfo: ImportedFileInfo,
+  fileInfo: ImportRunInfo,
   status: "SUCCESS" | "FAILED",
   recordsInserted: number,
   errorMessage?: string,
@@ -474,7 +520,7 @@ async function writeImportLog(
 async function runImportBlock(
   brandId: string,
   userId: string,
-  fileInfo: ImportedFileInfo,
+  fileInfo: ImportRunInfo,
   block: () => Promise<number>,
 ) {
   try {
@@ -545,33 +591,55 @@ async function replaceProducts(
   return rows.length;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function upsertOrders(
   brandId: string,
   paidOrders: PaidOrder[],
 ) {
+  const orderNumbers = [...new Set(paidOrders.map((order) => order.orderNumber))];
+  const existingRows = orderNumbers.length
+    ? await fetchAllRows(async (from, to) =>
+        supabase
+          .from("orders")
+          .select(
+            "order_number, is_ignored, ignore_reason, ignored_by, ignored_at, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
+          )
+          .eq("brand_id", brandId)
+          .in("order_number", orderNumbers)
+          .range(from, to),
+      )
+    : [];
+  const existingMap = new Map(existingRows.map((row) => [row.order_number, row]));
+
   const rows = dedupeByKey(
-    paidOrders.map((order) => ({
-      brand_id: brandId,
-      order_number: order.orderNumber,
-      order_date: toIsoTimestamp(order.orderDate),
-      customer_name: order.customerName,
-      gross_revenue: order.orderValue + order.discountValue,
-      discount: order.discountValue,
-      net_revenue: order.orderValue,
-      payment_status: order.paymentStatus,
-      source: order.source,
-      tracking_code: order.trackingUrl ?? null,
-      payment_method: order.paymentMethod,
-      items_in_order: order.itemsInOrder,
-      coupon_name: order.couponName ?? null,
-      commission_value: order.commissionValue,
-      shipping_state: order.shippingState ?? null,
-      shipping_street: null,
-      tracking_url: order.trackingUrl ?? null,
-      is_ignored: false,
-      ignore_reason: null,
-    })),
+    paidOrders.map((order) => {
+      const existing = existingMap.get(order.orderNumber);
+      return {
+        brand_id: brandId,
+        order_number: order.orderNumber,
+        order_date: toIsoTimestamp(order.orderDate),
+        customer_name: order.customerName,
+        discount: order.discountValue,
+        net_revenue: order.orderValue,
+        payment_status: order.paymentStatus,
+        source: order.source,
+        tracking_code: order.trackingUrl ?? null,
+        payment_method: order.paymentMethod,
+        items_in_order: order.itemsInOrder,
+        coupon_name: order.couponName ?? null,
+        commission_value: order.commissionValue,
+        shipping_state: order.shippingState ?? null,
+        shipping_street: null,
+        tracking_url: order.trackingUrl ?? null,
+        is_ignored: existing?.is_ignored ?? false,
+        ignore_reason: existing?.ignore_reason ?? null,
+        ignored_by: existing?.ignored_by ?? null,
+        ignored_at: existing?.ignored_at ?? null,
+        sanitization_status: existing?.sanitization_status ?? "PENDING",
+        sanitization_note: existing?.sanitization_note ?? null,
+        sanitized_at: existing?.sanitized_at ?? null,
+        sanitized_by: existing?.sanitized_by ?? null,
+      };
+    }),
     (row) => [row.brand_id, row.order_number].join("::"),
   );
 
@@ -587,7 +655,6 @@ async function upsertOrders(
   return rows.length;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function replaceOrderItems(
   brandId: string,
   orderItems: OrderItem[],
@@ -608,7 +675,7 @@ async function replaceOrderItems(
   const orderNumbers = [...new Set(orderItems.map((item) => item.orderNumber))];
   const { data: orders, error: ordersError } = await supabase
     .from("orders")
-    .select("id, order_number")
+    .select("id, order_number, is_ignored, ignore_reason, ignored_by, ignored_at")
     .eq("brand_id", brandId)
     .in("order_number", orderNumbers);
 
@@ -617,35 +684,51 @@ async function replaceOrderItems(
   }
 
   const orderMap = new Map(orders.map((row) => [row.order_number, row.id]));
+  const orderStateMap = new Map(
+    orders.map((row) => [
+      row.order_number,
+      {
+        isIgnored: (row as { is_ignored?: boolean }).is_ignored ?? false,
+        ignoreReason: (row as { ignore_reason?: string | null }).ignore_reason ?? null,
+        ignoredBy: (row as { ignored_by?: string | null }).ignored_by ?? null,
+        ignoredAt: (row as { ignored_at?: string | null }).ignored_at ?? null,
+      },
+    ]),
+  );
   if (!orderItems.every((item) => orderMap.has(item.orderNumber))) {
     throw new Error(
       "Importe Lista de Pedidos.csv antes de Lista de Itens.csv para vincular os pedidos.",
     );
   }
 
-  const rowsToInsert = rows.map((item) => ({
-    brand_id: brandId,
-    order_id: orderMap.get(item.orderNumber),
-    order_number: item.orderNumber,
-    order_date: toIsoTimestamp(item.orderDate),
-    customer_name: item.customerName ?? null,
-    sku: deriveOrderItemsSku(item),
-    product_name: item.productName,
-    product_specs: item.productSpecs ?? null,
-    product_type: item.productType ?? null,
-    quantity: item.quantity,
-    gross_value: item.grossValue,
-    unit_price: item.quantity ? item.grossValue / item.quantity : item.grossValue,
-    cmv_unit_applied: item.cmvUnitApplied ?? 0,
-    cmv_total_applied: item.cmvTotalApplied ?? 0,
-    cmv_rule_type: item.cmvRuleType ?? null,
-    cmv_rule_value: null,
-    cmv_rule_label: item.cmvRuleLabel ?? null,
-    cmv_applied_at: null,
-    cmv_checkpoint_id: null,
-    is_ignored: false,
-    ignore_reason: null,
-  }));
+  const rowsToInsert = rows.map((item) => {
+    const orderState = orderStateMap.get(item.orderNumber);
+    return {
+      brand_id: brandId,
+      order_id: orderMap.get(item.orderNumber),
+      order_number: item.orderNumber,
+      order_date: toIsoTimestamp(item.orderDate),
+      customer_name: item.customerName ?? null,
+      sku: deriveOrderItemsSku(item),
+      product_name: item.productName,
+      product_specs: item.productSpecs ?? null,
+      product_type: item.productType ?? null,
+      quantity: item.quantity,
+      gross_value: item.grossValue,
+      unit_price: item.quantity ? item.grossValue / item.quantity : item.grossValue,
+      cmv_unit_applied: item.cmvUnitApplied ?? 0,
+      cmv_total_applied: item.cmvTotalApplied ?? 0,
+      cmv_rule_type: item.cmvRuleType ?? null,
+      cmv_rule_value: null,
+      cmv_rule_label: item.cmvRuleLabel ?? null,
+      cmv_applied_at: null,
+      cmv_checkpoint_id: null,
+      is_ignored: orderState?.isIgnored ?? false,
+      ignore_reason: orderState?.ignoreReason ?? null,
+      ignored_by: orderState?.ignoredBy ?? null,
+      ignored_at: orderState?.ignoredAt ?? null,
+    };
+  });
 
   for (const chunk of chunkArray(orderNumbers)) {
     const { error: deleteError } = await supabase
@@ -668,7 +751,6 @@ async function replaceOrderItems(
   return rowsToInsert.length;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function replaceSalesLines(
   brandId: string,
   salesLines: SalesLine[],
@@ -705,6 +787,37 @@ async function replaceSalesLines(
   );
 
   const orderNumbers = [...new Set(salesLines.map((line) => line.orderNumber))];
+  const existingOrders = orderNumbers.length
+    ? await fetchAllRows(async (from, to) =>
+        supabase
+          .from("orders")
+          .select("order_number, is_ignored, ignore_reason, ignored_by, ignored_at")
+          .eq("brand_id", brandId)
+          .in("order_number", orderNumbers)
+          .range(from, to),
+      )
+    : [];
+  const orderStateMap = new Map(
+    existingOrders.map((row) => [
+      row.order_number,
+      {
+        isIgnored: row.is_ignored ?? false,
+        ignoreReason: row.ignore_reason ?? null,
+        ignoredBy: row.ignored_by ?? null,
+        ignoredAt: row.ignored_at ?? null,
+      },
+    ]),
+  );
+  const rowsToInsert = rows.map((row) => {
+    const orderState = orderStateMap.get(row.order_number);
+    return {
+      ...row,
+      is_ignored: orderState?.isIgnored ?? false,
+      ignore_reason: orderState?.ignoreReason ?? null,
+      ignored_by: orderState?.ignoredBy ?? null,
+      ignored_at: orderState?.ignoredAt ?? null,
+    };
+  });
 
   for (const chunk of chunkArray(orderNumbers)) {
     const { error: deleteError } = await supabase
@@ -717,17 +830,16 @@ async function replaceSalesLines(
     }
   }
 
-  for (const chunk of chunkArray(rows)) {
+  for (const chunk of chunkArray(rowsToInsert)) {
     const { error } = await supabase.from("sales_lines").insert(chunk);
     if (error) {
       throw error;
     }
   }
 
-  return rows.length;
+  return rowsToInsert.length;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function replaceMedia(
   brandId: string,
   media: MediaRow[],
@@ -771,15 +883,50 @@ async function replaceMedia(
       ].join("::"),
   );
 
-  const { error: deleteError } = await supabase
-    .from("media_performance")
-    .delete()
-    .eq("brand_id", brandId);
-  if (deleteError) {
-    throw deleteError;
-  }
+  const dates = [...new Set(rows.map((row) => row.date))];
+  const existingRows = dates.length
+    ? await fetchAllRows(async (from, to) =>
+        supabase
+          .from("media_performance")
+          .select(
+            "brand_id, date, campaign_name, adset_name, ad_name, platform, placement, device_platform, is_ignored, ignore_reason, ignored_by, ignored_at, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
+          )
+          .eq("brand_id", brandId)
+          .in("date", dates)
+          .range(from, to),
+      )
+    : [];
+  const existingMap = new Map(
+    existingRows.map((row) => [
+      buildMediaConflictKey({
+        brand_id: row.brand_id,
+        date: row.date,
+        campaign_name: row.campaign_name ?? "",
+        adset_name: row.adset_name ?? "",
+        ad_name: row.ad_name ?? "",
+        platform: row.platform ?? "",
+        placement: row.placement ?? "",
+        device_platform: row.device_platform ?? "",
+      }),
+      row,
+    ]),
+  );
+  const rowsToUpsert = rows.map((row) => {
+    const existing = existingMap.get(buildMediaConflictKey(row));
+    return {
+      ...row,
+      is_ignored: existing?.is_ignored ?? false,
+      ignore_reason: existing?.ignore_reason ?? null,
+      ignored_by: existing?.ignored_by ?? null,
+      ignored_at: existing?.ignored_at ?? null,
+      sanitization_status: existing?.sanitization_status ?? "PENDING",
+      sanitization_note: existing?.sanitization_note ?? null,
+      sanitized_at: existing?.sanitized_at ?? null,
+      sanitized_by: existing?.sanitized_by ?? null,
+    };
+  });
 
-  for (const chunk of chunkArray(rows)) {
+  for (const chunk of chunkArray(rowsToUpsert)) {
     const { error } = await supabase
       .from("media_performance")
       .upsert(chunk, {
@@ -791,7 +938,7 @@ async function replaceMedia(
     }
   }
 
-  return rows.length;
+  return rowsToUpsert.length;
 }
 
 async function replaceCmvRulesFromBase(
@@ -929,86 +1076,36 @@ export async function importFilesToBrand(
       // --- Lista de Pedidos: base financeira do pedido (Receita Bruta / Desconto / RLD)
       case "lista_pedidos": {
         const paidOrders = parsed.payload.paidOrders ?? [];
-        await runImportBlock(brandId, userId, parsed.fileInfo, async () => {
-          const orderPayloads: OrderPayload[] = paidOrders.map((order) => ({
-            order_number: order.orderNumber,
-            order_date: toIsoTimestamp(order.orderDate) ?? new Date().toISOString(),
-            customer_name: order.customerName,
-            payment_method: order.paymentMethod,
-            net_revenue: order.orderValue,
-            discount: order.discountValue,
-            items_in_order: order.itemsInOrder,
-            coupon_name: order.couponName ?? undefined,
-            shipping_state: order.shippingState,
-            tracking_url: order.trackingUrl,
-          }));
-          const result = await ingestOrdersPaid(brandId, orderPayloads);
-          return result.inserted + (result.updated ?? 0);
-        });
+        await runImportBlock(brandId, userId, parsed.fileInfo, () =>
+          upsertOrders(brandId, paidOrders),
+        );
         break;
       }
 
       // --- Lista de Itens: itens reais com CMV resolvido no banco (§7)
       case "lista_itens": {
         const orderItems = parsed.payload.orderItems ?? [];
-        await runImportBlock(brandId, userId, parsed.fileInfo, async () => {
-          const linePayloads: OrderLinePayload[] = orderItems.map((item) => ({
-            order_number: item.orderNumber,
-            order_date: toIsoTimestamp(item.orderDate) ?? new Date().toISOString(),
-            customer_name: item.customerName,
-            product_name: item.productName,
-            product_specs: item.productSpecs,
-            sku: deriveOrderItemsSku(item),
-            quantity: item.quantity,
-            unit_price: item.quantity ? item.grossValue / item.quantity : (item.grossValue ?? 0),
-          }));
-          const result = await ingestOrderLines(brandId, linePayloads);
-          return result.inserted;
-        });
+        await runImportBlock(brandId, userId, parsed.fileInfo, () =>
+          replaceOrderItems(brandId, orderItems),
+        );
         break;
       }
 
       // --- Pedidos Pagos (CSV alternativo financeiro): tratado como ingestão de pedidos
       case "pedidos_pagos": {
         const salesLines = parsed.payload.salesLines ?? [];
-        await runImportBlock(brandId, userId, parsed.fileInfo, async () => {
-          const linePayloads: OrderLinePayload[] = salesLines.map((line) => ({
-            order_number: line.orderNumber,
-            order_date: toIsoTimestamp(line.orderDate) ?? new Date().toISOString(),
-            product_name: line.productName,
-            sku: line.sku ?? undefined,
-            quantity: line.quantity,
-            unit_price: line.unitPrice,
-          }));
-          const result = await ingestOrderLines(brandId, linePayloads);
-          return result.inserted;
-        });
+        await runImportBlock(brandId, userId, parsed.fileInfo, () =>
+          replaceSalesLines(brandId, salesLines),
+        );
         break;
       }
 
       // --- Meta Export: ingestão idempotente com hash por campanha+data (§8)
       case "meta": {
         const mediaRows = parsed.payload.media ?? [];
-        await runImportBlock(brandId, userId, parsed.fileInfo, async () => {
-          const metaPayloads: MetaRowPayload[] = mediaRows.map((row) => ({
-            report_start: row.date,
-            report_end: row.date,
-            campaign_name: row.campaignName,
-            adset_name: row.adsetName,
-            ad_name: row.adName,
-            account_name: row.accountName,
-            impressions: row.impressions,
-            clicks_all: row.clicksAll,
-            link_clicks: row.linkClicks,
-            spend: row.spend,
-            purchases: row.purchases,
-            revenue: row.purchaseValue,
-            ctr_all: row.ctrAll,
-            ctr_link: row.ctrLink,
-          }));
-          const result = await ingestMetaRaw(brandId, metaPayloads);
-          return result.inserted + (result.updated ?? 0);
-        });
+        await runImportBlock(brandId, userId, parsed.fileInfo, () =>
+          replaceMedia(brandId, mediaRows),
+        );
         break;
       }
     }
@@ -1073,15 +1170,15 @@ export async function applyCmvCheckpoint(brandId: string, note?: string, created
   return data;
 }
 
-export async function setMediaIgnoreState(
+export async function setMediaSanitizationState(
   mediaRowId: string,
-  isIgnored: boolean,
-  reason?: string,
+  status: SanitizationDecision,
+  note?: string,
 ) {
-  const { data, error } = await supabase.rpc("set_media_row_ignore_state", {
+  const { data, error } = await supabase.rpc("set_media_sanitization_state", {
     p_row_id: mediaRowId,
-    p_is_ignored: isIgnored,
-    p_reason: reason ?? null,
+    p_status: status,
+    p_note: note ?? null,
   });
 
   if (error) {
@@ -1091,17 +1188,17 @@ export async function setMediaIgnoreState(
   return data;
 }
 
-export async function setOrderIgnoreState(
+export async function setOrderSanitizationState(
   brandId: string,
   orderNumber: string,
-  isIgnored: boolean,
-  reason?: string,
+  status: SanitizationDecision,
+  note?: string,
 ) {
-  const { data, error } = await supabase.rpc("set_order_ignore_state", {
+  const { data, error } = await supabase.rpc("set_order_sanitization_state", {
     p_brand_id: brandId,
     p_order_number: orderNumber,
-    p_is_ignored: isIgnored,
-    p_reason: reason ?? null,
+    p_status: status,
+    p_note: note ?? null,
   });
 
   if (error) {
@@ -1109,6 +1206,28 @@ export async function setOrderIgnoreState(
   }
 
   return data;
+}
+
+export async function setMediaIgnoreState(
+  mediaRowId: string,
+  isIgnored: boolean,
+  reason?: string,
+) {
+  return setMediaSanitizationState(mediaRowId, isIgnored ? "IGNORED" : "PENDING", reason);
+}
+
+export async function setOrderIgnoreState(
+  brandId: string,
+  orderNumber: string,
+  isIgnored: boolean,
+  reason?: string,
+) {
+  return setOrderSanitizationState(
+    brandId,
+    orderNumber,
+    isIgnored ? "IGNORED" : "PENDING",
+    reason,
+  );
 }
 
 export async function createExpenseCategory(
@@ -1160,4 +1279,41 @@ export async function createBrandExpense(
   }
 
   return data.id as string;
+}
+
+export async function updateBrandExpense(
+  expenseId: string,
+  categoryId: string,
+  description: string,
+  amount: number,
+  incurredOn: string,
+) {
+  const { data, error } = await supabase
+    .from("brand_expenses")
+    .update({
+      category_id: categoryId,
+      description: description.trim(),
+      amount,
+      incurred_on: incurredOn,
+    })
+    .eq("id", expenseId)
+    .select("id")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data.id as string;
+}
+
+export async function deleteBrandExpense(expenseId: string) {
+  const { error } = await supabase
+    .from("brand_expenses")
+    .delete()
+    .eq("id", expenseId);
+
+  if (error) {
+    throw error;
+  }
 }
