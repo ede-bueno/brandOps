@@ -159,6 +159,26 @@ function finalizeSummaryMetrics(metrics: BrandSummaryMetrics): BrandSummaryMetri
   };
 }
 
+export function mapDashboardKpisToSummary(kpi: Record<string, number | null>): BrandSummaryMetrics {
+  const metrics = buildEmptySummaryMetrics();
+  if (!kpi) return metrics;
+
+  metrics.grossRevenue = kpi.gross_revenue || 0;
+  metrics.rob = kpi.gross_revenue || 0;
+  metrics.netRevenue = kpi.net_revenue || 0;
+  metrics.rld = kpi.net_revenue || 0;
+  metrics.discounts = kpi.discount_value || 0;
+  metrics.cmvTotal = kpi.cmv_total || 0;
+  metrics.mediaSpend = kpi.adcost || 0;
+  metrics.unitsSold = kpi.qty_real || 0;
+  metrics.grossMargin = kpi.gross_margin || 0;
+  metrics.contributionAfterMedia = kpi.contribution_margin || 0;
+  
+  // Re-calcula proporções e métricas derivadas
+  return finalizeSummaryMetrics(metrics);
+}
+
+
 
 
 

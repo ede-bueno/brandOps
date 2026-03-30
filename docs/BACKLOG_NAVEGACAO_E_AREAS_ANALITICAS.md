@@ -146,6 +146,15 @@ Beneficios dessa abordagem:
 - garantir que o painel continue mostrando o historico mesmo quando o mesmo CSV for importado novamente
 - validar a chave correta de reidentificacao da ocorrencia, usando `pedido`, `ocorrencia` ou outra combinacao estavel
 
+### Epic 6 - Conciliacao entre trafego e venda real
+
+- revisar as metricas de `purchase` no `GA4`
+- validar se o `transaction_id` recebido do ecommerce corresponde aos pedidos da `INK`
+- comparar vendas do `GA4` com vendas reais da `INK` por periodo
+- identificar se a divergencia e de instrumentacao, atribuicao, janela ou deduplicacao
+- manter a `INK` como fonte principal de venda real quando houver conflito
+- avaliar uma camada de conciliacao para exibir diferenca entre `venda rastreada` e `venda operacional`
+
 ## Criterios de sucesso
 
 - a sidebar fica mais curta e mais clara

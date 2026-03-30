@@ -1427,3 +1427,43 @@ export async function deleteBrandExpense(expenseId: string) {
     throw error;
   }
 }
+export async function fetchDailyMetrics(brandId: string, from?: string, to?: string) {
+  const { data, error } = await supabase.rpc("get_daily_metrics", {
+    p_brand_id: brandId,
+    p_from: from || null,
+    p_to: to || null,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function fetchMonthlyDre(brandId: string, yearMonth?: string) {
+  const { data, error } = await supabase.rpc("get_dre_monthly", {
+    p_brand_id: brandId,
+    p_yearmonth: yearMonth || null,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function fetchDashboardKpis(brandId: string, from?: string, to?: string) {
+  const { data, error } = await supabase.rpc("get_dashboard_kpis", {
+    p_brand_id: brandId,
+    p_from: from || null,
+    p_to: to || null,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}

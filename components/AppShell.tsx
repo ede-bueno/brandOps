@@ -30,27 +30,36 @@ import type { PeriodFilter } from "@/lib/brandops/types";
    Navigation Groups
    ------------------------------------------------------- */
 
-const analyticsNav = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+}
+
+const operationsNav: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/sales", label: "Vendas", icon: BarChart3 },
-  { href: "/traffic", label: "Tráfego", icon: Activity },
-  { href: "/product-insights", label: "Insights de Produtos", icon: Sparkles },
-  { href: "/media", label: "Mídia", icon: TrendingUp },
   { href: "/dre", label: "DRE", icon: BarChart3 },
-  { href: "/feed", label: "Feed de Produtos", icon: Images },
-];
-
-const operationsNav = [
   { href: "/cost-center", label: "Despesas", icon: Receipt },
   { href: "/cmv", label: "CMV", icon: Tags },
   { href: "/import", label: "Importação", icon: FileUp },
   { href: "/sanitization", label: "Saneamento", icon: ShieldAlert },
-  { href: "/help", label: "Ajuda", icon: HelpCircle },
 ];
 
-const adminNavigation = [
+const acquisitionNav: NavItem[] = [
+  { href: "/media", label: "Mídia", icon: TrendingUp },
+  { href: "/traffic", label: "Tráfego", icon: Activity },
+  { href: "/product-insights", label: "Insights de Produtos", icon: Sparkles },
+];
+
+const catalogNav: NavItem[] = [
+  { href: "/feed", label: "Feed de Produtos", icon: Images },
+];
+
+const adminNavigation: NavItem[] = [
   { href: "/admin/stores", label: "Lojas e Pessoas", icon: Settings2 },
   { href: "/integrations", label: "Integrações", icon: PlugZap },
+  { href: "/help", label: "Ajuda", icon: HelpCircle },
 ];
 
 const periodOptions: Array<{ value: PeriodFilter; label: string }> = [
@@ -73,7 +82,7 @@ function NavSection({
   collapsed,
   onNavigate,
 }: {
-  items: typeof analyticsNav;
+  items: NavItem[];
   pathname: string;
   collapsed: boolean;
   onNavigate?: () => void;
@@ -278,22 +287,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <SidebarSkeleton />
             ) : (
               <>
-                <NavGroupLabel label="Análise" collapsed={isSidebarCollapsed} />
-                <NavSection items={analyticsNav} pathname={pathname} collapsed={isSidebarCollapsed} />
-
                 <NavGroupLabel label="Operação" collapsed={isSidebarCollapsed} />
                 <NavSection items={operationsNav} pathname={pathname} collapsed={isSidebarCollapsed} />
 
-                {isSuperAdmin && (
-                  <>
-                    <NavGroupLabel label="Admin" collapsed={isSidebarCollapsed} />
-                    <NavSection
-                      items={adminNavigation}
-                      pathname={pathname}
-                      collapsed={isSidebarCollapsed}
-                    />
-                  </>
-                )}
+                <NavGroupLabel label="Aquisição" collapsed={isSidebarCollapsed} />
+                <NavSection items={acquisitionNav} pathname={pathname} collapsed={isSidebarCollapsed} />
+
+                <NavGroupLabel label="Catálogo" collapsed={isSidebarCollapsed} />
+                <NavSection items={catalogNav} pathname={pathname} collapsed={isSidebarCollapsed} />
+
+                <NavGroupLabel label="Admin" collapsed={isSidebarCollapsed} />
+                <NavSection
+                  items={adminNavigation}
+                  pathname={pathname}
+                  collapsed={isSidebarCollapsed}
+                />
               </>
             )}
           </div>
@@ -423,16 +431,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {/* Mobile Nav */}
             {isMobileMenuOpen && (
               <div className="mt-2 rounded-lg border border-outline bg-surface-container-low p-2 lg:hidden">
-                <NavGroupLabel label="Análise" collapsed={false} />
-                <NavSection items={analyticsNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
                 <NavGroupLabel label="Operação" collapsed={false} />
                 <NavSection items={operationsNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
-                {isSuperAdmin && (
-                  <>
-                    <NavGroupLabel label="Admin" collapsed={false} />
-                    <NavSection items={adminNavigation} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
-                  </>
-                )}
+                <NavGroupLabel label="Aquisição" collapsed={false} />
+                <NavSection items={acquisitionNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
+                <NavGroupLabel label="Catálogo" collapsed={false} />
+                <NavSection items={catalogNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
+                <NavGroupLabel label="Admin" collapsed={false} />
+                <NavSection items={adminNavigation} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
               </div>
             )}
 
