@@ -60,6 +60,32 @@ async function fetchAllRows<T>(
   return rows;
 }
 
+export async function fetchDashboardKpis(
+  brandId: string,
+  from?: string | null,
+  to?: string | null
+): Promise<Record<string, number | null>> {
+  const { data, error } = await supabase.rpc("get_dashboard_kpis", {
+    p_brand_id: brandId,
+    p_from: from || null,
+    p_to: to || null,
+  });
+  if (error) throw error;
+  return data as Record<string, number | null>;
+}
+
+export async function fetchDreMonthly(
+  brandId: string,
+  yearmonth?: string | null
+): Promise<any[]> {
+  const { data, error } = await supabase.rpc("get_dre_monthly", {
+    p_brand_id: brandId,
+    p_yearmonth: yearmonth || null,
+  });
+  if (error) throw error;
+  return data || [];
+}
+
 function toImportErrorMessage(error: unknown) {
   if (error instanceof Error) {
     return error.message;
@@ -1454,16 +1480,4 @@ export async function fetchMonthlyDre(brandId: string, yearMonth?: string) {
   return data;
 }
 
-export async function fetchDashboardKpis(brandId: string, from?: string, to?: string) {
-  const { data, error } = await supabase.rpc("get_dashboard_kpis", {
-    p_brand_id: brandId,
-    p_from: from || null,
-    p_to: to || null,
-  });
 
-  if (error) {
-    throw error;
-  }
-
-  return data;
-}

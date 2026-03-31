@@ -57,7 +57,7 @@ function parseCurrencyDraft(value: string) {
 }
 
 export default function CmvPage() {
-  const { activeBrand, saveCmvRule, applyCmvCheckpoint } = useBrandOps();
+  const { activeBrand, saveCmvRule, applyCmvCheckpoint, isLoading } = useBrandOps();
   const [activeView, setActiveView] = useState<"types" | "orders">("types");
   const [editorTypeKey, setEditorTypeKey] = useState<string | null>(null);
   const [effectiveDate, setEffectiveDate] = useState("2026-03-01");
@@ -102,7 +102,25 @@ export default function CmvPage() {
     [activeBrand],
   );
 
-  if (!activeBrand || !activeBrand.orderItems.length) {
+  if (isLoading || !activeBrand) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-24 bg-surface-container rounded-3xl" />
+        <div className="flex gap-2">
+          <div className="h-10 w-32 bg-surface-container rounded-xl" />
+          <div className="h-10 w-32 bg-surface-container rounded-xl" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-32 bg-surface-container rounded-2xl" />
+          ))}
+        </div>
+        <div className="h-[400px] bg-surface-container rounded-3xl" />
+      </div>
+    );
+  }
+
+  if (!activeBrand.orderItems.length) {
     return (
       <EmptyState
         title="Ainda não há itens para CMV"

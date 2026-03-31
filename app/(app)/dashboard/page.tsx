@@ -10,21 +10,45 @@ import {
   integerFormatter,
   percentFormatter,
 } from "@/lib/brandops/format";
-import { buildExpenseSummary, computeBrandMetrics } from "@/lib/brandops/metrics";
+import { buildExpenseSummary } from "@/lib/brandops/metrics";
 
 export default function DashboardPage() {
-  const { activeBrand, filteredBrand, selectedPeriodLabel } = useBrandOps();
+  const { 
+    activeBrand, 
+    filteredBrand, 
+    selectedPeriodLabel, 
+    dashboardMetrics, 
+    isMetricsLoading,
+    isLoading: isDatasetLoading 
+  } = useBrandOps();
 
-  if (!activeBrand || !filteredBrand) {
+  if (!activeBrand) {
     return (
       <EmptyState
         title="Nenhuma marca em foco"
-        description="Importe os CSVs da operação para abrir a leitura da marca e começar a acompanhar os números."
+        description="Selecione uma marca para abrir a leitura operacional."
       />
     );
   }
 
-  const metrics = computeBrandMetrics(filteredBrand);
+  if (isMetricsLoading || isDatasetLoading || !dashboardMetrics || !filteredBrand) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-32 bg-surface-container rounded-3xl" />
+        <div className="grid gap-4 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-24 bg-surface-container rounded-2xl" />
+          ))}
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="h-[300px] bg-surface-container rounded-3xl" />
+          <div className="h-[300px] bg-surface-container rounded-3xl" />
+        </div>
+      </div>
+    );
+  }
+
+  const metrics = dashboardMetrics;
   const expenseSummary = buildExpenseSummary(filteredBrand).slice(0, 4);
   const variableCostShare =
     metrics.rld > 0 ? (metrics.cmvTotal + metrics.mediaSpend) / metrics.rld : 0;

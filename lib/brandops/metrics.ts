@@ -36,6 +36,7 @@ function toMonthKey(date: string) {
 }
 
 function formatMonthLabel(monthKey: string) {
+  if (!monthKey) return "-";
   const [year, month] = monthKey.split("-");
   return `${year}-${month}`;
 }
@@ -173,6 +174,8 @@ export function mapDashboardKpisToSummary(kpi: Record<string, number | null>): B
   metrics.unitsSold = kpi.qty_real || 0;
   metrics.grossMargin = kpi.gross_margin || 0;
   metrics.contributionAfterMedia = kpi.contribution_margin || 0;
+  metrics.paidOrderCount = kpi.order_count || 0;
+  metrics.orderCount = kpi.order_count || 0;
   
   // Re-calcula proporções e métricas derivadas
   return finalizeSummaryMetrics(metrics);
@@ -332,7 +335,7 @@ export function extractPrintName(title?: string | null, context?: string | null)
   return originalTitle;
 }
 
-function getLatestDatasetDate(brand: BrandDataset) {
+export function getLatestDatasetDate(brand: Pick<BrandDataset, "paidOrders" | "orderItems" | "salesLines" | "media" | "expenses" | "ga4DailyPerformance" | "ga4ItemDailyPerformance">) {
   const values = [
     ...brand.paidOrders.map((item) => item.orderDate),
     ...brand.orderItems.map((item) => item.orderDate),
@@ -349,7 +352,7 @@ function getLatestDatasetDate(brand: BrandDataset) {
   return values[0] ?? null;
 }
 
-function buildPeriodRange(
+export function buildPeriodRange(
   referenceDate: Date,
   period: PeriodFilter,
   customRange?: CustomDateRange,
@@ -739,12 +742,69 @@ export function buildExpenseSummary(brand: BrandDataset) {
     .sort((a, b) => b.amount - a.amount);
 }
 
-export function buildAnnualDreReport(brand: BrandDataset): AnnualDreReport {
+export function buildAnnualDreReport(
+  brand: BrandDataset,
+  dreMonthly?: any[] | null,
+  summary?: BrandSummaryMetrics | null,
+): AnnualDreReport {
+  const expenseByCategory = new Map<string, MonthlyExpenseBreakdown>();
+
+  // Se tivermos os dados do backend, usamos eles para as colunas mensais e o total.
+  if (dreMonthly && summary) {
+    const months: MonthlyDreEntry[] = dreMonthly
+      .filter((row) => row.yearmonth)
+      .map((row) => {
+        const monthKey = row.yearmonth;
+        const metrics = buildEmptySummaryMetrics();
+        metrics.grossRevenue = row.gross_revenue || 0;
+        metrics.rob = row.gross_revenue || 0;
+        metrics.discounts = row.discount_value || 0;
+        metrics.netRevenue = row.net_revenue || 0;
+        metrics.rld = row.net_revenue || 0;
+        metrics.cmvTotal = row.cmv_total || 0;
+        metrics.mediaSpend = row.adcost || 0;
+        metrics.contributionMargin = row.contribution_margin || 0;
+        metrics.contributionAfterMedia = row.contribution_margin || 0;
+        metrics.fixedExpensesTotal = row.fixed_expenses || 0;
+        metrics.netResult = row.resultado || 0;
+        metrics.orderCount = row.order_count || 0;
+        metrics.paidOrderCount = row.order_count || 0;
+
+        return {
+          monthKey,
+          label: formatMonthLabel(monthKey),
+          metrics: finalizeSummaryMetrics(metrics),
+        };
+      });
+
+    // Ainda precisamos calcular o breakdown de despesas em memória (pois são poucos registros)
+    brand.expenses.forEach((expense) => {
+      const monthKey = toMonthKey(expense.incurredOn);
+      const currentCategory = expenseByCategory.get(expense.categoryId) ?? {
+        categoryId: expense.categoryId,
+        categoryName: expense.categoryName,
+        valuesByMonth: {},
+        total: 0,
+      };
+      currentCategory.valuesByMonth[monthKey] = round(
+        (currentCategory.valuesByMonth[monthKey] ?? 0) + expense.amount,
+      );
+      currentCategory.total = round(currentCategory.total + expense.amount);
+      expenseByCategory.set(expense.categoryId, currentCategory);
+    });
+
+    return {
+      months: months.sort((a, b) => a.monthKey.localeCompare(b.monthKey)),
+      total: summary,
+      expenseBreakdown: [...expenseByCategory.values()].sort((a, b) => b.total - a.total),
+    };
+  }
+
+  // Fallback para cálculo em memória (caso o carregamento do backend falhe ou não tenha sido passado)
   const paidOrders = getPaidOrders(brand);
   const paidItems = getActiveOrderItems(brand);
   const activeMedia = getActiveMediaRows(brand);
   const monthMetrics = new Map<string, BrandSummaryMetrics>();
-  const expenseByCategory = new Map<string, MonthlyExpenseBreakdown>();
 
   function ensureMonth(monthKey: string) {
     const existing = monthMetrics.get(monthKey);
@@ -773,7 +833,6 @@ export function buildAnnualDreReport(brand: BrandDataset): AnnualDreReport {
     bucket.unitsSold += item.quantity;
     bucket.cmvTotal += item.cmvTotalApplied ?? 0;
   });
-
 
   activeMedia.forEach((row) => {
     const bucket = ensureMonth(toMonthKey(row.date));
@@ -824,7 +883,6 @@ export function buildAnnualDreReport(brand: BrandDataset): AnnualDreReport {
     accumulator.fixedExpensesTotal += month.metrics.fixedExpensesTotal;
     accumulator.netResult += month.metrics.netResult;
     return accumulator;
-
   }, buildEmptySummaryMetrics());
 
   return {

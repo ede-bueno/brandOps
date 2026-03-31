@@ -37,29 +37,27 @@ interface NavItem {
 }
 
 const operationsNav: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Control Tower", icon: LayoutDashboard },
+  { href: "/dre", label: "DRE Consolidado", icon: Receipt },
+  { href: "/cmv", label: "Custos (CMV)", icon: Tags },
   { href: "/sales", label: "Vendas", icon: BarChart3 },
-  { href: "/dre", label: "DRE", icon: BarChart3 },
-  { href: "/cost-center", label: "Despesas", icon: Receipt },
-  { href: "/cmv", label: "CMV", icon: Tags },
-  { href: "/import", label: "Importação", icon: FileUp },
-  { href: "/sanitization", label: "Saneamento", icon: ShieldAlert },
 ];
 
 const acquisitionNav: NavItem[] = [
-  { href: "/media", label: "Mídia", icon: TrendingUp },
-  { href: "/traffic", label: "Tráfego", icon: Activity },
-  { href: "/product-insights", label: "Insights de Produtos", icon: Sparkles },
+  { href: "/media", label: "Performance Mídia", icon: TrendingUp },
+  { href: "/traffic", label: "Tráfego Digital", icon: Activity },
+  { href: "/product-insights", label: "Insights Categorias", icon: Sparkles },
 ];
 
 const catalogNav: NavItem[] = [
-  { href: "/feed", label: "Feed de Produtos", icon: Images },
+  { href: "/feed", label: "Catálogo", icon: Images },
+  { href: "/import", label: "ETL / Importação", icon: FileUp },
+  { href: "/sanitization", label: "Saneamento", icon: ShieldAlert },
 ];
 
 const adminNavigation: NavItem[] = [
-  { href: "/admin/stores", label: "Lojas e Pessoas", icon: Settings2 },
+  { href: "/admin/stores", label: "Acessos", icon: Settings2 },
   { href: "/integrations", label: "Integrações", icon: PlugZap },
-  { href: "/help", label: "Ajuda", icon: HelpCircle },
 ];
 
 const periodOptions: Array<{ value: PeriodFilter; label: string }> = [
@@ -181,12 +179,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4 rounded-2xl border border-outline bg-surface px-7 py-6 shadow-sm">
-          <div className="brandops-loader" aria-hidden="true" />
-          <div className="text-center">
-            <p className="text-sm font-semibold text-on-surface">Carregando workspace</p>
-            <p className="mt-1 text-xs text-on-surface-variant">Preparando dados da marca e permissões de acesso.</p>
+      <div className="flex min-h-screen items-center justify-center bg-background relative overflow-hidden">
+        {/* Decorative blur elements for modern premium feel */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[80px]" />
+        
+        <div className="relative z-10 flex flex-col items-center gap-6 rounded-3xl border border-outline/50 bg-surface/60 backdrop-blur-xl px-10 py-12 shadow-2xl">
+          <div className="relative flex items-center justify-center w-16 h-16">
+            <div className="absolute inset-0 rounded-full border-[3px] border-primary/20" />
+            <div className="absolute inset-0 rounded-full border-[3px] border-primary border-t-transparent animate-spin" />
+            <Sparkles className="w-6 h-6 text-primary animate-pulse" />
+          </div>
+          
+          <div className="text-center space-y-2">
+            <h3 className="font-headline text-lg font-semibold tracking-tight text-on-surface">
+              Carregando Workspace
+            </h3>
+            <p className="text-[13px] font-medium text-ink-muted max-w-[240px] leading-relaxed">
+              Preparando seus dados financeiros, permissões e cache analítico.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-1.5 mt-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "0ms" }} />
+            <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "150ms" }} />
+            <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "300ms" }} />
           </div>
         </div>
       </div>

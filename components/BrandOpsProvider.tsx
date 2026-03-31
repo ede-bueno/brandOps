@@ -23,9 +23,12 @@ import {
   setCurrentCmv,
   setMediaSanitizationState,
   setOrderSanitizationState,
-  updateBrandExpense,
+  updateBrandExpense, 
+  fetchDashboardKpis,
+  fetchDreMonthly
 } from "@/lib/brandops/database";
-import { filterBrandDatasetByPeriod, getPeriodLabel } from "@/lib/brandops/metrics";
+import { filterBrandDatasetByPeriod, getPeriodLabel, buildPeriodRange, getLatestDatasetDate, mapDashboardKpisToSummary, computeBrandMetrics } from "@/lib/brandops/metrics";
+import { BrandSummaryMetrics } from "@/lib/brandops/types";
 import { supabase } from "@/lib/supabase";
 import type {
   BrandDataset,
@@ -49,6 +52,10 @@ interface BrandOpsContextValue {
   activeBrandId: string | null;
   activeBrand: BrandDataset | null;
   filteredBrand: BrandDataset | null;
+  dashboardMetrics: BrandSummaryMetrics | null;
+  isMetricsLoading: boolean;
+  dreMonthly: any[] | null;
+  isDreLoading: boolean;
   isLoading: boolean;
   errorMessage: string | null;
   selectedPeriod: PeriodFilter;
@@ -115,6 +122,10 @@ export function BrandOpsProvider({
   const [activeBrand, setActiveBrand] = useState<BrandDataset | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [dashboardMetrics, setDashboardMetrics] = useState<BrandSummaryMetrics | null>(null);
+  const [isMetricsLoading, setIsMetricsLoading] = useState(false);
+  const [dreMonthly, setDreMonthly] = useState<any[] | null>(null);
+  const [isDreLoading, setIsDreLoading] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>("30d");
   const [customDateRange, setCustomDateRange] = useState<CustomDateRange>({
     from: "",
@@ -124,6 +135,56 @@ export function BrandOpsProvider({
   const filteredBrand = activeBrand
     ? filterBrandDatasetByPeriod(activeBrand, selectedPeriod, customDateRange)
     : null;
+
+  useEffect(() => {
+    async function loadMetrics() {
+      if (!activeBrandId || !activeBrand) {
+        setDashboardMetrics(null);
+        setDreMonthly(null);
+        return;
+      }
+
+      setIsMetricsLoading(true);
+      setIsDreLoading(true);
+      
+      try {
+        // Usamos hoje como referência para filtros de período relativo (Hoje, 7d, 30d, etc)
+        // Isso evita que o "Hoje" mostre "Ontem" se o dataset estiver levemente desatualizado.
+        // Mantemos o getLatestDatasetDate apenas como fallback se não houver data de referência.
+        const datasetDate = getLatestDatasetDate(activeBrand);
+        const referenceDate = (selectedPeriod === "all" || selectedPeriod === "custom")
+          ? (datasetDate || new Date())
+          : new Date();
+
+        let fromDate: string | undefined;
+        let toDate: string | undefined;
+        
+        if (referenceDate) {
+          const range = buildPeriodRange(referenceDate, selectedPeriod, customDateRange);
+          if (range) {
+            fromDate = range.start;
+            toDate = range.end;
+          }
+        }
+
+        // Busca KPIs do Dashboard e DRE em paralelo
+        const [kpiData, dreData] = await Promise.all([
+          fetchDashboardKpis(activeBrandId, fromDate, toDate),
+          fetchDreMonthly(activeBrandId)
+        ]);
+
+        setDashboardMetrics(mapDashboardKpisToSummary(kpiData));
+        setDreMonthly(dreData);
+      } catch (err) {
+        console.error("Failed to load backend metrics:", err);
+      } finally {
+        setIsMetricsLoading(false);
+        setIsDreLoading(false);
+      }
+    }
+
+    void loadMetrics();
+  }, [activeBrandId, activeBrand, selectedPeriod, customDateRange]);
 
   useEffect(() => {
     let isMounted = true;
@@ -296,6 +357,10 @@ export function BrandOpsProvider({
       activeBrandId,
       activeBrand,
       filteredBrand,
+      dashboardMetrics,
+      isMetricsLoading,
+      dreMonthly,
+      isDreLoading,
       isLoading,
       errorMessage,
       selectedPeriod,
@@ -448,6 +513,10 @@ export function BrandOpsProvider({
       brands,
       errorMessage,
       filteredBrand,
+      dashboardMetrics,
+      isMetricsLoading,
+      dreMonthly,
+      isDreLoading,
       handleSetActiveBrandId,
       isLoading,
       profile,

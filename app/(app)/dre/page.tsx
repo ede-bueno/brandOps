@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
 import { MetricCard } from "@/components/MetricCard";
@@ -10,18 +11,44 @@ import { buildAnnualDreReport } from "@/lib/brandops/metrics";
 import { cn } from "@/lib/utils";
 
 export default function DrePage() {
-  const { activeBrand, filteredBrand, selectedPeriodLabel } = useBrandOps();
+  const { 
+    activeBrand, 
+    filteredBrand, 
+    selectedPeriodLabel, 
+    dashboardMetrics, 
+    isMetricsLoading,
+    dreMonthly,
+    isDreLoading
+  } = useBrandOps();
 
-  if (!activeBrand || !filteredBrand) {
+  const report = useMemo(() => {
+    if (!filteredBrand || !dreMonthly || !dashboardMetrics) return null;
+    return buildAnnualDreReport(filteredBrand, dreMonthly, dashboardMetrics);
+  }, [filteredBrand, dreMonthly, dashboardMetrics]);
+
+  if (!activeBrand) {
     return (
       <EmptyState
         title="Nenhum dado para o DRE"
-        description="Importe vendas, mídia e despesas para visualizar o Demonstrativo de Resultados."
+        description="Escolha uma marca para visualizar o relatório."
       />
     );
   }
 
-  const report = buildAnnualDreReport(filteredBrand);
+  if (isDreLoading || isMetricsLoading || !report) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-32 bg-surface-container rounded-3xl" />
+        <div className="grid gap-4 md:grid-cols-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-24 bg-surface-container rounded-2xl" />
+          ))}
+        </div>
+        <div className="h-[400px] bg-surface-container rounded-3xl" />
+      </div>
+    );
+  }
+
   const topExpense = report.expenseBreakdown[0] ?? null;
 
   return (

@@ -15,12 +15,42 @@ import { MetricCard } from "@/components/MetricCard";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { currencyFormatter, formatCompactDate, integerFormatter } from "@/lib/brandops/format";
-import { buildDailySalesSeries, buildTopProducts, computeBrandMetrics } from "@/lib/brandops/metrics";
+import { buildDailySalesSeries, buildTopProducts } from "@/lib/brandops/metrics";
 
 export default function SalesPage() {
-  const { activeBrand, filteredBrand, selectedPeriodLabel } = useBrandOps();
+  const { 
+    activeBrand, 
+    filteredBrand, 
+    selectedPeriodLabel, 
+    dashboardMetrics, 
+    isMetricsLoading,
+    isLoading: isDatasetLoading 
+  } = useBrandOps();
 
-  if (!activeBrand || !filteredBrand || !filteredBrand.paidOrders.length) {
+  if (!activeBrand) {
+    return (
+      <EmptyState
+        title="Nenhuma marca selecionada"
+        description="Escolha uma marca para visualizar o relatório de vendas."
+      />
+    );
+  }
+
+  if (isMetricsLoading || isDatasetLoading || !dashboardMetrics || !filteredBrand) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-32 bg-surface-container rounded-3xl" />
+        <div className="grid gap-4 md:grid-cols-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-24 bg-surface-container rounded-2xl" />
+          ))}
+        </div>
+        <div className="h-[400px] bg-surface-container rounded-3xl" />
+      </div>
+    );
+  }
+
+  if (!filteredBrand.paidOrders.length) {
     return (
       <EmptyState
         title="Ainda não há vendas carregadas"
@@ -29,7 +59,7 @@ export default function SalesPage() {
     );
   }
 
-  const metrics = computeBrandMetrics(filteredBrand);
+  const metrics = dashboardMetrics;
   const dailySales = buildDailySalesSeries(filteredBrand);
   const topProducts = buildTopProducts(filteredBrand);
 

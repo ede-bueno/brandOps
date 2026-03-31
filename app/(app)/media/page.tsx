@@ -23,14 +23,43 @@ import {
 import {
   buildCampaignPerformance,
   buildDailyMediaSeries,
-  computeBrandMetrics,
   getActiveMediaRows,
 } from "@/lib/brandops/metrics";
 
 export default function MediaPage() {
-  const { activeBrand, filteredBrand, selectedPeriodLabel } = useBrandOps();
+  const { 
+    activeBrand, 
+    filteredBrand, 
+    selectedPeriodLabel, 
+    dashboardMetrics, 
+    isMetricsLoading,
+    isLoading: isDatasetLoading 
+  } = useBrandOps();
 
-  if (!activeBrand || !filteredBrand || !filteredBrand.media.length) {
+  if (!activeBrand) {
+    return (
+      <EmptyState
+        title="Nenhuma marca selecionada"
+        description="Escolha uma marca para visualizar o relatório de mídia."
+      />
+    );
+  }
+
+  if (isMetricsLoading || isDatasetLoading || !dashboardMetrics || !filteredBrand) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-32 bg-surface-container rounded-3xl" />
+        <div className="grid gap-4 md:grid-cols-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-24 bg-surface-container rounded-2xl" />
+          ))}
+        </div>
+        <div className="h-[400px] bg-surface-container rounded-3xl" />
+      </div>
+    );
+  }
+
+  if (!filteredBrand.media.length) {
     return (
       <EmptyState
         title="Ainda não há mídia carregada"
@@ -39,7 +68,7 @@ export default function MediaPage() {
     );
   }
 
-  const metrics = computeBrandMetrics(filteredBrand);
+  const metrics = dashboardMetrics;
   const activeMedia = getActiveMediaRows(filteredBrand);
   const dailyMedia = buildDailyMediaSeries(filteredBrand);
   const campaigns = buildCampaignPerformance(filteredBrand);
