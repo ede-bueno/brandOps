@@ -8,6 +8,11 @@ DECLARE
   v_brand_id UUID;
   v_result JSONB;
 BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE NOTICE 'Migração executada sem sessão autenticada. Reprocessamento de CMV da OMD foi pulado nesta etapa.';
+    RETURN;
+  END IF;
+
   -- 1. Localizar o ID da marca Oh My Dog
   SELECT id INTO v_brand_id
   FROM public.brands
@@ -24,7 +29,8 @@ BEGIN
   -- e no product_type detectado ou SKU.
   SELECT public.apply_cmv_checkpoint(
     v_brand_id, 
-    'Reprocessamento histórico automático (Antigravity - Correção OMD < 2026-03-01)'
+    'Reprocessamento histórico automático (Antigravity - Correção OMD < 2026-03-01)',
+    NULL::timestamp with time zone
   ) INTO v_result;
 
   RAISE NOTICE 'Reprocessamento concluído para OMD: %', v_result;

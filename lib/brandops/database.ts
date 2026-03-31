@@ -1,4 +1,5 @@
 import { parseUploadedCsv } from "@/lib/brandops/csv";
+import { ingestMetaRaw } from "@/lib/brandops/canonical-ingest";
 import { supabase } from "@/lib/supabase";
 import type {
   BrandExpense,
@@ -14,6 +15,7 @@ import type {
   ExpenseCategory,
   ImportedFileInfo,
   MediaRow,
+  MediaDataSource,
   OrderItem,
   PaidOrder,
   SalesLine,
@@ -77,7 +79,7 @@ export async function fetchDashboardKpis(
 export async function fetchDreMonthly(
   brandId: string,
   yearmonth?: string | null
-): Promise<any[]> {
+): Promise<Array<Record<string, unknown>>> {
   const { data, error } = await supabase.rpc("get_dre_monthly", {
     p_brand_id: brandId,
     p_yearmonth: yearmonth || null,
@@ -164,26 +166,12 @@ function resolveSanitizationStatus(value: string | null | undefined, isIgnored?:
   return isIgnored ? "IGNORED" : "PENDING";
 }
 
-function buildMediaConflictKey(row: {
-  brand_id: string;
-  date: string;
-  campaign_name: string;
-  adset_name: string;
-  ad_name: string;
-  platform: string;
-  placement: string;
-  device_platform: string;
-}) {
-  return [
-    row.brand_id,
-    row.date,
-    row.campaign_name,
-    row.adset_name,
-    row.ad_name,
-    row.platform,
-    row.placement,
-    row.device_platform,
-  ].join("::");
+function resolveMediaSource(
+  row: {
+    delivery?: string | null;
+  },
+): MediaDataSource {
+  return row.delivery?.toLowerCase() === "api" ? "api" : "manual_csv";
 }
 
 export async function fetchUserProfile(userId: string) {
@@ -278,7 +266,7 @@ export async function fetchBrandDataset(brandId: string) {
       supabase
         .from("media_performance")
         .select(
-          "id, date, campaign_name, adset_name, account_name, ad_name, platform, placement, device_platform, delivery, reach, impressions, clicks_all, spend, purchases, conversion_value, link_clicks, ctr_all, ctr_link, add_to_cart, is_ignored, ignore_reason, ignored_by, ignored_at, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
+          "id, date, report_start, report_end, row_hash, campaign_name, adset_name, account_name, ad_name, platform, placement, device_platform, delivery, reach, impressions, clicks_all, spend, purchases, conversion_value, link_clicks, ctr_all, ctr_link, add_to_cart, is_ignored, ignore_reason, ignored_by, ignored_at, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
         )
         .eq("brand_id", brandId)
         .range(from, to),
@@ -489,7 +477,7 @@ export async function fetchBrandDataset(brandId: string) {
   const media: MediaRow[] =
     mediaResult.map((row) => ({
       id: row.id,
-      date: row.date,
+      date: row.date ?? row.report_start ?? "",
       campaignName: row.campaign_name ?? "",
       adsetName: row.adset_name ?? "",
       accountName: row.account_name ?? "",
@@ -514,6 +502,7 @@ export async function fetchBrandDataset(brandId: string) {
       sanitizationNote: row.sanitization_note ?? null,
       sanitizedAt: row.sanitized_at ?? row.ignored_at ?? null,
       sanitizedBy: row.sanitized_by ?? row.ignored_by ?? null,
+      dataSource: resolveMediaSource(row),
     }));
 
   const cmvEntries =
@@ -573,6 +562,20 @@ export async function fetchBrandDataset(brandId: string) {
       lastSyncError: row.last_sync_error ?? null,
     })) as BrandIntegrationConfig[];
 
+  const metaIntegration = integrations.find((integration) => integration.provider === "meta");
+  const apiMedia = media.filter((row) => row.dataSource === "api");
+  const manualMedia = media.filter((row) => row.dataSource === "manual_csv");
+  const effectiveMedia =
+    metaIntegration?.mode === "api"
+      ? apiMedia.length
+        ? apiMedia
+        : metaIntegration.settings.manualFallback
+          ? manualMedia
+          : []
+      : metaIntegration?.mode === "disabled"
+        ? []
+        : manualMedia;
+
   return {
     id: brandResult.data.id,
     name: brandResult.data.name,
@@ -583,7 +586,7 @@ export async function fetchBrandDataset(brandId: string) {
     paidOrders,
     orderItems,
     salesLines,
-    media,
+    media: effectiveMedia,
     cmvEntries,
     cmvCheckpoints,
     expenseCategories,
@@ -982,99 +985,39 @@ async function replaceMedia(
 ) {
   const rows = dedupeByKey(
     media.map((row) => ({
-      brand_id: brandId,
-      date: row.date,
+      report_start: row.date,
+      report_end: row.date,
       campaign_name: row.campaignName,
       adset_name: row.adsetName,
-      account_name: row.accountName,
       ad_name: row.adName,
-      platform: row.platform,
-      placement: row.placement,
-      device_platform: row.devicePlatform,
-      delivery: row.delivery,
-      spend: row.spend,
-      impressions: row.impressions,
+      account_name: row.accountName,
+      platform: row.platform || "meta_ads",
+      placement: row.placement || "all",
+      device_platform: row.devicePlatform || "all",
+      delivery: row.delivery || "csv",
       reach: row.reach,
-      clicks: row.linkClicks || row.clicksAll,
+      impressions: row.impressions,
       clicks_all: row.clicksAll,
-      purchases: row.purchases,
-      conversion_value: row.purchaseValue,
       link_clicks: row.linkClicks,
+      spend: row.spend,
+      purchases: row.purchases,
+      revenue: row.purchaseValue,
       ctr_all: row.ctrAll,
       ctr_link: row.ctrLink,
       add_to_cart: row.addToCart,
-      currency: "BRL",
-      is_ignored: false,
     })),
     (row) =>
       [
-        row.brand_id,
-        row.date,
+        brandId,
+        row.report_start,
         row.campaign_name,
         row.adset_name,
         row.ad_name,
-        row.platform,
-        row.placement,
-        row.device_platform,
       ].join("::"),
   );
 
-  const dates = [...new Set(rows.map((row) => row.date))];
-  const existingRows = dates.length
-    ? await fetchAllRows(async (from, to) =>
-        supabase
-          .from("media_performance")
-          .select(
-            "brand_id, date, campaign_name, adset_name, ad_name, platform, placement, device_platform, is_ignored, ignore_reason, ignored_by, ignored_at, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
-          )
-          .eq("brand_id", brandId)
-          .in("date", dates)
-          .range(from, to),
-      )
-    : [];
-  const existingMap = new Map(
-    existingRows.map((row) => [
-      buildMediaConflictKey({
-        brand_id: row.brand_id,
-        date: row.date,
-        campaign_name: row.campaign_name ?? "",
-        adset_name: row.adset_name ?? "",
-        ad_name: row.ad_name ?? "",
-        platform: row.platform ?? "",
-        placement: row.placement ?? "",
-        device_platform: row.device_platform ?? "",
-      }),
-      row,
-    ]),
-  );
-  const rowsToUpsert = rows.map((row) => {
-    const existing = existingMap.get(buildMediaConflictKey(row));
-    return {
-      ...row,
-      is_ignored: existing?.is_ignored ?? false,
-      ignore_reason: existing?.ignore_reason ?? null,
-      ignored_by: existing?.ignored_by ?? null,
-      ignored_at: existing?.ignored_at ?? null,
-      sanitization_status: existing?.sanitization_status ?? "PENDING",
-      sanitization_note: existing?.sanitization_note ?? null,
-      sanitized_at: existing?.sanitized_at ?? null,
-      sanitized_by: existing?.sanitized_by ?? null,
-    };
-  });
-
-  for (const chunk of chunkArray(rowsToUpsert)) {
-    const { error } = await supabase
-      .from("media_performance")
-      .upsert(chunk, {
-        onConflict:
-          "brand_id,date,campaign_name,adset_name,ad_name,platform,placement,device_platform",
-      });
-    if (error) {
-      throw error;
-    }
-  }
-
-  return rowsToUpsert.length;
+  const result = await ingestMetaRaw(brandId, rows);
+  return (result.inserted ?? 0) + (result.updated ?? 0);
 }
 
 async function replaceCmvRulesFromBase(
@@ -1479,5 +1422,3 @@ export async function fetchMonthlyDre(brandId: string, yearMonth?: string) {
 
   return data;
 }
-
-

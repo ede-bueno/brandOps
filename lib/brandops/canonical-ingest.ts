@@ -48,6 +48,11 @@ export interface MetaRowPayload {
   adset_name?: string;
   ad_name?: string;
   account_name?: string;
+  platform?: string;
+  placement?: string;
+  device_platform?: string;
+  delivery?: string;
+  reach?: number;
   impressions: number;
   clicks_all: number;
   link_clicks: number;
@@ -56,6 +61,7 @@ export interface MetaRowPayload {
   revenue?: number;
   ctr_all?: number;
   ctr_link?: number;
+  add_to_cart?: number;
 }
 
 export interface IngestResult {

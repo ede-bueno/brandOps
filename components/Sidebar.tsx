@@ -3,13 +3,11 @@ import {
   LayoutDashboard,
   Upload,
   ShieldAlert,
-  Settings,
   LogOut,
   TrendingUp,
   DollarSign,
   PieChart,
   Megaphone,
-  BarChart4,
   Briefcase
 } from "lucide-react";
 

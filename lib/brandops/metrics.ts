@@ -20,6 +20,19 @@ import type {
   WeeklyPerformanceRow,
 } from "./types";
 
+type DreBackendRow = {
+  yearmonth?: string | null;
+  gross_revenue?: number | null;
+  discount_value?: number | null;
+  net_revenue?: number | null;
+  cmv_total?: number | null;
+  adcost?: number | null;
+  contribution_margin?: number | null;
+  fixed_expenses?: number | null;
+  resultado?: number | null;
+  order_count?: number | null;
+};
+
 const PAID_STATUS = new Set(["Pago"]);
 
 function parseDateValue(value: string) {
@@ -744,7 +757,7 @@ export function buildExpenseSummary(brand: BrandDataset) {
 
 export function buildAnnualDreReport(
   brand: BrandDataset,
-  dreMonthly?: any[] | null,
+  dreMonthly?: DreBackendRow[] | null,
   summary?: BrandSummaryMetrics | null,
 ): AnnualDreReport {
   const expenseByCategory = new Map<string, MonthlyExpenseBreakdown>();
@@ -752,7 +765,10 @@ export function buildAnnualDreReport(
   // Se tivermos os dados do backend, usamos eles para as colunas mensais e o total.
   if (dreMonthly && summary) {
     const months: MonthlyDreEntry[] = dreMonthly
-      .filter((row) => row.yearmonth)
+      .filter(
+        (row): row is DreBackendRow & { yearmonth: string } =>
+          typeof row.yearmonth === "string" && row.yearmonth.trim().length > 0,
+      )
       .map((row) => {
         const monthKey = row.yearmonth;
         const metrics = buildEmptySummaryMetrics();

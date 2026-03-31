@@ -27,7 +27,7 @@ import {
   fetchDashboardKpis,
   fetchDreMonthly
 } from "@/lib/brandops/database";
-import { filterBrandDatasetByPeriod, getPeriodLabel, buildPeriodRange, getLatestDatasetDate, mapDashboardKpisToSummary, computeBrandMetrics } from "@/lib/brandops/metrics";
+import { filterBrandDatasetByPeriod, getPeriodLabel, buildPeriodRange, getLatestDatasetDate, mapDashboardKpisToSummary } from "@/lib/brandops/metrics";
 import { BrandSummaryMetrics } from "@/lib/brandops/types";
 import { supabase } from "@/lib/supabase";
 import type {
@@ -45,6 +45,8 @@ type BrandOption = {
   updated_at: string;
 };
 
+type DreMonthlyDataset = Array<Record<string, unknown>>;
+
 interface BrandOpsContextValue {
   session: Session | null;
   profile: UserProfile | null;
@@ -54,7 +56,7 @@ interface BrandOpsContextValue {
   filteredBrand: BrandDataset | null;
   dashboardMetrics: BrandSummaryMetrics | null;
   isMetricsLoading: boolean;
-  dreMonthly: any[] | null;
+  dreMonthly: DreMonthlyDataset | null;
   isDreLoading: boolean;
   isLoading: boolean;
   errorMessage: string | null;
@@ -124,7 +126,7 @@ export function BrandOpsProvider({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [dashboardMetrics, setDashboardMetrics] = useState<BrandSummaryMetrics | null>(null);
   const [isMetricsLoading, setIsMetricsLoading] = useState(false);
-  const [dreMonthly, setDreMonthly] = useState<any[] | null>(null);
+  const [dreMonthly, setDreMonthly] = useState<DreMonthlyDataset | null>(null);
   const [isDreLoading, setIsDreLoading] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>("30d");
   const [customDateRange, setCustomDateRange] = useState<CustomDateRange>({

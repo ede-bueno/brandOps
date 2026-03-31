@@ -95,6 +95,16 @@ const serviceAccountSteps = [
   "Na etapa de backend, o JSON da service account deve ser guardado em variável segura do servidor, por exemplo `GA4_SERVICE_ACCOUNT_JSON`, para a sincronização automática.",
 ];
 
+const metaIntegrationSteps = [
+  "No Gerenciador de Negócios da Meta, confirme qual conta de anúncios pertence à loja e copie o identificador no formato `act_1234567890`.",
+  "Garanta um token com permissão `ads_read`. Esse token deve ficar apenas no backend, por exemplo em `META_ACCESS_TOKEN` na Vercel.",
+  "No BrandOps, abra `Integrações`, selecione a loja e deixe `Meta Ads` em `API`.",
+  "Preencha o `ID da conta de anúncios` e a janela padrão de sincronização em dias.",
+  "Se a operação ainda depender do CSV como contingência, mantenha a opção de fallback manual marcada.",
+  "Salve a configuração e use o botão `Sincronizar Meta agora` para trazer os insights do período configurado.",
+  "Quando a API estiver ativa, o BrandOps prioriza as linhas sincronizadas por API. Se ainda não houver linhas da API, a aplicação pode cair no fallback manual da Meta.",
+];
+
 export default function HelpPage() {
   return (
     <div className="space-y-6">
@@ -205,6 +215,43 @@ export default function HelpPage() {
               </li>
             ))}
           </ol>
+        </SurfaceCard>
+      </section>
+
+      <section className="grid gap-6 md:grid-cols-2">
+        <SurfaceCard id="meta-api">
+          <SectionHeading
+            title="Meta Ads API"
+            description="Configuração mínima para operar a mídia por API sem perder o fallback manual."
+          />
+          <ol className="mt-5 space-y-3">
+            {metaIntegrationSteps.map((step, index) => (
+              <li key={step} className="panel-muted flex gap-4 p-4">
+                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary-container text-sm font-semibold text-secondary">
+                  {index + 1}
+                </span>
+                <p className="text-sm leading-6 text-on-surface-variant">{step}</p>
+              </li>
+            ))}
+          </ol>
+        </SurfaceCard>
+
+        <SurfaceCard>
+          <SectionHeading
+            title="Variáveis seguras"
+            description="Segredos de integração nunca devem ser cadastrados no navegador."
+          />
+          <div className="mt-5 grid gap-3">
+            {[
+              "GA4_SERVICE_ACCOUNT_JSON: JSON completo da service account usada pelo GA4.",
+              "META_ACCESS_TOKEN: token de leitura com `ads_read` para a Meta Ads API.",
+              "META_API_VERSION: versão da Graph API usada pelo backend, por exemplo `v19.0`.",
+            ].map((topic) => (
+              <article key={topic} className="panel-muted p-4">
+                <p className="text-sm leading-6 text-on-surface-variant">{topic}</p>
+              </article>
+            ))}
+          </div>
         </SurfaceCard>
       </section>
     </div>

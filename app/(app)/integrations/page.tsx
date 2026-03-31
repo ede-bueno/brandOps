@@ -155,6 +155,7 @@ export default function IntegrationsPage() {
   const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [syncingGa4, setSyncingGa4] = useState(false);
+  const [syncingMeta, setSyncingMeta] = useState(false);
   const [activeProvider, setActiveProvider] = useState<IntegrationProvider>("ink");
 
   useEffect(() => {
@@ -311,6 +312,43 @@ export default function IntegrationsPage() {
       });
     } finally {
       setSyncingGa4(false);
+    }
+  };
+
+  const handleMetaSync = async () => {
+    if (!session?.access_token) {
+      setNotice({ kind: "error", text: "Sessão inválida para sincronizar a Meta." });
+      return;
+    }
+
+    try {
+      setSyncingMeta(true);
+      setNotice(null);
+
+      const response = await fetch(`/api/admin/brands/${activeBrand.id}/integrations/meta/sync`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Falha ao sincronizar a Meta.");
+      }
+
+      await refreshActiveBrand();
+      setNotice({
+        kind: "success",
+        text: `Meta sincronizada com sucesso. ${payload.rows} linha(s) consolidadas de ${payload.startDate} até ${payload.endDate}.`,
+      });
+    } catch (error) {
+      setNotice({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Falha ao sincronizar a Meta.",
+      });
+    } finally {
+      setSyncingMeta(false);
     }
   };
 
@@ -496,6 +534,23 @@ export default function IntegrationsPage() {
                         Manter upload manual da Meta como contingência mesmo com a API ligada.
                       </span>
                     </label>
+                    <div className="flex items-end lg:col-span-2">
+                      <button
+                        type="button"
+                        onClick={handleMetaSync}
+                        disabled={syncingMeta || currentState.mode !== "api" || !currentState.adAccountId}
+                        className="brandops-button brandops-button-secondary"
+                      >
+                        {syncingMeta ? (
+                          <>
+                            <Loader2 size={16} className="animate-spin" />
+                            Sincronizando Meta
+                          </>
+                        ) : (
+                          "Sincronizar Meta agora"
+                        )}
+                      </button>
+                    </div>
                   </>
                 ) : null}
 
