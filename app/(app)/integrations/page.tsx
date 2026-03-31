@@ -183,14 +183,7 @@ export default function IntegrationsPage() {
     );
   }
 
-  if (profile?.role !== "SUPER_ADMIN") {
-    return (
-      <EmptyState
-        title="Área restrita"
-        description="As integrações por loja ficam disponíveis apenas para superadmin."
-      />
-    );
-  }
+  const canManageIntegrations = profile?.role === "SUPER_ADMIN";
 
   const current = integrationsMap.get(activeProvider);
   const currentState = formState[activeProvider];
@@ -360,20 +353,22 @@ export default function IntegrationsPage() {
         description="Defina a origem de cada dado por marca. O BrandOps mantém o fluxo manual disponível onde ele ainda é necessário e prepara a evolução para API sem quebrar a operação."
         badge={`Escopo atual: ${activeBrand.name}`}
         actions={
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="brandops-button brandops-button-primary"
-          >
-            {saving ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Salvando
-              </>
-            ) : (
-              "Salvar integrações"
-            )}
-          </button>
+          canManageIntegrations ? (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="brandops-button brandops-button-primary"
+            >
+              {saving ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Salvando
+                </>
+              ) : (
+                "Salvar integrações"
+              )}
+            </button>
+          ) : null
         }
       />
 
@@ -387,6 +382,15 @@ export default function IntegrationsPage() {
         >
           {notice.kind === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
           <span>{notice.text}</span>
+        </div>
+      ) : null}
+
+      {!canManageIntegrations ? (
+        <div className="flex items-center gap-3 rounded-2xl border border-secondary/20 bg-secondary-container/20 px-4 py-3 text-sm text-on-surface">
+          <ShieldCheck size={18} className="text-secondary" />
+          <span>
+            Você pode acompanhar o status e executar as sincronizações da sua loja. Alterações de configuração seguem restritas ao superadmin.
+          </span>
         </div>
       ) : null}
 
@@ -468,6 +472,7 @@ export default function IntegrationsPage() {
                       }))
                     }
                     className="brandops-input w-full px-3 py-2.5"
+                    disabled={!canManageIntegrations}
                   >
                     {options.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -494,6 +499,7 @@ export default function IntegrationsPage() {
                         }
                         className="brandops-input w-full px-3 py-2.5"
                         placeholder="act_1234567890"
+                        disabled={!canManageIntegrations}
                       />
                     </label>
                     <label className="space-y-2 text-sm">
@@ -513,6 +519,7 @@ export default function IntegrationsPage() {
                           }))
                         }
                         className="brandops-input w-full px-3 py-2.5"
+                        disabled={!canManageIntegrations}
                       />
                     </label>
                     <label className="flex items-start gap-3 rounded-2xl border border-outline bg-white p-4 text-sm text-on-surface-variant lg:col-span-2">
@@ -529,6 +536,7 @@ export default function IntegrationsPage() {
                           }))
                         }
                         className="mt-1"
+                        disabled={!canManageIntegrations}
                       />
                       <span>
                         Manter upload manual da Meta como contingência mesmo com a API ligada.
@@ -571,6 +579,7 @@ export default function IntegrationsPage() {
                         }
                         className="brandops-input w-full px-3 py-2.5"
                         placeholder="506034252"
+                        disabled={!canManageIntegrations}
                       />
                     </label>
                     <label className="space-y-2 text-sm">
@@ -588,6 +597,7 @@ export default function IntegrationsPage() {
                         }
                         className="brandops-input w-full px-3 py-2.5"
                         placeholder="America/Sao_Paulo"
+                        disabled={!canManageIntegrations}
                       />
                     </label>
                     <div className="flex items-end lg:col-span-2">

@@ -1,19 +1,23 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MetaRowPayload } from "@/lib/brandops/canonical-ingest";
 
-const PURCHASE_ACTION_TYPES = new Set([
+const PURCHASE_ACTION_PRIORITY = [
   "offsite_conversion.fb_pixel_purchase",
   "onsite_web_purchase",
-  "omni_purchase",
   "purchase",
-]);
+  "omni_purchase",
+  "onsite_web_app_purchase",
+  "web_in_store_purchase",
+  "web_app_in_store_purchase",
+] as const;
 
-const ADD_TO_CART_ACTION_TYPES = new Set([
+const ADD_TO_CART_ACTION_PRIORITY = [
   "offsite_conversion.fb_pixel_add_to_cart",
   "onsite_web_add_to_cart",
-  "omni_add_to_cart",
   "add_to_cart",
-]);
+  "omni_add_to_cart",
+  "onsite_web_app_add_to_cart",
+] as const;
 
 type MetaActionRow = {
   action_type?: string;
@@ -107,18 +111,22 @@ function toInteger(value?: string | null) {
   return Math.round(toNumber(value));
 }
 
-function sumActionValues(
+function pickActionValue(
   rows: MetaActionRow[] | undefined,
-  acceptedTypes: Set<string>,
+  priority: readonly string[],
 ) {
-  return (rows ?? []).reduce((total, row) => {
-    const actionType = row.action_type?.trim().toLowerCase() ?? "";
-    if (!acceptedTypes.has(actionType)) {
-      return total;
-    }
+  const normalized = new Map(
+    (rows ?? []).map((row) => [row.action_type?.trim().toLowerCase() ?? "", row]),
+  );
 
-    return total + toNumber(row.value);
-  }, 0);
+  for (const actionType of priority) {
+    const match = normalized.get(actionType);
+    if (match) {
+      return toNumber(match.value);
+    }
+  }
+
+  return 0;
 }
 
 function buildMetaInsightsUrl({ adAccountId, startDate, endDate }: FetchMetaInsightsOptions) {
@@ -196,11 +204,11 @@ function mapMetaInsightsRow(row: MetaInsightsRow): MetaRowPayload | null {
     clicks_all: clicksAll,
     link_clicks: linkClicks,
     spend: toNumber(row.spend),
-    purchases: Math.round(sumActionValues(row.actions, PURCHASE_ACTION_TYPES)),
-    revenue: sumActionValues(row.action_values, PURCHASE_ACTION_TYPES),
+    purchases: Math.round(pickActionValue(row.actions, PURCHASE_ACTION_PRIORITY)),
+    revenue: pickActionValue(row.action_values, PURCHASE_ACTION_PRIORITY),
     ctr_all: ctrAll,
     ctr_link: ctrLink,
-    add_to_cart: Math.round(sumActionValues(row.actions, ADD_TO_CART_ACTION_TYPES)),
+    add_to_cart: Math.round(pickActionValue(row.actions, ADD_TO_CART_ACTION_PRIORITY)),
   };
 }
 

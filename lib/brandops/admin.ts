@@ -6,7 +6,7 @@ function getBearerToken(request: Request) {
   return match?.[1] ?? null;
 }
 
-export async function requireSuperAdmin(request: Request) {
+async function getAuthenticatedContext(request: Request) {
   const accessToken = getBearerToken(request);
   if (!accessToken) {
     throw new Error("Sessão ausente.");
@@ -28,13 +28,50 @@ export async function requireSuperAdmin(request: Request) {
     .eq("id", user.id)
     .single();
 
-  if (profileError || !profile || profile.role !== "SUPER_ADMIN") {
-    throw new Error("Acesso restrito ao superadmin.");
+  if (profileError || !profile) {
+    throw new Error("Perfil do usuário não encontrado.");
   }
 
   return {
     supabase,
     user,
     profile,
+  };
+}
+
+export async function requireSuperAdmin(request: Request) {
+  const context = await getAuthenticatedContext(request);
+
+  if (context.profile.role !== "SUPER_ADMIN") {
+    throw new Error("Acesso restrito ao superadmin.");
+  }
+
+  return context;
+}
+
+export async function requireBrandAccess(request: Request, brandId: string) {
+  const context = await getAuthenticatedContext(request);
+
+  if (context.profile.role === "SUPER_ADMIN") {
+    return {
+      ...context,
+      canManageIntegrations: true,
+    };
+  }
+
+  const { data: membership, error } = await context.supabase
+    .from("brand_members")
+    .select("brand_id")
+    .eq("brand_id", brandId)
+    .eq("user_id", context.user.id)
+    .maybeSingle();
+
+  if (error || !membership) {
+    throw new Error("Você não tem acesso a esta marca.");
+  }
+
+  return {
+    ...context,
+    canManageIntegrations: false,
   };
 }

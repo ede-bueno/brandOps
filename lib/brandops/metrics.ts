@@ -633,7 +633,7 @@ export function buildCampaignPerformance(brand: BrandDataset): CampaignPerforman
     current.purchaseValue += row.purchaseValue;
     current.purchases += row.purchases;
     current.impressions += row.impressions;
-    current.clicks += row.linkClicks || row.clicksAll;
+    current.clicks += row.clicksAll;
     byCampaign.set(row.campaignName, current);
   });
 

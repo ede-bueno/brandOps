@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireSuperAdmin } from "@/lib/brandops/admin";
+import { requireBrandAccess } from "@/lib/brandops/admin";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import {
   fetchGa4DailyPerformance,
   fetchGa4ItemDailyPerformance,
@@ -28,8 +29,8 @@ export async function POST(
   const startedAt = new Date().toISOString();
 
   try {
-    const { supabase } = await requireSuperAdmin(request);
     const { brandId } = await params;
+    const { supabase } = await requireBrandAccess(request, brandId);
 
     const { data: integration, error: integrationError } = await supabase
       .from("brand_integrations")
@@ -204,7 +205,7 @@ export async function POST(
 
     try {
       const { brandId } = await params;
-      const { supabase } = await requireSuperAdmin(request);
+      const supabase = createSupabaseServiceRoleClient();
       await supabase
         .from("brand_integrations")
         .update({
