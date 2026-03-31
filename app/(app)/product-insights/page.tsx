@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Download, Lightbulb, PackageSearch, TrendingDown, TrendingUp } from "lucide-react";
+import { Download, TrendingDown, TrendingUp } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { MetricCard } from "@/components/MetricCard";
 import { useBrandOps } from "@/components/BrandOpsProvider";
@@ -26,6 +26,7 @@ import {
 import { buildProductInsights } from "@/lib/brandops/metrics";
 import type {
   BrandDataset,
+  ProductDecisionAction,
   ProductInsightClassification,
   ProductInsightRow,
 } from "@/lib/brandops/types";
@@ -78,6 +79,41 @@ const classificationMeta: Record<
       "Teste outra peça, outra cor base ou outro recorte de thumb.",
       "Evite escalar tráfego até corrigir a fricção visual.",
     ],
+  },
+};
+
+const decisionMeta: Record<
+  ProductDecisionAction,
+  {
+    label: string;
+    description: string;
+    chipClass: string;
+    sectionClass: string;
+  }
+> = {
+  scale_now: {
+    label: "Escalar agora",
+    description: "Sinal forte de intenção e validação. Merece ganhar distribuição.",
+    chipClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    sectionClass: "border-emerald-200 bg-emerald-50/70",
+  },
+  boost_traffic: {
+    label: "Dar mais tráfego",
+    description: "A estampa é promissora, mas ainda precisa de volume para fechar a leitura.",
+    chipClass: "bg-sky-50 text-sky-700 border-sky-200",
+    sectionClass: "border-sky-200 bg-sky-50/70",
+  },
+  review_listing: {
+    label: "Revisar vitrine",
+    description: "Recebe atenção, mas não converte o suficiente. O gargalo parece estar na apresentação.",
+    chipClass: "bg-rose-50 text-rose-700 border-rose-200",
+    sectionClass: "border-rose-200 bg-rose-50/70",
+  },
+  watch: {
+    label: "Observar",
+    description: "Sem amostra ou sinal forte o bastante. Ainda não é hora de escalar nem descartar.",
+    chipClass: "bg-slate-50 text-slate-700 border-slate-200",
+    sectionClass: "border-slate-200 bg-slate-50/80",
   },
 };
 
@@ -177,37 +213,11 @@ function buildScatterData(insights: ProductInsightRow[]) {
       y: item.addToCartRate * 100,
       z: Math.max(item.revenue, 1),
       label: item.stampName,
+      decision: item.decisionTitle,
     });
   });
 
   return groups;
-}
-
-function buildSuggestions(insights: ProductInsightRow[]) {
-  const validated = insights.filter((item) => item.classification === "validated").slice(0, 8);
-  const opportunity = insights.filter((item) => item.classification === "opportunity").slice(0, 8);
-  const lowTraffic = insights.filter((item) => item.classification === "low_traffic").slice(0, 8);
-
-  return [
-    {
-      title: "Produtos validados",
-      subtitle: "Escalar em catálogo e mídia",
-      items: validated,
-      className: "border-emerald-200 bg-emerald-50/70",
-    },
-    {
-      title: "Alto potencial",
-      subtitle: "Bom sinal, mas ainda pedem visibilidade",
-      items: opportunity,
-      className: "border-violet-200 bg-violet-50/70",
-    },
-    {
-      title: "Teste de mercado",
-      subtitle: "Ainda precisam de mais tráfego para decisão",
-      items: lowTraffic,
-      className: "border-amber-200 bg-amber-50/70",
-    },
-  ];
 }
 
 function exportInsightsCsv(insights: ProductInsightRow[]) {
@@ -216,18 +226,24 @@ function exportInsightsCsv(insights: ProductInsightRow[]) {
     "estampa",
     "tipo_produto",
     "classificacao",
+    "decisao",
+    "confianca",
     "views",
     "add_to_cart",
     "checkouts",
-    "compras",
-    "quantidade",
-    "receita",
+    "quantidade_ga4",
+    "vendas_reais_ink",
+    "receita_ga4",
+    "receita_real_ink",
     "tx_adicao",
-    "tx_conversao",
+    "tx_checkout",
+    "tx_compra",
     "views_periodo_anterior",
     "tx_adicao_periodo_anterior",
     "crescimento_views",
     "delta_tx_adicao",
+    "acao_sugerida",
+    "racional",
   ];
 
   const lines = insights.map((item) => [
@@ -235,18 +251,24 @@ function exportInsightsCsv(insights: ProductInsightRow[]) {
     item.stampName,
     item.productType,
     classificationMeta[item.classification].label,
+    decisionMeta[item.decision].label,
+    item.decisionConfidence,
     item.views,
     item.addToCarts,
     item.checkouts,
-    item.purchases,
     item.quantity,
+    item.realUnitsSold,
     item.revenue.toFixed(2).replace(".", ","),
+    item.realGrossRevenue.toFixed(2).replace(".", ","),
     (item.addToCartRate * 100).toFixed(2).replace(".", ","),
-    (item.conversionRate * 100).toFixed(2).replace(".", ","),
+    (item.checkoutRate * 100).toFixed(2).replace(".", ","),
+    (item.purchaseRate * 100).toFixed(2).replace(".", ","),
     item.previousViews,
     (item.previousAddToCartRate * 100).toFixed(2).replace(".", ","),
     (item.viewGrowth * 100).toFixed(2).replace(".", ","),
     (item.addToCartRateDelta * 100).toFixed(2).replace(".", ","),
+    item.recommendedAction,
+    item.rationale.join(" | "),
   ]);
 
   const csv = [header, ...lines]
@@ -293,8 +315,17 @@ export default function ProductInsightsPage() {
     [currentRows, selectedInsight],
   );
   const scatterData = useMemo(() => buildScatterData(insights), [insights]);
-  const suggestionBlocks = useMemo(() => buildSuggestions(insights), [insights]);
   const highlightList = useMemo(() => insights.slice(0, 8), [insights]);
+
+  const decisionGroups = useMemo(
+    () => ({
+      scale_now: insights.filter((item) => item.decision === "scale_now"),
+      boost_traffic: insights.filter((item) => item.decision === "boost_traffic"),
+      review_listing: insights.filter((item) => item.decision === "review_listing"),
+      watch: insights.filter((item) => item.decision === "watch"),
+    }),
+    [insights],
+  );
 
   const insightCounts = useMemo(() => {
     return {
@@ -310,11 +341,11 @@ export default function ProductInsightsPage() {
       (accumulator, item) => {
         accumulator.views += item.views;
         accumulator.addToCarts += item.addToCarts;
-        accumulator.purchases += item.purchases;
-        accumulator.revenue += item.revenue;
+        accumulator.realUnitsSold += item.realUnitsSold;
+        accumulator.realRevenue += item.realGrossRevenue;
         return accumulator;
       },
-      { views: 0, addToCarts: 0, purchases: 0, revenue: 0 },
+      { views: 0, addToCarts: 0, realUnitsSold: 0, realRevenue: 0 },
     );
   }, [insights]);
 
@@ -349,8 +380,8 @@ export default function ProductInsightsPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Inteligência de produto"
-        title="Insights de Produtos"
-        description="Leitura de estampas com base no comportamento do GA4: visualização, adição ao carrinho, checkout, compra e sinais de evolução frente à janela anterior."
+        title="Decisão por Estampa"
+        description="Use o GA4 para entender quais estampas merecem ganhar visibilidade, quais pedem revisão e quais ainda estão sem amostra suficiente."
         badge={`Período analisado: ${selectedPeriodLabel}`}
         actions={
           <button
@@ -366,31 +397,31 @@ export default function ProductInsightsPage() {
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard
-          label="Estampas monitoradas"
-          value={integerFormatter.format(insights.length)}
-          help="Quantidade de grupos únicos por estampa e tipo de peça no período."
-          accent={insights.length > 0 ? "positive" : "default"}
+          label="Escalar agora"
+          value={integerFormatter.format(decisionGroups.scale_now.length)}
+          help="Estampas com sinal forte de intenção e amostra suficiente para ganhar distribuição."
+          accent={decisionGroups.scale_now.length > 0 ? "positive" : "default"}
         />
         <MetricCard
-          label="Views de itens"
-          value={integerFormatter.format(totals.views)}
-          help="Visualizações de item registradas pelo GA4."
+          label="Dar mais tráfego"
+          value={integerFormatter.format(decisionGroups.boost_traffic.length)}
+          help="Estampas promissoras, mas ainda precisando de visibilidade."
         />
         <MetricCard
-          label="Add to cart"
-          value={integerFormatter.format(totals.addToCarts)}
-          help="Eventos de adição ao carrinho nas páginas de produto."
+          label="Revisar vitrine"
+          value={integerFormatter.format(decisionGroups.review_listing.length)}
+          help="Itens com atenção suficiente, mas resposta abaixo do esperado."
         />
         <MetricCard
-          label="Compras"
-          value={integerFormatter.format(totals.purchases)}
-          help="Compras atribuídas ao item pelo GA4."
+          label="Sem amostra"
+          value={integerFormatter.format(decisionGroups.watch.length)}
+          help="Itens ainda sem base suficiente para decisão definitiva."
         />
         <MetricCard
-          label="Receita"
-          value={currencyFormatter.format(totals.revenue)}
-          help="Receita de item registrada pelo GA4 no período."
-          accent={totals.revenue > 0 ? "positive" : "default"}
+          label="Venda real INK"
+          value={integerFormatter.format(totals.realUnitsSold)}
+          help="Peças com venda real conciliada no período."
+          accent={totals.realUnitsSold > 0 ? "positive" : "default"}
         />
       </section>
 
@@ -398,7 +429,7 @@ export default function ProductInsightsPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <SectionHeading
             title="Navegação da análise"
-            description="Alterne entre leitura executiva, tendência e detalhamento para reduzir rolagem e ruído visual."
+            description="A leitura agora separa ação, tendência e detalhamento para reduzir ruído e facilitar decisão."
           />
           <div className="brandops-tabs overflow-x-auto">
             <button
@@ -407,7 +438,7 @@ export default function ProductInsightsPage() {
               onClick={() => setActiveView("overview")}
               className="brandops-tab"
             >
-              Visão geral
+              Decisão
             </button>
             <button
               type="button"
@@ -430,196 +461,275 @@ export default function ProductInsightsPage() {
       </SurfaceCard>
 
       {activeView === "overview" ? (
-      <>
-      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <SurfaceCard>
-          <SectionHeading
-            title="Matriz de estampa"
-            description="Cada ponto cruza visualizações e taxa de adição ao carrinho. Isso ajuda a separar o que já está validado do que ainda precisa de exposição ou revisão."
-            aside={`${integerFormatter.format(insights.length)} itens classificados`}
-          />
-          <div className="mt-4 flex flex-wrap gap-3 text-xs text-on-surface-variant">
-            {Object.entries(classificationMeta).map(([key, meta]) => (
-              <div key={key} className="inline-flex items-center gap-2">
-                <span
-                  className="inline-flex h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: meta.color }}
-                  aria-hidden="true"
-                />
-                <span>{meta.label}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-5 h-[340px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 12, right: 18, bottom: 12, left: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline)" />
-                <XAxis
-                  type="number"
-                  dataKey="x"
-                  name="Visualizações"
-                  stroke="var(--color-on-surface-variant)"
-                  tick={{ fontSize: 11 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  type="number"
-                  dataKey="y"
-                  name="Tx. adição"
-                  unit="%"
-                  stroke="var(--color-on-surface-variant)"
-                  tick={{ fontSize: 11 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip
-                  cursor={{ strokeDasharray: "3 3" }}
-                  content={({ active, payload }) => {
-                    const point = payload?.[0]?.payload as
-                      | { label?: string; x?: number; y?: number }
-                      | undefined;
-                    if (!active || !point) return null;
-                    return (
-                      <div className="rounded-2xl border border-outline bg-surface px-3 py-2 shadow-sm">
-                        <p className="text-sm font-semibold text-on-surface">{point.label}</p>
-                        <p className="mt-1 text-xs text-on-surface-variant">
-                          {integerFormatter.format(Number(point.x ?? 0))} views •{" "}
-                          {Number(point.y ?? 0).toFixed(1)}% add to cart
-                        </p>
-                      </div>
-                    );
-                  }}
-                />
-                {Object.entries(classificationMeta).map(([classification, meta]) => (
-                  <Scatter
-                    key={classification}
-                    name={meta.label}
-                    data={scatterData[classification as ProductInsightClassification]}
-                    fill={meta.color}
+        <>
+          <section className="grid gap-4 xl:grid-cols-4">
+            {(Object.entries(decisionMeta) as Array<
+              [ProductDecisionAction, (typeof decisionMeta)[ProductDecisionAction]]
+            >).map(([decisionKey, meta]) => {
+              const items = decisionGroups[decisionKey].slice(0, 4);
+
+              return (
+                <SurfaceCard key={decisionKey} className={`border ${meta.sectionClass}`}>
+                  <SectionHeading
+                    title={meta.label}
+                    description={meta.description}
+                    aside={`${integerFormatter.format(decisionGroups[decisionKey].length)} itens`}
                   />
-                ))}
-              </ScatterChart>
-            </ResponsiveContainer>
-          </div>
-        </SurfaceCard>
+                  <div className="mt-4 space-y-3">
+                    {items.length ? (
+                      items.map((item) => (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => setSelectedInsightKey(item.key)}
+                          className="w-full rounded-2xl border border-white/70 bg-white/80 px-3 py-3 text-left shadow-sm transition-colors hover:border-secondary/30"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold text-on-surface">{item.stampName}</p>
+                              <p className="mt-1 text-xs text-on-surface-variant">{item.productType}</p>
+                            </div>
+                            <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${meta.chipClass}`}>
+                              {item.decisionConfidence}
+                            </span>
+                          </div>
+                          <p className="mt-3 text-sm leading-6 text-on-surface-variant">
+                            {item.decisionSummary}
+                          </p>
+                        </button>
+                      ))
+                    ) : (
+                      <p className="text-sm text-on-surface-variant">
+                        Nenhuma estampa nesta faixa no período.
+                      </p>
+                    )}
+                  </div>
+                </SurfaceCard>
+              );
+            })}
+          </section>
 
-        <SurfaceCard>
-          <SectionHeading
-            title="Estampas em foco"
-            description="Ranking curto para identificar quais pontos da matriz merecem atenção sem depender do tooltip."
-          />
-          <div className="mt-5 space-y-3">
-            {highlightList.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => setSelectedInsightKey(item.key)}
-                className={`w-full rounded-2xl border p-3 text-left transition-colors ${
-                  resolvedInsightKey === item.key
-                    ? "border-secondary/40 bg-secondary/5"
-                    : "border-outline bg-surface-container-low hover:border-secondary/25"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-on-surface">{item.stampName}</p>
-                    <p className="mt-1 text-xs text-on-surface-variant">{item.productType}</p>
-                  </div>
-                  <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${classificationMeta[item.classification].chipClass}`}>
-                    {classificationMeta[item.classification].label}
-                  </span>
-                </div>
-                <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-on-surface-variant">
-                  <div>
-                    <p>Views</p>
-                    <p className="mt-1 font-semibold text-on-surface">{integerFormatter.format(item.views)}</p>
-                  </div>
-                  <div>
-                    <p>Tx. carrinho</p>
-                    <p className="mt-1 font-semibold text-on-surface">{percentFormatter.format(item.addToCartRate)}</p>
-                  </div>
-                  <div>
-                    <p>Receita</p>
-                    <p className="mt-1 font-semibold text-on-surface">{currencyFormatter.format(item.revenue)}</p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </SurfaceCard>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-2">
-        <SurfaceCard>
-          <SectionHeading
-            title="Insights acionáveis"
-            description="Leitura rápida do que escalar, do que testar e do que revisar visualmente."
-          />
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            {(Object.entries(classificationMeta) as Array<[ProductInsightClassification, (typeof classificationMeta)[ProductInsightClassification]]>).map(
-              ([key, meta]) => (
-                <article key={key} className="rounded-2xl border border-outline bg-surface-container-low p-4">
-                  <div className="flex items-center gap-2">
+          <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+            <SurfaceCard>
+              <SectionHeading
+                title="Radar das estampas"
+                description="Mapa visual para entender quais grupos estão convertendo interesse em intenção de compra."
+                aside={`${integerFormatter.format(insights.length)} grupos monitorados`}
+              />
+              <div className="mt-4 flex flex-wrap gap-3 text-xs text-on-surface-variant">
+                {Object.entries(classificationMeta).map(([key, meta]) => (
+                  <div key={key} className="inline-flex items-center gap-2">
                     <span
                       className="inline-flex h-2.5 w-2.5 rounded-full"
                       style={{ backgroundColor: meta.color }}
                       aria-hidden="true"
                     />
-                    <h3 className="text-base font-semibold text-on-surface">
-                      {meta.label} ({integerFormatter.format(insightCounts[key])})
-                    </h3>
+                    <span>{meta.label}</span>
                   </div>
-                  <ul className="mt-3 space-y-2 text-sm leading-6 text-on-surface-variant">
-                    {meta.bullets.map((bullet) => (
-                      <li key={bullet} className="flex items-start gap-2">
-                        <span className="mt-[7px] inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-outline" />
-                        <span>{bullet}</span>
-                      </li>
+                ))}
+              </div>
+              <div className="mt-5 h-[340px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart margin={{ top: 12, right: 18, bottom: 12, left: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline)" />
+                    <XAxis
+                      type="number"
+                      dataKey="x"
+                      name="Visualizações"
+                      stroke="var(--color-on-surface-variant)"
+                      tick={{ fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      type="number"
+                      dataKey="y"
+                      name="Tx. adição"
+                      unit="%"
+                      stroke="var(--color-on-surface-variant)"
+                      tick={{ fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <Tooltip
+                      cursor={{ strokeDasharray: "3 3" }}
+                      content={({ active, payload }) => {
+                        const point = payload?.[0]?.payload as
+                          | { label?: string; x?: number; y?: number; decision?: string }
+                          | undefined;
+                        if (!active || !point) return null;
+                        return (
+                          <div className="rounded-2xl border border-outline bg-surface px-3 py-2 shadow-sm">
+                            <p className="text-sm font-semibold text-on-surface">{point.label}</p>
+                            <p className="mt-1 text-xs text-on-surface-variant">
+                              {integerFormatter.format(Number(point.x ?? 0))} views •{" "}
+                              {Number(point.y ?? 0).toFixed(1)}% add to cart
+                            </p>
+                            <p className="mt-1 text-xs font-medium text-secondary">
+                              {point.decision}
+                            </p>
+                          </div>
+                        );
+                      }}
+                    />
+                    {Object.entries(classificationMeta).map(([classification, meta]) => (
+                      <Scatter
+                        key={classification}
+                        name={meta.label}
+                        data={scatterData[classification as ProductInsightClassification]}
+                        fill={meta.color}
+                      />
                     ))}
-                  </ul>
-                </article>
-              ),
-            )}
-          </div>
-        </SurfaceCard>
+                  </ScatterChart>
+                </ResponsiveContainer>
+              </div>
+            </SurfaceCard>
 
-        <SurfaceCard>
-          <SectionHeading
-            title="Sugestão de conjuntos de produtos"
-            description="Agrupamentos práticos para mídia, catálogo e testes de vitrine."
-            aside="Leitura sugerida para Meta Ads e catálogo"
-          />
-          <div className="mt-5 grid gap-4 xl:grid-cols-3">
-            {suggestionBlocks.map((block) => (
-              <article key={block.title} className={`rounded-2xl border p-4 ${block.className}`}>
-                <div className="flex items-center gap-2">
-                  <Lightbulb size={16} className="text-on-surface" />
-                  <div>
-                    <h3 className="text-base font-semibold text-on-surface">{block.title}</h3>
-                    <p className="text-xs text-on-surface-variant">{block.subtitle}</p>
+            <SurfaceCard>
+              <SectionHeading
+                title="Estampa selecionada"
+                description="Resumo operacional da leitura e da ação sugerida para a estampa em foco."
+              />
+              {selectedInsight ? (
+                <div className="mt-5 space-y-4">
+                  <div className="rounded-2xl border border-outline bg-surface-container-low p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-lg font-semibold text-on-surface">{selectedInsight.stampName}</span>
+                      <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${decisionMeta[selectedInsight.decision].chipClass}`}>
+                        {selectedInsight.decisionTitle}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm text-on-surface-variant">{selectedInsight.productType}</p>
+                    <p className="mt-3 text-sm leading-6 text-on-surface-variant">{selectedInsight.decisionSummary}</p>
+                    <div className="mt-3 rounded-2xl border border-secondary/20 bg-secondary/5 px-3 py-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-secondary">Ação sugerida</p>
+                      <p className="mt-2 text-sm leading-6 text-on-surface">{selectedInsight.recommendedAction}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="panel-muted p-3">
+                      <p className="text-xs uppercase tracking-wide text-on-surface-variant">Views</p>
+                      <p className="mt-1 text-xl font-semibold text-on-surface">{integerFormatter.format(selectedInsight.views)}</p>
+                    </div>
+                    <div className="panel-muted p-3">
+                      <p className="text-xs uppercase tracking-wide text-on-surface-variant">Tx. adição</p>
+                      <p className="mt-1 text-xl font-semibold text-on-surface">{percentFormatter.format(selectedInsight.addToCartRate)}</p>
+                    </div>
+                    <div className="panel-muted p-3">
+                      <p className="text-xs uppercase tracking-wide text-on-surface-variant">Checkout rate</p>
+                      <p className="mt-1 text-xl font-semibold text-on-surface">{percentFormatter.format(selectedInsight.checkoutRate)}</p>
+                    </div>
+                    <div className="panel-muted p-3">
+                      <p className="text-xs uppercase tracking-wide text-on-surface-variant">Venda real INK</p>
+                      <p className="mt-1 text-xl font-semibold text-on-surface">{integerFormatter.format(selectedInsight.realUnitsSold)}</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-outline bg-surface-container-low p-4">
+                    <h3 className="text-sm font-semibold text-on-surface">Por que esta recomendação apareceu</h3>
+                    <ul className="mt-3 space-y-2 text-sm leading-6 text-on-surface-variant">
+                      {selectedInsight.rationale.map((bullet) => (
+                        <li key={bullet} className="flex items-start gap-2">
+                          <span className="mt-[7px] inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-outline" />
+                          <span>{bullet}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
-                <div className="mt-4 space-y-2">
-                  {block.items.length ? (
-                    block.items.map((item) => (
-                      <div key={item.key} className="rounded-xl bg-white/70 px-3 py-2 text-sm font-medium text-on-surface shadow-sm">
-                        {item.stampName}
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-on-surface-variant">
-                      Ainda sem itens suficientes nesta faixa.
-                    </p>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
-        </SurfaceCard>
-      </section>
+              ) : (
+                <p className="mt-5 text-sm text-on-surface-variant">Selecione uma estampa para ver a leitura detalhada.</p>
+              )}
+            </SurfaceCard>
+          </section>
 
-      </>
+          <section className="grid gap-6 xl:grid-cols-2">
+            <SurfaceCard>
+              <SectionHeading
+                title="Leitura dos sinais"
+                description="A matriz abaixo ajuda a entender maturidade de interesse, validação e risco visual."
+              />
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                {(Object.entries(classificationMeta) as Array<[ProductInsightClassification, (typeof classificationMeta)[ProductInsightClassification]]>).map(
+                  ([key, meta]) => (
+                    <article key={key} className="rounded-2xl border border-outline bg-surface-container-low p-4">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="inline-flex h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: meta.color }}
+                          aria-hidden="true"
+                        />
+                        <h3 className="text-base font-semibold text-on-surface">
+                          {meta.label} ({integerFormatter.format(insightCounts[key])})
+                        </h3>
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-on-surface-variant">
+                        {key === "validated"
+                          ? "Já existe boa combinação de interesse, carrinho e confirmação de venda."
+                          : key === "opportunity"
+                            ? "Há sinal comercial, mas a estampa ainda depende de distribuição ou teste adicional."
+                            : key === "low_traffic"
+                              ? "Ainda faltam views para concluir se vale escalar ou cortar."
+                              : "Recebe atenção, mas a apresentação ainda não convence o suficiente."}
+                      </p>
+                    </article>
+                  ),
+                )}
+              </div>
+            </SurfaceCard>
+
+            <SurfaceCard>
+              <SectionHeading
+                title="Estampas em foco"
+                description="Lista curta das estampas mais relevantes do período para decisão rápida."
+                aside="Selecione uma para aprofundar"
+              />
+              <div className="mt-5 space-y-3">
+                {highlightList.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setSelectedInsightKey(item.key)}
+                    className={`w-full rounded-2xl border p-3 text-left transition-colors ${
+                      resolvedInsightKey === item.key
+                        ? "border-secondary/40 bg-secondary/5"
+                        : "border-outline bg-surface-container-low hover:border-secondary/25"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-on-surface">{item.stampName}</p>
+                        <p className="mt-1 text-xs text-on-surface-variant">{item.productType}</p>
+                      </div>
+                      <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${decisionMeta[item.decision].chipClass}`}>
+                        {item.decisionTitle}
+                      </span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-4 gap-2 text-xs text-on-surface-variant">
+                      <div>
+                        <p>Views</p>
+                        <p className="mt-1 font-semibold text-on-surface">{integerFormatter.format(item.views)}</p>
+                      </div>
+                      <div>
+                        <p>Tx. carrinho</p>
+                        <p className="mt-1 font-semibold text-on-surface">{percentFormatter.format(item.addToCartRate)}</p>
+                      </div>
+                      <div>
+                        <p>Venda real</p>
+                        <p className="mt-1 font-semibold text-on-surface">{integerFormatter.format(item.realUnitsSold)}</p>
+                      </div>
+                      <div>
+                        <p>Receita</p>
+                        <p className="mt-1 font-semibold text-on-surface">{currencyFormatter.format(item.realGrossRevenue || item.revenue)}</p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </SurfaceCard>
+          </section>
+        </>
       ) : null}
 
       {activeView === "trend" ? (
@@ -710,18 +820,19 @@ export default function ProductInsightsPage() {
             <SurfaceCard>
               <SectionHeading
                 title="Foco do período"
-                description="Resumo rápido da estampa selecionada para tomada de decisão."
+                description="Resumo executivo da leitura, do sinal comercial e da ação sugerida."
               />
           {selectedInsight ? (
             <div className="mt-5 space-y-4">
               <div className="rounded-2xl border border-outline bg-surface-container-low p-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-lg font-semibold text-on-surface">{selectedInsight.stampName}</span>
-                  <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${classificationMeta[selectedInsight.classification].chipClass}`}>
-                    {classificationMeta[selectedInsight.classification].label}
+                  <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${decisionMeta[selectedInsight.decision].chipClass}`}>
+                    {selectedInsight.decisionTitle}
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-on-surface-variant">{selectedInsight.productType}</p>
+                <p className="mt-3 text-sm leading-6 text-on-surface-variant">{selectedInsight.decisionSummary}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -734,22 +845,26 @@ export default function ProductInsightsPage() {
                   <p className="mt-1 text-xl font-semibold text-on-surface">{percentFormatter.format(selectedInsight.addToCartRate)}</p>
                 </div>
                 <div className="panel-muted p-3">
-                  <p className="text-xs uppercase tracking-wide text-on-surface-variant">Compras</p>
-                  <p className="mt-1 text-xl font-semibold text-on-surface">{integerFormatter.format(selectedInsight.purchases)}</p>
+                  <p className="text-xs uppercase tracking-wide text-on-surface-variant">Checkout rate</p>
+                  <p className="mt-1 text-xl font-semibold text-on-surface">{percentFormatter.format(selectedInsight.checkoutRate)}</p>
                 </div>
                 <div className="panel-muted p-3">
-                  <p className="text-xs uppercase tracking-wide text-on-surface-variant">Receita</p>
-                  <p className="mt-1 text-xl font-semibold text-on-surface">{currencyFormatter.format(selectedInsight.revenue)}</p>
+                  <p className="text-xs uppercase tracking-wide text-on-surface-variant">Venda real INK</p>
+                  <p className="mt-1 text-xl font-semibold text-on-surface">{integerFormatter.format(selectedInsight.realUnitsSold)}</p>
                 </div>
               </div>
 
+                  <div className="rounded-2xl border border-secondary/20 bg-secondary/5 p-4">
+                    <h3 className="text-sm font-semibold text-on-surface">Ação sugerida</h3>
+                    <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                      {selectedInsight.recommendedAction}
+                    </p>
+                  </div>
+
                   <div className="rounded-2xl border border-outline bg-surface-container-low p-4">
-                    <h3 className="flex items-center gap-2 text-sm font-semibold text-on-surface">
-                      <PackageSearch size={16} />
-                      Leituras recomendadas
-                    </h3>
+                    <h3 className="text-sm font-semibold text-on-surface">Racional da recomendação</h3>
                 <ul className="mt-3 space-y-2 text-sm leading-6 text-on-surface-variant">
-                  {classificationMeta[selectedInsight.classification].bullets.map((bullet) => (
+                  {selectedInsight.rationale.map((bullet) => (
                     <li key={bullet} className="flex items-start gap-2">
                       <span className="mt-[7px] inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-outline" />
                       <span>{bullet}</span>
@@ -812,24 +927,28 @@ export default function ProductInsightsPage() {
         <div className="border-b border-outline p-5">
           <SectionHeading
             title="Análise detalhada de produtos"
-            description="Tabela completa das estampas com métricas de comportamento, venda e classificação da matriz."
+            description="Tabela completa para auditoria rápida do sinal do GA4 versus venda real conciliada na INK."
             aside={`${integerFormatter.format(insights.length)} grupos analisados`}
           />
         </div>
         <div className="brandops-table-container rounded-none border-0">
-          <table className="brandops-table min-w-[1120px] w-full">
+          <table className="brandops-table min-w-[1400px] w-full">
             <thead>
               <tr>
                 <th>IDs</th>
                 <th>Nome</th>
-                <th>Classificação</th>
+                <th>Decisão</th>
                 <th className="text-right">Views</th>
                 <th className="text-right">Carrinho</th>
                 <th className="text-right">Checkouts</th>
-                <th className="text-right">Compras</th>
-                <th className="text-right">Receita</th>
+                <th className="text-right">Qtd. GA4</th>
+                <th className="text-right">Venda real</th>
+                <th className="text-right">Receita GA4</th>
+                <th className="text-right">Receita INK</th>
                 <th className="text-right">Tx. Adição</th>
-                <th className="text-right">Tx. Conversão</th>
+                <th className="text-right">Tx. Checkout</th>
+                <th className="text-right">Tx. Compra</th>
+                <th>Ação</th>
               </tr>
             </thead>
             <tbody>
@@ -846,17 +965,21 @@ export default function ProductInsightsPage() {
                     </div>
                   </td>
                   <td>
-                    <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${classificationMeta[item.classification].chipClass}`}>
-                      {classificationMeta[item.classification].label}
+                    <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${decisionMeta[item.decision].chipClass}`}>
+                      {item.decisionTitle}
                     </span>
                   </td>
                   <td className="text-right">{integerFormatter.format(item.views)}</td>
                   <td className="text-right">{integerFormatter.format(item.addToCarts)}</td>
                   <td className="text-right">{integerFormatter.format(item.checkouts)}</td>
-                  <td className="text-right">{integerFormatter.format(item.purchases)}</td>
+                  <td className="text-right">{integerFormatter.format(item.quantity)}</td>
+                  <td className="text-right">{integerFormatter.format(item.realUnitsSold)}</td>
                   <td className="text-right">{currencyFormatter.format(item.revenue)}</td>
+                  <td className="text-right">{currencyFormatter.format(item.realGrossRevenue)}</td>
                   <td className="text-right text-emerald-700">{percentFormatter.format(item.addToCartRate)}</td>
-                  <td className="text-right text-primary">{percentFormatter.format(item.conversionRate)}</td>
+                  <td className="text-right text-sky-700">{percentFormatter.format(item.checkoutRate)}</td>
+                  <td className="text-right text-primary">{percentFormatter.format(item.purchaseRate)}</td>
+                  <td className="max-w-[280px] text-sm text-on-surface-variant">{item.recommendedAction}</td>
                 </tr>
               ))}
             </tbody>

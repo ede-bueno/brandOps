@@ -460,6 +460,14 @@ export type ProductInsightClassification =
   | "low_traffic"
   | "review";
 
+export type ProductDecisionAction =
+  | "scale_now"
+  | "boost_traffic"
+  | "review_listing"
+  | "watch";
+
+export type ProductDecisionConfidence = "high" | "medium" | "low";
+
 export interface ProductInsightRow {
   key: string;
   itemIds: string[];
@@ -474,8 +482,18 @@ export interface ProductInsightRow {
   addToCartRate: number;
   conversionRate: number;
   classification: ProductInsightClassification;
+  decision: ProductDecisionAction;
+  decisionConfidence: ProductDecisionConfidence;
+  decisionTitle: string;
+  decisionSummary: string;
+  recommendedAction: string;
+  rationale: string[];
   previousViews: number;
   previousAddToCartRate: number;
   viewGrowth: number;
   addToCartRateDelta: number;
+  checkoutRate: number;
+  purchaseRate: number;
+  realUnitsSold: number;
+  realGrossRevenue: number;
 }

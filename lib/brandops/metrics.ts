@@ -11,6 +11,7 @@ import type {
   MonthlyExpenseBreakdown,
   CustomDateRange,
   PeriodFilter,
+  ProductDecisionAction,
   ProductInsightClassification,
   ProductInsightRow,
   TrafficBreakdownRow,
@@ -1503,6 +1504,129 @@ function classifyProductInsight(
   return "review";
 }
 
+function aggregateRealProductSignals(brand: BrandDataset) {
+  const byKey = new Map<
+    string,
+    {
+      realUnitsSold: number;
+      realGrossRevenue: number;
+    }
+  >();
+
+  getActiveOrderItems(brand).forEach((item) => {
+    const stampName = extractPrintName(
+      item.productName,
+      `${item.productSpecs ?? ""} ${item.sku ?? ""}`,
+    );
+    const productType =
+      item.productType ??
+      detectProductType(item.productName, `${item.productSpecs ?? ""} ${item.sku ?? ""}`) ??
+      "Sem tipo";
+    const key = `${normalizeText(stampName)}::${normalizeText(productType)}`;
+    const current = byKey.get(key) ?? {
+      realUnitsSold: 0,
+      realGrossRevenue: 0,
+    };
+
+    current.realUnitsSold += item.quantity;
+    current.realGrossRevenue += item.grossValue;
+    byKey.set(key, current);
+  });
+
+  return byKey;
+}
+
+function resolveProductDecision(input: {
+  views: number;
+  addToCartRate: number;
+  checkoutRate: number;
+  purchaseRate: number;
+  viewGrowth: number;
+  addToCartRateDelta: number;
+  revenue: number;
+  realUnitsSold: number;
+}) {
+  const {
+    views,
+    addToCartRate,
+    checkoutRate,
+    purchaseRate,
+    viewGrowth,
+    addToCartRateDelta,
+    revenue,
+    realUnitsSold,
+  } = input;
+
+  const hasRealSales = realUnitsSold > 0 || revenue > 0;
+  const hasComfortableSample = views >= 150;
+  const hasModerateSample = views >= 60;
+
+  if (
+    hasComfortableSample &&
+    addToCartRate >= 0.08 &&
+    (checkoutRate >= 0.03 || purchaseRate >= 0.01 || hasRealSales)
+  ) {
+    return {
+      decision: "scale_now" as const,
+      confidence: hasRealSales && views >= 250 ? "high" as const : "medium" as const,
+      title: "Escalar agora",
+      summary: "A estampa já demonstra intenção de compra consistente e pode receber mais visibilidade.",
+      action: "Aumente exposição em catálogo e mídia de forma controlada, priorizando criativos já aprovados.",
+      rationale: [
+        "Volume de views suficiente para leitura confiável",
+        "Taxa de adição ao carrinho acima do piso de validação",
+        hasRealSales ? "Sinal de venda real confirmado na operação" : "Sinal de checkout/compra acima da média mínima",
+      ],
+    };
+  }
+
+  if (
+    (hasModerateSample && addToCartRate >= 0.05) ||
+    (views >= 30 && addToCartRate >= 0.06 && (viewGrowth > 0 || addToCartRateDelta > 0))
+  ) {
+    return {
+      decision: "boost_traffic" as const,
+      confidence: hasModerateSample ? "medium" as const : "low" as const,
+      title: "Dar mais tráfego",
+      summary: "A estampa tem sinal promissor, mas ainda precisa de mais exposição para fechar diagnóstico.",
+      action: "Ganhe visibilidade na home, coleções e campanhas de catálogo antes de decidir escalar forte.",
+      rationale: [
+        "Taxa de adição ao carrinho saudável para o volume atual",
+        viewGrowth > 0 ? "Tendência recente de interesse em alta" : "Amostra ainda em consolidação",
+        hasRealSales ? "Já existe venda real, mas ainda com pouca base" : "Ainda falta amostra para concluir",
+      ],
+    };
+  }
+
+  if ((hasComfortableSample && addToCartRate < 0.025) || (views >= 250 && purchaseRate === 0)) {
+    return {
+      decision: "review_listing" as const,
+      confidence: "high" as const,
+      title: "Revisar vitrine e criativo",
+      summary: "Há atenção suficiente, mas a conversão não acompanha. O gargalo parece estar na apresentação.",
+      action: "Revise mockup, thumb, peça base, enquadramento e aderência da oferta antes de investir mais tráfego.",
+      rationale: [
+        "Views altas sem resposta proporcional de carrinho",
+        purchaseRate === 0 ? "Nenhuma compra registrada na amostra relevante" : "Conversão abaixo do esperado para o tráfego recebido",
+        "Melhor corrigir vitrine antes de ampliar distribuição",
+      ],
+    };
+  }
+
+  return {
+    decision: "watch" as const,
+    confidence: hasModerateSample ? "medium" as const : "low" as const,
+    title: "Observar",
+    summary: "O sinal atual ainda é inconclusivo para decidir escala ou corte.",
+    action: "Mantenha monitoramento e reavalie após nova rodada de tráfego ou merchandising.",
+    rationale: [
+      hasModerateSample ? "Amostra existe, mas sem sinal forte o bastante" : "Base ainda pequena para conclusão definitiva",
+      addToCartRateDelta > 0 ? "Há leve melhora recente no interesse" : "Sem mudança relevante na última janela",
+      hasRealSales ? "Já houve venda real, mas o volume ainda é baixo" : "Ainda não há venda real confirmada para apoiar decisão",
+    ],
+  };
+}
+
 function aggregateProductInsights(rows: BrandDataset["ga4ItemDailyPerformance"]) {
   const byKey = new Map<
     string,
@@ -1563,12 +1687,21 @@ export function buildProductInsights(
 ): ProductInsightRow[] {
   const currentMap = aggregateProductInsights(brand.ga4ItemDailyPerformance);
   const previousMap = aggregateProductInsights(previousRows);
+  const realSignals = aggregateRealProductSignals(brand);
+  const decisionPriority: Record<ProductDecisionAction, number> = {
+    scale_now: 0,
+    boost_traffic: 1,
+    review_listing: 2,
+    watch: 3,
+  };
 
   return [...currentMap.values()]
     .map((item) => {
       const previous = previousMap.get(item.key);
       const addToCartRate = item.views ? item.addToCarts / item.views : 0;
-      const conversionRate = item.views ? item.purchases / item.views : 0;
+      const conversionRate = item.views ? item.quantity / item.views : 0;
+      const checkoutRate = item.views ? item.checkouts / item.views : 0;
+      const purchaseRate = item.views ? item.quantity / item.views : 0;
       const previousViews = previous?.views ?? 0;
       const previousAddToCartRate = previous?.views
         ? previous.addToCarts / previous.views
@@ -1580,6 +1713,17 @@ export function buildProductInsights(
             ? 1
             : 0;
       const addToCartRateDelta = addToCartRate - previousAddToCartRate;
+      const realSignal = realSignals.get(item.key);
+      const decision = resolveProductDecision({
+        views: item.views,
+        addToCartRate,
+        checkoutRate,
+        purchaseRate,
+        viewGrowth,
+        addToCartRateDelta,
+        revenue: item.revenue,
+        realUnitsSold: realSignal?.realUnitsSold ?? 0,
+      });
 
       return {
         key: item.key,
@@ -1595,15 +1739,27 @@ export function buildProductInsights(
         addToCartRate: round(addToCartRate, 4),
         conversionRate: round(conversionRate, 4),
         classification: classifyProductInsight(item.views, addToCartRate, conversionRate),
+        decision: decision.decision,
+        decisionConfidence: decision.confidence,
+        decisionTitle: decision.title,
+        decisionSummary: decision.summary,
+        recommendedAction: decision.action,
+        rationale: decision.rationale,
         previousViews,
         previousAddToCartRate: round(previousAddToCartRate, 4),
         viewGrowth: round(viewGrowth, 4),
         addToCartRateDelta: round(addToCartRateDelta, 4),
+        checkoutRate: round(checkoutRate, 4),
+        purchaseRate: round(purchaseRate, 4),
+        realUnitsSold: realSignal?.realUnitsSold ?? 0,
+        realGrossRevenue: round(realSignal?.realGrossRevenue ?? 0),
       };
     })
     .sort(
       (left, right) =>
+        decisionPriority[left.decision] - decisionPriority[right.decision] ||
         right.views - left.views ||
+        right.realGrossRevenue - left.realGrossRevenue ||
         right.revenue - left.revenue ||
         left.stampName.localeCompare(right.stampName),
     );
