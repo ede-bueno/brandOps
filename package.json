@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "npm run check && next build",
-    "start": "node .next/standalone/server.js",
+    "start": "node scripts/start-standalone.mjs",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "check": "npm run type-check && npm run lint"
