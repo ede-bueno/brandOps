@@ -155,6 +155,7 @@ export default function IntegrationsPage() {
   const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [syncingGa4, setSyncingGa4] = useState(false);
+  const [syncingMeta, setSyncingMeta] = useState(false);
   const [activeProvider, setActiveProvider] = useState<IntegrationProvider>("ink");
 
   useEffect(() => {
@@ -182,14 +183,7 @@ export default function IntegrationsPage() {
     );
   }
 
-  if (profile?.role !== "SUPER_ADMIN") {
-    return (
-      <EmptyState
-        title="Área restrita"
-        description="As integrações por loja ficam disponíveis apenas para superadmin."
-      />
-    );
-  }
+  const canManageIntegrations = profile?.role === "SUPER_ADMIN";
 
   const current = integrationsMap.get(activeProvider);
   const currentState = formState[activeProvider];
@@ -314,6 +308,43 @@ export default function IntegrationsPage() {
     }
   };
 
+  const handleMetaSync = async () => {
+    if (!session?.access_token) {
+      setNotice({ kind: "error", text: "Sessão inválida para sincronizar a Meta." });
+      return;
+    }
+
+    try {
+      setSyncingMeta(true);
+      setNotice(null);
+
+      const response = await fetch(`/api/admin/brands/${activeBrand.id}/integrations/meta/sync`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Falha ao sincronizar a Meta.");
+      }
+
+      await refreshActiveBrand();
+      setNotice({
+        kind: "success",
+        text: `Meta sincronizada com sucesso. ${payload.rows} linha(s) consolidadas de ${payload.startDate} até ${payload.endDate}.`,
+      });
+    } catch (error) {
+      setNotice({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Falha ao sincronizar a Meta.",
+      });
+    } finally {
+      setSyncingMeta(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -322,20 +353,22 @@ export default function IntegrationsPage() {
         description="Defina a origem de cada dado por marca. O BrandOps mantém o fluxo manual disponível onde ele ainda é necessário e prepara a evolução para API sem quebrar a operação."
         badge={`Escopo atual: ${activeBrand.name}`}
         actions={
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="brandops-button brandops-button-primary"
-          >
-            {saving ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Salvando
-              </>
-            ) : (
-              "Salvar integrações"
-            )}
-          </button>
+          canManageIntegrations ? (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="brandops-button brandops-button-primary"
+            >
+              {saving ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Salvando
+                </>
+              ) : (
+                "Salvar integrações"
+              )}
+            </button>
+          ) : null
         }
       />
 
@@ -349,6 +382,15 @@ export default function IntegrationsPage() {
         >
           {notice.kind === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
           <span>{notice.text}</span>
+        </div>
+      ) : null}
+
+      {!canManageIntegrations ? (
+        <div className="flex items-center gap-3 rounded-2xl border border-secondary/20 bg-secondary-container/20 px-4 py-3 text-sm text-on-surface">
+          <ShieldCheck size={18} className="text-secondary" />
+          <span>
+            Você pode acompanhar o status e executar as sincronizações da sua loja. Alterações de configuração seguem restritas ao superadmin.
+          </span>
         </div>
       ) : null}
 
@@ -430,6 +472,7 @@ export default function IntegrationsPage() {
                       }))
                     }
                     className="brandops-input w-full px-3 py-2.5"
+                    disabled={!canManageIntegrations}
                   >
                     {options.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -456,6 +499,7 @@ export default function IntegrationsPage() {
                         }
                         className="brandops-input w-full px-3 py-2.5"
                         placeholder="act_1234567890"
+                        disabled={!canManageIntegrations}
                       />
                     </label>
                     <label className="space-y-2 text-sm">
@@ -475,6 +519,7 @@ export default function IntegrationsPage() {
                           }))
                         }
                         className="brandops-input w-full px-3 py-2.5"
+                        disabled={!canManageIntegrations}
                       />
                     </label>
                     <label className="flex items-start gap-3 rounded-2xl border border-outline bg-white p-4 text-sm text-on-surface-variant lg:col-span-2">
@@ -491,11 +536,29 @@ export default function IntegrationsPage() {
                           }))
                         }
                         className="mt-1"
+                        disabled={!canManageIntegrations}
                       />
                       <span>
                         Manter upload manual da Meta como contingência mesmo com a API ligada.
                       </span>
                     </label>
+                    <div className="flex items-end lg:col-span-2">
+                      <button
+                        type="button"
+                        onClick={handleMetaSync}
+                        disabled={syncingMeta || currentState.mode !== "api" || !currentState.adAccountId}
+                        className="brandops-button brandops-button-secondary"
+                      >
+                        {syncingMeta ? (
+                          <>
+                            <Loader2 size={16} className="animate-spin" />
+                            Sincronizando Meta
+                          </>
+                        ) : (
+                          "Sincronizar Meta agora"
+                        )}
+                      </button>
+                    </div>
                   </>
                 ) : null}
 
@@ -516,6 +579,7 @@ export default function IntegrationsPage() {
                         }
                         className="brandops-input w-full px-3 py-2.5"
                         placeholder="506034252"
+                        disabled={!canManageIntegrations}
                       />
                     </label>
                     <label className="space-y-2 text-sm">
@@ -533,6 +597,7 @@ export default function IntegrationsPage() {
                         }
                         className="brandops-input w-full px-3 py-2.5"
                         placeholder="America/Sao_Paulo"
+                        disabled={!canManageIntegrations}
                       />
                     </label>
                     <div className="flex items-end lg:col-span-2">

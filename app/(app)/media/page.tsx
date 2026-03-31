@@ -73,13 +73,15 @@ export default function MediaPage() {
   const dailyMedia = buildDailyMediaSeries(filteredBrand);
   const campaigns = buildCampaignPerformance(filteredBrand);
   const totalPurchases = activeMedia.reduce((sum, row) => sum + row.purchases, 0);
-  const totalClicks = activeMedia.reduce((sum, row) => sum + (row.linkClicks || row.clicksAll), 0);
+  const totalClicksAll = activeMedia.reduce((sum, row) => sum + row.clicksAll, 0);
+  const totalLinkClicks = activeMedia.reduce((sum, row) => sum + row.linkClicks, 0);
   const attributedRevenue = activeMedia.reduce((sum, row) => sum + row.purchaseValue, 0);
   const totalReach = activeMedia.reduce((sum, row) => sum + row.reach, 0);
   const totalImpressions = activeMedia.reduce((sum, row) => sum + row.impressions, 0);
   const attributedRoas = metrics.mediaSpend ? attributedRevenue / metrics.mediaSpend : 0;
-  const ctrLink = totalImpressions ? totalClicks / totalImpressions : 0;
-  const cpc = totalClicks ? metrics.mediaSpend / totalClicks : 0;
+  const ctrAll = totalImpressions ? totalClicksAll / totalImpressions : 0;
+  const ctrLink = totalImpressions ? totalLinkClicks / totalImpressions : 0;
+  const cpc = totalLinkClicks ? metrics.mediaSpend / totalLinkClicks : 0;
   const cpm = totalImpressions ? (metrics.mediaSpend / totalImpressions) * 1000 : 0;
   const cpa = totalPurchases ? metrics.mediaSpend / totalPurchases : 0;
 
@@ -116,7 +118,7 @@ export default function MediaPage() {
         />
         <MetricCard
           label="Cliques no link"
-          value={integerFormatter.format(totalClicks)}
+          value={integerFormatter.format(totalLinkClicks)}
           help="Base usada para CTR e CPC."
         />
         <MetricCard
@@ -139,10 +141,10 @@ export default function MediaPage() {
           help="Entrega bruta registrada pela Meta."
         />
         <MetricCard
-          label="CTR link"
-          value={percentFormatter.format(ctrLink)}
-          help="Cliques no link divididos por impressões."
-          accent={ctrLink >= 0.02 ? "positive" : "default"}
+          label="CTR (todos)"
+          value={percentFormatter.format(ctrAll)}
+          help="CTR geral da Meta: cliques totais divididos por impressões."
+          accent={ctrAll >= 0.02 ? "positive" : "default"}
         />
         <MetricCard
           label="CPC"

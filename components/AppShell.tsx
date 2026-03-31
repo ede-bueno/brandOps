@@ -9,7 +9,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
   FileUp,
-  HelpCircle,
   Images,
   LayoutDashboard,
   LogOut,

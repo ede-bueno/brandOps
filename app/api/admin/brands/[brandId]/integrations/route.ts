@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireSuperAdmin } from "@/lib/brandops/admin";
+import { requireBrandAccess, requireSuperAdmin } from "@/lib/brandops/admin";
 import type { IntegrationMode, IntegrationProvider } from "@/lib/brandops/types";
 
 const allowedProviders = new Set<IntegrationProvider>(["ink", "meta", "ga4"]);
@@ -50,8 +50,8 @@ export async function GET(
   { params }: { params: Promise<{ brandId: string }> },
 ) {
   try {
-    const { supabase } = await requireSuperAdmin(request);
     const { brandId } = await params;
+    const { supabase } = await requireBrandAccess(request, brandId);
 
     const { data, error } = await supabase
       .from("brand_integrations")

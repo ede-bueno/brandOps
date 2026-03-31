@@ -19,6 +19,7 @@ export type IntegrationProvider = "ink" | "meta" | "ga4";
 export type IntegrationMode = "manual_csv" | "api" | "disabled";
 
 export type IntegrationSyncStatus = "idle" | "running" | "success" | "error";
+export type MediaDataSource = "manual_csv" | "api";
 
 export interface ImportRunInfo {
   kind: CsvFileKind;
@@ -160,6 +161,7 @@ export interface MediaRow {
   sanitizationNote?: string | null;
   sanitizedAt?: string | null;
   sanitizedBy?: string | null;
+  dataSource?: MediaDataSource;
 }
 
 export interface CmvEntry {
