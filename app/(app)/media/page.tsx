@@ -31,8 +31,6 @@ export default function MediaPage() {
     activeBrand, 
     filteredBrand, 
     selectedPeriodLabel, 
-    dashboardMetrics, 
-    isMetricsLoading,
     isLoading: isDatasetLoading 
   } = useBrandOps();
 
@@ -45,7 +43,7 @@ export default function MediaPage() {
     );
   }
 
-  if (isMetricsLoading || isDatasetLoading || !dashboardMetrics || !filteredBrand) {
+  if (isDatasetLoading || !filteredBrand) {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-32 bg-surface-container rounded-3xl" />
@@ -68,22 +66,22 @@ export default function MediaPage() {
     );
   }
 
-  const metrics = dashboardMetrics;
   const activeMedia = getActiveMediaRows(filteredBrand);
   const dailyMedia = buildDailyMediaSeries(filteredBrand);
   const campaigns = buildCampaignPerformance(filteredBrand);
+  const mediaSpend = activeMedia.reduce((sum, row) => sum + row.spend, 0);
   const totalPurchases = activeMedia.reduce((sum, row) => sum + row.purchases, 0);
   const totalClicksAll = activeMedia.reduce((sum, row) => sum + row.clicksAll, 0);
   const totalLinkClicks = activeMedia.reduce((sum, row) => sum + row.linkClicks, 0);
   const attributedRevenue = activeMedia.reduce((sum, row) => sum + row.purchaseValue, 0);
   const totalReach = activeMedia.reduce((sum, row) => sum + row.reach, 0);
   const totalImpressions = activeMedia.reduce((sum, row) => sum + row.impressions, 0);
-  const attributedRoas = metrics.mediaSpend ? attributedRevenue / metrics.mediaSpend : 0;
+  const attributedRoas = mediaSpend ? attributedRevenue / mediaSpend : 0;
   const ctrAll = totalImpressions ? totalClicksAll / totalImpressions : 0;
   const ctrLink = totalImpressions ? totalLinkClicks / totalImpressions : 0;
-  const cpc = totalLinkClicks ? metrics.mediaSpend / totalLinkClicks : 0;
-  const cpm = totalImpressions ? (metrics.mediaSpend / totalImpressions) * 1000 : 0;
-  const cpa = totalPurchases ? metrics.mediaSpend / totalPurchases : 0;
+  const cpc = totalLinkClicks ? mediaSpend / totalLinkClicks : 0;
+  const cpm = totalImpressions ? (mediaSpend / totalImpressions) * 1000 : 0;
+  const cpa = totalPurchases ? mediaSpend / totalPurchases : 0;
 
   return (
     <div className="space-y-6">
@@ -102,19 +100,19 @@ export default function MediaPage() {
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard
           label="Investimento"
-          value={currencyFormatter.format(metrics.mediaSpend)}
+          value={currencyFormatter.format(mediaSpend)}
           help="Gasto ativo da Meta no período saneado."
         />
         <MetricCard
-          label="Receita Meta atribuída"
+          label="Receita atribuída"
           value={currencyFormatter.format(attributedRevenue)}
           accent="positive"
-          help="Valor atribuído pela Meta. Pode divergir do faturado real conciliado na INK."
+          help="Valor de conversão da compra exportado pela Meta."
         />
         <MetricCard
           label="Compras Meta"
           value={integerFormatter.format(totalPurchases)}
-          help="Compras atribuídas pela Meta. Não substitui pedidos pagos da INK."
+          help="Volume de compras atribuídas pela plataforma."
         />
         <MetricCard
           label="Cliques no link"

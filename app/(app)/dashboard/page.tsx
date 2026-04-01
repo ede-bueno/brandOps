@@ -10,15 +10,13 @@ import {
   integerFormatter,
   percentFormatter,
 } from "@/lib/brandops/format";
-import { buildExpenseSummary } from "@/lib/brandops/metrics";
+import { buildExpenseSummary, computeBrandMetrics } from "@/lib/brandops/metrics";
 
 export default function DashboardPage() {
   const { 
     activeBrand, 
     filteredBrand, 
     selectedPeriodLabel, 
-    dashboardMetrics, 
-    isMetricsLoading,
     isLoading: isDatasetLoading 
   } = useBrandOps();
 
@@ -31,7 +29,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (isMetricsLoading || isDatasetLoading || !dashboardMetrics || !filteredBrand) {
+  if (isDatasetLoading || !filteredBrand) {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-32 bg-surface-container rounded-3xl" />
@@ -48,7 +46,7 @@ export default function DashboardPage() {
     );
   }
 
-  const metrics = dashboardMetrics;
+  const metrics = computeBrandMetrics(filteredBrand);
   const expenseSummary = buildExpenseSummary(filteredBrand).slice(0, 4);
   const variableCostShare =
     metrics.rld > 0 ? (metrics.cmvTotal + metrics.mediaSpend) / metrics.rld : 0;

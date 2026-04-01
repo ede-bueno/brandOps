@@ -1,5 +1,6 @@
 import { google } from "googleapis";
 import type { analyticsdata_v1beta } from "googleapis";
+import { readFileSync } from "node:fs";
 
 type ServiceAccountPayload = {
   client_email: string;
@@ -38,9 +39,26 @@ export type Ga4ItemSyncRow = {
 };
 
 function getGa4ServiceAccount() {
-  const raw = process.env.GA4_SERVICE_ACCOUNT_JSON;
+  let raw = process.env.GA4_SERVICE_ACCOUNT_JSON?.trim();
+
   if (!raw) {
-    throw new Error("GA4_SERVICE_ACCOUNT_JSON não configurada.");
+    const filePath =
+      process.env.GA4_SERVICE_ACCOUNT_FILE?.trim() ||
+      process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim();
+
+    if (filePath) {
+      try {
+        raw = readFileSync(filePath, "utf8");
+      } catch {
+        throw new Error("Arquivo de credencial do GA4 não pôde ser lido.");
+      }
+    }
+  }
+
+  if (!raw) {
+    throw new Error(
+      "Credencial do GA4 ausente. Configure GA4_SERVICE_ACCOUNT_JSON, GA4_SERVICE_ACCOUNT_FILE ou GOOGLE_APPLICATION_CREDENTIALS.",
+    );
   }
 
   let parsed: ServiceAccountPayload;

@@ -34,6 +34,11 @@ type DreBackendRow = {
   order_count?: number | null;
 };
 
+export type AnalysisDateRange = {
+  start: string;
+  end: string;
+};
+
 const PAID_STATUS = new Set(["Pago"]);
 
 function parseDateValue(value: string) {
@@ -131,6 +136,7 @@ function finalizeSummaryMetrics(metrics: BrandSummaryMetrics): BrandSummaryMetri
   const rld = metrics.rld || Math.max(rob - metrics.discounts, 0);
   const netAfterFees = rld;
   const cmvTotal = metrics.cmvTotal;
+  const inkProfit = metrics.inkProfit || metrics.commissionTotal;
   const contributionAfterMedia = rld - cmvTotal - metrics.mediaSpend;
   const grossMargin = rld - cmvTotal;
   const contributionMargin = rld > 0 ? contributionAfterMedia / rld : 0;
@@ -168,8 +174,14 @@ function finalizeSummaryMetrics(metrics: BrandSummaryMetrics): BrandSummaryMetri
     avgMarkup: round(metrics.cmvTotal ? grossRevenue / metrics.cmvTotal : 0, 2),
     breakEvenPoint: round(breakEvenPoint),
     couponDiscounts: round(metrics.couponDiscounts),
-    inkProfit: round(metrics.inkProfit),
-    averageInkProfit: round(metrics.unitsSold ? metrics.inkProfit / metrics.unitsSold : metrics.paidOrderCount ? metrics.inkProfit / metrics.paidOrderCount : 0),
+    inkProfit: round(inkProfit),
+    averageInkProfit: round(
+      metrics.unitsSold
+        ? inkProfit / metrics.unitsSold
+        : metrics.paidOrderCount
+          ? inkProfit / metrics.paidOrderCount
+          : 0,
+    ),
     hasItemDetailCoverage: metrics.hasItemDetailCoverage,
   };
 }
@@ -183,13 +195,17 @@ export function mapDashboardKpisToSummary(kpi: Record<string, number | null>): B
   metrics.netRevenue = kpi.net_revenue || 0;
   metrics.rld = kpi.net_revenue || 0;
   metrics.discounts = kpi.discount_value || 0;
+  metrics.commissionTotal = kpi.commission_total || 0;
+  metrics.inkProfit = kpi.commission_total || 0;
   metrics.cmvTotal = kpi.cmv_total || 0;
   metrics.mediaSpend = kpi.adcost || 0;
-  metrics.unitsSold = kpi.qty_real || 0;
+  metrics.unitsSold = kpi.items_sold || kpi.qty_real || 0;
   metrics.grossMargin = kpi.gross_margin || 0;
   metrics.contributionAfterMedia = kpi.contribution_margin || 0;
   metrics.paidOrderCount = kpi.order_count || 0;
   metrics.orderCount = kpi.order_count || 0;
+  metrics.commissionTotal = kpi.commission_total || 0;
+  metrics.inkProfit = kpi.commission_total || 0;
   
   // Re-calcula proporções e métricas derivadas
   return finalizeSummaryMetrics(metrics);
@@ -370,7 +386,7 @@ export function buildPeriodRange(
   referenceDate: Date,
   period: PeriodFilter,
   customRange?: CustomDateRange,
-) {
+): AnalysisDateRange | null {
   const end = new Date(referenceDate);
   end.setHours(0, 0, 0, 0);
 
@@ -420,6 +436,39 @@ function inRange(date: string, range: { start: string; end: string } | null) {
   return date >= range.start && date <= range.end;
 }
 
+export function filterBrandDatasetByRange(
+  brand: BrandDataset,
+  range: AnalysisDateRange | null,
+): BrandDataset {
+  if (!range) {
+    return brand;
+  }
+
+  const paidOrders = brand.paidOrders.filter((item) => inRange(item.orderDate, range));
+  const paidOrderNumbers = new Set(paidOrders.map((item) => item.orderNumber));
+
+  return {
+    ...brand,
+    paidOrders,
+    orderItems: brand.orderItems.filter(
+      (item) =>
+        inRange(item.orderDate, range) &&
+        (!item.orderNumber || paidOrderNumbers.has(item.orderNumber)),
+    ),
+    salesLines: brand.salesLines.filter(
+      (item) =>
+        inRange(item.orderDate, range) &&
+        (!item.orderNumber || paidOrderNumbers.has(item.orderNumber)),
+    ),
+    media: brand.media.filter((item) => inRange(item.date, range)),
+    expenses: brand.expenses.filter((item) => inRange(item.incurredOn, range)),
+    ga4DailyPerformance: brand.ga4DailyPerformance.filter((item) => inRange(item.date, range)),
+    ga4ItemDailyPerformance: brand.ga4ItemDailyPerformance.filter((item) =>
+      inRange(item.date, range),
+    ),
+  };
+}
+
 export function getPeriodLabel(period: PeriodFilter, customRange?: CustomDateRange) {
   switch (period) {
     case "today":
@@ -446,40 +495,40 @@ export function filterBrandDatasetByPeriod(
   brand: BrandDataset,
   period: PeriodFilter,
   customRange?: CustomDateRange,
+  referenceDateOverride?: Date | null,
 ): BrandDataset {
   if (period === "all") {
     return brand;
   }
 
-  const referenceDate = getLatestDatasetDate(brand);
+  const referenceDate =
+    referenceDateOverride ??
+    (period === "custom"
+      ? getLatestDatasetDate(brand) ?? new Date()
+      : new Date());
   if (!referenceDate) {
     return brand;
   }
 
   const range = buildPeriodRange(referenceDate, period, customRange);
-  const paidOrders = brand.paidOrders.filter((item) => inRange(item.orderDate, range));
-  const paidOrderNumbers = new Set(paidOrders.map((item) => item.orderNumber));
+  return filterBrandDatasetByRange(brand, range);
+}
 
-  return {
-    ...brand,
-    paidOrders,
-    orderItems: brand.orderItems.filter(
-      (item) =>
-        inRange(item.orderDate, range) &&
-        (!item.orderNumber || paidOrderNumbers.has(item.orderNumber)),
-    ),
-    salesLines: brand.salesLines.filter(
-      (item) =>
-        inRange(item.orderDate, range) &&
-        (!item.orderNumber || paidOrderNumbers.has(item.orderNumber)),
-    ),
-    media: brand.media.filter((item) => inRange(item.date, range)),
-    expenses: brand.expenses.filter((item) => inRange(item.incurredOn, range)),
-    ga4DailyPerformance: brand.ga4DailyPerformance.filter((item) => inRange(item.date, range)),
-    ga4ItemDailyPerformance: brand.ga4ItemDailyPerformance.filter((item) =>
-      inRange(item.date, range),
-    ),
-  };
+export function filterDreMonthlyByRange(
+  rows: DreBackendRow[] | null | undefined,
+  range: AnalysisDateRange | null,
+): DreBackendRow[] {
+  if (!rows?.length || !range) {
+    return rows ?? [];
+  }
+
+  const startMonth = range.start.slice(0, 7);
+  const endMonth = range.end.slice(0, 7);
+
+  return rows.filter((row) => {
+    const monthKey = row.yearmonth?.slice(0, 7);
+    return Boolean(monthKey && monthKey >= startMonth && monthKey <= endMonth);
+  });
 }
 
 export function getPaidOrders(brand: BrandDataset) {
@@ -526,15 +575,15 @@ export function computeBrandMetrics(brand: BrandDataset): BrandSummaryMetrics {
     (sum, expense) => sum + expense.amount,
     0,
   );
-  return finalizeSummaryMetrics({
-    grossRevenue,
-    rob: grossRevenue,
-    netRevenue: grossRevenue,
-    rld,
-    netAfterFees: 0,
-    discounts,
-    orderCount: brand.paidOrders.length,
-    paidOrderCount: paidOrders.length,
+    return finalizeSummaryMetrics({
+      grossRevenue,
+      rob: grossRevenue,
+      netRevenue: grossRevenue,
+      rld,
+      netAfterFees: 0,
+      discounts,
+      orderCount: paidOrders.length,
+      paidOrderCount: paidOrders.length,
     unitsSold,
     averageTicket: 0,
     mediaSpend,
@@ -1504,6 +1553,60 @@ function classifyProductInsight(
   return "review";
 }
 
+function aggregateProductInsights(rows: BrandDataset["ga4ItemDailyPerformance"]) {
+  const byKey = new Map<
+    string,
+    {
+      key: string;
+      stampName: string;
+      productType: string;
+      itemIds: Set<string>;
+      views: number;
+      addToCarts: number;
+      checkouts: number;
+      purchases: number;
+      quantity: number;
+      revenue: number;
+    }
+  >();
+
+  rows.forEach((row) => {
+    const stampName = extractPrintName(
+      row.itemName,
+      `${row.itemBrand} ${row.itemCategory} ${row.itemId}`,
+    );
+    const productType =
+      detectProductType(row.itemName, `${row.itemBrand} ${row.itemCategory}`) ?? "Sem tipo";
+    const key = `${normalizeText(stampName)}::${normalizeText(productType)}`;
+    const current = byKey.get(key) ?? {
+      key,
+      stampName,
+      productType,
+      itemIds: new Set<string>(),
+      views: 0,
+      addToCarts: 0,
+      checkouts: 0,
+      purchases: 0,
+      quantity: 0,
+      revenue: 0,
+    };
+
+    if (row.itemId?.trim()) {
+      current.itemIds.add(row.itemId.trim());
+    }
+
+    current.views += row.itemViews;
+    current.addToCarts += row.addToCarts;
+    current.checkouts += row.checkouts;
+    current.purchases += row.ecommercePurchases;
+    current.quantity += row.itemPurchaseQuantity;
+    current.revenue += row.itemRevenue;
+    byKey.set(key, current);
+  });
+
+  return byKey;
+}
+
 function aggregateRealProductSignals(brand: BrandDataset) {
   const byKey = new Map<
     string,
@@ -1575,7 +1678,9 @@ function resolveProductDecision(input: {
       rationale: [
         "Volume de views suficiente para leitura confiável",
         "Taxa de adição ao carrinho acima do piso de validação",
-        hasRealSales ? "Sinal de venda real confirmado na operação" : "Sinal de checkout/compra acima da média mínima",
+        hasRealSales
+          ? "Sinal de venda real confirmado na operação"
+          : "Sinal de checkout/compra acima da média mínima",
       ],
     };
   }
@@ -1607,7 +1712,9 @@ function resolveProductDecision(input: {
       action: "Revise mockup, thumb, peça base, enquadramento e aderência da oferta antes de investir mais tráfego.",
       rationale: [
         "Views altas sem resposta proporcional de carrinho",
-        purchaseRate === 0 ? "Nenhuma compra registrada na amostra relevante" : "Conversão abaixo do esperado para o tráfego recebido",
+        purchaseRate === 0
+          ? "Nenhuma compra registrada na amostra relevante"
+          : "Conversão abaixo do esperado para o tráfego recebido",
         "Melhor corrigir vitrine antes de ampliar distribuição",
       ],
     };
@@ -1620,65 +1727,15 @@ function resolveProductDecision(input: {
     summary: "O sinal atual ainda é inconclusivo para decidir escala ou corte.",
     action: "Mantenha monitoramento e reavalie após nova rodada de tráfego ou merchandising.",
     rationale: [
-      hasModerateSample ? "Amostra existe, mas sem sinal forte o bastante" : "Base ainda pequena para conclusão definitiva",
+      hasModerateSample
+        ? "Amostra existe, mas sem sinal forte o bastante"
+        : "Base ainda pequena para conclusão definitiva",
       addToCartRateDelta > 0 ? "Há leve melhora recente no interesse" : "Sem mudança relevante na última janela",
-      hasRealSales ? "Já houve venda real, mas o volume ainda é baixo" : "Ainda não há venda real confirmada para apoiar decisão",
+      hasRealSales
+        ? "Já houve venda real, mas o volume ainda é baixo"
+        : "Ainda não há venda real confirmada para apoiar decisão",
     ],
   };
-}
-
-function aggregateProductInsights(rows: BrandDataset["ga4ItemDailyPerformance"]) {
-  const byKey = new Map<
-    string,
-    {
-      key: string;
-      stampName: string;
-      productType: string;
-      itemIds: Set<string>;
-      views: number;
-      addToCarts: number;
-      checkouts: number;
-      purchases: number;
-      quantity: number;
-      revenue: number;
-    }
-  >();
-
-  rows.forEach((row) => {
-    const stampName = extractPrintName(
-      row.itemName,
-      `${row.itemBrand} ${row.itemCategory} ${row.itemId}`,
-    );
-    const productType =
-      detectProductType(row.itemName, `${row.itemBrand} ${row.itemCategory}`) ?? "Sem tipo";
-    const key = `${normalizeText(stampName)}::${normalizeText(productType)}`;
-    const current = byKey.get(key) ?? {
-      key,
-      stampName,
-      productType,
-      itemIds: new Set<string>(),
-      views: 0,
-      addToCarts: 0,
-      checkouts: 0,
-      purchases: 0,
-      quantity: 0,
-      revenue: 0,
-    };
-
-    if (row.itemId?.trim()) {
-      current.itemIds.add(row.itemId.trim());
-    }
-
-    current.views += row.itemViews;
-    current.addToCarts += row.addToCarts;
-    current.checkouts += row.checkouts;
-    current.purchases += row.ecommercePurchases;
-    current.quantity += row.itemPurchaseQuantity;
-    current.revenue += row.itemRevenue;
-    byKey.set(key, current);
-  });
-
-  return byKey;
 }
 
 export function buildProductInsights(

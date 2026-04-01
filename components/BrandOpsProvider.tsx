@@ -24,10 +24,16 @@ import {
   setMediaSanitizationState,
   setOrderSanitizationState,
   updateBrandExpense, 
-  fetchDashboardKpis,
   fetchDreMonthly
 } from "@/lib/brandops/database";
-import { filterBrandDatasetByPeriod, getPeriodLabel, buildPeriodRange, getLatestDatasetDate, mapDashboardKpisToSummary } from "@/lib/brandops/metrics";
+import {
+  buildPeriodRange,
+  computeBrandMetrics,
+  filterBrandDatasetByRange,
+  getLatestDatasetDate,
+  getPeriodLabel,
+  type AnalysisDateRange,
+} from "@/lib/brandops/metrics";
 import { BrandSummaryMetrics } from "@/lib/brandops/types";
 import { supabase } from "@/lib/supabase";
 import type {
@@ -54,6 +60,7 @@ interface BrandOpsContextValue {
   activeBrandId: string | null;
   activeBrand: BrandDataset | null;
   filteredBrand: BrandDataset | null;
+  periodRange: AnalysisDateRange | null;
   dashboardMetrics: BrandSummaryMetrics | null;
   isMetricsLoading: boolean;
   dreMonthly: DreMonthlyDataset | null;
@@ -124,8 +131,6 @@ export function BrandOpsProvider({
   const [activeBrand, setActiveBrand] = useState<BrandDataset | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [dashboardMetrics, setDashboardMetrics] = useState<BrandSummaryMetrics | null>(null);
-  const [isMetricsLoading, setIsMetricsLoading] = useState(false);
   const [dreMonthly, setDreMonthly] = useState<DreMonthlyDataset | null>(null);
   const [isDreLoading, setIsDreLoading] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>("30d");
@@ -134,59 +139,62 @@ export function BrandOpsProvider({
     to: "",
   });
   const userId = session?.user?.id ?? null;
-  const filteredBrand = activeBrand
-    ? filterBrandDatasetByPeriod(activeBrand, selectedPeriod, customDateRange)
-    : null;
+  const periodReferenceDate = useMemo(() => {
+    if (!activeBrand) {
+      return null;
+    }
+
+    if (selectedPeriod === "all") {
+      return null;
+    }
+
+    if (selectedPeriod === "custom") {
+      return getLatestDatasetDate(activeBrand) ?? new Date();
+    }
+
+    return new Date();
+  }, [activeBrand, selectedPeriod]);
+
+  const periodRange = useMemo(
+    () =>
+      periodReferenceDate
+        ? buildPeriodRange(periodReferenceDate, selectedPeriod, customDateRange)
+        : null,
+    [customDateRange, periodReferenceDate, selectedPeriod],
+  );
+
+  const filteredBrand = useMemo(
+    () => (activeBrand ? filterBrandDatasetByRange(activeBrand, periodRange) : null),
+    [activeBrand, periodRange],
+  );
+
+  const dashboardMetrics = useMemo(
+    () => (filteredBrand ? computeBrandMetrics(filteredBrand) : null),
+    [filteredBrand],
+  );
+  const isMetricsLoading = false;
 
   useEffect(() => {
     async function loadMetrics() {
-      if (!activeBrandId || !activeBrand) {
-        setDashboardMetrics(null);
+      if (!activeBrandId) {
         setDreMonthly(null);
         return;
       }
 
-      setIsMetricsLoading(true);
       setIsDreLoading(true);
       
       try {
-        // Usamos hoje como referência para filtros de período relativo (Hoje, 7d, 30d, etc)
-        // Isso evita que o "Hoje" mostre "Ontem" se o dataset estiver levemente desatualizado.
-        // Mantemos o getLatestDatasetDate apenas como fallback se não houver data de referência.
-        const datasetDate = getLatestDatasetDate(activeBrand);
-        const referenceDate = (selectedPeriod === "all" || selectedPeriod === "custom")
-          ? (datasetDate || new Date())
-          : new Date();
-
-        let fromDate: string | undefined;
-        let toDate: string | undefined;
-        
-        if (referenceDate) {
-          const range = buildPeriodRange(referenceDate, selectedPeriod, customDateRange);
-          if (range) {
-            fromDate = range.start;
-            toDate = range.end;
-          }
-        }
-
-        // Busca KPIs do Dashboard e DRE em paralelo
-        const [kpiData, dreData] = await Promise.all([
-          fetchDashboardKpis(activeBrandId, fromDate, toDate),
-          fetchDreMonthly(activeBrandId)
-        ]);
-
-        setDashboardMetrics(mapDashboardKpisToSummary(kpiData));
+        const dreData = await fetchDreMonthly(activeBrandId);
         setDreMonthly(dreData);
       } catch (err) {
         console.error("Failed to load backend metrics:", err);
       } finally {
-        setIsMetricsLoading(false);
         setIsDreLoading(false);
       }
     }
 
     void loadMetrics();
-  }, [activeBrandId, activeBrand, selectedPeriod, customDateRange]);
+  }, [activeBrandId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -203,7 +211,9 @@ export function BrandOpsProvider({
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
-      setIsLoading(Boolean(nextSession));
+      if (!nextSession) {
+        setIsLoading(false);
+      }
     });
 
     return () => {
@@ -225,9 +235,6 @@ export function BrandOpsProvider({
       }
 
       setIsLoading(true);
-      setActiveBrand(null);
-      setDashboardMetrics(null);
-      setDreMonthly(null);
       try {
         const [nextProfile, nextBrands] = await Promise.all([
           fetchUserProfile(userId),
@@ -287,8 +294,6 @@ export function BrandOpsProvider({
     (brandId: string) => {
       setIsLoading(true);
       setActiveBrand(null);
-      setDashboardMetrics(null);
-      setDreMonthly(null);
       setActiveBrandId(brandId);
       if (typeof window !== "undefined" && userId) {
         window.localStorage.setItem(getBrandContextStorageKey(userId), brandId);
@@ -366,6 +371,7 @@ export function BrandOpsProvider({
       activeBrandId,
       activeBrand,
       filteredBrand,
+      periodRange,
       dashboardMetrics,
       isMetricsLoading,
       dreMonthly,
@@ -522,6 +528,7 @@ export function BrandOpsProvider({
       brands,
       errorMessage,
       filteredBrand,
+      periodRange,
       dashboardMetrics,
       isMetricsLoading,
       dreMonthly,

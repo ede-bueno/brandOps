@@ -15,15 +15,13 @@ import { MetricCard } from "@/components/MetricCard";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { currencyFormatter, formatCompactDate, integerFormatter } from "@/lib/brandops/format";
-import { buildDailySalesSeries, buildTopProducts } from "@/lib/brandops/metrics";
+import { buildDailySalesSeries, buildTopProducts, computeBrandMetrics } from "@/lib/brandops/metrics";
 
 export default function SalesPage() {
   const { 
     activeBrand, 
     filteredBrand, 
     selectedPeriodLabel, 
-    dashboardMetrics, 
-    isMetricsLoading,
     isLoading: isDatasetLoading 
   } = useBrandOps();
 
@@ -36,7 +34,7 @@ export default function SalesPage() {
     );
   }
 
-  if (isMetricsLoading || isDatasetLoading || !dashboardMetrics || !filteredBrand) {
+  if (isDatasetLoading || !filteredBrand) {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-32 bg-surface-container rounded-3xl" />
@@ -59,7 +57,7 @@ export default function SalesPage() {
     );
   }
 
-  const metrics = dashboardMetrics;
+  const metrics = computeBrandMetrics(filteredBrand);
   const dailySales = buildDailySalesSeries(filteredBrand);
   const topProducts = buildTopProducts(filteredBrand);
 

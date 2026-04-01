@@ -174,6 +174,15 @@ function resolveMediaSource(
   return row.delivery?.toLowerCase() === "api" ? "api" : "manual_csv";
 }
 
+function buildMediaMergeKey(row: Pick<MediaRow, "date" | "campaignName" | "adsetName" | "adName">) {
+  return [
+    row.date ?? "",
+    row.campaignName ?? "",
+    row.adsetName ?? "",
+    row.adName ?? "",
+  ].join("::");
+}
+
 export async function fetchUserProfile(userId: string) {
   const { data, error } = await supabase
     .from("user_profiles")
@@ -565,16 +574,38 @@ export async function fetchBrandDataset(brandId: string) {
   const metaIntegration = integrations.find((integration) => integration.provider === "meta");
   const apiMedia = media.filter((row) => row.dataSource === "api");
   const manualMedia = media.filter((row) => row.dataSource === "manual_csv");
-  const effectiveMedia =
-    metaIntegration?.mode === "api"
-      ? apiMedia.length
-        ? apiMedia
-        : metaIntegration.settings.manualFallback
-          ? manualMedia
-          : []
-      : metaIntegration?.mode === "disabled"
-        ? []
-        : manualMedia;
+  const effectiveMedia = (() => {
+    if (metaIntegration?.mode === "disabled") {
+      return [];
+    }
+
+    if (metaIntegration?.mode !== "api") {
+      return manualMedia;
+    }
+
+    if (!apiMedia.length) {
+      return metaIntegration.settings.manualFallback ? manualMedia : [];
+    }
+
+    if (!metaIntegration.settings.manualFallback) {
+      return apiMedia;
+    }
+
+    const apiKeys = new Set(apiMedia.map((row) => buildMediaMergeKey(row)));
+    const merged = [
+      ...manualMedia.filter((row) => !apiKeys.has(buildMediaMergeKey(row))),
+      ...apiMedia,
+    ];
+
+    return merged.sort((left, right) => {
+      const dateCompare = left.date.localeCompare(right.date);
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
+
+      return buildMediaMergeKey(left).localeCompare(buildMediaMergeKey(right));
+    });
+  })();
 
   return {
     id: brandResult.data.id,

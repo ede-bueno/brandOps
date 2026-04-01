@@ -7,7 +7,7 @@ import { MetricCard } from "@/components/MetricCard";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { currencyFormatter, percentFormatter } from "@/lib/brandops/format";
-import { buildAnnualDreReport } from "@/lib/brandops/metrics";
+import { buildAnnualDreReport, computeBrandMetrics } from "@/lib/brandops/metrics";
 import { cn } from "@/lib/utils";
 
 export default function DrePage() {
@@ -15,16 +15,18 @@ export default function DrePage() {
     activeBrand, 
     filteredBrand, 
     selectedPeriodLabel, 
-    dashboardMetrics, 
-    isMetricsLoading,
-    dreMonthly,
-    isDreLoading
+    isLoading: isDatasetLoading,
   } = useBrandOps();
 
+  const summary = useMemo(() => {
+    if (!filteredBrand) return null;
+    return computeBrandMetrics(filteredBrand);
+  }, [filteredBrand]);
+
   const report = useMemo(() => {
-    if (!filteredBrand || !dreMonthly || !dashboardMetrics) return null;
-    return buildAnnualDreReport(filteredBrand, dreMonthly, dashboardMetrics);
-  }, [filteredBrand, dreMonthly, dashboardMetrics]);
+    if (!filteredBrand) return null;
+    return buildAnnualDreReport(filteredBrand);
+  }, [filteredBrand]);
 
   if (!activeBrand) {
     return (
@@ -35,7 +37,7 @@ export default function DrePage() {
     );
   }
 
-  if (isDreLoading || isMetricsLoading || !report) {
+  if (isDatasetLoading || !report || !summary) {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-32 bg-surface-container rounded-3xl" />
@@ -262,11 +264,7 @@ export default function DrePage() {
             description="Valor de RLD necessário para cobrir as despesas fixas com a margem atual."
           />
           <p className="mt-5 font-headline text-3xl font-semibold text-on-surface">
-            {currencyFormatter.format(
-              report.total.contributionMargin > 0
-                ? report.total.fixedExpensesTotal / report.total.contributionMargin
-                : 0,
-            )}
+            {currencyFormatter.format(summary.breakEvenPoint)}
           </p>
         </SurfaceCard>
 
