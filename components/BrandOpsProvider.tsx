@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { Session } from "@supabase/supabase-js";
@@ -16,6 +17,7 @@ import {
   createBrandIfNeeded,
   deleteBrandExpense,
   fetchAccessibleBrands,
+  fetchDashboardKpis,
   fetchBrandDataset,
   fetchUserProfile,
   importFilesToBrand,
@@ -31,10 +33,11 @@ import {
   computeBrandMetrics,
   filterBrandDatasetByRange,
   getLatestDatasetDate,
+  mergeDashboardSummary,
   getPeriodLabel,
   type AnalysisDateRange,
 } from "@/lib/brandops/metrics";
-import { BrandSummaryMetrics } from "@/lib/brandops/types";
+import type { BrandSummaryMetrics } from "@/lib/brandops/types";
 import { supabase } from "@/lib/supabase";
 import type {
   BrandDataset,
@@ -133,11 +136,14 @@ export function BrandOpsProvider({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [dreMonthly, setDreMonthly] = useState<DreMonthlyDataset | null>(null);
   const [isDreLoading, setIsDreLoading] = useState(false);
+  const [backendKpis, setBackendKpis] = useState<Record<string, number | null> | null>(null);
+  const [isMetricsLoading, setIsMetricsLoading] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>("30d");
   const [customDateRange, setCustomDateRange] = useState<CustomDateRange>({
     from: "",
     to: "",
   });
+  const sessionUserIdRef = useRef<string | null>(null);
   const userId = session?.user?.id ?? null;
   const periodReferenceDate = useMemo(() => {
     if (!activeBrand) {
@@ -168,33 +174,63 @@ export function BrandOpsProvider({
     [activeBrand, periodRange],
   );
 
-  const dashboardMetrics = useMemo(
-    () => (filteredBrand ? computeBrandMetrics(filteredBrand) : null),
-    [filteredBrand],
+  const refreshBrandResources = useCallback(async (brandId: string) => {
+    const dataset = await fetchBrandDataset(brandId);
+    setActiveBrand(dataset);
+  }, []);
+
+  const refreshSummaryResources = useCallback(
+    async (brandId: string) => {
+      const [kpis, dreData] = await Promise.all([
+        fetchDashboardKpis(brandId, periodRange?.start ?? null, periodRange?.end ?? null).catch(
+          (error) => {
+            console.error("Failed to load dashboard KPIs from backend:", error);
+            return null;
+          },
+        ),
+        fetchDreMonthly(brandId).catch((error) => {
+          console.error("Failed to load DRE monthly from backend:", error);
+          return null;
+        }),
+      ]);
+
+      setBackendKpis(kpis);
+      setDreMonthly(dreData);
+    },
+    [periodRange?.end, periodRange?.start],
   );
-  const isMetricsLoading = false;
+
+  const dashboardMetrics = useMemo(() => {
+    const fallbackMetrics = filteredBrand ? computeBrandMetrics(filteredBrand) : null;
+    return mergeDashboardSummary(backendKpis, fallbackMetrics);
+  }, [backendKpis, filteredBrand]);
 
   useEffect(() => {
-    async function loadMetrics() {
+    async function loadDashboardMetrics() {
       if (!activeBrandId) {
+        setBackendKpis(null);
         setDreMonthly(null);
+        setIsMetricsLoading(false);
+        setIsDreLoading(false);
         return;
       }
 
+      setIsMetricsLoading(true);
       setIsDreLoading(true);
-      
       try {
-        const dreData = await fetchDreMonthly(activeBrandId);
-        setDreMonthly(dreData);
-      } catch (err) {
-        console.error("Failed to load backend metrics:", err);
+        await refreshSummaryResources(activeBrandId);
+      } catch (error) {
+        console.error("Failed to load dashboard KPIs from backend:", error);
+        setBackendKpis(null);
+        setDreMonthly(null);
       } finally {
+        setIsMetricsLoading(false);
         setIsDreLoading(false);
       }
     }
 
-    void loadMetrics();
-  }, [activeBrandId]);
+    void loadDashboardMetrics();
+  }, [activeBrandId, refreshSummaryResources]);
 
   useEffect(() => {
     let isMounted = true;
@@ -203,16 +239,26 @@ export function BrandOpsProvider({
       if (!isMounted) {
         return;
       }
+      sessionUserIdRef.current = data.session?.user?.id ?? null;
       setSession(data.session);
-      setIsLoading(!data.session ? false : true);
+      setIsLoading(Boolean(data.session));
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      const previousUserId = sessionUserIdRef.current;
+      const nextUserId = nextSession?.user?.id ?? null;
+      sessionUserIdRef.current = nextUserId;
       setSession(nextSession);
+
       if (!nextSession) {
         setIsLoading(false);
+        return;
+      }
+
+      if (previousUserId !== nextUserId) {
+        setIsLoading(true);
       }
     });
 
@@ -229,6 +275,8 @@ export function BrandOpsProvider({
         setBrands([]);
         setActiveBrandId(null);
         setActiveBrand(null);
+        setBackendKpis(null);
+        setDreMonthly(null);
         setErrorMessage(null);
         setIsLoading(false);
         return;
@@ -263,10 +311,13 @@ export function BrandOpsProvider({
 
         setErrorMessage(null);
       } catch (error) {
+        console.error("Failed to load workspace:", error);
         setProfile(null);
         setBrands([]);
         setActiveBrandId(null);
         setActiveBrand(null);
+        setBackendKpis(null);
+        setDreMonthly(null);
         setErrorMessage(
           error instanceof Error
             ? error.message
@@ -294,6 +345,8 @@ export function BrandOpsProvider({
     (brandId: string) => {
       setIsLoading(true);
       setActiveBrand(null);
+      setBackendKpis(null);
+      setDreMonthly(null);
       setActiveBrandId(brandId);
       if (typeof window !== "undefined" && userId) {
         window.localStorage.setItem(getBrandContextStorageKey(userId), brandId);
@@ -312,10 +365,10 @@ export function BrandOpsProvider({
 
       setIsLoading(true);
       try {
-        const dataset = await fetchBrandDataset(activeBrandId);
-        setActiveBrand(dataset);
+        await refreshBrandResources(activeBrandId);
         setErrorMessage(null);
       } catch (error) {
+        console.error("Failed to load active brand dataset:", error);
         setActiveBrand(null);
         setErrorMessage(
           error instanceof Error
@@ -328,7 +381,7 @@ export function BrandOpsProvider({
     }
 
     void loadBrand();
-  }, [activeBrandId, userId]);
+  }, [activeBrandId, refreshBrandResources, userId]);
 
   useEffect(() => {
     if (typeof document === "undefined" || !userId || !activeBrandId) {
@@ -340,12 +393,12 @@ export function BrandOpsProvider({
         return;
       }
 
-      void fetchBrandDataset(activeBrandId)
-        .then((dataset) => {
-          setActiveBrand(dataset);
+      void refreshSummaryResources(activeBrandId)
+        .then(() => {
           setErrorMessage(null);
         })
         .catch((error) => {
+          console.error("Failed to refresh visible brand summaries:", error);
           setErrorMessage(
             error instanceof Error
               ? error.message
@@ -361,7 +414,7 @@ export function BrandOpsProvider({
       document.removeEventListener("visibilitychange", reloadVisibleBrand);
       window.removeEventListener("focus", reloadVisibleBrand);
     };
-  }, [activeBrandId, userId]);
+  }, [activeBrandId, refreshSummaryResources, userId]);
 
   const value = useMemo<BrandOpsContextValue>(
     () => ({
@@ -409,76 +462,87 @@ export function BrandOpsProvider({
         const refreshedBrands = await fetchAccessibleBrands();
         setBrands(refreshedBrands);
         setActiveBrandId(brandId);
-        setActiveBrand(await fetchBrandDataset(brandId));
+        await refreshBrandResources(brandId);
+        await refreshSummaryResources(brandId);
         setErrorMessage(null);
       },
       saveCmvEntry: async (brandId, productId, _productName, unitCost) => {
         await setCurrentCmv(brandId, productId, unitCost);
         if (activeBrandId === brandId) {
-          setActiveBrand(await fetchBrandDataset(brandId));
+          await refreshBrandResources(brandId);
+          await refreshSummaryResources(brandId);
         }
         setErrorMessage(null);
       },
       saveCmvRule: async (brandId, matchType, matchValue, matchLabel, unitCost, validFrom) => {
         await saveCmvRule(brandId, matchType, matchValue, matchLabel, unitCost, validFrom);
         if (activeBrandId === brandId) {
-          setActiveBrand(await fetchBrandDataset(brandId));
+          await refreshBrandResources(brandId);
+          await refreshSummaryResources(brandId);
         }
         setErrorMessage(null);
       },
       applyCmvCheckpoint: async (brandId, note, createdAt) => {
         await applyCmvCheckpoint(brandId, note, createdAt);
         if (activeBrandId === brandId) {
-          setActiveBrand(await fetchBrandDataset(brandId));
+          await refreshBrandResources(brandId);
+          await refreshSummaryResources(brandId);
         }
         setErrorMessage(null);
       },
       ignoreMediaRow: async (mediaRowId, reason) => {
         await setMediaSanitizationState(mediaRowId, "IGNORED", reason);
         if (activeBrandId) {
-          setActiveBrand(await fetchBrandDataset(activeBrandId));
+          await refreshBrandResources(activeBrandId);
+          await refreshSummaryResources(activeBrandId);
         }
         setErrorMessage(null);
       },
       keepMediaRow: async (mediaRowId, reason) => {
         await setMediaSanitizationState(mediaRowId, "KEPT", reason);
         if (activeBrandId) {
-          setActiveBrand(await fetchBrandDataset(activeBrandId));
+          await refreshBrandResources(activeBrandId);
+          await refreshSummaryResources(activeBrandId);
         }
         setErrorMessage(null);
       },
       restoreMediaRow: async (mediaRowId) => {
         await setMediaSanitizationState(mediaRowId, "PENDING");
         if (activeBrandId) {
-          setActiveBrand(await fetchBrandDataset(activeBrandId));
+          await refreshBrandResources(activeBrandId);
+          await refreshSummaryResources(activeBrandId);
         }
         setErrorMessage(null);
       },
       ignoreOrder: async (brandId, orderNumber, reason) => {
         await setOrderSanitizationState(brandId, orderNumber, "IGNORED", reason);
         if (activeBrandId === brandId) {
-          setActiveBrand(await fetchBrandDataset(brandId));
+          await refreshBrandResources(brandId);
+          await refreshSummaryResources(brandId);
         }
         setErrorMessage(null);
       },
       keepOrder: async (brandId, orderNumber, reason) => {
         await setOrderSanitizationState(brandId, orderNumber, "KEPT", reason);
         if (activeBrandId === brandId) {
-          setActiveBrand(await fetchBrandDataset(brandId));
+          await refreshBrandResources(brandId);
+          await refreshSummaryResources(brandId);
         }
         setErrorMessage(null);
       },
       restoreOrder: async (brandId, orderNumber) => {
         await setOrderSanitizationState(brandId, orderNumber, "PENDING");
         if (activeBrandId === brandId) {
-          setActiveBrand(await fetchBrandDataset(brandId));
+          await refreshBrandResources(brandId);
+          await refreshSummaryResources(brandId);
         }
         setErrorMessage(null);
       },
       createExpenseCategory: async (brandId, name, color) => {
         await createExpenseCategory(brandId, name, color);
         if (activeBrandId === brandId) {
-          setActiveBrand(await fetchBrandDataset(brandId));
+          await refreshBrandResources(brandId);
+          await refreshSummaryResources(brandId);
         }
         setErrorMessage(null);
       },
@@ -488,21 +552,24 @@ export function BrandOpsProvider({
         }
         await createBrandExpense(brandId, categoryId, description, amount, incurredOn, userId);
         if (activeBrandId === brandId) {
-          setActiveBrand(await fetchBrandDataset(brandId));
+          await refreshBrandResources(brandId);
+          await refreshSummaryResources(brandId);
         }
         setErrorMessage(null);
       },
       updateExpense: async (brandId, expenseId, categoryId, description, amount, incurredOn) => {
         await updateBrandExpense(expenseId, categoryId, description, amount, incurredOn);
         if (activeBrandId === brandId) {
-          setActiveBrand(await fetchBrandDataset(brandId));
+          await refreshBrandResources(brandId);
+          await refreshSummaryResources(brandId);
         }
         setErrorMessage(null);
       },
       deleteExpense: async (brandId, expenseId) => {
         await deleteBrandExpense(expenseId);
         if (activeBrandId === brandId) {
-          setActiveBrand(await fetchBrandDataset(brandId));
+          await refreshBrandResources(brandId);
+          await refreshSummaryResources(brandId);
         }
         setErrorMessage(null);
       },
@@ -511,7 +578,8 @@ export function BrandOpsProvider({
           return;
         }
         try {
-          setActiveBrand(await fetchBrandDataset(activeBrandId));
+          await refreshBrandResources(activeBrandId);
+          await refreshSummaryResources(activeBrandId);
           setErrorMessage(null);
         } catch (error) {
           setErrorMessage(
@@ -540,6 +608,8 @@ export function BrandOpsProvider({
       selectedPeriod,
       session,
       userId,
+      refreshBrandResources,
+      refreshSummaryResources,
     ],
   );
 

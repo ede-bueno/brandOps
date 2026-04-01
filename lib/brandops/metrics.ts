@@ -26,6 +26,7 @@ type DreBackendRow = {
   gross_revenue?: number | null;
   discount_value?: number | null;
   net_revenue?: number | null;
+  commission_total?: number | null;
   cmv_total?: number | null;
   adcost?: number | null;
   contribution_margin?: number | null;
@@ -186,7 +187,10 @@ function finalizeSummaryMetrics(metrics: BrandSummaryMetrics): BrandSummaryMetri
   };
 }
 
-export function mapDashboardKpisToSummary(kpi: Record<string, number | null>): BrandSummaryMetrics {
+export function mapDashboardKpisToSummary(
+  kpi: Record<string, number | null>,
+  operatingExpensesTotal = 0,
+): BrandSummaryMetrics {
   const metrics = buildEmptySummaryMetrics();
   if (!kpi) return metrics;
 
@@ -200,15 +204,49 @@ export function mapDashboardKpisToSummary(kpi: Record<string, number | null>): B
   metrics.cmvTotal = kpi.cmv_total || 0;
   metrics.mediaSpend = kpi.adcost || 0;
   metrics.unitsSold = kpi.items_sold || kpi.qty_real || 0;
-  metrics.grossMargin = kpi.gross_margin || 0;
-  metrics.contributionAfterMedia = kpi.contribution_margin || 0;
   metrics.paidOrderCount = kpi.order_count || 0;
   metrics.orderCount = kpi.order_count || 0;
-  metrics.commissionTotal = kpi.commission_total || 0;
-  metrics.inkProfit = kpi.commission_total || 0;
-  
-  // Re-calcula proporções e métricas derivadas
+  metrics.fixedExpensesTotal = operatingExpensesTotal;
+  metrics.operatingExpensesTotal = operatingExpensesTotal;
+  metrics.hasItemDetailCoverage = (kpi.qty_real || 0) > 0;
+
   return finalizeSummaryMetrics(metrics);
+}
+
+export function mergeDashboardSummary(
+  kpi: Record<string, number | null> | null,
+  fallback: BrandSummaryMetrics | null,
+): BrandSummaryMetrics | null {
+  if (!kpi) {
+    return fallback;
+  }
+
+  const mapped = mapDashboardKpisToSummary(kpi, fallback?.operatingExpensesTotal ?? 0);
+  if (!fallback) {
+    return mapped;
+  }
+
+  const hasCommission = Object.prototype.hasOwnProperty.call(kpi, "commission_total");
+  const hasItemsSold =
+    Object.prototype.hasOwnProperty.call(kpi, "items_sold") ||
+    Object.prototype.hasOwnProperty.call(kpi, "qty_real");
+  const useBackendCommission =
+    hasCommission &&
+    (mapped.commissionTotal > 0 || (fallback.commissionTotal <= 0 && fallback.inkProfit <= 0));
+  const useBackendItems =
+    hasItemsSold &&
+    (mapped.unitsSold > 0 || fallback.unitsSold <= 0);
+
+  return {
+    ...fallback,
+    ...mapped,
+    commissionTotal: useBackendCommission ? mapped.commissionTotal : fallback.commissionTotal,
+    inkProfit: useBackendCommission ? mapped.inkProfit : fallback.inkProfit,
+    averageInkProfit: useBackendCommission ? mapped.averageInkProfit : fallback.averageInkProfit,
+    unitsSold: useBackendItems ? mapped.unitsSold : fallback.unitsSold,
+    couponDiscounts: fallback.couponDiscounts,
+    hasItemDetailCoverage: fallback.hasItemDetailCoverage,
+  };
 }
 
 
@@ -419,6 +457,15 @@ export function buildPeriodRange(
     };
   }
 
+  if (period === "lastMonth") {
+    const lastMonthStart = new Date(end.getFullYear(), end.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(end.getFullYear(), end.getMonth(), 0);
+    return {
+      start: toDateKey(lastMonthStart),
+      end: toDateKey(lastMonthEnd),
+    };
+  }
+
   const days = period === "7d" ? 7 : period === "14d" ? 14 : 30;
   start.setDate(start.getDate() - (days - 1));
 
@@ -481,6 +528,8 @@ export function getPeriodLabel(period: PeriodFilter, customRange?: CustomDateRan
       return "Últimos 30 dias";
     case "month":
       return "Mês atual";
+    case "lastMonth":
+      return "Mês passado";
     case "all":
       return "Todo o período";
     case "custom":
@@ -811,6 +860,31 @@ export function buildAnnualDreReport(
   summary?: BrandSummaryMetrics | null,
 ): AnnualDreReport {
   const expenseByCategory = new Map<string, MonthlyExpenseBreakdown>();
+  const visibleMonthKeys = new Set<string>();
+
+  getPaidOrders(brand).forEach((order) => {
+    if (order.orderDate) {
+      visibleMonthKeys.add(toMonthKey(order.orderDate));
+    }
+  });
+
+  getActiveOrderItems(brand).forEach((item) => {
+    if (item.orderDate) {
+      visibleMonthKeys.add(toMonthKey(item.orderDate));
+    }
+  });
+
+  getActiveMediaRows(brand).forEach((row) => {
+    if (row.date) {
+      visibleMonthKeys.add(toMonthKey(row.date));
+    }
+  });
+
+  brand.expenses.forEach((expense) => {
+    if (expense.incurredOn) {
+      visibleMonthKeys.add(toMonthKey(expense.incurredOn));
+    }
+  });
 
   // Se tivermos os dados do backend, usamos eles para as colunas mensais e o total.
   if (dreMonthly && summary) {
@@ -818,6 +892,9 @@ export function buildAnnualDreReport(
       .filter(
         (row): row is DreBackendRow & { yearmonth: string } =>
           typeof row.yearmonth === "string" && row.yearmonth.trim().length > 0,
+      )
+      .filter((row) =>
+        visibleMonthKeys.size > 0 ? visibleMonthKeys.has(row.yearmonth) : true,
       )
       .map((row) => {
         const monthKey = row.yearmonth;
@@ -827,6 +904,8 @@ export function buildAnnualDreReport(
         metrics.discounts = row.discount_value || 0;
         metrics.netRevenue = row.net_revenue || 0;
         metrics.rld = row.net_revenue || 0;
+        metrics.commissionTotal = row.commission_total || 0;
+        metrics.inkProfit = row.commission_total || 0;
         metrics.cmvTotal = row.cmv_total || 0;
         metrics.mediaSpend = row.adcost || 0;
         metrics.contributionMargin = row.contribution_margin || 0;
@@ -1164,6 +1243,156 @@ export function buildMediaAnomalies(brand: BrandDataset): MediaAnomaly[] {
       return a.date.localeCompare(b.date);
     }
     return a.severity === "high" ? -1 : 1;
+  });
+}
+
+export function buildSanitizationHistory(brand: BrandDataset): MediaAnomaly[] {
+  if (brand.sanitizationReviews.length) {
+    const mediaById = new Map(
+      brand.media.filter((row): row is typeof row & { id: string } => Boolean(row.id)).map((row) => [row.id, row]),
+    );
+    const mediaByHash = new Map(
+      brand.media
+        .filter((row): row is typeof row & { rowHash: string } => Boolean(row.rowHash))
+        .map((row) => [row.rowHash, row]),
+    );
+    const ordersById = new Map(
+      brand.paidOrders.filter((row): row is typeof row & { id: string } => Boolean(row.id)).map((row) => [row.id, row]),
+    );
+    const ordersByNumber = new Map(brand.paidOrders.map((row) => [row.orderNumber, row]));
+
+    return brand.sanitizationReviews
+      .map((review, index) => {
+        if (review.sourceTable === "media_performance") {
+          const row =
+            mediaById.get(review.sourceRowId) ??
+            (review.sourceKey ? mediaByHash.get(review.sourceKey) : undefined);
+          return {
+            id: `review-media-${review.id}-${index}`,
+            target: "MEDIA" as const,
+            targetId: row?.id ?? review.sourceRowId,
+            date: row?.date ?? review.reviewedAt.slice(0, 10),
+            campaignName: row?.campaignName ?? review.sourceKey ?? "Linha de mídia",
+            adsetName: row?.adsetName ?? "",
+            adName: row?.adName ?? "",
+            metric: review.action === "PENDING" ? "Reversão" : "Linha de mídia",
+            value: row
+              ? `${toCurrencyLabel(row.spend)} • ${row.impressions} impressões • ${row.clicksAll} cliques`
+              : "Ocorrência revisada",
+            reason:
+              review.reason ??
+              row?.sanitizationNote ??
+              row?.ignoreReason ??
+              "Decisão operacional registrada para esta linha de mídia.",
+            severity: review.action === "IGNORED" ? "high" : "medium",
+            isIgnored: review.action === "IGNORED",
+            ignoreReason: review.reason ?? null,
+            sanitizationStatus: review.action,
+            sanitizationNote: review.reason ?? row?.sanitizationNote ?? null,
+            sanitizedAt: review.reviewedAt,
+          } satisfies MediaAnomaly;
+        }
+
+        const order =
+          ordersById.get(review.sourceRowId) ??
+          (review.sourceKey ? ordersByNumber.get(review.sourceKey) : undefined);
+        return {
+          id: `review-order-${review.id}-${index}`,
+          target: "ORDER" as const,
+          targetId: order?.id ?? review.sourceRowId,
+          orderNumber: order?.orderNumber ?? review.sourceKey ?? undefined,
+          date: order?.orderDate ?? review.reviewedAt.slice(0, 10),
+          campaignName:
+            order?.orderNumber ? `Pedido ${order.orderNumber}` : review.sourceKey ?? "Pedido revisado",
+          adsetName: order?.customerName ?? "",
+          adName: order?.paymentStatus ?? "",
+          metric: review.action === "PENDING" ? "Reversão" : "Pedido revisado",
+          value: order
+            ? `${toCurrencyLabel(order.orderValue)} • ${order.itemsInOrder} item(ns)`
+            : "Pedido revisado no saneamento",
+          reason:
+            review.reason ??
+            order?.sanitizationNote ??
+            order?.ignoreReason ??
+            "Decisão operacional registrada para este pedido.",
+          severity: review.action === "IGNORED" ? "high" : "medium",
+          isIgnored: review.action === "IGNORED",
+          ignoreReason: review.reason ?? null,
+          sanitizationStatus: review.action,
+          sanitizationNote: review.reason ?? order?.sanitizationNote ?? null,
+          sanitizedAt: review.reviewedAt,
+        } satisfies MediaAnomaly;
+      })
+      .sort((left, right) => right.sanitizedAt!.localeCompare(left.sanitizedAt!));
+  }
+
+  const rows: MediaAnomaly[] = [];
+
+  brand.media.forEach((row, index) => {
+    const status = row.sanitizationStatus ?? "PENDING";
+    if (status === "PENDING") {
+      return;
+    }
+
+    rows.push({
+      id: `media-history-${row.id ?? index}`,
+      target: "MEDIA",
+      targetId: row.id,
+      date: row.date,
+      campaignName: row.campaignName,
+      adsetName: row.adsetName,
+      adName: row.adName,
+      metric: "Linha de mídia",
+      value: `${toCurrencyLabel(row.spend)} • ${row.impressions} impressões • ${row.clicksAll} cliques`,
+      reason:
+        row.sanitizationNote ??
+        row.ignoreReason ??
+        "Decisão operacional registrada para esta linha de mídia.",
+      severity: status === "IGNORED" ? "high" : "medium",
+      isIgnored: Boolean(row.isIgnored),
+      ignoreReason: row.ignoreReason ?? null,
+      sanitizationStatus: status,
+      sanitizationNote: row.sanitizationNote ?? null,
+      sanitizedAt: row.sanitizedAt ?? null,
+    });
+  });
+
+  brand.paidOrders.forEach((order, index) => {
+    const status = order.sanitizationStatus ?? "PENDING";
+    if (status === "PENDING") {
+      return;
+    }
+
+    rows.push({
+      id: `order-history-${order.orderNumber}-${order.id ?? index}`,
+      target: "ORDER",
+      targetId: order.id,
+      orderNumber: order.orderNumber,
+      date: order.orderDate,
+      campaignName: `Pedido ${order.orderNumber}`,
+      adsetName: order.customerName,
+      adName: order.paymentStatus,
+      metric: "Pedido revisado",
+      value: `${toCurrencyLabel(order.orderValue)} • ${order.itemsInOrder} item(ns)`,
+      reason:
+        order.sanitizationNote ??
+        order.ignoreReason ??
+        "Decisão operacional registrada para este pedido.",
+      severity: status === "IGNORED" ? "high" : "medium",
+      isIgnored: Boolean(order.isIgnored),
+      ignoreReason: order.ignoreReason ?? null,
+      sanitizationStatus: status,
+      sanitizationNote: order.sanitizationNote ?? null,
+      sanitizedAt: order.sanitizedAt ?? null,
+    });
+  });
+
+  return rows.sort((left, right) => {
+    if (left.sanitizedAt && right.sanitizedAt && left.sanitizedAt !== right.sanitizedAt) {
+      return right.sanitizedAt.localeCompare(left.sanitizedAt);
+    }
+
+    return right.date.localeCompare(left.date);
   });
 }
 

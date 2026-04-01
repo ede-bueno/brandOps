@@ -31,7 +31,46 @@ import {
 } from "@/lib/brandops/metrics";
 
 export default function TrafficPage() {
-  const { activeBrand, filteredBrand, selectedPeriodLabel } = useBrandOps();
+  const { activeBrand, activeBrandId, brands, filteredBrand, selectedPeriodLabel, isLoading } = useBrandOps();
+  const selectedBrandName =
+    activeBrand?.name ??
+    brands.find((brand) => brand.id === activeBrandId)?.name ??
+    "Loja";
+  const isBrandLoading =
+    Boolean(activeBrandId) && (isLoading || !activeBrand || !filteredBrand);
+
+  if (isBrandLoading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Analytics"
+          title="Tráfego"
+          description={`Carregando os dados de tráfego da loja ${selectedBrandName}.`}
+          badge={`Período analisado: ${selectedPeriodLabel}`}
+        />
+        <div className="space-y-6 animate-pulse">
+          <div className="grid gap-4 md:grid-cols-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-24 bg-surface-container rounded-2xl" />
+            ))}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="h-[300px] bg-surface-container rounded-3xl" />
+            <div className="h-[300px] bg-surface-container rounded-3xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeBrandId && !activeBrand) {
+    return (
+      <EmptyState
+        title="Nenhuma marca selecionada"
+        description="Escolha uma marca para visualizar os dados de tráfego."
+      />
+    );
+  }
 
   if (!activeBrand || !filteredBrand || !filteredBrand.ga4DailyPerformance.length) {
     return (

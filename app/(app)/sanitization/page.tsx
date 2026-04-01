@@ -4,7 +4,7 @@ import { useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SurfaceCard } from "@/components/ui-shell";
-import { buildMediaAnomalies } from "@/lib/brandops/metrics";
+import { buildMediaAnomalies, buildSanitizationHistory } from "@/lib/brandops/metrics";
 import { cn } from "@/lib/utils";
 
 function statusLabel(status: "PENDING" | "KEPT" | "IGNORED") {
@@ -22,19 +22,17 @@ function statusClasses(status: "PENDING" | "KEPT" | "IGNORED") {
 export default function SanitizationPage() {
   const {
     activeBrand,
-    filteredBrand,
     ignoreMediaRow,
     keepMediaRow,
     restoreMediaRow,
     ignoreOrder,
     keepOrder,
     restoreOrder,
-    selectedPeriodLabel,
   } = useBrandOps();
   const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
   const [reasonDrafts, setReasonDrafts] = useState<Record<string, string>>({});
 
-  if (!activeBrand || !filteredBrand || (!filteredBrand.media.length && !filteredBrand.paidOrders.length)) {
+  if (!activeBrand || (!activeBrand.media.length && !activeBrand.paidOrders.length)) {
     return (
       <EmptyState
         title="Nenhum dado carregado para saneamento"
@@ -43,21 +41,20 @@ export default function SanitizationPage() {
     );
   }
 
-  const anomalies = buildMediaAnomalies(filteredBrand);
+  const anomalies = buildMediaAnomalies(activeBrand);
   const pendingAnomalies = anomalies.filter(
     (anomaly) => anomaly.sanitizationStatus === "PENDING",
   );
-  const historyAnomalies = anomalies.filter(
-    (anomaly) => anomaly.sanitizationStatus !== "PENDING",
-  );
+  const historyAnomalies = buildSanitizationHistory(activeBrand);
   const visibleAnomalies = activeTab === "pending" ? pendingAnomalies : historyAnomalies;
+  const allKnownAnomalies = [...pendingAnomalies, ...historyAnomalies];
 
   const commitDecision = async (
     anomalyId: string,
     decision: "PENDING" | "KEPT" | "IGNORED",
     note?: string,
   ) => {
-    const anomaly = anomalies.find((item) => item.id === anomalyId);
+    const anomaly = allKnownAnomalies.find((item) => item.id === anomalyId);
     if (!anomaly) {
       return;
     }
@@ -94,7 +91,7 @@ export default function SanitizationPage() {
         eyebrow="Decisão operacional"
         title="Saneamento"
         description="O sistema aponta divergências, mas a decisão final fica com o operador. Mantido ou ignorado, o histórico permanece salvo no banco mesmo após reimportações."
-        badge={`Período analisado: ${selectedPeriodLabel}`}
+        badge="Histórico completo da marca"
       />
 
       <SurfaceCard className="p-0 overflow-hidden">
@@ -122,7 +119,7 @@ export default function SanitizationPage() {
 
         {!visibleAnomalies.length ? (
           <div className="p-6 text-sm text-on-surface-variant">
-            Nenhuma ocorrência encontrada nesta categoria para o período atual.
+            Nenhuma ocorrência encontrada nesta categoria no histórico operacional da marca.
           </div>
         ) : (
           <div className="brandops-table-container rounded-none border-0">

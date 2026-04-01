@@ -29,12 +29,44 @@ import {
 export default function MediaPage() {
   const { 
     activeBrand, 
+    activeBrandId,
+    brands,
     filteredBrand, 
     selectedPeriodLabel, 
     isLoading: isDatasetLoading 
   } = useBrandOps();
+  const selectedBrandName =
+    activeBrand?.name ??
+    brands.find((brand) => brand.id === activeBrandId)?.name ??
+    "Loja";
+  const isBrandLoading =
+    Boolean(activeBrandId) && (isDatasetLoading || !activeBrand || !filteredBrand);
 
-  if (!activeBrand) {
+  if (isBrandLoading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Aquisição"
+          title="Mídia"
+          description={`Carregando os dados de mídia da loja ${selectedBrandName}.`}
+          badge={`Período analisado: ${selectedPeriodLabel}`}
+        />
+        <div className="space-y-6 animate-pulse">
+          <div className="grid gap-4 md:grid-cols-5">
+            {[...Array(10)].map((_, i) => (
+              <div key={i} className="h-24 bg-surface-container rounded-2xl" />
+            ))}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="h-[300px] bg-surface-container rounded-3xl" />
+            <div className="h-[300px] bg-surface-container rounded-3xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeBrandId && !activeBrand) {
     return (
       <EmptyState
         title="Nenhuma marca selecionada"
@@ -43,17 +75,12 @@ export default function MediaPage() {
     );
   }
 
-  if (isDatasetLoading || !filteredBrand) {
+  if (!activeBrand || !filteredBrand) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-32 bg-surface-container rounded-3xl" />
-        <div className="grid gap-4 md:grid-cols-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-24 bg-surface-container rounded-2xl" />
-          ))}
-        </div>
-        <div className="h-[400px] bg-surface-container rounded-3xl" />
-      </div>
+      <EmptyState
+        title="Dados da loja indisponíveis"
+        description="Não foi possível montar o relatório de mídia da loja selecionada."
+      />
     );
   }
 

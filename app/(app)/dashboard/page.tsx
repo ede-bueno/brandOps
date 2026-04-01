@@ -15,12 +15,51 @@ import { buildExpenseSummary, computeBrandMetrics } from "@/lib/brandops/metrics
 export default function DashboardPage() {
   const { 
     activeBrand, 
+    activeBrandId,
+    brands,
     filteredBrand, 
     selectedPeriodLabel, 
-    isLoading: isDatasetLoading 
+    isLoading: isDatasetLoading,
+    isMetricsLoading,
+    dashboardMetrics,
   } = useBrandOps();
+  const selectedBrandName =
+    activeBrand?.name ??
+    brands.find((brand) => brand.id === activeBrandId)?.name ??
+    "Loja";
+  const isBrandLoading =
+    Boolean(activeBrandId) && (isDatasetLoading || !activeBrand || !filteredBrand);
 
-  if (!activeBrand) {
+  if (isBrandLoading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Resumo executivo"
+          title={selectedBrandName}
+          description="Carregando dados da loja selecionada. Aguarde enquanto consolidamos vendas, mídia, CMV e despesas."
+          badge={selectedPeriodLabel}
+        />
+        <div className="space-y-6 animate-pulse">
+          <div className="grid gap-4 md:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-24 bg-surface-container rounded-2xl" />
+            ))}
+          </div>
+          <div className="grid gap-4 md:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-24 bg-surface-container rounded-2xl" />
+            ))}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="h-[260px] bg-surface-container rounded-3xl" />
+            <div className="h-[260px] bg-surface-container rounded-3xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeBrandId && !activeBrand) {
     return (
       <EmptyState
         title="Nenhuma marca em foco"
@@ -29,7 +68,16 @@ export default function DashboardPage() {
     );
   }
 
-  if (isDatasetLoading || !filteredBrand) {
+  if (!activeBrand || !filteredBrand) {
+    return (
+      <EmptyState
+        title="Dados da loja indisponíveis"
+        description="Não foi possível montar o dataset da loja selecionada no momento."
+      />
+    );
+  }
+
+  if (isDatasetLoading || isMetricsLoading) {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-32 bg-surface-container rounded-3xl" />
@@ -46,10 +94,18 @@ export default function DashboardPage() {
     );
   }
 
-  const metrics = computeBrandMetrics(filteredBrand);
+  const metrics = dashboardMetrics ?? computeBrandMetrics(filteredBrand);
   const expenseSummary = buildExpenseSummary(filteredBrand).slice(0, 4);
   const variableCostShare =
     metrics.rld > 0 ? (metrics.cmvTotal + metrics.mediaSpend) / metrics.rld : 0;
+  const breakEvenValue =
+    metrics.contributionMargin > 0 && metrics.operatingExpensesTotal > 0
+      ? currencyFormatter.format(metrics.breakEvenPoint)
+      : "N/A";
+  const breakEvenHelp =
+    metrics.contributionMargin > 0 && metrics.operatingExpensesTotal > 0
+      ? "RLD necessário para cobrir despesas"
+      : "Não calculável com a margem atual";
 
   return (
     <div className="space-y-6">
@@ -138,8 +194,8 @@ export default function DashboardPage() {
         />
         <MetricCard
           label="Ponto de equilíbrio"
-          value={currencyFormatter.format(metrics.breakEvenPoint)}
-          help="RLD necessário para cobrir despesas"
+          value={breakEvenValue}
+          help={breakEvenHelp}
           accent="secondary"
         />
       </section>

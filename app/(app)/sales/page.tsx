@@ -20,12 +20,42 @@ import { buildDailySalesSeries, buildTopProducts, computeBrandMetrics } from "@/
 export default function SalesPage() {
   const { 
     activeBrand, 
+    activeBrandId,
+    brands,
     filteredBrand, 
     selectedPeriodLabel, 
-    isLoading: isDatasetLoading 
+    isLoading: isDatasetLoading,
+    isMetricsLoading,
   } = useBrandOps();
+  const selectedBrandName =
+    activeBrand?.name ??
+    brands.find((brand) => brand.id === activeBrandId)?.name ??
+    "Loja";
+  const isBrandLoading =
+    Boolean(activeBrandId) && (isDatasetLoading || isMetricsLoading || !activeBrand || !filteredBrand);
 
-  if (!activeBrand) {
+  if (isBrandLoading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Leitura comercial"
+          title="Vendas"
+          description={`Carregando dados comerciais da loja ${selectedBrandName}.`}
+          badge={`Período analisado: ${selectedPeriodLabel}`}
+        />
+        <div className="space-y-6 animate-pulse">
+          <div className="grid gap-4 md:grid-cols-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-24 bg-surface-container rounded-2xl" />
+            ))}
+          </div>
+          <div className="h-[400px] bg-surface-container rounded-3xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeBrandId && !activeBrand) {
     return (
       <EmptyState
         title="Nenhuma marca selecionada"
@@ -34,17 +64,12 @@ export default function SalesPage() {
     );
   }
 
-  if (isDatasetLoading || !filteredBrand) {
+  if (!activeBrand || !filteredBrand) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-32 bg-surface-container rounded-3xl" />
-        <div className="grid gap-4 md:grid-cols-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-24 bg-surface-container rounded-2xl" />
-          ))}
-        </div>
-        <div className="h-[400px] bg-surface-container rounded-3xl" />
-      </div>
+      <EmptyState
+        title="Dados da loja indisponíveis"
+        description="Não foi possível montar o relatório comercial da loja selecionada."
+      />
     );
   }
 

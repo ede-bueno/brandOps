@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { requireBrandAccess } from "@/lib/brandops/admin";
-import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import {
   fetchGa4DailyPerformance,
   fetchGa4ItemDailyPerformance,
@@ -27,10 +26,14 @@ export async function POST(
   { params }: { params: Promise<{ brandId: string }> },
 ) {
   const startedAt = new Date().toISOString();
+  let brandId = "";
+  let authenticatedSupabase: Awaited<ReturnType<typeof requireBrandAccess>>["supabase"] | null =
+    null;
 
   try {
-    const { brandId } = await params;
+    ({ brandId } = await params);
     const { supabase } = await requireBrandAccess(request, brandId);
+    authenticatedSupabase = supabase;
 
     const { data: integration, error: integrationError } = await supabase
       .from("brand_integrations")
@@ -203,10 +206,9 @@ export async function POST(
   } catch (error) {
     const message = formatError(error);
 
-    try {
-      const { brandId } = await params;
-      const supabase = createSupabaseServiceRoleClient();
-      await supabase
+    if (brandId && authenticatedSupabase) {
+      try {
+        await authenticatedSupabase
         .from("brand_integrations")
         .update({
           last_sync_status: "error",
@@ -215,8 +217,9 @@ export async function POST(
         })
         .eq("brand_id", brandId)
         .eq("provider", "ga4");
-    } catch {
-      // best effort
+      } catch {
+        // best effort
+      }
     }
 
     return NextResponse.json({ error: message }, { status: 400 });

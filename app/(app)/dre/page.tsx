@@ -1,34 +1,86 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
 import { MetricCard } from "@/components/MetricCard";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { currencyFormatter, percentFormatter } from "@/lib/brandops/format";
-import { buildAnnualDreReport, computeBrandMetrics } from "@/lib/brandops/metrics";
+import {
+  buildAnnualDreReport,
+  computeBrandMetrics,
+  filterDreMonthlyByRange,
+} from "@/lib/brandops/metrics";
 import { cn } from "@/lib/utils";
 
 export default function DrePage() {
+  const [viewMode, setViewMode] = useState<"historical" | "filtered">("historical");
   const { 
     activeBrand, 
+    activeBrandId,
+    brands,
     filteredBrand, 
     selectedPeriodLabel, 
     isLoading: isDatasetLoading,
+    dreMonthly,
+    isDreLoading,
+    dashboardMetrics,
+    periodRange,
   } = useBrandOps();
+  const selectedBrandName =
+    activeBrand?.name ??
+    brands.find((brand) => brand.id === activeBrandId)?.name ??
+    "Loja";
+  const isBrandLoading =
+    Boolean(activeBrandId) && (isDatasetLoading || isDreLoading || !activeBrand || !filteredBrand);
 
-  const summary = useMemo(() => {
-    if (!filteredBrand) return null;
+  const filteredSummary = useMemo(() => {
+    if (!filteredBrand) return dashboardMetrics;
     return computeBrandMetrics(filteredBrand);
-  }, [filteredBrand]);
+  }, [dashboardMetrics, filteredBrand]);
 
-  const report = useMemo(() => {
-    if (!filteredBrand) return null;
-    return buildAnnualDreReport(filteredBrand);
-  }, [filteredBrand]);
+  const historicalSummary = useMemo(() => {
+    if (!activeBrand) return null;
+    return computeBrandMetrics(activeBrand);
+  }, [activeBrand]);
 
-  if (!activeBrand) {
+  const filteredReport = useMemo(() => {
+    if (!filteredBrand || !filteredSummary) return null;
+    return buildAnnualDreReport(
+      filteredBrand,
+      filterDreMonthlyByRange(dreMonthly, periodRange),
+      filteredSummary,
+    );
+  }, [dreMonthly, filteredBrand, filteredSummary, periodRange]);
+
+  const historicalReport = useMemo(() => {
+    if (!activeBrand || !historicalSummary) return null;
+    return buildAnnualDreReport(activeBrand, dreMonthly, historicalSummary);
+  }, [activeBrand, dreMonthly, historicalSummary]);
+
+  if (isBrandLoading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Relatório gerencial"
+          title="DRE"
+          description={`Carregando o DRE da loja ${selectedBrandName}.`}
+          badge={`Período: ${selectedPeriodLabel}`}
+        />
+        <div className="space-y-6 animate-pulse">
+          <div className="grid gap-4 md:grid-cols-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-24 bg-surface-container rounded-2xl" />
+            ))}
+          </div>
+          <div className="h-[420px] bg-surface-container rounded-3xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeBrandId && !activeBrand) {
     return (
       <EmptyState
         title="Nenhum dado para o DRE"
@@ -37,7 +89,10 @@ export default function DrePage() {
     );
   }
 
-  if (isDatasetLoading || !report || !summary) {
+  const report = viewMode === "historical" ? historicalReport : filteredReport;
+  const summary = viewMode === "historical" ? historicalSummary : filteredSummary;
+
+  if (!report || !summary) {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-32 bg-surface-container rounded-3xl" />
@@ -52,6 +107,14 @@ export default function DrePage() {
   }
 
   const topExpense = report.expenseBreakdown[0] ?? null;
+  const breakEvenValue =
+    summary.contributionMargin > 0 && summary.operatingExpensesTotal > 0
+      ? currencyFormatter.format(summary.breakEvenPoint)
+      : "N/A";
+  const breakEvenHelp =
+    summary.contributionMargin > 0 && summary.operatingExpensesTotal > 0
+      ? "Valor de RLD necessário para cobrir as despesas fixas com a margem atual."
+      : "Não calculável com a margem de contribuição atual.";
 
   return (
     <div className="space-y-6">
@@ -59,11 +122,31 @@ export default function DrePage() {
         eyebrow="Relatório gerencial"
         title="DRE"
         description="Leitura mês a mês do faturado exportado pela INK, descontos, CMV histórico, mídia, despesas e resultado final da operação."
-        badge={`Período: ${selectedPeriodLabel}`}
+        badge={viewMode === "historical" ? "Histórico completo" : `Período: ${selectedPeriodLabel}`}
         actions={
-          <Link href="/help#dre" className="brandops-button brandops-button-ghost">
-            Entender cálculos
-          </Link>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="brandops-tabs">
+              <button
+                type="button"
+                data-active={viewMode === "historical"}
+                className="brandops-tab"
+                onClick={() => setViewMode("historical")}
+              >
+                DRE histórico
+              </button>
+              <button
+                type="button"
+                data-active={viewMode === "filtered"}
+                className="brandops-tab"
+                onClick={() => setViewMode("filtered")}
+              >
+                DRE filtrado
+              </button>
+            </div>
+            <Link href="/help#dre" className="brandops-button brandops-button-ghost">
+              Entender cálculos
+            </Link>
+          </div>
         }
       />
 
@@ -261,10 +344,10 @@ export default function DrePage() {
         <SurfaceCard>
           <SectionHeading
             title="Ponto de equilíbrio"
-            description="Valor de RLD necessário para cobrir as despesas fixas com a margem atual."
+            description={breakEvenHelp}
           />
           <p className="mt-5 font-headline text-3xl font-semibold text-on-surface">
-            {currencyFormatter.format(summary.breakEvenPoint)}
+            {breakEvenValue}
           </p>
         </SurfaceCard>
 

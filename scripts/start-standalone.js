@@ -1,17 +1,16 @@
-import { cpSync, existsSync, mkdirSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { spawn } from "node:child_process";
+const { cpSync, existsSync, mkdirSync, readFileSync } = require("node:fs");
+const { join } = require("node:path");
+const { spawn } = require("node:child_process");
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, "..");
+const distDir = (process.env.BRANDOPS_DIST_DIR || "").trim() || ".next";
 
-const sourceStatic = join(projectRoot, ".next", "static");
-const targetStatic = join(projectRoot, ".next", "standalone", ".next", "static");
+const sourceStatic = join(projectRoot, distDir, "static");
+const sourceStandalone = join(projectRoot, distDir, "standalone");
+const targetStatic = join(sourceStandalone, ".next", "static");
 const sourcePublic = join(projectRoot, "public");
-const targetPublic = join(projectRoot, ".next", "standalone", "public");
-const serverEntrypoint = join(projectRoot, ".next", "standalone", "server.js");
+const targetPublic = join(sourceStandalone, "public");
+const serverEntrypoint = join(sourceStandalone, "server.js");
 const envFilePath = join(projectRoot, ".env.local");
 
 function loadLocalEnvFile() {
@@ -35,7 +34,7 @@ function loadLocalEnvFile() {
     let value = trimmed.slice(separatorIndex + 1).trim();
 
     if (
-      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("\"") && value.endsWith("\"")) ||
       (value.startsWith("'") && value.endsWith("'"))
     ) {
       value = value.slice(1, -1);
@@ -65,7 +64,7 @@ syncDirectory(sourcePublic, targetPublic);
 loadLocalEnvFile();
 
 const child = spawn(process.execPath, [serverEntrypoint], {
-  cwd: join(projectRoot, ".next", "standalone"),
+  cwd: sourceStandalone,
   stdio: "inherit",
   env: process.env,
 });
@@ -76,5 +75,5 @@ child.on("exit", (code, signal) => {
     return;
   }
 
-  process.exit(code ?? 0);
+  process.exit(code || 0);
 });

@@ -37,12 +37,12 @@ export function MetricCard({
   };
 
   return (
-    <div className="brandops-card p-5 flex flex-col justify-between relative overflow-hidden group">
+    <div className="brandops-card flex flex-col justify-between p-5">
       <div className="flex items-center justify-between gap-3 mb-3 relative z-10">
         <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/80">
           {label}
         </p>
-        <div className={`p-1.5 rounded-lg ${config.bg} transition-colors`}>
+        <div className={`flex h-7 w-7 items-center justify-center rounded-md ${config.bg}`}>
           <Icon size={16} className={config.iconColor} />
         </div>
       </div>
@@ -72,9 +72,6 @@ export function MetricCard({
           </p>
         )}
       </div>
-
-      {/* Decorative gradient blur */}
-      <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-gradient-to-br from-transparent to-primary/5 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0 pointer-events-none" />
     </div>
   );
 }

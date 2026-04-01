@@ -8,11 +8,20 @@ export type CsvFileKind =
 
 export type UserRole = "SUPER_ADMIN" | "BRAND_OWNER";
 
-export type PeriodFilter = "today" | "7d" | "14d" | "30d" | "month" | "all" | "custom";
+export type PeriodFilter =
+  | "today"
+  | "7d"
+  | "14d"
+  | "30d"
+  | "month"
+  | "lastMonth"
+  | "all"
+  | "custom";
 
 export type CmvMatchType = "SKU" | "PRODUCT" | "TYPE";
 
 export type SanitizationDecision = "PENDING" | "KEPT" | "IGNORED";
+export type SanitizationReviewAction = "PENDING" | "KEPT" | "IGNORED";
 
 export type IntegrationProvider = "ink" | "meta" | "ga4";
 
@@ -136,6 +145,7 @@ export interface OrderItem {
 
 export interface MediaRow {
   id?: string;
+  rowHash?: string | null;
   date: string;
   campaignName: string;
   adsetName: string;
@@ -278,6 +288,19 @@ export interface BrandDataset {
   integrations: BrandIntegrationConfig[];
   ga4DailyPerformance: Ga4DailyPerformanceRow[];
   ga4ItemDailyPerformance: Ga4ItemDailyPerformanceRow[];
+  sanitizationReviews: SanitizationReview[];
+}
+
+export interface SanitizationReview {
+  id: string;
+  sourceTable: "media_performance" | "orders" | "order_items";
+  sourceRowId: string;
+  sourceKey?: string | null;
+  anomalyType: string;
+  action: SanitizationReviewAction;
+  reason?: string | null;
+  reviewedBy?: string | null;
+  reviewedAt: string;
 }
 
 export interface CustomDateRange {

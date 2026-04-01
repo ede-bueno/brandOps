@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "npm run check && next build",
-    "start": "node scripts/start-standalone.mjs",
+    "dev": "node scripts/run-next-dev.js",
+    "clean": "node -e \"const fs=require('node:fs'); ['.next','.next-dev','.next-build','tsconfig.tsbuildinfo','tsconfig.typecheck.tsbuildinfo'].forEach((path)=>fs.rmSync(path,{ recursive:true, force:true }));\"",
+    "build": "npm run check && node scripts/run-next-build.js",
+    "start": "node scripts/start-standalone.js",
     "lint": "next lint",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit -p tsconfig.typecheck.json",
     "check": "npm run type-check && npm run lint"
   },
   "dependencies": {

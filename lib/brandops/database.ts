@@ -19,6 +19,7 @@ import type {
   OrderItem,
   PaidOrder,
   SalesLine,
+  SanitizationReview,
   SanitizationDecision,
   UserProfile,
 } from "./types";
@@ -171,7 +172,12 @@ function resolveMediaSource(
     delivery?: string | null;
   },
 ): MediaDataSource {
-  return row.delivery?.toLowerCase() === "api" ? "api" : "manual_csv";
+  const delivery = row.delivery?.toLowerCase().trim();
+  if (delivery === "api") {
+    return "api";
+  }
+
+  return "manual_csv";
 }
 
 function buildMediaMergeKey(row: Pick<MediaRow, "date" | "campaignName" | "adsetName" | "adName">) {
@@ -231,6 +237,7 @@ export async function fetchBrandDataset(brandId: string) {
     ga4DailyPerformanceResult,
     ga4ItemDailyPerformanceResult,
     importLogsResult,
+    anomalyReviewsResult,
   ] = await Promise.all([
     supabase
       .from("brands")
@@ -248,7 +255,7 @@ export async function fetchBrandDataset(brandId: string) {
       supabase
         .from("orders")
         .select(
-          "id, order_number, order_date, payment_method, payment_status, customer_name, items_in_order, net_revenue, discount, commission_value, source, tracking_url, shipping_state, coupon_name, is_ignored, ignore_reason, ignored_by, ignored_at, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
+          "id, order_number, order_date, payment_method, payment_status, customer_name, items_in_order, gross_revenue, net_revenue, discount, commission_value, source, tracking_url, shipping_state, coupon_name, is_ignored, ignore_reason, ignored_by, ignored_at, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
         )
         .eq("brand_id", brandId)
         .range(from, to),
@@ -338,6 +345,16 @@ export async function fetchBrandDataset(brandId: string) {
         .eq("brand_id", brandId)
         .eq("status", "SUCCESS")
         .order("created_at", { ascending: false })
+        .range(from, to),
+    ),
+    fetchAllRows(async (from, to) =>
+      supabase
+        .from("anomaly_reviews")
+        .select(
+          "id, source_table, source_row_id, anomaly_type, action, reason, reviewed_by, reviewed_at",
+        )
+        .eq("brand_id", brandId)
+        .order("reviewed_at", { ascending: false })
         .range(from, to),
     ),
   ]);
@@ -431,6 +448,8 @@ export async function fetchBrandDataset(brandId: string) {
       paymentStatus: row.payment_status ?? "",
       customerName: row.customer_name ?? "",
       itemsInOrder: row.items_in_order ?? 0,
+      // Na camada operacional da INK, `net_revenue` já representa o "Valor do Pedido"
+      // exportado. O campo `gross_revenue` ficou inconsistente em parte do histórico.
       orderValue: Number(row.net_revenue ?? 0),
       discountValue: Number(row.discount ?? 0),
       commissionValue: Number(row.commission_value ?? 0),
@@ -486,6 +505,7 @@ export async function fetchBrandDataset(brandId: string) {
   const media: MediaRow[] =
     mediaResult.map((row) => ({
       id: row.id,
+      rowHash: row.row_hash ?? null,
       date: row.date ?? row.report_start ?? "",
       campaignName: row.campaign_name ?? "",
       adsetName: row.adset_name ?? "",
@@ -571,6 +591,26 @@ export async function fetchBrandDataset(brandId: string) {
       lastSyncError: row.last_sync_error ?? null,
     })) as BrandIntegrationConfig[];
 
+  const sanitizationReviews: SanitizationReview[] =
+    anomalyReviewsResult.map((row) => ({
+      id: row.id,
+      sourceTable: row.source_table,
+      sourceRowId: row.source_row_id,
+      sourceKey: null,
+      anomalyType: row.anomaly_type,
+      action:
+        row.action === "KEPT" || row.action === "IGNORED" || row.action === "PENDING"
+          ? row.action
+          : row.action?.toUpperCase?.() === "IGNORED"
+            ? "IGNORED"
+            : row.action?.toUpperCase?.() === "KEPT"
+              ? "KEPT"
+              : "PENDING",
+      reason: row.reason ?? null,
+      reviewedBy: row.reviewed_by ?? null,
+      reviewedAt: row.reviewed_at,
+    }));
+
   const metaIntegration = integrations.find((integration) => integration.provider === "meta");
   const apiMedia = media.filter((row) => row.dataSource === "api");
   const manualMedia = media.filter((row) => row.dataSource === "manual_csv");
@@ -625,6 +665,7 @@ export async function fetchBrandDataset(brandId: string) {
     integrations,
     ga4DailyPerformance,
     ga4ItemDailyPerformance,
+    sanitizationReviews,
   } satisfies BrandDataset;
 }
 

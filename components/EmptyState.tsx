@@ -24,19 +24,19 @@ export function EmptyState({
   const DefaultIcon = variant === "error" ? AlertTriangle : Inbox;
 
   return (
-    <div className="brandops-panel rounded-[28px] px-8 py-12 text-center">
-      <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl ${iconBg}`}>
+    <div className="brandops-panel px-7 py-9 text-center">
+      <div className={`mx-auto flex h-12 w-12 items-center justify-center rounded-xl ${iconBg}`}>
         {icon ?? <DefaultIcon size={22} />}
       </div>
-      <h3 className="mt-5 font-headline text-xl font-semibold tracking-[-0.02em] text-on-surface">
+      <h3 className="mt-4 font-headline text-lg font-semibold tracking-[-0.02em] text-on-surface">
         {title}
       </h3>
-      <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-on-surface-variant">
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-on-surface-variant">
         {description}
       </p>
       <Link
         href={ctaHref}
-        className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary shadow-[0_2px_12px_rgba(95,212,168,0.3)] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(95,212,168,0.4)]"
+        className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary transition-colors hover:brightness-95"
       >
         {ctaLabel}
         <ArrowRight size={15} />

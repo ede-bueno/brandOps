@@ -65,6 +65,7 @@ const periodOptions: Array<{ value: PeriodFilter; label: string }> = [
   { value: "14d", label: "14 dias" },
   { value: "30d", label: "30 dias" },
   { value: "month", label: "Mês atual" },
+  { value: "lastMonth", label: "Mês passado" },
   { value: "all", label: "Todo período" },
   { value: "custom", label: "Período livre" },
 ];
@@ -143,7 +144,7 @@ function SidebarSkeleton() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("brandops.sidebar.collapsed") === "1";
@@ -165,6 +166,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setSelectedPeriod,
     signOut,
   } = useBrandOps();
+  const selectedBrandName =
+    activeBrand?.name ??
+    brands.find((brand) => brand.id === activeBrandId)?.name ??
+    "Nenhuma marca";
 
   useEffect(() => {
     if (!isLoading && !session) {
@@ -176,7 +181,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     window.localStorage.setItem("brandops.sidebar.collapsed", isSidebarCollapsed ? "1" : "0");
   }, [isSidebarCollapsed]);
 
-  if (isLoading) {
+  const shouldBlockShell = isLoading && !session;
+
+  if (shouldBlockShell) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background relative overflow-hidden">
         {/* Decorative blur elements for modern premium feel */}
@@ -268,29 +275,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* ---- Desktop Sidebar ---- */}
         <aside
           className={`brandops-panel sticky top-3 hidden h-[calc(100vh-1.5rem)] shrink-0 flex-col overflow-hidden lg:flex transition-[width] duration-300 ease-in-out ${
-            isSidebarCollapsed ? "w-[48px]" : "w-[210px]"
+            isSidebarCollapsed ? "w-[64px]" : "w-[220px]"
           }`}
         >
           {/* Header */}
           <div
-            className={`flex shrink-0 items-center gap-2 border-b border-outline px-2 py-2.5 ${
-              isSidebarCollapsed ? "justify-center" : "justify-between"
+            className={`flex shrink-0 items-center gap-2 border-b border-outline px-3 py-3 ${
+              isSidebarCollapsed ? "flex-col justify-center" : "justify-between"
             }`}
           >
-            {!isSidebarCollapsed && (
-              <div className="min-w-0 pl-1">
-                <p className="eyebrow text-primary">BrandOps</p>
-                <p className="truncate text-[11px] font-medium text-on-surface-variant">
-                  Op. Multi-marca
-                </p>
+            <div className={`flex min-w-0 items-center gap-2 ${isSidebarCollapsed ? "flex-col" : ""}`}>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-container text-primary">
+                <Sparkles size={16} />
               </div>
-            )}
-            {isSidebarCollapsed && (
-              <span className="eyebrow text-primary text-center">BO</span>
-            )}
+              {!isSidebarCollapsed && (
+                <div className="min-w-0">
+                  <p className="eyebrow text-primary">BrandOps</p>
+                  <p className="truncate text-[11px] font-medium text-on-surface-variant">
+                    Op. Multi-marca
+                  </p>
+                </div>
+              )}
+            </div>
             <button
               onClick={() => setIsSidebarCollapsed((c) => !c)}
-              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded border border-transparent text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
             >
               {isSidebarCollapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
             </button>
@@ -347,10 +356,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* ---- Main Content ---- */}
         <div className="min-w-0 flex-1">
           {/* Header */}
-          <header className="brandops-panel py-2 px-3 sticky top-3 z-30 lg:px-4">
-            <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
-              
-              <div className="flex items-center gap-2">
+          <header className="brandops-panel sticky top-3 z-30 px-3 py-3 lg:px-4">
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsMobileMenuOpen((c) => !c)}
                   className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-outline bg-surface-container text-on-surface lg:hidden"
@@ -360,15 +369,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="truncate font-headline text-lg font-semibold tracking-tight text-on-surface">
-                      {activeBrand?.name ?? "Nenhuma marca"}
+                      {selectedBrandName}
                     </h2>
                     <span className="status-chip">{selectedPeriodLabel}</span>
                   </div>
                 </div>
-              </div>
+                </div>
 
-              <div className="flex gap-2">
-                <div className="brandops-input flex-1 min-w-[140px]">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="brandops-input min-w-[160px]">
                   <select
                     value={activeBrandId ?? ""}
                     onChange={(e) => {
@@ -393,55 +402,58 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     ))}
                   </select>
                 </div>
-
-                <div className="brandops-input w-[110px] shrink-0">
-                  <select
-                    value={selectedPeriod}
-                    onChange={(e) => setSelectedPeriod(e.target.value as PeriodFilter)}
-                    className="w-full bg-transparent text-xs p-1.5 outline-none"
-                  >
-                    {periodOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value} className="bg-surface text-on-surface">
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
                 </div>
               </div>
             </div>
 
-            {selectedPeriod === "custom" && (
-              <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:max-w-[360px] xl:ml-auto">
-                <label className="brandops-input flex items-center gap-2 px-2 py-1.5 text-xs">
-                  <span className="whitespace-nowrap font-semibold text-on-surface-variant">De</span>
-                  <input
-                    type="date"
-                    value={customDateRange.from}
-                    onChange={(event) =>
-                      setCustomDateRange({
-                        ...customDateRange,
-                        from: event.target.value,
-                      })
-                    }
-                    className="w-full bg-transparent outline-none"
-                  />
-                </label>
-                <label className="brandops-input flex items-center gap-2 px-2 py-1.5 text-xs">
-                  <span className="whitespace-nowrap font-semibold text-on-surface-variant">Até</span>
-                  <input
-                    type="date"
-                    value={customDateRange.to}
-                    onChange={(event) =>
-                      setCustomDateRange({
-                        ...customDateRange,
-                        to: event.target.value,
-                      })
-                    }
-                    className="w-full bg-transparent outline-none"
-                  />
-                </label>
+            <div className="flex flex-col gap-3 border-t border-outline pt-3">
+              <div className="brandops-filterbar">
+                {periodOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    data-active={selectedPeriod === opt.value}
+                    className="brandops-filter-pill"
+                    onClick={() => setSelectedPeriod(opt.value)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
-            )}
+
+              {selectedPeriod === "custom" && (
+                <div className="grid gap-2 sm:grid-cols-2 xl:max-w-[420px]">
+                  <label className="brandops-input flex items-center gap-2 px-3 py-2 text-xs">
+                    <span className="whitespace-nowrap font-semibold text-on-surface-variant">De</span>
+                    <input
+                      type="date"
+                      value={customDateRange.from}
+                      onChange={(event) =>
+                        setCustomDateRange({
+                          ...customDateRange,
+                          from: event.target.value,
+                        })
+                      }
+                      className="w-full bg-transparent outline-none"
+                    />
+                  </label>
+                  <label className="brandops-input flex items-center gap-2 px-3 py-2 text-xs">
+                    <span className="whitespace-nowrap font-semibold text-on-surface-variant">Até</span>
+                    <input
+                      type="date"
+                      value={customDateRange.to}
+                      onChange={(event) =>
+                        setCustomDateRange({
+                          ...customDateRange,
+                          to: event.target.value,
+                        })
+                      }
+                      className="w-full bg-transparent outline-none"
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
 
             {/* Mobile Nav */}
             {isMobileMenuOpen && (

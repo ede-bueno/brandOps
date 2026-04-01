@@ -10,6 +10,9 @@
 
 # next.js
 /.next/
+/.next-dev/
+/.next-build/
+/.next-runtime/
 /out/
 
 # production
@@ -19,6 +22,7 @@
 .DS_Store
 *.pem
 .codex/
+.codex-*.log
 .playwright/
 .playwright-cli/
 /output/
