@@ -106,15 +106,15 @@ export default function MediaPage() {
           help="Gasto ativo da Meta no período saneado."
         />
         <MetricCard
-          label="Receita atribuída"
+          label="Receita Meta atribuída"
           value={currencyFormatter.format(attributedRevenue)}
           accent="positive"
-          help="Valor de conversão da compra exportado pela Meta."
+          help="Valor atribuído pela Meta. Pode divergir do faturado real conciliado na INK."
         />
         <MetricCard
           label="Compras Meta"
           value={integerFormatter.format(totalPurchases)}
-          help="Volume de compras atribuídas pela plataforma."
+          help="Compras atribuídas pela Meta. Não substitui pedidos pagos da INK."
         />
         <MetricCard
           label="Cliques no link"

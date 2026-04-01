@@ -203,7 +203,7 @@ export function BrandOpsProvider({
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
-      setIsLoading(false);
+      setIsLoading(Boolean(nextSession));
     });
 
     return () => {
@@ -225,6 +225,9 @@ export function BrandOpsProvider({
       }
 
       setIsLoading(true);
+      setActiveBrand(null);
+      setDashboardMetrics(null);
+      setDreMonthly(null);
       try {
         const [nextProfile, nextBrands] = await Promise.all([
           fetchUserProfile(userId),
@@ -282,6 +285,10 @@ export function BrandOpsProvider({
 
   const handleSetActiveBrandId = useCallback(
     (brandId: string) => {
+      setIsLoading(true);
+      setActiveBrand(null);
+      setDashboardMetrics(null);
+      setDreMonthly(null);
       setActiveBrandId(brandId);
       if (typeof window !== "undefined" && userId) {
         window.localStorage.setItem(getBrandContextStorageKey(userId), brandId);

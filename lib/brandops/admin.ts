@@ -1,4 +1,4 @@
-import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 function getBearerToken(request: Request) {
   const header = request.headers.get("authorization") ?? "";
@@ -12,7 +12,7 @@ async function getAuthenticatedContext(request: Request) {
     throw new Error("Sessão ausente.");
   }
 
-  const supabase = createSupabaseServiceRoleClient();
+  const supabase = createSupabaseServerClient(accessToken);
   const {
     data: { user },
     error: userError,

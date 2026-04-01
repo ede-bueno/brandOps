@@ -14,10 +14,10 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (session) {
+    if (!isLoading && session) {
       router.replace("/dashboard");
     }
-  }, [router, session]);
+  }, [isLoading, router, session]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
@@ -40,7 +40,6 @@ export default function LoginPage() {
             setIsSubmitting(true);
             try {
               await signIn(email, password);
-              router.replace("/dashboard");
             } catch (loginError) {
               setError(
                 loginError instanceof Error
