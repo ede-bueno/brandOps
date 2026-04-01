@@ -25,6 +25,7 @@ import {
   setCurrentCmv,
   setMediaSanitizationState,
   setOrderSanitizationState,
+  updateExpenseCategory as updateExpenseCategoryRecord,
   updateBrandExpense, 
   fetchDreMonthly
 } from "@/lib/brandops/database";
@@ -69,6 +70,7 @@ interface BrandOpsContextValue {
   dreMonthly: DreMonthlyDataset | null;
   isDreLoading: boolean;
   isLoading: boolean;
+  isBrandHydrating: boolean;
   errorMessage: string | null;
   selectedPeriod: PeriodFilter;
   selectedPeriodLabel: string;
@@ -97,6 +99,12 @@ interface BrandOpsContextValue {
   keepOrder: (brandId: string, orderNumber: string, reason?: string) => Promise<void>;
   restoreOrder: (brandId: string, orderNumber: string) => Promise<void>;
   createExpenseCategory: (brandId: string, name: string, color?: string) => Promise<void>;
+  updateExpenseCategory: (
+    brandId: string,
+    categoryId: string,
+    name: string,
+    color: string,
+  ) => Promise<void>;
   createExpense: (
     brandId: string,
     categoryId: string,
@@ -133,6 +141,7 @@ export function BrandOpsProvider({
   const [activeBrandId, setActiveBrandId] = useState<string | null>(null);
   const [activeBrand, setActiveBrand] = useState<BrandDataset | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBrandHydrating, setIsBrandHydrating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [dreMonthly, setDreMonthly] = useState<DreMonthlyDataset | null>(null);
   const [isDreLoading, setIsDreLoading] = useState(false);
@@ -144,7 +153,18 @@ export function BrandOpsProvider({
     to: "",
   });
   const sessionUserIdRef = useRef<string | null>(null);
+  const activeBrandIdRef = useRef<string | null>(null);
+  const brandLoadRequestRef = useRef(0);
+  const summaryLoadRequestRef = useRef(0);
+  const dreLoadRequestRef = useRef(0);
+  const lastVisibleRefreshRef = useRef(0);
+  const fullHydrationTimerRef = useRef<number | null>(null);
   const userId = session?.user?.id ?? null;
+
+  useEffect(() => {
+    activeBrandIdRef.current = activeBrandId;
+  }, [activeBrandId]);
+
   const periodReferenceDate = useMemo(() => {
     if (!activeBrand) {
       return null;
@@ -174,30 +194,238 @@ export function BrandOpsProvider({
     [activeBrand, periodRange],
   );
 
-  const refreshBrandResources = useCallback(async (brandId: string) => {
-    const dataset = await fetchBrandDataset(brandId);
-    setActiveBrand(dataset);
+  const refreshBrandResources = useCallback(async (
+    brandId: string,
+    scope: "core" | "full" = "core",
+  ) => {
+    const dataset = await fetchBrandDataset(brandId, { scope });
+    if (activeBrandIdRef.current === brandId) {
+      setActiveBrand(dataset);
+    }
+    return dataset;
+  }, []);
+
+  const cancelScheduledFullHydration = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (fullHydrationTimerRef.current !== null) {
+      window.clearTimeout(fullHydrationTimerRef.current);
+      fullHydrationTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleFullHydration = useCallback(
+    (brandId: string, requestId: number) => {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      cancelScheduledFullHydration();
+      fullHydrationTimerRef.current = window.setTimeout(async () => {
+        try {
+          await refreshBrandResources(brandId, "full");
+        } catch (error) {
+          console.error("Failed to hydrate auxiliary brand dataset:", error);
+        } finally {
+          if (brandLoadRequestRef.current === requestId) {
+            setIsBrandHydrating(false);
+          }
+          fullHydrationTimerRef.current = null;
+        }
+      }, 250);
+    },
+    [cancelScheduledFullHydration, refreshBrandResources],
+  );
+
+  const refreshDashboardResources = useCallback(
+    async (brandId: string) => {
+      const kpis = await fetchDashboardKpis(
+        brandId,
+        periodRange?.start ?? null,
+        periodRange?.end ?? null,
+      ).catch((error) => {
+        console.error("Failed to load dashboard KPIs from backend:", error);
+        return null;
+      });
+
+      if (activeBrandIdRef.current === brandId) {
+        setBackendKpis(kpis);
+      }
+    },
+    [periodRange?.end, periodRange?.start],
+  );
+
+  const refreshDreResources = useCallback(async (brandId: string) => {
+    const dreData = await fetchDreMonthly(brandId).catch((error) => {
+      console.error("Failed to load DRE monthly from backend:", error);
+      return null;
+    });
+
+    if (activeBrandIdRef.current === brandId) {
+      setDreMonthly(dreData);
+    }
   }, []);
 
   const refreshSummaryResources = useCallback(
-    async (brandId: string) => {
-      const [kpis, dreData] = await Promise.all([
-        fetchDashboardKpis(brandId, periodRange?.start ?? null, periodRange?.end ?? null).catch(
-          (error) => {
-            console.error("Failed to load dashboard KPIs from backend:", error);
-            return null;
-          },
-        ),
-        fetchDreMonthly(brandId).catch((error) => {
-          console.error("Failed to load DRE monthly from backend:", error);
-          return null;
-        }),
-      ]);
-
-      setBackendKpis(kpis);
-      setDreMonthly(dreData);
+    async (brandId: string, options?: { includeDre?: boolean }) => {
+      await refreshDashboardResources(brandId);
+      if (options?.includeDre) {
+        await refreshDreResources(brandId);
+      }
     },
-    [periodRange?.end, periodRange?.start],
+    [refreshDashboardResources, refreshDreResources],
+  );
+
+  const applyOptimisticSanitizationDecision = useCallback(
+    (
+      target: "MEDIA" | "ORDER",
+      targetId: string,
+      status: "PENDING" | "KEPT" | "IGNORED",
+      note?: string,
+    ) => {
+      const reviewedAt = new Date().toISOString();
+      const sanitizedAt = status === "PENDING" ? null : reviewedAt;
+      const nextNote = status === "PENDING" ? null : note?.trim() || null;
+
+      setActiveBrand((current) => {
+        if (!current) {
+          return current;
+        }
+
+        const currentMediaRow = current.media.find((row) => row.id === targetId);
+        const currentOrder = current.paidOrders.find(
+          (order) => order.id === targetId || order.orderNumber === targetId,
+        );
+
+        const media =
+          target === "MEDIA"
+            ? current.media.map((row) => {
+                if (row.id !== targetId) {
+                  return row;
+                }
+
+                return {
+                  ...row,
+                  isIgnored: status === "IGNORED",
+                  ignoreReason: status === "IGNORED" ? nextNote : null,
+                  sanitizationStatus: status,
+                  sanitizationNote: nextNote,
+                  sanitizedAt,
+                  sanitizedBy: status === "PENDING" ? null : userId,
+                };
+              })
+            : current.media;
+
+        const paidOrders =
+          target === "ORDER"
+            ? current.paidOrders.map((order) => {
+                if (order.id !== targetId && order.orderNumber !== targetId) {
+                  return order;
+                }
+
+                return {
+                  ...order,
+                  isIgnored: status === "IGNORED",
+                  ignoreReason: status === "IGNORED" ? nextNote : null,
+                  sanitizationStatus: status,
+                  sanitizationNote: nextNote,
+                  sanitizedAt,
+                  sanitizedBy: status === "PENDING" ? null : userId,
+                };
+              })
+            : current.paidOrders;
+
+        const orderItems =
+          target === "ORDER"
+            ? current.orderItems.map((item) =>
+                item.orderNumber === (currentOrder?.orderNumber ?? targetId)
+                  ? {
+                      ...item,
+                      isIgnored: status === "IGNORED",
+                      ignoreReason: status === "IGNORED" ? nextNote : null,
+                    }
+                  : item,
+              )
+            : current.orderItems;
+
+        const salesLines =
+          target === "ORDER"
+            ? current.salesLines.map((line) =>
+                line.orderNumber === (currentOrder?.orderNumber ?? targetId)
+                  ? {
+                      ...line,
+                      isIgnored: status === "IGNORED",
+                      ignoreReason: status === "IGNORED" ? nextNote : null,
+                    }
+                  : line,
+              )
+            : current.salesLines;
+
+        const sourceTable = target === "MEDIA" ? "media_performance" : "orders";
+        const sourceKey =
+          target === "MEDIA"
+            ? currentMediaRow?.rowHash ?? null
+            : currentOrder?.orderNumber ?? null;
+        const sourceRowId =
+          target === "MEDIA" ? currentMediaRow?.id ?? targetId : currentOrder?.id ?? targetId;
+
+        return {
+          ...current,
+          media,
+          paidOrders,
+          orderItems,
+          salesLines,
+          sanitizationReviews: [
+            {
+              id: `optimistic-${target.toLowerCase()}-${sourceRowId}-${Date.now()}`,
+              sourceTable,
+              sourceRowId,
+              sourceKey,
+              anomalyType: "sanitization_state",
+              action: status,
+              reason: nextNote,
+              reviewedBy: userId,
+              reviewedAt,
+            },
+            ...current.sanitizationReviews.filter(
+              (review) =>
+                !(
+                  review.id.startsWith("optimistic-") &&
+                  review.sourceTable === sourceTable &&
+                  (review.sourceRowId === sourceRowId ||
+                    (sourceKey !== null && review.sourceKey === sourceKey))
+                ),
+            ),
+          ],
+        };
+      });
+    },
+    [userId],
+  );
+
+  const refreshAfterMutation = useCallback(
+    (brandId: string, includeDataset = true, includeDre = false) => {
+      void (async () => {
+        try {
+          if (includeDataset) {
+            await refreshBrandResources(brandId);
+          }
+
+          await refreshSummaryResources(brandId, { includeDre });
+          setErrorMessage(null);
+        } catch (error) {
+          console.error("Failed to refresh brand data after mutation:", error);
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : "Não foi possível atualizar os dados da marca.",
+          );
+        }
+      })();
+    },
+    [refreshBrandResources, refreshSummaryResources],
   );
 
   const dashboardMetrics = useMemo(() => {
@@ -209,28 +437,55 @@ export function BrandOpsProvider({
     async function loadDashboardMetrics() {
       if (!activeBrandId) {
         setBackendKpis(null);
-        setDreMonthly(null);
         setIsMetricsLoading(false);
-        setIsDreLoading(false);
         return;
       }
 
+      const requestId = ++summaryLoadRequestRef.current;
       setIsMetricsLoading(true);
-      setIsDreLoading(true);
       try {
-        await refreshSummaryResources(activeBrandId);
+        await refreshDashboardResources(activeBrandId);
       } catch (error) {
         console.error("Failed to load dashboard KPIs from backend:", error);
-        setBackendKpis(null);
-        setDreMonthly(null);
+        if (summaryLoadRequestRef.current === requestId) {
+          setBackendKpis(null);
+        }
       } finally {
-        setIsMetricsLoading(false);
-        setIsDreLoading(false);
+        if (summaryLoadRequestRef.current === requestId) {
+          setIsMetricsLoading(false);
+        }
       }
     }
 
     void loadDashboardMetrics();
-  }, [activeBrandId, refreshSummaryResources]);
+  }, [activeBrandId, refreshDashboardResources]);
+
+  useEffect(() => {
+    async function loadDreMonthlyData() {
+      if (!activeBrandId) {
+        setDreMonthly(null);
+        setIsDreLoading(false);
+        return;
+      }
+
+      const requestId = ++dreLoadRequestRef.current;
+      setIsDreLoading(true);
+      try {
+        await refreshDreResources(activeBrandId);
+      } catch (error) {
+        console.error("Failed to load DRE monthly from backend:", error);
+        if (dreLoadRequestRef.current === requestId) {
+          setDreMonthly(null);
+        }
+      } finally {
+        if (dreLoadRequestRef.current === requestId) {
+          setIsDreLoading(false);
+        }
+      }
+    }
+
+    void loadDreMonthlyData();
+  }, [activeBrandId, refreshDreResources]);
 
   useEffect(() => {
     let isMounted = true;
@@ -275,6 +530,7 @@ export function BrandOpsProvider({
         setBrands([]);
         setActiveBrandId(null);
         setActiveBrand(null);
+        setIsBrandHydrating(false);
         setBackendKpis(null);
         setDreMonthly(null);
         setErrorMessage(null);
@@ -345,6 +601,7 @@ export function BrandOpsProvider({
     (brandId: string) => {
       setIsLoading(true);
       setActiveBrand(null);
+      setIsBrandHydrating(true);
       setBackendKpis(null);
       setDreMonthly(null);
       setActiveBrandId(brandId);
@@ -356,32 +613,53 @@ export function BrandOpsProvider({
   );
 
   useEffect(() => {
-    async function loadBrand() {
-      if (!userId || !activeBrandId) {
-        setActiveBrand(null);
-        setIsLoading(false);
+      async function loadBrand() {
+        if (!userId || !activeBrandId) {
+          cancelScheduledFullHydration();
+          setActiveBrand(null);
+          setIsBrandHydrating(false);
+          setIsLoading(false);
         return;
       }
 
-      setIsLoading(true);
-      try {
-        await refreshBrandResources(activeBrandId);
-        setErrorMessage(null);
-      } catch (error) {
-        console.error("Failed to load active brand dataset:", error);
-        setActiveBrand(null);
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "Não foi possível carregar os dados da marca.",
-        );
+        const requestId = ++brandLoadRequestRef.current;
+        cancelScheduledFullHydration();
+        setIsLoading(true);
+        setIsBrandHydrating(true);
+        try {
+          if (brandLoadRequestRef.current === requestId) {
+            await refreshBrandResources(activeBrandId, "core");
+            setErrorMessage(null);
+            setIsLoading(false);
+          }
+
+          scheduleFullHydration(activeBrandId, requestId);
+        } catch (error) {
+          console.error("Failed to load active brand dataset:", error);
+          if (brandLoadRequestRef.current === requestId) {
+          setActiveBrand(null);
+          setIsBrandHydrating(false);
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : "Não foi possível carregar os dados da marca.",
+          );
+        }
       } finally {
-        setIsLoading(false);
+        if (brandLoadRequestRef.current === requestId && !activeBrandIdRef.current) {
+          setIsLoading(false);
+        }
       }
     }
 
     void loadBrand();
-  }, [activeBrandId, refreshBrandResources, userId]);
+    }, [activeBrandId, cancelScheduledFullHydration, refreshBrandResources, scheduleFullHydration, userId]);
+
+  useEffect(() => {
+    return () => {
+      cancelScheduledFullHydration();
+    };
+  }, [cancelScheduledFullHydration]);
 
   useEffect(() => {
     if (typeof document === "undefined" || !userId || !activeBrandId) {
@@ -392,6 +670,12 @@ export function BrandOpsProvider({
       if (document.visibilityState !== "visible") {
         return;
       }
+
+      const now = Date.now();
+      if (now - lastVisibleRefreshRef.current < 45_000) {
+        return;
+      }
+      lastVisibleRefreshRef.current = now;
 
       void refreshSummaryResources(activeBrandId)
         .then(() => {
@@ -430,6 +714,7 @@ export function BrandOpsProvider({
       dreMonthly,
       isDreLoading,
       isLoading,
+      isBrandHydrating,
       errorMessage,
       selectedPeriod,
       selectedPeriodLabel: getPeriodLabel(selectedPeriod, customDateRange),
@@ -462,87 +747,94 @@ export function BrandOpsProvider({
         const refreshedBrands = await fetchAccessibleBrands();
         setBrands(refreshedBrands);
         setActiveBrandId(brandId);
-        await refreshBrandResources(brandId);
-        await refreshSummaryResources(brandId);
+        await refreshBrandResources(brandId, "full");
+        await refreshSummaryResources(brandId, { includeDre: true });
         setErrorMessage(null);
       },
       saveCmvEntry: async (brandId, productId, _productName, unitCost) => {
         await setCurrentCmv(brandId, productId, unitCost);
         if (activeBrandId === brandId) {
-          await refreshBrandResources(brandId);
-          await refreshSummaryResources(brandId);
+          await refreshBrandResources(brandId, "full");
+          await refreshSummaryResources(brandId, { includeDre: true });
         }
         setErrorMessage(null);
       },
       saveCmvRule: async (brandId, matchType, matchValue, matchLabel, unitCost, validFrom) => {
         await saveCmvRule(brandId, matchType, matchValue, matchLabel, unitCost, validFrom);
         if (activeBrandId === brandId) {
-          await refreshBrandResources(brandId);
-          await refreshSummaryResources(brandId);
+          await refreshBrandResources(brandId, "full");
+          await refreshSummaryResources(brandId, { includeDre: true });
         }
         setErrorMessage(null);
       },
       applyCmvCheckpoint: async (brandId, note, createdAt) => {
         await applyCmvCheckpoint(brandId, note, createdAt);
         if (activeBrandId === brandId) {
-          await refreshBrandResources(brandId);
-          await refreshSummaryResources(brandId);
+          await refreshBrandResources(brandId, "full");
+          await refreshSummaryResources(brandId, { includeDre: true });
         }
         setErrorMessage(null);
       },
       ignoreMediaRow: async (mediaRowId, reason) => {
         await setMediaSanitizationState(mediaRowId, "IGNORED", reason);
         if (activeBrandId) {
-          await refreshBrandResources(activeBrandId);
-          await refreshSummaryResources(activeBrandId);
+          applyOptimisticSanitizationDecision("MEDIA", mediaRowId, "IGNORED", reason);
+          refreshAfterMutation(activeBrandId);
         }
         setErrorMessage(null);
       },
       keepMediaRow: async (mediaRowId, reason) => {
         await setMediaSanitizationState(mediaRowId, "KEPT", reason);
         if (activeBrandId) {
-          await refreshBrandResources(activeBrandId);
-          await refreshSummaryResources(activeBrandId);
+          applyOptimisticSanitizationDecision("MEDIA", mediaRowId, "KEPT", reason);
+          refreshAfterMutation(activeBrandId);
         }
         setErrorMessage(null);
       },
       restoreMediaRow: async (mediaRowId) => {
         await setMediaSanitizationState(mediaRowId, "PENDING");
         if (activeBrandId) {
-          await refreshBrandResources(activeBrandId);
-          await refreshSummaryResources(activeBrandId);
+          applyOptimisticSanitizationDecision("MEDIA", mediaRowId, "PENDING");
+          refreshAfterMutation(activeBrandId);
         }
         setErrorMessage(null);
       },
       ignoreOrder: async (brandId, orderNumber, reason) => {
         await setOrderSanitizationState(brandId, orderNumber, "IGNORED", reason);
         if (activeBrandId === brandId) {
-          await refreshBrandResources(brandId);
-          await refreshSummaryResources(brandId);
+          applyOptimisticSanitizationDecision("ORDER", orderNumber, "IGNORED", reason);
+          refreshAfterMutation(brandId);
         }
         setErrorMessage(null);
       },
       keepOrder: async (brandId, orderNumber, reason) => {
         await setOrderSanitizationState(brandId, orderNumber, "KEPT", reason);
         if (activeBrandId === brandId) {
-          await refreshBrandResources(brandId);
-          await refreshSummaryResources(brandId);
+          applyOptimisticSanitizationDecision("ORDER", orderNumber, "KEPT", reason);
+          refreshAfterMutation(brandId);
         }
         setErrorMessage(null);
       },
       restoreOrder: async (brandId, orderNumber) => {
         await setOrderSanitizationState(brandId, orderNumber, "PENDING");
         if (activeBrandId === brandId) {
-          await refreshBrandResources(brandId);
-          await refreshSummaryResources(brandId);
+          applyOptimisticSanitizationDecision("ORDER", orderNumber, "PENDING");
+          refreshAfterMutation(brandId);
         }
         setErrorMessage(null);
       },
       createExpenseCategory: async (brandId, name, color) => {
         await createExpenseCategory(brandId, name, color);
         if (activeBrandId === brandId) {
-          await refreshBrandResources(brandId);
-          await refreshSummaryResources(brandId);
+          await refreshBrandResources(brandId, "core");
+          await refreshSummaryResources(brandId, { includeDre: true });
+        }
+        setErrorMessage(null);
+      },
+      updateExpenseCategory: async (brandId, categoryId, name, color) => {
+        await updateExpenseCategoryRecord(categoryId, name, color);
+        if (activeBrandId === brandId) {
+          await refreshBrandResources(brandId, "core");
         }
         setErrorMessage(null);
       },
@@ -552,24 +844,24 @@ export function BrandOpsProvider({
         }
         await createBrandExpense(brandId, categoryId, description, amount, incurredOn, userId);
         if (activeBrandId === brandId) {
-          await refreshBrandResources(brandId);
-          await refreshSummaryResources(brandId);
+          await refreshBrandResources(brandId, "core");
+          await refreshSummaryResources(brandId, { includeDre: true });
         }
         setErrorMessage(null);
       },
       updateExpense: async (brandId, expenseId, categoryId, description, amount, incurredOn) => {
         await updateBrandExpense(expenseId, categoryId, description, amount, incurredOn);
         if (activeBrandId === brandId) {
-          await refreshBrandResources(brandId);
-          await refreshSummaryResources(brandId);
+          await refreshBrandResources(brandId, "core");
+          await refreshSummaryResources(brandId, { includeDre: true });
         }
         setErrorMessage(null);
       },
       deleteExpense: async (brandId, expenseId) => {
         await deleteBrandExpense(expenseId);
         if (activeBrandId === brandId) {
-          await refreshBrandResources(brandId);
-          await refreshSummaryResources(brandId);
+          await refreshBrandResources(brandId, "core");
+          await refreshSummaryResources(brandId, { includeDre: true });
         }
         setErrorMessage(null);
       },
@@ -578,8 +870,8 @@ export function BrandOpsProvider({
           return;
         }
         try {
-          await refreshBrandResources(activeBrandId);
-          await refreshSummaryResources(activeBrandId);
+          await refreshBrandResources(activeBrandId, "full");
+          await refreshSummaryResources(activeBrandId, { includeDre: true });
           setErrorMessage(null);
         } catch (error) {
           setErrorMessage(
@@ -602,6 +894,7 @@ export function BrandOpsProvider({
       dreMonthly,
       isDreLoading,
       handleSetActiveBrandId,
+      isBrandHydrating,
       isLoading,
       profile,
       customDateRange,
@@ -610,6 +903,8 @@ export function BrandOpsProvider({
       userId,
       refreshBrandResources,
       refreshSummaryResources,
+      applyOptimisticSanitizationDecision,
+      refreshAfterMutation,
     ],
   );
 

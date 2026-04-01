@@ -180,6 +180,24 @@ function resolveMediaSource(
   return "manual_csv";
 }
 
+function resolveCommercialOrderValue(row: {
+  gross_revenue?: number | null;
+  net_revenue?: number | null;
+}) {
+  const grossRevenue = Number(row.gross_revenue ?? 0);
+  const netRevenue = Number(row.net_revenue ?? 0);
+
+  if (grossRevenue > 0 && netRevenue > 0) {
+    return Math.max(grossRevenue, netRevenue);
+  }
+
+  if (grossRevenue > 0) {
+    return grossRevenue;
+  }
+
+  return netRevenue;
+}
+
 function buildMediaMergeKey(row: Pick<MediaRow, "date" | "campaignName" | "adsetName" | "adName">) {
   return [
     row.date ?? "",
@@ -221,7 +239,14 @@ export async function fetchAccessibleBrands() {
   return data;
 }
 
-export async function fetchBrandDataset(brandId: string) {
+export async function fetchBrandDataset(
+  brandId: string,
+  options?: {
+    scope?: "core" | "full";
+  },
+) {
+  const scope = options?.scope ?? "full";
+  const shouldLoadFull = scope === "full";
   const [
     brandResult,
     productsResult,
@@ -244,13 +269,15 @@ export async function fetchBrandDataset(brandId: string) {
       .select("id, name, created_at, updated_at")
       .eq("id", brandId)
       .single(),
-    fetchAllRows(async (from, to) =>
-      supabase
-        .from("products")
-        .select("sku, title, image_url, product_url, price, sale_price, attributes")
-        .eq("brand_id", brandId)
-        .range(from, to),
-    ),
+    shouldLoadFull
+      ? fetchAllRows(async (from, to) =>
+          supabase
+            .from("products")
+            .select("sku, title, image_url, product_url, price, sale_price, attributes")
+            .eq("brand_id", brandId)
+            .range(from, to),
+        )
+      : Promise.resolve([]),
     fetchAllRows(async (from, to) =>
       supabase
         .from("orders")
@@ -269,15 +296,17 @@ export async function fetchBrandDataset(brandId: string) {
         .eq("brand_id", brandId)
         .range(from, to),
     ),
-    fetchAllRows(async (from, to) =>
-      supabase
-        .from("sales_lines")
-        .select(
-          "id, order_number, order_date, product_id, product_name, quantity, unit_price, order_discount_value, shipping_value, order_status, sku, is_ignored, ignore_reason",
+    shouldLoadFull
+      ? fetchAllRows(async (from, to) =>
+          supabase
+            .from("sales_lines")
+            .select(
+              "id, order_number, order_date, product_id, product_name, quantity, unit_price, order_discount_value, shipping_value, order_status, sku, is_ignored, ignore_reason",
+            )
+            .eq("brand_id", brandId)
+            .range(from, to),
         )
-        .eq("brand_id", brandId)
-        .range(from, to),
-    ),
+      : Promise.resolve([]),
     fetchAllRows(async (from, to) =>
       supabase
         .from("media_performance")
@@ -287,22 +316,26 @@ export async function fetchBrandDataset(brandId: string) {
         .eq("brand_id", brandId)
         .range(from, to),
     ),
-    fetchAllRows(async (from, to) =>
-      supabase
-        .from("cmv_history")
-        .select("id, match_type, match_value, match_label, cmv_unit, source, valid_from, valid_to, updated_at")
-        .eq("brand_id", brandId)
-        .order("valid_from", { ascending: false })
-        .range(from, to),
-    ),
-    fetchAllRows(async (from, to) =>
-      supabase
-        .from("cmv_checkpoints")
-        .select("id, created_at, note, items_updated, unmatched_items")
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false })
-        .range(from, to),
-    ),
+    shouldLoadFull
+      ? fetchAllRows(async (from, to) =>
+          supabase
+            .from("cmv_history")
+            .select("id, match_type, match_value, match_label, cmv_unit, source, valid_from, valid_to, updated_at")
+            .eq("brand_id", brandId)
+            .order("valid_from", { ascending: false })
+            .range(from, to),
+        )
+      : Promise.resolve([]),
+    shouldLoadFull
+      ? fetchAllRows(async (from, to) =>
+          supabase
+            .from("cmv_checkpoints")
+            .select("id, created_at, note, items_updated, unmatched_items")
+            .eq("brand_id", brandId)
+            .order("created_at", { ascending: false })
+            .range(from, to),
+        )
+      : Promise.resolve([]),
     supabase
       .from("expense_categories")
       .select("id, name, color, is_system, brand_id")
@@ -318,41 +351,45 @@ export async function fetchBrandDataset(brandId: string) {
       .select("id, provider, mode, settings, last_sync_at, last_sync_status, last_sync_error")
       .eq("brand_id", brandId)
       .order("provider"),
-    fetchAllRows(async (from, to) =>
-      supabase
-        .from("ga4_daily_performance")
-        .select(
-          "id, date, source_medium, campaign_name, landing_page, sessions, total_users, page_views, add_to_carts, begin_checkouts, purchases, purchase_revenue, last_synced_at",
+    shouldLoadFull
+      ? fetchAllRows(async (from, to) =>
+          supabase
+            .from("ga4_daily_performance")
+            .select(
+              "id, date, source_medium, campaign_name, landing_page, sessions, total_users, page_views, add_to_carts, begin_checkouts, purchases, purchase_revenue, last_synced_at",
+            )
+            .eq("brand_id", brandId)
+            .order("date", { ascending: true })
+            .range(from, to),
         )
-        .eq("brand_id", brandId)
-        .order("date", { ascending: true })
-        .range(from, to),
-    ),
-    fetchAllRows(async (from, to) =>
-      supabase
-        .from("ga4_item_daily_performance")
-        .select(
-          "id, date, item_id, item_name, item_brand, item_category, item_views, add_to_carts, checkouts, ecommerce_purchases, item_purchase_quantity, item_revenue, cart_to_view_rate, purchase_to_view_rate, last_synced_at",
+      : Promise.resolve([]),
+    shouldLoadFull
+      ? fetchAllRows(async (from, to) =>
+          supabase
+            .from("ga4_item_daily_performance")
+            .select(
+              "id, date, item_id, item_name, item_brand, item_category, item_views, add_to_carts, checkouts, ecommerce_purchases, item_purchase_quantity, item_revenue, cart_to_view_rate, purchase_to_view_rate, last_synced_at",
+            )
+            .eq("brand_id", brandId)
+            .order("date", { ascending: true })
+            .range(from, to),
         )
-        .eq("brand_id", brandId)
-        .order("date", { ascending: true })
-        .range(from, to),
-    ),
-    fetchAllRows(async (from, to) =>
-      supabase
-        .from("import_logs")
-        .select("file_type, file_name, created_at, records_processed, records_inserted")
-        .eq("brand_id", brandId)
-        .eq("status", "SUCCESS")
-        .order("created_at", { ascending: false })
-        .range(from, to),
-    ),
+      : Promise.resolve([]),
+    shouldLoadFull
+      ? fetchAllRows(async (from, to) =>
+          supabase
+            .from("import_logs")
+            .select("file_type, file_name, created_at, records_processed, records_inserted")
+            .eq("brand_id", brandId)
+            .eq("status", "SUCCESS")
+            .order("created_at", { ascending: false })
+            .range(from, to),
+        )
+      : Promise.resolve([]),
     fetchAllRows(async (from, to) =>
       supabase
         .from("anomaly_reviews")
-        .select(
-          "id, source_table, source_row_id, anomaly_type, action, reason, reviewed_by, reviewed_at",
-        )
+        .select("*")
         .eq("brand_id", brandId)
         .order("reviewed_at", { ascending: false })
         .range(from, to),
@@ -448,9 +485,9 @@ export async function fetchBrandDataset(brandId: string) {
       paymentStatus: row.payment_status ?? "",
       customerName: row.customer_name ?? "",
       itemsInOrder: row.items_in_order ?? 0,
-      // Na camada operacional da INK, `net_revenue` já representa o "Valor do Pedido"
-      // exportado. O campo `gross_revenue` ficou inconsistente em parte do histórico.
-      orderValue: Number(row.net_revenue ?? 0),
+      // Parte do histórico traz `gross_revenue` zerado. Quando os dois existem,
+      // usamos o maior valor para representar o faturado comercial exportado pela INK.
+      orderValue: resolveCommercialOrderValue(row),
       discountValue: Number(row.discount ?? 0),
       commissionValue: Number(row.commission_value ?? 0),
       couponName: row.coupon_name ?? null,
@@ -562,6 +599,7 @@ export async function fetchBrandDataset(brandId: string) {
       name: row.name,
       color: row.color ?? "#7C8DB5",
       isSystem: Boolean(row.is_system),
+      isActive: true,
     }));
 
   const expenses: BrandExpense[] =
@@ -596,7 +634,7 @@ export async function fetchBrandDataset(brandId: string) {
       id: row.id,
       sourceTable: row.source_table,
       sourceRowId: row.source_row_id,
-      sourceKey: null,
+      sourceKey: "source_key" in row ? (row.source_key ?? null) : null,
       anomalyType: row.anomaly_type,
       action:
         row.action === "KEPT" || row.action === "IGNORED" || row.action === "PENDING"
@@ -652,6 +690,11 @@ export async function fetchBrandDataset(brandId: string) {
     name: brandResult.data.name,
     createdAt: brandResult.data.created_at,
     updatedAt: brandResult.data.updated_at,
+    hydration: {
+      catalogLoaded: shouldLoadFull,
+      salesLinesLoaded: shouldLoadFull,
+      ga4ItemDailyLoaded: shouldLoadFull,
+    },
     files: mapLatestImportFiles(importLogsResult),
     catalog,
     paidOrders,
@@ -1394,6 +1437,28 @@ export async function createExpenseCategory(
       color,
       is_system: false,
     })
+    .select("id")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data.id as string;
+}
+
+export async function updateExpenseCategory(
+  categoryId: string,
+  name: string,
+  color: string,
+) {
+  const { data, error } = await supabase
+    .from("expense_categories")
+    .update({
+      name: name.trim(),
+      color,
+    })
+    .eq("id", categoryId)
     .select("id")
     .single();
 

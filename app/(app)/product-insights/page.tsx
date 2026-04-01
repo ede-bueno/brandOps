@@ -289,7 +289,7 @@ function exportInsightsCsv(insights: ProductInsightRow[]) {
 }
 
 export default function ProductInsightsPage() {
-  const { activeBrand, filteredBrand, selectedPeriodLabel } = useBrandOps();
+  const { activeBrand, filteredBrand, selectedPeriodLabel, isBrandHydrating } = useBrandOps();
   const [selectedInsightKey, setSelectedInsightKey] = useState<string>("");
   const [activeView, setActiveView] = useState<"overview" | "trend" | "detail">("overview");
 
@@ -366,6 +366,28 @@ export default function ProductInsightsPage() {
         .slice(0, 6),
     [insights],
   );
+
+  if (activeBrand && filteredBrand && isBrandHydrating && !currentRows.length) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Inteligência de produto"
+          title="Decisão por Estampa"
+          description={`Carregando os sinais de navegação e intenção de compra da loja ${activeBrand.name}.`}
+          badge={`Período analisado: ${selectedPeriodLabel}`}
+        />
+        <div className="space-y-6 animate-pulse">
+          <div className="grid gap-4 md:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-24 rounded-2xl bg-surface-container" />
+            ))}
+          </div>
+          <div className="h-[360px] rounded-3xl bg-surface-container" />
+          <div className="h-[420px] rounded-3xl bg-surface-container" />
+        </div>
+      </div>
+    );
+  }
 
   if (!activeBrand || !filteredBrand || !currentRows.length) {
     return (

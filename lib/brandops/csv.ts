@@ -28,6 +28,17 @@ function normalizeHeader(header: string) {
   return header.trim().replace(/\uFEFF/g, "");
 }
 
+function getFirstRecordValue(record: CsvRecord, candidates: string[]) {
+  for (const candidate of candidates) {
+    const value = record[candidate];
+    if (typeof value === "string" && value.trim()) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
 function ensureUniqueHeaders(headers: string[]) {
   const counts = new Map<string, number>();
   return headers.map((header) => {
@@ -208,7 +219,16 @@ function parsePaidOrders(records: CsvRecord[]): PaidOrder[] {
     itemsInOrder: parseIntegerLike(record["Items no Pedido"]),
     orderValue: parseCurrencyLike(record["Valor do Pedido"]),
     discountValue: parseCurrencyLike(record["Valor do Desconto"]),
-    commissionValue: parseCurrencyLike(record.Comissao),
+    commissionValue: parseCurrencyLike(
+      getFirstRecordValue(record, [
+        "Comissao",
+        "Comissão",
+        "Comissao (R$)",
+        "Comissão (R$)",
+        "Comissao INK",
+        "Comissão INK",
+      ]),
+    ),
     couponName: record["Nome do Cupom"]?.trim() || null,
     source: record.Origem,
     trackingUrl: record["Link de Rastreio"],
@@ -345,6 +365,17 @@ export function mergeBrandDataset(
     name: brandName,
     createdAt: current?.createdAt ?? now,
     updatedAt: now,
+    hydration: {
+      catalogLoaded:
+        payload.catalog !== undefined
+          ? true
+          : current?.hydration.catalogLoaded ?? false,
+      salesLinesLoaded:
+        payload.salesLines !== undefined
+          ? true
+          : current?.hydration.salesLinesLoaded ?? false,
+      ga4ItemDailyLoaded: current?.hydration.ga4ItemDailyLoaded ?? false,
+    },
     files: {
       ...(current?.files ?? {}),
       [fileInfo.kind]: aggregateInfo,

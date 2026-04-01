@@ -11,6 +11,7 @@ import {
   FileUp,
   Images,
   LayoutDashboard,
+  Landmark,
   LogOut,
   Menu,
   PlugZap,
@@ -38,6 +39,7 @@ interface NavItem {
 const operationsNav: NavItem[] = [
   { href: "/dashboard", label: "Control Tower", icon: LayoutDashboard },
   { href: "/dre", label: "DRE Consolidado", icon: Receipt },
+  { href: "/cost-center", label: "Lançamentos DRE", icon: Landmark },
   { href: "/cmv", label: "Custos (CMV)", icon: Tags },
   { href: "/sales", label: "Vendas", icon: BarChart3 },
 ];

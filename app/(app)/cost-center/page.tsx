@@ -1,423 +1,1042 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState, type ReactNode } from "react";
+import {
+  Landmark,
+  Palette,
+  Pencil,
+  Plus,
+  ReceiptText,
+  Tags,
+  Trash2,
+  X,
+} from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
+import { MetricCard } from "@/components/MetricCard";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
-import { currencyFormatter } from "@/lib/brandops/format";
+import {
+  ActionToast,
+  PageHeader,
+  ProcessingOverlay,
+  SectionHeading,
+  SurfaceCard,
+} from "@/components/ui-shell";
+import { currencyFormatter, integerFormatter } from "@/lib/brandops/format";
 
-const COLORS = ["#0F9D73", "#2563EB", "#7C3AED", "#D97706", "#DC2626", "#475569"];
+type CostCenterTab = "launches" | "categories";
 
-function currentMonthValue() {
-  return new Date().toISOString().slice(0, 7);
+function CostCenterModal({
+  open,
+  title,
+  description,
+  onClose,
+  children,
+  mode = "side",
+}: {
+  open: boolean;
+  title: string;
+  description?: string;
+  onClose: () => void;
+  children: ReactNode;
+  mode?: "side" | "center";
+}) {
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-[85] bg-surface/70 backdrop-blur-sm">
+      <div
+        className={`flex h-full ${
+          mode === "side" ? "justify-end" : "items-center justify-center p-4"
+        }`}
+      >
+        <div
+          className={`brandops-panel border-outline shadow-2xl ${
+            mode === "side"
+              ? "h-full w-full max-w-xl overflow-y-auto rounded-none border-l p-6"
+              : "w-full max-w-lg p-6"
+          }`}
+        >
+          <div className="flex items-start justify-between gap-4 border-b border-outline pb-4">
+            <div>
+              <h2 className="font-headline text-xl font-semibold tracking-tight text-on-surface">
+                {title}
+              </h2>
+              {description ? (
+                <p className="mt-1 text-sm leading-6 text-on-surface-variant">{description}</p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-outline text-on-surface-variant transition hover:bg-surface-container"
+              onClick={onClose}
+              aria-label="Fechar"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="pt-5">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-function toCompetencyDate(value: string) {
+function normalizeMonthToDate(value: string) {
+  if (!value) {
+    return "";
+  }
   return `${value}-01`;
 }
 
-function parseCurrencyInput(value: string) {
-  return Number(value.trim().replace(/\./g, "").replace(",", "."));
-}
-
-function formatCompetency(value: string) {
+function formatCompetencyLabel(value: string) {
+  if (!value) {
+    return "-";
+  }
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
   return new Intl.DateTimeFormat("pt-BR", {
-    month: "short",
+    month: "long",
     year: "numeric",
-  }).format(new Date(`${value}-01T00:00:00`));
+  }).format(date);
 }
 
 export default function CostCenterPage() {
   const {
     activeBrand,
-    createExpense,
+    activeBrandId,
+    brands,
+    isLoading,
+    isBrandHydrating,
+    selectedPeriodLabel,
     createExpenseCategory,
+    updateExpenseCategory,
+    createExpense,
     updateExpense,
     deleteExpense,
   } = useBrandOps();
-  const [categoryName, setCategoryName] = useState("");
-  const [selectedColor, setSelectedColor] = useState(COLORS[0]);
+
+  const [activeTab, setActiveTab] = useState<CostCenterTab>("launches");
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [bookSearch, setBookSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [processingMessage, setProcessingMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ tone: "success" | "error"; message: string } | null>(null);
+
   const [expenseForm, setExpenseForm] = useState({
     categoryId: "",
     description: "",
     amount: "",
-    competency: currentMonthValue(),
+    month: "",
+  });
+  const [categoryForm, setCategoryForm] = useState({
+    name: "",
+    color: "#0ea5e9",
   });
 
-  const expenseCategories = useMemo(
-    () => activeBrand?.expenseCategories ?? [],
-    [activeBrand],
-  );
-  const expenses = useMemo(
-    () =>
-      activeBrand
-        ? [...activeBrand.expenses].sort((left, right) =>
-            right.incurredOn.localeCompare(left.incurredOn),
-          )
-        : [],
-    [activeBrand],
-  );
+  const selectedBrandName =
+    activeBrand?.name ?? brands.find((brand) => brand.id === activeBrandId)?.name ?? "Loja";
+
+  const expenseCategories = useMemo(() => {
+    return [...(activeBrand?.expenseCategories ?? [])].sort((left, right) => {
+      if (left.isSystem !== right.isSystem) {
+        return left.isSystem ? 1 : -1;
+      }
+      return left.name.localeCompare(right.name, "pt-BR");
+    });
+  }, [activeBrand?.expenseCategories]);
+
+  const expenses = useMemo(() => {
+    return [...(activeBrand?.expenses ?? [])].sort((left, right) =>
+      right.incurredOn.localeCompare(left.incurredOn),
+    );
+  }, [activeBrand?.expenses]);
+
+  const launchableCategories = expenseCategories.filter((category) => category.isActive);
+
+  const defaultMonth = useMemo(() => {
+    if (expenses[0]?.incurredOn) {
+      return expenses[0].incurredOn.slice(0, 7);
+    }
+    return new Date().toISOString().slice(0, 7);
+  }, [expenses]);
+
+  const bookEntries = useMemo(() => {
+    return expenses.filter((expense) => {
+      const matchesCategory =
+        categoryFilter === "all" ? true : expense.categoryId === categoryFilter;
+      const search = bookSearch.trim().toLowerCase();
+      const matchesSearch = search
+        ? expense.description.toLowerCase().includes(search) ||
+          expense.categoryName.toLowerCase().includes(search)
+        : true;
+
+      return matchesCategory && matchesSearch;
+    });
+  }, [bookSearch, categoryFilter, expenses]);
 
   const monthlyLedger = useMemo(() => {
-    const usedCategoryMap = new Map(
-      expenseCategories.map((category) => [category.id, category.name]),
-    );
-    const months = new Map<
+    const byMonth = new Map<
       string,
       {
-        monthKey: string;
+        month: string;
         total: number;
-        byCategory: Record<string, number>;
+        entries: number;
+        categories: Set<string>;
       }
     >();
 
     expenses.forEach((expense) => {
-      const monthKey = expense.incurredOn.slice(0, 7);
-      const current = months.get(monthKey) ?? {
-        monthKey,
+      const month = expense.incurredOn.slice(0, 7);
+      const current = byMonth.get(month) ?? {
+        month,
         total: 0,
-        byCategory: {},
+        entries: 0,
+        categories: new Set<string>(),
       };
+
       current.total += expense.amount;
-      current.byCategory[expense.categoryId] = (current.byCategory[expense.categoryId] ?? 0) + expense.amount;
-      months.set(monthKey, current);
-      usedCategoryMap.set(expense.categoryId, expense.categoryName);
+      current.entries += 1;
+      current.categories.add(expense.categoryName);
+      byMonth.set(month, current);
     });
 
-    const categories = [...usedCategoryMap.entries()].map(([id, name]) => ({ id, name }));
-    const rows = [...months.values()].sort((left, right) =>
-      right.monthKey.localeCompare(left.monthKey),
-    );
+    return [...byMonth.values()]
+      .sort((left, right) => right.month.localeCompare(left.month))
+      .map((row) => ({
+        month: row.month,
+        total: row.total,
+        entries: row.entries,
+        categories: row.categories.size,
+      }));
+  }, [expenses]);
 
-    return { categories, rows };
-  }, [expenseCategories, expenses]);
+  const categorySummary = useMemo(() => {
+    const totals = new Map<string, { categoryId: string; categoryName: string; total: number; entries: number }>();
 
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    expenses.forEach((expense) => {
+      const current = totals.get(expense.categoryId) ?? {
+        categoryId: expense.categoryId,
+        categoryName: expense.categoryName,
+        total: 0,
+        entries: 0,
+      };
 
-  if (!activeBrand) {
+      current.total += expense.amount;
+      current.entries += 1;
+      totals.set(expense.categoryId, current);
+    });
+
+    return [...totals.values()].sort((left, right) => right.total - left.total);
+  }, [expenses]);
+
+  const totalExpenses = useMemo(
+    () => expenses.reduce((accumulator, expense) => accumulator + expense.amount, 0),
+    [expenses],
+  );
+
+  const currentMonthTotal = useMemo(() => {
+    return expenses
+      .filter((expense) => expense.incurredOn.startsWith(defaultMonth))
+      .reduce((accumulator, expense) => accumulator + expense.amount, 0);
+  }, [defaultMonth, expenses]);
+
+  const activeMonthEntries = useMemo(
+    () => expenses.filter((expense) => expense.incurredOn.startsWith(defaultMonth)).length,
+    [defaultMonth, expenses],
+  );
+
+  const activeMonthCategories = useMemo(
+    () =>
+      new Set(
+        expenses
+          .filter((expense) => expense.incurredOn.startsWith(defaultMonth))
+          .map((expense) => expense.categoryId),
+      ).size,
+    [defaultMonth, expenses],
+  );
+
+  const resetExpenseForm = () => {
+    setExpenseForm({
+      categoryId: launchableCategories[0]?.id ?? "",
+      description: "",
+      amount: "",
+      month: defaultMonth,
+    });
+    setEditingExpenseId(null);
+  };
+
+  const resetCategoryForm = () => {
+    setCategoryForm({
+      name: "",
+      color: "#0ea5e9",
+    });
+    setEditingCategoryId(null);
+  };
+
+  const openNewExpenseModal = () => {
+    resetExpenseForm();
+    setIsExpenseModalOpen(true);
+  };
+
+  const openEditExpenseModal = (expenseId: string) => {
+    const expense = expenses.find((entry) => entry.id === expenseId);
+    if (!expense) {
+      return;
+    }
+
+    setEditingExpenseId(expense.id);
+    setExpenseForm({
+      categoryId: expense.categoryId,
+      description: expense.description,
+      amount: String(expense.amount),
+      month: expense.incurredOn.slice(0, 7),
+    });
+    setIsExpenseModalOpen(true);
+  };
+
+  const openNewCategoryModal = () => {
+    resetCategoryForm();
+    setIsCategoryModalOpen(true);
+  };
+
+  const openEditCategoryModal = (categoryId: string) => {
+    const category = expenseCategories.find((entry) => entry.id === categoryId);
+    if (!category) {
+      return;
+    }
+
+    setEditingCategoryId(category.id);
+    setCategoryForm({
+      name: category.name,
+      color: category.color,
+    });
+    setIsCategoryModalOpen(true);
+  };
+
+  const handleExpenseSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!activeBrandId) {
+      return;
+    }
+
+    if (!expenseForm.categoryId || !expenseForm.description.trim() || !expenseForm.amount || !expenseForm.month) {
+      setToast({
+        tone: "error",
+        message: "Preencha categoria, descrição, valor e competência.",
+      });
+      return;
+    }
+
+    const parsedAmount = Number(expenseForm.amount.replace(",", "."));
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setToast({
+        tone: "error",
+        message: "Informe um valor válido para o lançamento.",
+      });
+      return;
+    }
+
+    try {
+      setProcessingMessage(
+        editingExpenseId ? "Atualizando lançamento no DRE..." : "Registrando lançamento no DRE...",
+      );
+
+      if (editingExpenseId) {
+        await updateExpense(
+          activeBrandId,
+          editingExpenseId,
+          expenseForm.categoryId,
+          expenseForm.description.trim(),
+          parsedAmount,
+          normalizeMonthToDate(expenseForm.month),
+        );
+      } else {
+        await createExpense(
+          activeBrandId,
+          expenseForm.categoryId,
+          expenseForm.description.trim(),
+          parsedAmount,
+          normalizeMonthToDate(expenseForm.month),
+        );
+      }
+
+      setIsExpenseModalOpen(false);
+      resetExpenseForm();
+      setToast({
+        tone: "success",
+        message: editingExpenseId
+          ? "Lançamento atualizado com sucesso."
+          : "Lançamento criado com sucesso.",
+      });
+    } catch (error) {
+      setToast({
+        tone: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível salvar o lançamento agora.",
+      });
+    } finally {
+      setProcessingMessage(null);
+    }
+  };
+
+  const handleDeleteExpense = async (expenseId: string) => {
+    if (!activeBrandId) {
+      return;
+    }
+
+    try {
+      setProcessingMessage("Removendo lançamento...");
+      await deleteExpense(activeBrandId, expenseId);
+      setToast({
+        tone: "success",
+        message: "Lançamento removido com sucesso.",
+      });
+    } catch (error) {
+      setToast({
+        tone: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível remover o lançamento.",
+      });
+    } finally {
+      setProcessingMessage(null);
+    }
+  };
+
+  const handleCategorySubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!activeBrandId) {
+      return;
+    }
+
+    if (!categoryForm.name.trim()) {
+      setToast({
+        tone: "error",
+        message: "Informe um nome para a categoria.",
+      });
+      return;
+    }
+
+    try {
+      setProcessingMessage(
+        editingCategoryId ? "Atualizando categoria..." : "Criando categoria...",
+      );
+
+      if (editingCategoryId) {
+        await updateExpenseCategory(
+          activeBrandId,
+          editingCategoryId,
+          categoryForm.name.trim(),
+          categoryForm.color,
+        );
+      } else {
+        await createExpenseCategory(
+          activeBrandId,
+          categoryForm.name.trim(),
+          categoryForm.color,
+        );
+      }
+
+      setIsCategoryModalOpen(false);
+      resetCategoryForm();
+      setToast({
+        tone: "success",
+        message: editingCategoryId
+          ? "Categoria atualizada com sucesso."
+          : "Categoria criada com sucesso.",
+      });
+    } catch (error) {
+      setToast({
+        tone: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível salvar a categoria.",
+      });
+    } finally {
+      setProcessingMessage(null);
+    }
+  };
+
+  if (!activeBrandId) {
     return (
       <EmptyState
         title="Nenhuma marca em foco"
-        description="Selecione uma marca para lançar despesas operacionais e alimentar o DRE."
+        description="Selecione uma marca para organizar os lançamentos do DRE."
       />
     );
   }
 
-  const resetForm = () => {
-    setEditingExpenseId(null);
-    setExpenseForm({
-      categoryId: "",
-      description: "",
-      amount: "",
-      competency: currentMonthValue(),
-    });
-  };
-
-  const submitExpense = async () => {
-    const amount = parseCurrencyInput(expenseForm.amount);
-    if (!expenseForm.categoryId || !expenseForm.description.trim() || !Number.isFinite(amount)) {
-      return;
-    }
-
-    const incurredOn = toCompetencyDate(expenseForm.competency);
-    if (editingExpenseId) {
-      await updateExpense(
-        activeBrand.id,
-        editingExpenseId,
-        expenseForm.categoryId,
-        expenseForm.description,
-        amount,
-        incurredOn,
-      );
-    } else {
-      await createExpense(
-        activeBrand.id,
-        expenseForm.categoryId,
-        expenseForm.description,
-        amount,
-        incurredOn,
-      );
-    }
-
-    resetForm();
-  };
+  if ((isLoading || isBrandHydrating) && !activeBrand) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Fluxo financeiro"
+          title="Lançamentos DRE"
+          description={`Carregando os lançamentos da loja ${selectedBrandName}.`}
+          badge={`Período ativo: ${selectedPeriodLabel}`}
+        />
+        <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr] animate-pulse">
+          <div className="brandops-panel h-[360px]" />
+          <div className="brandops-panel h-[360px]" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Centro de custo"
-        title="Despesas operacionais"
-        description="Lance os custos fora mídia por competência mensal. Cada lançamento é registrado no dia 1º do mês para alimentar o DRE sem distorção."
+        eyebrow="Fluxo financeiro"
+        title="Lançamentos DRE"
+        description="Cadastre categorias, lance despesas por competência e revise o histórico mensal da operação."
+        badge={`Loja ativa: ${selectedBrandName}`}
+        actions={
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Link href="/dre" className="brandops-button brandops-button-secondary">
+              Abrir DRE
+            </Link>
+            <button
+              type="button"
+              className="brandops-button brandops-button-ghost"
+              onClick={openNewCategoryModal}
+            >
+              <Tags size={15} />
+              Nova categoria
+            </button>
+            <button
+              type="button"
+              className="brandops-button brandops-button-primary"
+              onClick={openNewExpenseModal}
+            >
+              <Plus size={15} />
+              Novo lançamento
+            </button>
+          </div>
+        }
       />
 
-      <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-        <div className="space-y-6">
-          <SurfaceCard>
+      <SurfaceCard>
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div>
             <SectionHeading
-              title="Nova categoria"
-              description="Use categorias simples para manter o DRE legível."
+              title="Escolha o fluxo"
+              description="Separe a gestão das categorias da operação de lançamento. Isso deixa a rotina financeira mais objetiva."
             />
-            <div className="mt-5 space-y-4">
-              <input
-                value={categoryName}
-                onChange={(event) => setCategoryName(event.target.value)}
-                placeholder="Ex.: Assinaturas de IA"
-                className="brandops-input w-full px-3 py-2.5"
-              />
-              <div className="flex flex-wrap gap-2">
-                {COLORS.map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setSelectedColor(color)}
-                    className={`h-10 w-10 rounded-full border-2 transition-all ${
-                      selectedColor === color ? "border-on-surface scale-105" : "border-transparent"
-                    }`}
-                    style={{ backgroundColor: color }}
-                    aria-label={color}
+          </div>
+          <div className="brandops-tabs">
+            <button
+              type="button"
+              className="brandops-tab"
+              data-active={activeTab === "launches"}
+              onClick={() => setActiveTab("launches")}
+            >
+              Lançamentos
+            </button>
+            <button
+              type="button"
+              className="brandops-tab"
+              data-active={activeTab === "categories"}
+              onClick={() => setActiveTab("categories")}
+            >
+              Categorias
+            </button>
+          </div>
+        </div>
+      </SurfaceCard>
+
+      {activeTab === "launches" ? (
+        <div className="space-y-6">
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              label="Competência em foco"
+              value={formatCompetencyLabel(`${defaultMonth}-01`)}
+              help="Mês padrão usado para leitura rápida e novos lançamentos."
+              icon={Landmark}
+            />
+            <MetricCard
+              label="Total no mês"
+              value={currencyFormatter.format(currentMonthTotal)}
+              help="Soma de despesas lançadas na competência em foco."
+              icon={ReceiptText}
+            />
+            <MetricCard
+              label="Lançamentos no mês"
+              value={integerFormatter.format(activeMonthEntries)}
+              help="Quantidade de movimentos lançados na competência ativa."
+              icon={ReceiptText}
+            />
+            <MetricCard
+              label="Categorias usadas"
+              value={integerFormatter.format(activeMonthCategories)}
+              help="Categorias que já apareceram na competência em foco."
+              icon={Tags}
+            />
+          </section>
+
+          <div className="grid gap-6 xl:grid-cols-[1.45fr_1fr]">
+            <SurfaceCard>
+              <div className="space-y-4">
+                <SectionHeading
+                  title="Tabela mensal de despesas"
+                  description="Visão consolidada por competência para entender rapidamente o peso das despesas no DRE."
+                  aside={`${monthlyLedger.length} competências registradas`}
+                />
+                {monthlyLedger.length ? (
+                  <div className="brandops-table-container">
+                    <table className="brandops-table-compact">
+                      <thead>
+                        <tr>
+                          <th>Mês</th>
+                          <th className="text-right">Lançamentos</th>
+                          <th className="text-right">Categorias</th>
+                          <th className="text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {monthlyLedger.map((row) => (
+                          <tr key={row.month}>
+                            <td className="font-medium text-on-surface">
+                              {formatCompetencyLabel(`${row.month}-01`)}
+                            </td>
+                            <td className="text-right">{integerFormatter.format(row.entries)}</td>
+                            <td className="text-right">
+                              {integerFormatter.format(row.categories)}
+                            </td>
+                            <td className="text-right font-semibold text-on-surface">
+                              {currencyFormatter.format(row.total)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <EmptyState
+                    title="Nenhuma despesa lançada"
+                    description="Crie o primeiro lançamento para começar a montar o DRE operacional."
+                    ctaLabel="Novo lançamento"
+                    ctaHref="/cost-center"
                   />
-                ))}
+                )}
               </div>
-              <button
-                onClick={async () => {
-                  if (!categoryName.trim()) return;
-                  await createExpenseCategory(activeBrand.id, categoryName, selectedColor);
-                  setCategoryName("");
-                }}
-                className="brandops-button brandops-button-secondary"
-              >
-                Criar categoria
-              </button>
-            </div>
-          </SurfaceCard>
+            </SurfaceCard>
+
+            <SurfaceCard>
+              <div className="space-y-4">
+                <SectionHeading
+                  title="Leitura por categoria"
+                  description="Distribuição acumulada das despesas por categoria para apoiar análise e revisão."
+                />
+                {categorySummary.length ? (
+                  <div className="space-y-3">
+                    {categorySummary.slice(0, 8).map((row) => (
+                      <div
+                        key={row.categoryId}
+                        className="rounded-xl border border-outline bg-surface-container-low p-3"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-on-surface">
+                              {row.categoryName}
+                            </p>
+                            <p className="text-xs text-on-surface-variant">
+                              {integerFormatter.format(row.entries)} lançamentos
+                            </p>
+                          </div>
+                          <p className="text-sm font-semibold text-on-surface">
+                            {currencyFormatter.format(row.total)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-outline p-4 text-sm text-on-surface-variant">
+                    As categorias começam a aparecer aqui conforme os lançamentos são feitos.
+                  </div>
+                )}
+              </div>
+            </SurfaceCard>
+          </div>
 
           <SurfaceCard>
-            <SectionHeading
-              title={editingExpenseId ? "Editar lançamento" : "Novo lançamento"}
-              description="A competência sempre é gravada no dia 1º do mês selecionado."
+            <div className="space-y-4">
+              <SectionHeading
+                title="Livro de lançamentos"
+                description="Histórico operacional para editar, revisar ou excluir movimentos do DRE."
+              />
+
+              <div className="grid gap-3 xl:grid-cols-[1fr_280px_180px_auto]">
+                <label className="space-y-1">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+                    Buscar
+                  </span>
+                  <input
+                    value={bookSearch}
+                    onChange={(event) => setBookSearch(event.target.value)}
+                    placeholder="Descrição ou categoria"
+                    className="brandops-input w-full"
+                  />
+                </label>
+
+                <label className="space-y-1">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+                    Categoria
+                  </span>
+                  <select
+                    value={categoryFilter}
+                    onChange={(event) => setCategoryFilter(event.target.value)}
+                    className="brandops-input w-full"
+                  >
+                    <option value="all">Todas as categorias</option>
+                    {expenseCategories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="rounded-xl border border-outline bg-surface-container-low px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-on-surface-variant">
+                    Total filtrado
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-on-surface">
+                    {currencyFormatter.format(
+                      bookEntries.reduce((accumulator, expense) => accumulator + expense.amount, 0),
+                    )}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  className="brandops-button brandops-button-primary h-[46px] self-end"
+                  onClick={openNewExpenseModal}
+                >
+                  <Plus size={15} />
+                  Lançar despesa
+                </button>
+              </div>
+
+              <div className="brandops-table-container">
+                <table className="brandops-table-compact">
+                  <thead>
+                    <tr>
+                      <th>Competência</th>
+                      <th>Categoria</th>
+                      <th>Descrição</th>
+                      <th className="text-right">Valor</th>
+                      <th className="text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bookEntries.length ? (
+                      bookEntries.map((expense) => (
+                        <tr key={expense.id}>
+                          <td>{formatCompetencyLabel(expense.incurredOn)}</td>
+                          <td>{expense.categoryName}</td>
+                          <td className="text-on-surface">{expense.description}</td>
+                          <td className="text-right font-semibold text-on-surface">
+                            {currencyFormatter.format(expense.amount)}
+                          </td>
+                          <td>
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                className="brandops-button brandops-button-ghost !px-3 !py-2"
+                                onClick={() => openEditExpenseModal(expense.id)}
+                              >
+                                <Pencil size={14} />
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                className="brandops-button brandops-button-danger !px-3 !py-2"
+                                onClick={() => handleDeleteExpense(expense.id)}
+                              >
+                                <Trash2 size={14} />
+                                Excluir
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5}>
+                          <div className="py-10 text-center text-sm text-on-surface-variant">
+                            Nenhum lançamento encontrado para os filtros atuais.
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </SurfaceCard>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            <MetricCard
+              label="Categorias totais"
+              value={integerFormatter.format(expenseCategories.length)}
+              help="Categorias disponíveis para alimentar o DRE."
+              icon={Tags}
             />
-            <div className="mt-5 grid gap-4">
+            <MetricCard
+              label="Categorias customizadas"
+              value={integerFormatter.format(expenseCategories.filter((category) => !category.isSystem).length)}
+              help="Categorias que podem ser editadas pela operação."
+              icon={Palette}
+            />
+            <MetricCard
+              label="Despesas lançadas"
+              value={currencyFormatter.format(totalExpenses)}
+              help="Acumulado de despesas registradas na marca."
+              icon={Landmark}
+            />
+          </div>
+
+          <SurfaceCard>
+            <div className="space-y-4">
+              <SectionHeading
+                title="Gestão de categorias"
+                description="Cadastre novas categorias e ajuste as categorias customizadas existentes. Categorias de sistema permanecem protegidas."
+                aside={
+                  <button
+                    type="button"
+                    className="brandops-button brandops-button-primary"
+                    onClick={openNewCategoryModal}
+                  >
+                    <Plus size={15} />
+                    Nova categoria
+                  </button>
+                }
+              />
+
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {expenseCategories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="rounded-2xl border border-outline bg-surface p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <span
+                          className="mt-1 h-3 w-3 rounded-full border border-white/60 shadow-sm"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        <div>
+                          <p className="text-sm font-semibold text-on-surface">{category.name}</p>
+                          <div className="mt-1 flex flex-wrap gap-2">
+                            <span className="status-chip">
+                              {category.isSystem ? "Sistema" : "Customizada"}
+                            </span>
+                            <span className="status-chip">{category.isActive ? "Ativa" : "Inativa"}</span>
+                          </div>
+                        </div>
+                      </div>
+                      {!category.isSystem ? (
+                        <button
+                          type="button"
+                          className="brandops-button brandops-button-ghost !px-3 !py-2"
+                          onClick={() => openEditCategoryModal(category.id)}
+                        >
+                          <Pencil size={14} />
+                          Editar
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </SurfaceCard>
+        </div>
+      )}
+
+      <CostCenterModal
+        open={isExpenseModalOpen}
+        title={editingExpenseId ? "Editar lançamento" : "Novo lançamento"}
+        description="Preencha a competência mensal, a categoria e a descrição. O valor alimenta diretamente o DRE."
+        onClose={() => {
+          setIsExpenseModalOpen(false);
+          resetExpenseForm();
+        }}
+        mode="side"
+      >
+        <form className="space-y-5" onSubmit={handleExpenseSubmit}>
+          <div className="grid gap-4">
+            <label className="space-y-1">
+              <span className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+                Categoria
+              </span>
               <select
                 value={expenseForm.categoryId}
                 onChange={(event) =>
                   setExpenseForm((current) => ({ ...current, categoryId: event.target.value }))
                 }
-                className="brandops-input w-full px-3 py-2.5"
+                className="brandops-input w-full"
               >
-                <option value="">Selecione a categoria</option>
-                {expenseCategories.map((category) => (
+                <option value="">Selecione uma categoria</option>
+                {launchableCategories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
                 ))}
               </select>
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+                Descrição
+              </span>
               <input
                 value={expenseForm.description}
                 onChange={(event) =>
                   setExpenseForm((current) => ({ ...current, description: event.target.value }))
                 }
-                placeholder="Descrição do lançamento"
-                className="brandops-input w-full px-3 py-2.5"
+                placeholder="Ex.: Plataforma, frete administrativo, ferramenta"
+                className="brandops-input w-full"
               />
-              <div className="grid gap-4 sm:grid-cols-2">
+            </label>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="space-y-1">
+                <span className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+                  Valor
+                </span>
                 <input
                   value={expenseForm.amount}
                   onChange={(event) =>
                     setExpenseForm((current) => ({ ...current, amount: event.target.value }))
                   }
+                  inputMode="decimal"
                   placeholder="0,00"
-                  className="brandops-input w-full px-3 py-2.5"
+                  className="brandops-input w-full"
                 />
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+                  Competência
+                </span>
                 <input
                   type="month"
-                  value={expenseForm.competency}
+                  value={expenseForm.month}
                   onChange={(event) =>
-                    setExpenseForm((current) => ({ ...current, competency: event.target.value }))
+                    setExpenseForm((current) => ({ ...current, month: event.target.value }))
                   }
-                  className="brandops-input w-full px-3 py-2.5"
+                  className="brandops-input w-full"
                 />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => void submitExpense()}
-                  className="brandops-button brandops-button-primary"
-                >
-                  {editingExpenseId ? "Salvar alteração" : "Lançar despesa"}
-                </button>
-                {editingExpenseId ? (
-                  <button
-                    onClick={resetForm}
-                    className="brandops-button brandops-button-ghost"
-                  >
-                    Cancelar edição
-                  </button>
-                ) : null}
-              </div>
+              </label>
             </div>
-          </SurfaceCard>
+          </div>
 
-          <SurfaceCard>
-            <SectionHeading
-              title="Resumo rápido"
-              description="Visão curta para bater volume e cobertura da base."
+          <div className="rounded-2xl border border-outline bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
+            Esse lançamento entra na competência do mês escolhido e aparece no DRE consolidado.
+          </div>
+
+          <div className="flex flex-wrap justify-end gap-2 border-t border-outline pt-4">
+            <button
+              type="button"
+              className="brandops-button brandops-button-ghost"
+              onClick={() => {
+                setIsExpenseModalOpen(false);
+                resetExpenseForm();
+              }}
+            >
+              Cancelar
+            </button>
+            <button type="submit" className="brandops-button brandops-button-primary">
+              {editingExpenseId ? "Salvar alterações" : "Criar lançamento"}
+            </button>
+          </div>
+        </form>
+      </CostCenterModal>
+
+      <CostCenterModal
+        open={isCategoryModalOpen}
+        title={editingCategoryId ? "Editar categoria" : "Nova categoria"}
+        description="Use categorias curtas e claras para facilitar leitura mensal do DRE."
+        onClose={() => {
+          setIsCategoryModalOpen(false);
+          resetCategoryForm();
+        }}
+        mode="center"
+      >
+        <form className="space-y-5" onSubmit={handleCategorySubmit}>
+          <label className="space-y-1">
+            <span className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+              Nome da categoria
+            </span>
+            <input
+              value={categoryForm.name}
+              onChange={(event) =>
+                setCategoryForm((current) => ({ ...current, name: event.target.value }))
+              }
+              placeholder="Ex.: Ferramentas, Operação, Software"
+              className="brandops-input w-full"
             />
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="panel-muted p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Total lançado
-                </p>
-                <p className="mt-2 font-headline text-2xl font-semibold text-on-surface">
-                  {currencyFormatter.format(totalExpenses)}
-                </p>
-              </div>
-              <div className="panel-muted p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Competências
-                </p>
-                <p className="mt-2 font-headline text-2xl font-semibold text-on-surface">
-                  {monthlyLedger.rows.length}
-                </p>
-              </div>
-              <div className="panel-muted p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Categorias
-                </p>
-                <p className="mt-2 font-headline text-2xl font-semibold text-on-surface">
-                  {expenseCategories.length}
-                </p>
-              </div>
-            </div>
-          </SurfaceCard>
-        </div>
+          </label>
 
-        <div className="space-y-6">
-          <SurfaceCard className="p-0 overflow-hidden">
-            <div className="border-b border-outline p-5">
-              <SectionHeading
-                title="Tabela mensal de despesas"
-                description="Consolidação por competência mensal usando o dia 1º como referência contábil."
+          <label className="space-y-1">
+            <span className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+              Cor de apoio
+            </span>
+            <div className="flex items-center gap-3 rounded-xl border border-outline px-3 py-2">
+              <input
+                type="color"
+                value={categoryForm.color}
+                onChange={(event) =>
+                  setCategoryForm((current) => ({ ...current, color: event.target.value }))
+                }
+                className="h-10 w-14 cursor-pointer rounded border border-outline bg-transparent"
               />
+              <span className="text-sm text-on-surface-variant">{categoryForm.color}</span>
             </div>
-            <div className="brandops-table-container rounded-none border-0">
-              <table className="brandops-table-compact min-w-[760px] w-full">
-                <thead>
-                  <tr>
-                    <th>Competência</th>
-                    {monthlyLedger.categories.map((category) => (
-                      <th key={category.id} className="text-right">
-                        {category.name}
-                      </th>
-                    ))}
-                    <th className="text-right">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {monthlyLedger.rows.length ? (
-                    monthlyLedger.rows.map((row) => (
-                      <tr key={row.monthKey}>
-                        <td className="font-semibold text-on-surface">
-                          {formatCompetency(row.monthKey)}
-                        </td>
-                        {monthlyLedger.categories.map((category) => (
-                          <td key={category.id} className="text-right">
-                            {currencyFormatter.format(row.byCategory[category.id] ?? 0)}
-                          </td>
-                        ))}
-                        <td className="text-right font-semibold text-on-surface">
-                          {currencyFormatter.format(row.total)}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={monthlyLedger.categories.length + 2} className="py-8 text-center text-sm text-on-surface-variant">
-                        Nenhuma despesa lançada ainda para esta marca.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </SurfaceCard>
+          </label>
 
-          <SurfaceCard className="p-0 overflow-hidden">
-            <div className="border-b border-outline p-5">
-              <SectionHeading
-                title="Livro de lançamentos"
-                description="Cada linha pode ser editada ou excluída sem sair da tela."
-              />
-            </div>
-            <div className="brandops-table-container rounded-none border-0">
-              <table className="brandops-table-compact min-w-[760px] w-full">
-                <thead>
-                  <tr>
-                    <th>Competência</th>
-                    <th>Categoria</th>
-                    <th>Descrição</th>
-                    <th className="text-right">Valor</th>
-                    <th className="text-right">Ação</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {expenses.length ? (
-                    expenses.map((expense) => (
-                      <tr key={expense.id}>
-                        <td>{formatCompetency(expense.incurredOn.slice(0, 7))}</td>
-                        <td>{expense.categoryName}</td>
-                        <td className="max-w-[320px] truncate">{expense.description}</td>
-                        <td className="text-right font-semibold text-on-surface">
-                          {currencyFormatter.format(expense.amount)}
-                        </td>
-                        <td>
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => {
-                                setEditingExpenseId(expense.id);
-                                setExpenseForm({
-                                  categoryId: expense.categoryId,
-                                  description: expense.description,
-                                  amount: expense.amount.toFixed(2).replace(".", ","),
-                                  competency: expense.incurredOn.slice(0, 7),
-                                });
-                              }}
-                              className="brandops-button brandops-button-ghost px-3 py-1.5 text-xs"
-                            >
-                              <Pencil size={14} />
-                              Editar
-                            </button>
-                            <button
-                              onClick={async () => {
-                                if (!window.confirm("Deseja excluir este lançamento?")) {
-                                  return;
-                                }
-                                await deleteExpense(activeBrand.id, expense.id);
-                                if (editingExpenseId === expense.id) {
-                                  resetForm();
-                                }
-                              }}
-                              className="brandops-button brandops-button-ghost px-3 py-1.5 text-xs text-error"
-                            >
-                              <Trash2 size={14} />
-                              Excluir
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="py-8 text-center text-sm text-on-surface-variant">
-                        Nenhum lançamento registrado ainda.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </SurfaceCard>
-        </div>
-      </section>
+          <div className="flex flex-wrap justify-end gap-2 border-t border-outline pt-4">
+            <button
+              type="button"
+              className="brandops-button brandops-button-ghost"
+              onClick={() => {
+                setIsCategoryModalOpen(false);
+                resetCategoryForm();
+              }}
+            >
+              Cancelar
+            </button>
+            <button type="submit" className="brandops-button brandops-button-primary">
+              {editingCategoryId ? "Salvar categoria" : "Criar categoria"}
+            </button>
+          </div>
+        </form>
+      </CostCenterModal>
+
+      <ProcessingOverlay
+        open={Boolean(processingMessage)}
+        title="Atualizando lançamentos"
+        description={processingMessage ?? "Aguarde enquanto processamos a solicitação."}
+      />
+      <ActionToast message={toast?.message ?? null} tone={toast?.tone ?? "success"} />
     </div>
   );
 }

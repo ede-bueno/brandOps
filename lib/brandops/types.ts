@@ -209,6 +209,7 @@ export interface ExpenseCategory {
   name: string;
   color: string;
   isSystem: boolean;
+  isActive: boolean;
 }
 
 export interface BrandExpense {
@@ -275,6 +276,11 @@ export interface BrandDataset {
   name: string;
   createdAt: string;
   updatedAt: string;
+  hydration: {
+    catalogLoaded: boolean;
+    salesLinesLoaded: boolean;
+    ga4ItemDailyLoaded: boolean;
+  };
   files: Partial<Record<CsvFileKind, ImportedFileInfo>>;
   catalog: CatalogProduct[];
   paidOrders: PaidOrder[];

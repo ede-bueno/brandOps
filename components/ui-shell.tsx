@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Loader2 } from "lucide-react";
 
 export function PageHeader({
   eyebrow,
@@ -83,6 +84,60 @@ export function SectionHeading({
           {aside}
         </div>
       )}
+    </div>
+  );
+}
+
+export function ActionToast({
+  message,
+  tone = "success",
+}: {
+  message: string | null;
+  tone?: "success" | "error";
+}) {
+  if (!message) {
+    return null;
+  }
+
+  return (
+    <div className="fixed bottom-5 right-5 z-[75] max-w-sm">
+      <div
+        className={`brandops-panel px-4 py-3 text-sm shadow-xl ${
+          tone === "success"
+            ? "border-primary/20 bg-surface text-on-surface"
+            : "border-red-200 bg-red-50 text-red-900"
+        }`}
+      >
+        {message}
+      </div>
+    </div>
+  );
+}
+
+export function ProcessingOverlay({
+  open,
+  title = "Processando",
+  description = "Aguarde enquanto atualizamos os dados.",
+}: {
+  open: boolean;
+  title?: string;
+  description?: ReactNode;
+}) {
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-surface/55 px-4 backdrop-blur-sm">
+      <div className="brandops-panel w-full max-w-md p-6 text-center shadow-2xl">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+        <h3 className="mt-4 font-headline text-xl font-semibold tracking-tight text-on-surface">
+          {title}
+        </h3>
+        <div className="mt-2 text-sm leading-6 text-on-surface-variant">{description}</div>
+      </div>
     </div>
   );
 }

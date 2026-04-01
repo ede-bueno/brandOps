@@ -75,7 +75,7 @@ function getProviderMode(
 }
 
 export default function ImportPage() {
-  const { activeBrand, importFiles } = useBrandOps();
+  const { activeBrand, importFiles, isBrandHydrating } = useBrandOps();
   const [files, setFiles] = useState<File[]>([]);
   const [status, setStatus] = useState<ImportStatus>("idle");
   const [message, setMessage] = useState("");
@@ -153,6 +153,27 @@ export default function ImportPage() {
   const progressPercent = stats
     ? Math.round((completedSources / sourceChecklist.length) * 100)
     : 0;
+
+  if (activeBrand && isBrandHydrating && !Object.keys(activeBrand.files).length) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Integração de dados"
+          title="Importação"
+          description={`Carregando o histórico de importações da loja ${activeBrand.name}.`}
+          badge="Hidratando dados"
+        />
+        <div className="space-y-6 animate-pulse">
+          <div className="h-52 rounded-3xl bg-surface-container" />
+          <div className="grid gap-4 xl:grid-cols-5">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-28 rounded-2xl bg-surface-container" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

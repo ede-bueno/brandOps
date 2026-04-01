@@ -627,7 +627,7 @@ export function computeBrandMetrics(brand: BrandDataset): BrandSummaryMetrics {
     return finalizeSummaryMetrics({
       grossRevenue,
       rob: grossRevenue,
-      netRevenue: grossRevenue,
+      netRevenue: rld,
       rld,
       netAfterFees: 0,
       discounts,
@@ -1247,92 +1247,39 @@ export function buildMediaAnomalies(brand: BrandDataset): MediaAnomaly[] {
 }
 
 export function buildSanitizationHistory(brand: BrandDataset): MediaAnomaly[] {
-  if (brand.sanitizationReviews.length) {
-    const mediaById = new Map(
-      brand.media.filter((row): row is typeof row & { id: string } => Boolean(row.id)).map((row) => [row.id, row]),
-    );
-    const mediaByHash = new Map(
-      brand.media
-        .filter((row): row is typeof row & { rowHash: string } => Boolean(row.rowHash))
-        .map((row) => [row.rowHash, row]),
-    );
-    const ordersById = new Map(
-      brand.paidOrders.filter((row): row is typeof row & { id: string } => Boolean(row.id)).map((row) => [row.id, row]),
-    );
-    const ordersByNumber = new Map(brand.paidOrders.map((row) => [row.orderNumber, row]));
-
-    return brand.sanitizationReviews
-      .map((review, index) => {
-        if (review.sourceTable === "media_performance") {
-          const row =
-            mediaById.get(review.sourceRowId) ??
-            (review.sourceKey ? mediaByHash.get(review.sourceKey) : undefined);
-          return {
-            id: `review-media-${review.id}-${index}`,
-            target: "MEDIA" as const,
-            targetId: row?.id ?? review.sourceRowId,
-            date: row?.date ?? review.reviewedAt.slice(0, 10),
-            campaignName: row?.campaignName ?? review.sourceKey ?? "Linha de mídia",
-            adsetName: row?.adsetName ?? "",
-            adName: row?.adName ?? "",
-            metric: review.action === "PENDING" ? "Reversão" : "Linha de mídia",
-            value: row
-              ? `${toCurrencyLabel(row.spend)} • ${row.impressions} impressões • ${row.clicksAll} cliques`
-              : "Ocorrência revisada",
-            reason:
-              review.reason ??
-              row?.sanitizationNote ??
-              row?.ignoreReason ??
-              "Decisão operacional registrada para esta linha de mídia.",
-            severity: review.action === "IGNORED" ? "high" : "medium",
-            isIgnored: review.action === "IGNORED",
-            ignoreReason: review.reason ?? null,
-            sanitizationStatus: review.action,
-            sanitizationNote: review.reason ?? row?.sanitizationNote ?? null,
-            sanitizedAt: review.reviewedAt,
-          } satisfies MediaAnomaly;
-        }
-
-        const order =
-          ordersById.get(review.sourceRowId) ??
-          (review.sourceKey ? ordersByNumber.get(review.sourceKey) : undefined);
-        return {
-          id: `review-order-${review.id}-${index}`,
-          target: "ORDER" as const,
-          targetId: order?.id ?? review.sourceRowId,
-          orderNumber: order?.orderNumber ?? review.sourceKey ?? undefined,
-          date: order?.orderDate ?? review.reviewedAt.slice(0, 10),
-          campaignName:
-            order?.orderNumber ? `Pedido ${order.orderNumber}` : review.sourceKey ?? "Pedido revisado",
-          adsetName: order?.customerName ?? "",
-          adName: order?.paymentStatus ?? "",
-          metric: review.action === "PENDING" ? "Reversão" : "Pedido revisado",
-          value: order
-            ? `${toCurrencyLabel(order.orderValue)} • ${order.itemsInOrder} item(ns)`
-            : "Pedido revisado no saneamento",
-          reason:
-            review.reason ??
-            order?.sanitizationNote ??
-            order?.ignoreReason ??
-            "Decisão operacional registrada para este pedido.",
-          severity: review.action === "IGNORED" ? "high" : "medium",
-          isIgnored: review.action === "IGNORED",
-          ignoreReason: review.reason ?? null,
-          sanitizationStatus: review.action,
-          sanitizationNote: review.reason ?? order?.sanitizationNote ?? null,
-          sanitizedAt: review.reviewedAt,
-        } satisfies MediaAnomaly;
-      })
-      .sort((left, right) => right.sanitizedAt!.localeCompare(left.sanitizedAt!));
-  }
-
   const rows: MediaAnomaly[] = [];
+  const seenTargets = new Set<string>();
+  const reviewedHistory = brand.sanitizationReviews
+    .filter((review) => review.action !== "PENDING")
+    .sort((left, right) => right.reviewedAt.localeCompare(left.reviewedAt));
+
+  const latestReviewByTarget = new Map<string, (typeof reviewedHistory)[number]>();
+  const appendReviewTarget = (review: (typeof reviewedHistory)[number]) => {
+    const targets = [`${review.sourceTable}:${review.sourceRowId}`];
+    if (review.sourceKey) {
+      targets.push(`${review.sourceTable}:key:${review.sourceKey}`);
+    }
+
+    targets.forEach((targetKey) => {
+      if (!latestReviewByTarget.has(targetKey)) {
+        latestReviewByTarget.set(targetKey, review);
+      }
+    });
+  };
+
+  reviewedHistory.forEach(appendReviewTarget);
 
   brand.media.forEach((row, index) => {
     const status = row.sanitizationStatus ?? "PENDING";
     if (status === "PENDING") {
       return;
     }
+
+    const review =
+      (row.id ? latestReviewByTarget.get(`media_performance:${row.id}`) : undefined) ??
+      (row.rowHash ? latestReviewByTarget.get(`media_performance:key:${row.rowHash}`) : undefined);
+    const targetKey = row.id ?? row.rowHash ?? `media-index-${index}`;
+    seenTargets.add(`MEDIA:${targetKey}`);
 
     rows.push({
       id: `media-history-${row.id ?? index}`,
@@ -1345,6 +1292,7 @@ export function buildSanitizationHistory(brand: BrandDataset): MediaAnomaly[] {
       metric: "Linha de mídia",
       value: `${toCurrencyLabel(row.spend)} • ${row.impressions} impressões • ${row.clicksAll} cliques`,
       reason:
+        review?.reason ??
         row.sanitizationNote ??
         row.ignoreReason ??
         "Decisão operacional registrada para esta linha de mídia.",
@@ -1352,8 +1300,8 @@ export function buildSanitizationHistory(brand: BrandDataset): MediaAnomaly[] {
       isIgnored: Boolean(row.isIgnored),
       ignoreReason: row.ignoreReason ?? null,
       sanitizationStatus: status,
-      sanitizationNote: row.sanitizationNote ?? null,
-      sanitizedAt: row.sanitizedAt ?? null,
+      sanitizationNote: review?.reason ?? row.sanitizationNote ?? null,
+      sanitizedAt: row.sanitizedAt ?? review?.reviewedAt ?? null,
     });
   });
 
@@ -1362,6 +1310,12 @@ export function buildSanitizationHistory(brand: BrandDataset): MediaAnomaly[] {
     if (status === "PENDING") {
       return;
     }
+
+    const review =
+      (order.id ? latestReviewByTarget.get(`orders:${order.id}`) : undefined) ??
+      latestReviewByTarget.get(`orders:key:${order.orderNumber}`);
+    const targetKey = order.id ?? order.orderNumber ?? `order-index-${index}`;
+    seenTargets.add(`ORDER:${targetKey}`);
 
     rows.push({
       id: `order-history-${order.orderNumber}-${order.id ?? index}`,
@@ -1375,6 +1329,7 @@ export function buildSanitizationHistory(brand: BrandDataset): MediaAnomaly[] {
       metric: "Pedido revisado",
       value: `${toCurrencyLabel(order.orderValue)} • ${order.itemsInOrder} item(ns)`,
       reason:
+        review?.reason ??
         order.sanitizationNote ??
         order.ignoreReason ??
         "Decisão operacional registrada para este pedido.",
@@ -1382,9 +1337,77 @@ export function buildSanitizationHistory(brand: BrandDataset): MediaAnomaly[] {
       isIgnored: Boolean(order.isIgnored),
       ignoreReason: order.ignoreReason ?? null,
       sanitizationStatus: status,
-      sanitizationNote: order.sanitizationNote ?? null,
-      sanitizedAt: order.sanitizedAt ?? null,
+      sanitizationNote: review?.reason ?? order.sanitizationNote ?? null,
+      sanitizedAt: order.sanitizedAt ?? review?.reviewedAt ?? null,
     });
+  });
+
+  reviewedHistory.forEach((review, index) => {
+    if (review.sourceTable === "media_performance") {
+      const targetKey = `MEDIA:${review.sourceRowId}`;
+      const fallbackKey = review.sourceKey ? `MEDIA:${review.sourceKey}` : null;
+      if (seenTargets.has(targetKey) || (fallbackKey && seenTargets.has(fallbackKey))) {
+        return;
+      }
+
+      rows.push({
+        id: `review-media-${review.id}-${index}`,
+        target: "MEDIA",
+        targetId: review.sourceRowId,
+        date: review.reviewedAt.slice(0, 10),
+        campaignName: review.sourceKey ?? "Linha de mídia revisada",
+        adsetName: "",
+        adName: "",
+        metric: "Linha de mídia",
+        value: "Ocorrência revisada no histórico",
+        reason: review.reason ?? "Decisão operacional registrada para esta linha de mídia.",
+        severity: review.action === "IGNORED" ? "high" : "medium",
+        isIgnored: review.action === "IGNORED",
+        ignoreReason: review.reason ?? null,
+        sanitizationStatus: review.action,
+        sanitizationNote: review.reason ?? null,
+        sanitizedAt: review.reviewedAt,
+      });
+      seenTargets.add(targetKey);
+      if (fallbackKey) {
+        seenTargets.add(fallbackKey);
+      }
+      return;
+    }
+
+    if (review.sourceTable !== "orders") {
+      return;
+    }
+
+    const targetKey = `ORDER:${review.sourceRowId}`;
+    const fallbackKey = review.sourceKey ? `ORDER:${review.sourceKey}` : null;
+    if (seenTargets.has(targetKey) || (fallbackKey && seenTargets.has(fallbackKey))) {
+      return;
+    }
+
+    rows.push({
+      id: `review-order-${review.id}-${index}`,
+      target: "ORDER",
+      targetId: review.sourceRowId,
+      orderNumber: review.sourceKey ?? undefined,
+      date: review.reviewedAt.slice(0, 10),
+      campaignName: review.sourceKey ? `Pedido ${review.sourceKey}` : "Pedido revisado",
+      adsetName: "",
+      adName: "",
+      metric: "Pedido revisado",
+      value: "Pedido revisado no histórico",
+      reason: review.reason ?? "Decisão operacional registrada para este pedido.",
+      severity: review.action === "IGNORED" ? "high" : "medium",
+      isIgnored: review.action === "IGNORED",
+      ignoreReason: review.reason ?? null,
+      sanitizationStatus: review.action,
+      sanitizationNote: review.reason ?? null,
+      sanitizedAt: review.reviewedAt,
+    });
+    seenTargets.add(targetKey);
+    if (fallbackKey) {
+      seenTargets.add(fallbackKey);
+    }
   });
 
   return rows.sort((left, right) => {

@@ -31,7 +31,15 @@ import {
 } from "@/lib/brandops/metrics";
 
 export default function TrafficPage() {
-  const { activeBrand, activeBrandId, brands, filteredBrand, selectedPeriodLabel, isLoading } = useBrandOps();
+  const {
+    activeBrand,
+    activeBrandId,
+    brands,
+    filteredBrand,
+    selectedPeriodLabel,
+    isLoading,
+    isBrandHydrating,
+  } = useBrandOps();
   const selectedBrandName =
     activeBrand?.name ??
     brands.find((brand) => brand.id === activeBrandId)?.name ??
@@ -58,6 +66,27 @@ export default function TrafficPage() {
             <div className="h-[300px] bg-surface-container rounded-3xl" />
             <div className="h-[300px] bg-surface-container rounded-3xl" />
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeBrandId && activeBrand && filteredBrand && isBrandHydrating && !filteredBrand.ga4DailyPerformance.length) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Analytics"
+          title="Tráfego"
+          description={`Hidratando os dados complementares da loja ${selectedBrandName}.`}
+          badge={`Período analisado: ${selectedPeriodLabel}`}
+        />
+        <div className="space-y-6 animate-pulse">
+          <div className="grid gap-4 md:grid-cols-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-24 bg-surface-container rounded-2xl" />
+            ))}
+          </div>
+          <div className="h-[320px] bg-surface-container rounded-3xl" />
         </div>
       </div>
     );

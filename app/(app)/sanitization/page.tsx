@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, SurfaceCard } from "@/components/ui-shell";
+import { PageHeader, ProcessingOverlay, SurfaceCard } from "@/components/ui-shell";
 import { buildMediaAnomalies, buildSanitizationHistory } from "@/lib/brandops/metrics";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +31,20 @@ export default function SanitizationPage() {
   } = useBrandOps();
   const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
   const [reasonDrafts, setReasonDrafts] = useState<Record<string, string>>({});
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingMessage, setProcessingMessage] = useState("Atualizando o saneamento da marca.");
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (!feedback) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setFeedback(null), 3500);
+    return () => window.clearTimeout(timeoutId);
+  }, [feedback]);
 
   if (!activeBrand || (!activeBrand.media.length && !activeBrand.paidOrders.length)) {
     return (
@@ -60,33 +74,69 @@ export default function SanitizationPage() {
     }
 
     const cleanNote = note?.trim() || undefined;
+    const decisionLabel =
+      decision === "PENDING"
+        ? "Voltando a ocorrência para a fila de decisão."
+        : decision === "KEPT"
+          ? "Mantendo o cálculo e atualizando o histórico."
+          : "Ignorando o cálculo e atualizando o histórico.";
 
-    if (anomaly.target === "MEDIA" && anomaly.targetId) {
-      if (decision === "PENDING") {
-        await restoreMediaRow(anomaly.targetId);
-      } else if (decision === "KEPT") {
-        await keepMediaRow(anomaly.targetId, cleanNote);
-      } else {
-        await ignoreMediaRow(anomaly.targetId, cleanNote);
-      }
-      setReasonDrafts((current) => ({ ...current, [anomalyId]: "" }));
-      return;
-    }
+    setFeedback(null);
+    setProcessingMessage(decisionLabel);
+    setIsProcessing(true);
 
-    if (anomaly.target === "ORDER" && anomaly.orderNumber) {
-      if (decision === "PENDING") {
-        await restoreOrder(activeBrand.id, anomaly.orderNumber);
-      } else if (decision === "KEPT") {
-        await keepOrder(activeBrand.id, anomaly.orderNumber, cleanNote);
-      } else {
-        await ignoreOrder(activeBrand.id, anomaly.orderNumber, cleanNote);
+    try {
+      if (anomaly.target === "MEDIA" && anomaly.targetId) {
+        if (decision === "PENDING") {
+          await restoreMediaRow(anomaly.targetId);
+        } else if (decision === "KEPT") {
+          await keepMediaRow(anomaly.targetId, cleanNote);
+        } else {
+          await ignoreMediaRow(anomaly.targetId, cleanNote);
+        }
+
+        setReasonDrafts((current) => ({ ...current, [anomalyId]: "" }));
+      } else if (anomaly.target === "ORDER" && anomaly.orderNumber) {
+        if (decision === "PENDING") {
+          await restoreOrder(activeBrand.id, anomaly.orderNumber);
+        } else if (decision === "KEPT") {
+          await keepOrder(activeBrand.id, anomaly.orderNumber, cleanNote);
+        } else {
+          await ignoreOrder(activeBrand.id, anomaly.orderNumber, cleanNote);
+        }
+
+        setReasonDrafts((current) => ({ ...current, [anomalyId]: "" }));
       }
-      setReasonDrafts((current) => ({ ...current, [anomalyId]: "" }));
+
+      setActiveTab(decision === "PENDING" ? "pending" : "history");
+      setFeedback({
+        type: "success",
+        message:
+          decision === "PENDING"
+            ? "Ocorrência devolvida para a tomada de decisão."
+            : "Decisão registrada no histórico do saneamento.",
+      });
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível concluir a decisão de saneamento.",
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   return (
     <div className="space-y-6">
+      <ProcessingOverlay
+        open={isProcessing}
+        title="Atualizando saneamento"
+        description={processingMessage}
+      />
+
       <PageHeader
         eyebrow="Decisão operacional"
         title="Saneamento"
@@ -95,6 +145,19 @@ export default function SanitizationPage() {
       />
 
       <SurfaceCard className="p-0 overflow-hidden">
+        {feedback ? (
+          <div
+            className={cn(
+              "border-b px-5 py-3 text-sm",
+              feedback.type === "success"
+                ? "border-secondary/20 bg-secondary/10 text-secondary"
+                : "border-error/20 bg-error/10 text-error",
+            )}
+          >
+            {feedback.message}
+          </div>
+        ) : null}
+
         <div className="border-b border-outline px-5 py-4">
           <div className="flex flex-wrap gap-2">
             {[
@@ -104,6 +167,7 @@ export default function SanitizationPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as "pending" | "history")}
+                disabled={isProcessing}
                 className={cn(
                   "rounded-xl px-4 py-2 text-sm font-semibold transition-all",
                   activeTab === tab.key
@@ -175,6 +239,7 @@ export default function SanitizationPage() {
                           }
                           placeholder="Contexto da decisão do operador"
                           className="brandops-input min-h-[92px] w-[260px] p-3 text-xs"
+                          disabled={isProcessing}
                         />
                       </td>
                       <td className="align-top">
@@ -205,12 +270,14 @@ export default function SanitizationPage() {
                               <button
                                 onClick={() => void commitDecision(anomaly.id, "KEPT", note)}
                                 className="brandops-button brandops-button-secondary min-w-[148px]"
+                                disabled={isProcessing}
                               >
                                 Manter cálculo
                               </button>
                               <button
                                 onClick={() => void commitDecision(anomaly.id, "IGNORED", note)}
                                 className="brandops-button brandops-button-primary min-w-[148px]"
+                                disabled={isProcessing}
                               >
                                 Ignorar cálculo
                               </button>
@@ -219,6 +286,7 @@ export default function SanitizationPage() {
                             <button
                               onClick={() => void commitDecision(anomaly.id, "PENDING")}
                               className="brandops-button brandops-button-ghost min-w-[148px]"
+                              disabled={isProcessing}
                             >
                               Voltar para pendente
                             </button>

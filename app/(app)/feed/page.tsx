@@ -13,7 +13,7 @@ import { extractPrintName } from "@/lib/brandops/metrics";
 type CatalogStatusFilter = "all" | "sold" | "unsold";
 
 export default function FeedPage() {
-  const { activeBrand } = useBrandOps();
+  const { activeBrand, isBrandHydrating } = useBrandOps();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<CatalogStatusFilter>("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -89,6 +89,27 @@ export default function FeedPage() {
         title="Nenhum catálogo disponível"
         description="Importe o feed de produtos para visualizar as estampas, mockups e páginas do catálogo da marca."
       />
+    );
+  }
+
+  if (isBrandHydrating && !activeBrand.catalog.length) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Catálogo visual"
+          title="Feed de Produtos"
+          description={`Carregando o catálogo e as galerias da loja ${activeBrand.name}.`}
+          badge="Hidratando catálogo"
+        />
+        <div className="space-y-6 animate-pulse">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-24 rounded-2xl bg-surface-container" />
+            ))}
+          </div>
+          <div className="h-[520px] rounded-3xl bg-surface-container" />
+        </div>
+      </div>
     );
   }
 

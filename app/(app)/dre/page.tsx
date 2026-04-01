@@ -143,6 +143,9 @@ export default function DrePage() {
                 DRE filtrado
               </button>
             </div>
+            <Link href="/cost-center" className="brandops-button brandops-button-secondary">
+              Lançar despesas
+            </Link>
             <Link href="/help#dre" className="brandops-button brandops-button-ghost">
               Entender cálculos
             </Link>
