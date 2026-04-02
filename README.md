@@ -1,6 +1,6 @@
-# BrandOps
+# Atlas
 
-Plataforma interna para gestão multi-marca de operações print on demand.
+Plataforma SaaS para gestão, inteligência e controle de operações Print on Demand.
 
 ## O que o sistema cobre hoje
 

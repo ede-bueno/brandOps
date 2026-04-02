@@ -27,6 +27,7 @@ type IntegrationFormState = Record<
     propertyId: string;
     timezone: string;
     adAccountId: string;
+    catalogId: string;
     manualFallback: boolean;
     syncWindowDays: string;
   }
@@ -56,6 +57,7 @@ const emptyIntegrationForm: IntegrationFormState = {
     propertyId: "",
     timezone: "America/Sao_Paulo",
     adAccountId: "",
+    catalogId: "",
     manualFallback: true,
     syncWindowDays: "30",
   },
@@ -64,6 +66,7 @@ const emptyIntegrationForm: IntegrationFormState = {
     propertyId: "",
     timezone: "America/Sao_Paulo",
     adAccountId: "",
+    catalogId: "",
     manualFallback: true,
     syncWindowDays: "30",
   },
@@ -72,6 +75,7 @@ const emptyIntegrationForm: IntegrationFormState = {
     propertyId: "",
     timezone: "America/Sao_Paulo",
     adAccountId: "",
+    catalogId: "",
     manualFallback: false,
     syncWindowDays: "30",
   },
@@ -86,6 +90,7 @@ function toFormState(integrations: BrandIntegrationConfig[]): IntegrationFormSta
       propertyId: integration.settings.propertyId ?? "",
       timezone: integration.settings.timezone ?? "America/Sao_Paulo",
       adAccountId: integration.settings.adAccountId ?? "",
+      catalogId: integration.settings.catalogId ?? "",
       manualFallback:
         integration.settings.manualFallback ?? integration.provider !== "ga4",
       syncWindowDays: String(integration.settings.syncWindowDays ?? 30),
@@ -108,6 +113,17 @@ function formatSyncLabel(integration?: BrandIntegrationConfig) {
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date(integration.lastSyncAt));
+}
+
+function formatCatalogSyncLabel(integration?: BrandIntegrationConfig) {
+  if (!integration?.settings.catalogSyncAt) {
+    return "Sem sincronização de catálogo registrada";
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(integration.settings.catalogSyncAt));
 }
 
 function getModeOptions(provider: IntegrationProvider) {
@@ -156,7 +172,9 @@ export default function IntegrationsPage() {
   const [saving, setSaving] = useState(false);
   const [syncingGa4, setSyncingGa4] = useState(false);
   const [syncingMeta, setSyncingMeta] = useState(false);
+  const [syncingCatalog, setSyncingCatalog] = useState(false);
   const [activeProvider, setActiveProvider] = useState<IntegrationProvider>("ink");
+  const [activeSection, setActiveSection] = useState<"config" | "sync" | "rules">("config");
 
   useEffect(() => {
     setFormState(toFormState(activeBrand?.integrations ?? []));
@@ -198,7 +216,7 @@ export default function IntegrationsPage() {
       title: "Fallback e contingência",
       body:
         currentState.mode === "api"
-          ? `A ${activeBrand.name} está preparada para operar Meta por API${currentState.manualFallback ? " com contingência manual" : ""}.`
+          ? `A ${activeBrand.name} está preparada para operar Meta por API${currentState.manualFallback ? " com contingência manual" : ""}${currentState.catalogId ? " e já possui catálogo vinculado." : "."}`
           : `A ${activeBrand.name} segue em fluxo manual da Meta, com possibilidade de migração futura para API.`,
       cta: null,
     },
@@ -234,6 +252,7 @@ export default function IntegrationsPage() {
             : provider === "meta"
               ? {
                   adAccountId: formState.meta.adAccountId || null,
+                  catalogId: formState.meta.catalogId || null,
                   manualFallback: formState.meta.manualFallback,
                   syncWindowDays: Number(formState.meta.syncWindowDays || 30),
                 }
@@ -345,6 +364,43 @@ export default function IntegrationsPage() {
     }
   };
 
+  const handleMetaCatalogSync = async () => {
+    if (!session?.access_token) {
+      setNotice({ kind: "error", text: "Sessão inválida para sincronizar o catálogo da Meta." });
+      return;
+    }
+
+    try {
+      setSyncingCatalog(true);
+      setNotice(null);
+
+      const response = await fetch(`/api/admin/brands/${activeBrand.id}/integrations/meta/catalog-sync`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Falha ao sincronizar o catálogo da Meta.");
+      }
+
+      await refreshActiveBrand();
+      setNotice({
+        kind: "success",
+        text: `Catálogo da Meta sincronizado com sucesso. ${payload.rows} item(ns), ${payload.inserted} novo(s), ${payload.updated} atualizado(s) e ${payload.deleted} removido(s) da fonte Meta.`,
+      });
+    } catch (error) {
+      setNotice({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Falha ao sincronizar o catálogo da Meta.",
+      });
+    } finally {
+      setSyncingCatalog(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -430,7 +486,27 @@ export default function IntegrationsPage() {
         })}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <SurfaceCard>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <SectionHeading
+            title="Modo de trabalho"
+            description="Troque entre configuração, sincronização e regras sem empilhar tudo na mesma tela."
+          />
+          <div className="brandops-subtabs">
+            <button type="button" className="brandops-subtab" data-active={activeSection === "config"} onClick={() => setActiveSection("config")}>
+              Configuração
+            </button>
+            <button type="button" className="brandops-subtab" data-active={activeSection === "sync"} onClick={() => setActiveSection("sync")}>
+              Sincronização
+            </button>
+            <button type="button" className="brandops-subtab" data-active={activeSection === "rules"} onClick={() => setActiveSection("rules")}>
+              Regras
+            </button>
+          </div>
+        </div>
+      </SurfaceCard>
+
+      <section className={`grid gap-6 ${activeSection === "rules" ? "xl:grid-cols-[1.15fr_0.85fr]" : ""}`}>
         <SurfaceCard>
           <div className="flex flex-col gap-4 border-b border-outline pb-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
@@ -456,10 +532,11 @@ export default function IntegrationsPage() {
           </div>
 
           <div className="mt-5 space-y-5">
-            <div className="rounded-3xl border border-outline bg-surface-container-low p-4 sm:p-5">
-              <div className="grid gap-4 lg:grid-cols-2">
-                <label className="space-y-2 text-sm lg:col-span-2">
-                  <span className="font-medium text-on-surface">Origem principal</span>
+            {activeSection === "config" ? (
+            <div className="brandops-command-slab p-4 sm:p-5">
+              <div className="brandops-toolbar-grid" data-columns="2">
+                <label className="brandops-field-stack text-sm lg:col-span-2">
+                  <span className="brandops-field-label">Origem principal</span>
                   <select
                     value={currentState.mode}
                     onChange={(event) =>
@@ -471,7 +548,7 @@ export default function IntegrationsPage() {
                         },
                       }))
                     }
-                    className="brandops-input w-full px-3 py-2.5"
+                    className="brandops-input w-full"
                     disabled={!canManageIntegrations}
                   >
                     {options.map((option) => (
@@ -484,8 +561,8 @@ export default function IntegrationsPage() {
 
                 {activeProvider === "meta" ? (
                   <>
-                    <label className="space-y-2 text-sm">
-                      <span className="font-medium text-on-surface">ID da conta de anúncios</span>
+                    <label className="brandops-field-stack text-sm">
+                      <span className="brandops-field-label">ID da conta de anúncios</span>
                       <input
                         value={currentState.adAccountId}
                         onChange={(event) =>
@@ -497,13 +574,13 @@ export default function IntegrationsPage() {
                             },
                           }))
                         }
-                        className="brandops-input w-full px-3 py-2.5"
+                        className="brandops-input w-full"
                         placeholder="act_1234567890"
                         disabled={!canManageIntegrations}
                       />
                     </label>
-                    <label className="space-y-2 text-sm">
-                      <span className="font-medium text-on-surface">Janela padrão de sync (dias)</span>
+                    <label className="brandops-field-stack text-sm">
+                      <span className="brandops-field-label">Janela padrão de sync (dias)</span>
                       <input
                         type="number"
                         min={1}
@@ -518,11 +595,29 @@ export default function IntegrationsPage() {
                             },
                           }))
                         }
-                        className="brandops-input w-full px-3 py-2.5"
+                        className="brandops-input w-full"
                         disabled={!canManageIntegrations}
                       />
                     </label>
-                    <label className="flex items-start gap-3 rounded-2xl border border-outline bg-white p-4 text-sm text-on-surface-variant lg:col-span-2">
+                    <label className="brandops-field-stack text-sm lg:col-span-2">
+                      <span className="brandops-field-label">ID do catálogo da Meta</span>
+                      <input
+                        value={currentState.catalogId}
+                        onChange={(event) =>
+                          setFormState((previous) => ({
+                            ...previous,
+                            meta: {
+                              ...previous.meta,
+                              catalogId: event.target.value,
+                            },
+                          }))
+                        }
+                        className="brandops-input w-full"
+                        placeholder="2384xxxxxxxxxx"
+                        disabled={!canManageIntegrations}
+                      />
+                    </label>
+                    <label className="flex items-start gap-3 rounded-xl border border-outline bg-surface-container-low p-4 text-sm text-on-surface-variant lg:col-span-2">
                       <input
                         type="checkbox"
                         checked={currentState.manualFallback}
@@ -542,30 +637,13 @@ export default function IntegrationsPage() {
                         Manter upload manual da Meta como contingência mesmo com a API ligada.
                       </span>
                     </label>
-                    <div className="flex items-end lg:col-span-2">
-                      <button
-                        type="button"
-                        onClick={handleMetaSync}
-                        disabled={syncingMeta || currentState.mode !== "api" || !currentState.adAccountId}
-                        className="brandops-button brandops-button-secondary"
-                      >
-                        {syncingMeta ? (
-                          <>
-                            <Loader2 size={16} className="animate-spin" />
-                            Sincronizando Meta
-                          </>
-                        ) : (
-                          "Sincronizar Meta agora"
-                        )}
-                      </button>
-                    </div>
                   </>
                 ) : null}
 
                 {activeProvider === "ga4" ? (
                   <>
-                    <label className="space-y-2 text-sm">
-                      <span className="font-medium text-on-surface">Property ID do GA4</span>
+                    <label className="brandops-field-stack text-sm">
+                      <span className="brandops-field-label">Property ID do GA4</span>
                       <input
                         value={currentState.propertyId}
                         onChange={(event) =>
@@ -577,13 +655,13 @@ export default function IntegrationsPage() {
                             },
                           }))
                         }
-                        className="brandops-input w-full px-3 py-2.5"
+                        className="brandops-input w-full"
                         placeholder="506034252"
                         disabled={!canManageIntegrations}
                       />
                     </label>
-                    <label className="space-y-2 text-sm">
-                      <span className="font-medium text-on-surface">Timezone da propriedade</span>
+                    <label className="brandops-field-stack text-sm">
+                      <span className="brandops-field-label">Timezone da propriedade</span>
                       <input
                         value={currentState.timezone}
                         onChange={(event) =>
@@ -595,34 +673,19 @@ export default function IntegrationsPage() {
                             },
                           }))
                         }
-                        className="brandops-input w-full px-3 py-2.5"
+                        className="brandops-input w-full"
                         placeholder="America/Sao_Paulo"
                         disabled={!canManageIntegrations}
                       />
                     </label>
-                    <div className="flex items-end lg:col-span-2">
-                      <button
-                        type="button"
-                        onClick={handleGa4Sync}
-                        disabled={syncingGa4 || currentState.mode !== "api" || !currentState.propertyId}
-                        className="brandops-button brandops-button-secondary"
-                      >
-                        {syncingGa4 ? (
-                          <>
-                            <Loader2 size={16} className="animate-spin" />
-                            Sincronizando GA4
-                          </>
-                        ) : (
-                          "Sincronizar GA4 agora"
-                        )}
-                      </button>
-                    </div>
                   </>
                 ) : null}
               </div>
             </div>
+            ) : null}
 
-            <div className="rounded-2xl border border-outline bg-surface-container-low p-4 text-sm text-on-surface-variant">
+            {activeSection === "sync" ? (
+            <div className="brandops-toolbar-panel text-sm text-on-surface-variant">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-medium text-on-surface">Última sincronização</p>
@@ -633,10 +696,100 @@ export default function IntegrationsPage() {
               {current?.lastSyncError ? (
                 <p className="mt-3 text-error">{current.lastSyncError}</p>
               ) : null}
+              {activeProvider === "meta" ? (
+                <div className="mt-4 border-t border-outline pt-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-on-surface">Sincronização do catálogo</p>
+                      <p className="mt-1">{formatCatalogSyncLabel(current)}</p>
+                    </div>
+                    <span className="status-chip">
+                      {current?.settings.catalogSyncStatus ?? "idle"}
+                    </span>
+                  </div>
+                  {current?.settings.catalogProductCount ? (
+                    <p className="mt-2 text-xs text-on-surface-variant">
+                      {current.settings.catalogProductCount} item(ns) consolidados da fonte Meta.
+                    </p>
+                  ) : null}
+                  {current?.settings.catalogSyncError ? (
+                    <p className="mt-3 text-error">{current.settings.catalogSyncError}</p>
+                  ) : null}
+                </div>
+              ) : null}
+              <div className="brandops-toolbar-actions pt-1">
+                {activeProvider === "meta" ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleMetaSync}
+                      disabled={syncingMeta || currentState.mode !== "api" || !currentState.adAccountId}
+                      className="brandops-button brandops-button-secondary"
+                    >
+                      {syncingMeta ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          Sincronizando Meta
+                        </>
+                      ) : (
+                        "Sincronizar Meta agora"
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleMetaCatalogSync}
+                      disabled={syncingCatalog || currentState.mode !== "api" || !currentState.catalogId}
+                      className="brandops-button brandops-button-secondary"
+                    >
+                      {syncingCatalog ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          Sincronizando catálogo
+                        </>
+                      ) : (
+                        "Sincronizar catálogo"
+                      )}
+                    </button>
+                  </>
+                ) : null}
+                {activeProvider === "ga4" ? (
+                  <button
+                    type="button"
+                    onClick={handleGa4Sync}
+                    disabled={syncingGa4 || currentState.mode !== "api" || !currentState.propertyId}
+                    className="brandops-button brandops-button-secondary"
+                  >
+                    {syncingGa4 ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Sincronizando GA4
+                      </>
+                    ) : (
+                      "Sincronizar GA4 agora"
+                    )}
+                  </button>
+                ) : null}
+              </div>
             </div>
+            ) : null}
+
+            {activeSection === "rules" ? (
+              <div className="brandops-toolbar-panel text-sm text-on-surface-variant">
+                <p className="font-medium text-on-surface">{providerContextCard.title}</p>
+                <p className="leading-6">{providerContextCard.body}</p>
+                {providerContextCard.cta ? (
+                  <div>
+                    <Link href={providerContextCard.cta} className="brandops-button brandops-button-ghost">
+                      Abrir painel relacionado
+                    </Link>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </SurfaceCard>
 
+        {activeSection === "rules" ? (
         <SurfaceCard>
           <SectionHeading
             title="Modelo operacional"
@@ -687,6 +840,7 @@ export default function IntegrationsPage() {
             </article>
           </div>
         </SurfaceCard>
+        ) : null}
       </section>
     </div>
   );

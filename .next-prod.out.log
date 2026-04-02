@@ -1,0 +1,10 @@
+
+> brandops@0.1.0 start
+> node scripts/start-standalone.js
+
+   ▲ Next.js 15.1.12
+   - Local:        http://localhost:3008
+   - Network:      http://192.168.18.38:3008
+
+ ✓ Starting...
+ ✓ Ready in 595ms

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Loader2, LockKeyhole } from "lucide-react";
 import { useBrandOps } from "@/components/BrandOpsProvider";
+import { BRANDING } from "@/lib/branding";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,16 +21,22 @@ export default function LoginPage() {
   }, [isLoading, router, session]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
-      <div className="brandops-panel w-full max-w-md px-6 py-7 shadow-sm sm:px-7 sm:py-8">
-        <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/12 text-secondary">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-8">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(58,88,140,0.12)_1px,transparent_0)] bg-[length:24px_24px]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top,rgba(8,145,178,0.18),transparent_62%)]" />
+      <div className="brandops-panel atlas-tech-grid relative z-10 w-full max-w-md px-6 py-7 shadow-sm sm:px-7 sm:py-8">
+        <div className="atlas-brand-shell inline-flex h-12 w-12 items-center justify-center rounded-xl border text-secondary">
           <LockKeyhole size={22} />
         </div>
         <div className="mt-5">
-          <p className="eyebrow">BrandOps</p>
+          <p className="eyebrow">{BRANDING.appName}</p>
           <h1 className="mt-2 font-headline text-2xl font-semibold tracking-tight text-on-surface">
             Entrar no painel
           </h1>
+          <p className="mt-2 text-sm text-on-surface-variant">{BRANDING.tagline}</p>
+          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-ink-muted">
+            Torre de controle e inteligência para Print on Demand
+          </p>
         </div>
 
         <form
@@ -58,7 +65,7 @@ export default function LoginPage() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               autoComplete="email"
-              className="brandops-input w-full rounded-xl px-4 py-3"
+                className="brandops-input w-full"
               placeholder="contato@marca.com"
             />
           </div>
@@ -69,19 +76,19 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
-              className="brandops-input w-full rounded-xl px-4 py-3"
+                className="brandops-input w-full"
               placeholder="Sua senha"
             />
           </div>
           {error ? (
-            <div className="rounded-2xl border border-tertiary/20 bg-tertiary/10 px-4 py-3 text-sm text-tertiary">
+            <div className="rounded-xl border border-tertiary/20 bg-tertiary-container/60 px-4 py-3 text-sm text-on-tertiary-container">
               {error}
             </div>
           ) : null}
           <button
             type="submit"
             disabled={isSubmitting || isLoading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-5 py-3 text-sm font-semibold text-on-secondary transition-transform hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-60"
+            className="brandops-button brandops-button-primary inline-flex w-full items-center justify-center gap-2 px-5 py-3 text-sm disabled:translate-y-0 disabled:opacity-60"
           >
             {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
             Entrar

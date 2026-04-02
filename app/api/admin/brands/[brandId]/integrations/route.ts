@@ -30,6 +30,10 @@ function normalizeSettings(provider: IntegrationProvider, settings: unknown) {
         typeof source.adAccountId === "string" && source.adAccountId.trim()
           ? source.adAccountId.trim()
           : null,
+      catalogId:
+        typeof source.catalogId === "string" && source.catalogId.trim()
+          ? source.catalogId.trim()
+          : null,
       manualFallback:
         typeof source.manualFallback === "boolean" ? source.manualFallback : true,
       syncWindowDays:
@@ -92,6 +96,24 @@ export async function PATCH(
       throw new Error("Nenhuma integração informada para atualização.");
     }
 
+    const { data: currentRows, error: currentError } = await supabase
+      .from("brand_integrations")
+      .select("provider, settings")
+      .eq("brand_id", brandId);
+
+    if (currentError) {
+      throw currentError;
+    }
+
+    const currentSettingsMap = new Map(
+      (currentRows ?? []).map((row) => [
+        row.provider as IntegrationProvider,
+        row.settings && typeof row.settings === "object" && !Array.isArray(row.settings)
+          ? (row.settings as Record<string, unknown>)
+          : {},
+      ]),
+    );
+
     const rows = updates.map((entry) => {
       const provider = String(entry.provider ?? "").trim() as IntegrationProvider;
       const mode = String(entry.mode ?? "").trim() as IntegrationMode;
@@ -108,7 +130,10 @@ export async function PATCH(
         brand_id: brandId,
         provider,
         mode,
-        settings: normalizeSettings(provider, entry.settings),
+        settings: {
+          ...currentSettingsMap.get(provider),
+          ...normalizeSettings(provider, entry.settings),
+        },
       };
     });
 

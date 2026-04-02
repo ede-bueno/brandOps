@@ -17,8 +17,8 @@ import {
   createBrandIfNeeded,
   deleteBrandExpense,
   fetchAccessibleBrands,
-  fetchDashboardKpis,
   fetchBrandDataset,
+  fetchFinancialReport,
   fetchUserProfile,
   importFilesToBrand,
   saveCmvRule,
@@ -26,19 +26,16 @@ import {
   setMediaSanitizationState,
   setOrderSanitizationState,
   updateExpenseCategory as updateExpenseCategoryRecord,
-  updateBrandExpense, 
-  fetchDreMonthly
+  updateBrandExpense,
 } from "@/lib/brandops/database";
 import {
   buildPeriodRange,
-  computeBrandMetrics,
   filterBrandDatasetByRange,
   getLatestDatasetDate,
-  mergeDashboardSummary,
   getPeriodLabel,
   type AnalysisDateRange,
 } from "@/lib/brandops/metrics";
-import type { BrandSummaryMetrics } from "@/lib/brandops/types";
+import type { AnnualDreReport } from "@/lib/brandops/types";
 import { supabase } from "@/lib/supabase";
 import type {
   BrandDataset,
@@ -55,8 +52,6 @@ type BrandOption = {
   updated_at: string;
 };
 
-type DreMonthlyDataset = Array<Record<string, unknown>>;
-
 interface BrandOpsContextValue {
   session: Session | null;
   profile: UserProfile | null;
@@ -65,9 +60,9 @@ interface BrandOpsContextValue {
   activeBrand: BrandDataset | null;
   filteredBrand: BrandDataset | null;
   periodRange: AnalysisDateRange | null;
-  dashboardMetrics: BrandSummaryMetrics | null;
+  financialReportFiltered: AnnualDreReport | null;
+  financialReportHistorical: AnnualDreReport | null;
   isMetricsLoading: boolean;
-  dreMonthly: DreMonthlyDataset | null;
   isDreLoading: boolean;
   isLoading: boolean;
   isBrandHydrating: boolean;
@@ -143,10 +138,9 @@ export function BrandOpsProvider({
   const [isLoading, setIsLoading] = useState(true);
   const [isBrandHydrating, setIsBrandHydrating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [dreMonthly, setDreMonthly] = useState<DreMonthlyDataset | null>(null);
-  const [isDreLoading, setIsDreLoading] = useState(false);
-  const [backendKpis, setBackendKpis] = useState<Record<string, number | null> | null>(null);
-  const [isMetricsLoading, setIsMetricsLoading] = useState(false);
+  const [financialReportHistorical, setFinancialReportHistorical] = useState<AnnualDreReport | null>(null);
+  const [financialReportFiltered, setFinancialReportFiltered] = useState<AnnualDreReport | null>(null);
+  const [isFinancialReportLoading, setIsFinancialReportLoading] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>("30d");
   const [customDateRange, setCustomDateRange] = useState<CustomDateRange>({
     from: "",
@@ -239,43 +233,43 @@ export function BrandOpsProvider({
     [cancelScheduledFullHydration, refreshBrandResources],
   );
 
-  const refreshDashboardResources = useCallback(
+  const refreshFilteredFinancialReport = useCallback(
     async (brandId: string) => {
-      const kpis = await fetchDashboardKpis(
+      const report = await fetchFinancialReport(
         brandId,
         periodRange?.start ?? null,
         periodRange?.end ?? null,
       ).catch((error) => {
-        console.error("Failed to load dashboard KPIs from backend:", error);
+        console.error("Failed to load filtered financial report from backend:", error);
         return null;
       });
 
       if (activeBrandIdRef.current === brandId) {
-        setBackendKpis(kpis);
+        setFinancialReportFiltered(report);
       }
     },
     [periodRange?.end, periodRange?.start],
   );
 
-  const refreshDreResources = useCallback(async (brandId: string) => {
-    const dreData = await fetchDreMonthly(brandId).catch((error) => {
-      console.error("Failed to load DRE monthly from backend:", error);
+  const refreshHistoricalFinancialReport = useCallback(async (brandId: string) => {
+    const report = await fetchFinancialReport(brandId).catch((error) => {
+      console.error("Failed to load historical financial report from backend:", error);
       return null;
     });
 
     if (activeBrandIdRef.current === brandId) {
-      setDreMonthly(dreData);
+      setFinancialReportHistorical(report);
     }
   }, []);
 
   const refreshSummaryResources = useCallback(
-    async (brandId: string, options?: { includeDre?: boolean }) => {
-      await refreshDashboardResources(brandId);
-      if (options?.includeDre) {
-        await refreshDreResources(brandId);
+    async (brandId: string, options?: { includeHistorical?: boolean }) => {
+      await refreshFilteredFinancialReport(brandId);
+      if (options?.includeHistorical) {
+        await refreshHistoricalFinancialReport(brandId);
       }
     },
-    [refreshDashboardResources, refreshDreResources],
+    [refreshFilteredFinancialReport, refreshHistoricalFinancialReport],
   );
 
   const applyOptimisticSanitizationDecision = useCallback(
@@ -406,14 +400,14 @@ export function BrandOpsProvider({
   );
 
   const refreshAfterMutation = useCallback(
-    (brandId: string, includeDataset = true, includeDre = false) => {
+    (brandId: string, includeDataset = true, includeHistorical = true) => {
       void (async () => {
         try {
           if (includeDataset) {
             await refreshBrandResources(brandId);
           }
 
-          await refreshSummaryResources(brandId, { includeDre });
+          await refreshSummaryResources(brandId, { includeHistorical });
           setErrorMessage(null);
         } catch (error) {
           console.error("Failed to refresh brand data after mutation:", error);
@@ -428,64 +422,56 @@ export function BrandOpsProvider({
     [refreshBrandResources, refreshSummaryResources],
   );
 
-  const dashboardMetrics = useMemo(() => {
-    const fallbackMetrics = filteredBrand ? computeBrandMetrics(filteredBrand) : null;
-    return mergeDashboardSummary(backendKpis, fallbackMetrics);
-  }, [backendKpis, filteredBrand]);
+  const isMetricsLoading = isFinancialReportLoading;
+  const isDreLoading = isFinancialReportLoading;
 
   useEffect(() => {
-    async function loadDashboardMetrics() {
+    async function loadFilteredFinancialReport() {
       if (!activeBrandId) {
-        setBackendKpis(null);
-        setIsMetricsLoading(false);
+        setFinancialReportFiltered(null);
+        setIsFinancialReportLoading(false);
         return;
       }
 
       const requestId = ++summaryLoadRequestRef.current;
-      setIsMetricsLoading(true);
+      setIsFinancialReportLoading(true);
       try {
-        await refreshDashboardResources(activeBrandId);
+        await refreshFilteredFinancialReport(activeBrandId);
       } catch (error) {
-        console.error("Failed to load dashboard KPIs from backend:", error);
+        console.error("Failed to load filtered financial report from backend:", error);
         if (summaryLoadRequestRef.current === requestId) {
-          setBackendKpis(null);
+          setFinancialReportFiltered(null);
         }
       } finally {
         if (summaryLoadRequestRef.current === requestId) {
-          setIsMetricsLoading(false);
+          setIsFinancialReportLoading(false);
         }
       }
     }
 
-    void loadDashboardMetrics();
-  }, [activeBrandId, refreshDashboardResources]);
+    void loadFilteredFinancialReport();
+  }, [activeBrandId, refreshFilteredFinancialReport]);
 
   useEffect(() => {
-    async function loadDreMonthlyData() {
+    async function loadHistoricalFinancialReport() {
       if (!activeBrandId) {
-        setDreMonthly(null);
-        setIsDreLoading(false);
+        setFinancialReportHistorical(null);
         return;
       }
 
       const requestId = ++dreLoadRequestRef.current;
-      setIsDreLoading(true);
       try {
-        await refreshDreResources(activeBrandId);
+        await refreshHistoricalFinancialReport(activeBrandId);
       } catch (error) {
-        console.error("Failed to load DRE monthly from backend:", error);
+        console.error("Failed to load historical financial report from backend:", error);
         if (dreLoadRequestRef.current === requestId) {
-          setDreMonthly(null);
-        }
-      } finally {
-        if (dreLoadRequestRef.current === requestId) {
-          setIsDreLoading(false);
+          setFinancialReportHistorical(null);
         }
       }
     }
 
-    void loadDreMonthlyData();
-  }, [activeBrandId, refreshDreResources]);
+    void loadHistoricalFinancialReport();
+  }, [activeBrandId, refreshHistoricalFinancialReport]);
 
   useEffect(() => {
     let isMounted = true;
@@ -531,8 +517,8 @@ export function BrandOpsProvider({
         setActiveBrandId(null);
         setActiveBrand(null);
         setIsBrandHydrating(false);
-        setBackendKpis(null);
-        setDreMonthly(null);
+        setFinancialReportFiltered(null);
+        setFinancialReportHistorical(null);
         setErrorMessage(null);
         setIsLoading(false);
         return;
@@ -572,8 +558,8 @@ export function BrandOpsProvider({
         setBrands([]);
         setActiveBrandId(null);
         setActiveBrand(null);
-        setBackendKpis(null);
-        setDreMonthly(null);
+        setFinancialReportFiltered(null);
+        setFinancialReportHistorical(null);
         setErrorMessage(
           error instanceof Error
             ? error.message
@@ -602,8 +588,8 @@ export function BrandOpsProvider({
       setIsLoading(true);
       setActiveBrand(null);
       setIsBrandHydrating(true);
-      setBackendKpis(null);
-      setDreMonthly(null);
+      setFinancialReportFiltered(null);
+      setFinancialReportHistorical(null);
       setActiveBrandId(brandId);
       if (typeof window !== "undefined" && userId) {
         window.localStorage.setItem(getBrandContextStorageKey(userId), brandId);
@@ -709,9 +695,9 @@ export function BrandOpsProvider({
       activeBrand,
       filteredBrand,
       periodRange,
-      dashboardMetrics,
+      financialReportFiltered,
+      financialReportHistorical,
       isMetricsLoading,
-      dreMonthly,
       isDreLoading,
       isLoading,
       isBrandHydrating,
@@ -748,14 +734,14 @@ export function BrandOpsProvider({
         setBrands(refreshedBrands);
         setActiveBrandId(brandId);
         await refreshBrandResources(brandId, "full");
-        await refreshSummaryResources(brandId, { includeDre: true });
+        await refreshSummaryResources(brandId, { includeHistorical: true });
         setErrorMessage(null);
       },
       saveCmvEntry: async (brandId, productId, _productName, unitCost) => {
         await setCurrentCmv(brandId, productId, unitCost);
         if (activeBrandId === brandId) {
           await refreshBrandResources(brandId, "full");
-          await refreshSummaryResources(brandId, { includeDre: true });
+          await refreshSummaryResources(brandId, { includeHistorical: true });
         }
         setErrorMessage(null);
       },
@@ -763,7 +749,7 @@ export function BrandOpsProvider({
         await saveCmvRule(brandId, matchType, matchValue, matchLabel, unitCost, validFrom);
         if (activeBrandId === brandId) {
           await refreshBrandResources(brandId, "full");
-          await refreshSummaryResources(brandId, { includeDre: true });
+          await refreshSummaryResources(brandId, { includeHistorical: true });
         }
         setErrorMessage(null);
       },
@@ -771,7 +757,7 @@ export function BrandOpsProvider({
         await applyCmvCheckpoint(brandId, note, createdAt);
         if (activeBrandId === brandId) {
           await refreshBrandResources(brandId, "full");
-          await refreshSummaryResources(brandId, { includeDre: true });
+          await refreshSummaryResources(brandId, { includeHistorical: true });
         }
         setErrorMessage(null);
       },
@@ -827,7 +813,7 @@ export function BrandOpsProvider({
         await createExpenseCategory(brandId, name, color);
         if (activeBrandId === brandId) {
           await refreshBrandResources(brandId, "core");
-          await refreshSummaryResources(brandId, { includeDre: true });
+          await refreshSummaryResources(brandId, { includeHistorical: true });
         }
         setErrorMessage(null);
       },
@@ -845,7 +831,7 @@ export function BrandOpsProvider({
         await createBrandExpense(brandId, categoryId, description, amount, incurredOn, userId);
         if (activeBrandId === brandId) {
           await refreshBrandResources(brandId, "core");
-          await refreshSummaryResources(brandId, { includeDre: true });
+          await refreshSummaryResources(brandId, { includeHistorical: true });
         }
         setErrorMessage(null);
       },
@@ -853,7 +839,7 @@ export function BrandOpsProvider({
         await updateBrandExpense(expenseId, categoryId, description, amount, incurredOn);
         if (activeBrandId === brandId) {
           await refreshBrandResources(brandId, "core");
-          await refreshSummaryResources(brandId, { includeDre: true });
+          await refreshSummaryResources(brandId, { includeHistorical: true });
         }
         setErrorMessage(null);
       },
@@ -861,7 +847,7 @@ export function BrandOpsProvider({
         await deleteBrandExpense(expenseId);
         if (activeBrandId === brandId) {
           await refreshBrandResources(brandId, "core");
-          await refreshSummaryResources(brandId, { includeDre: true });
+          await refreshSummaryResources(brandId, { includeHistorical: true });
         }
         setErrorMessage(null);
       },
@@ -871,7 +857,7 @@ export function BrandOpsProvider({
         }
         try {
           await refreshBrandResources(activeBrandId, "full");
-          await refreshSummaryResources(activeBrandId, { includeDre: true });
+          await refreshSummaryResources(activeBrandId, { includeHistorical: true });
           setErrorMessage(null);
         } catch (error) {
           setErrorMessage(
@@ -889,9 +875,9 @@ export function BrandOpsProvider({
       errorMessage,
       filteredBrand,
       periodRange,
-      dashboardMetrics,
+      financialReportFiltered,
+      financialReportHistorical,
       isMetricsLoading,
-      dreMonthly,
       isDreLoading,
       handleSetActiveBrandId,
       isBrandHydrating,

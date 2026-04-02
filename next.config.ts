@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output:
-    (process.env.BRANDOPS_OUTPUT_MODE?.trim() as "standalone" | undefined) ||
-    undefined,
   serverExternalPackages: ["googleapis"],
   images: {
     remotePatterns: [

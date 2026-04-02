@@ -252,13 +252,13 @@ export default function AdminStoresPage() {
       <section className="grid gap-4 xl:grid-cols-[300px_1fr]">
         <aside className="space-y-4">
           <SurfaceCard className="flex max-h-[720px] flex-col p-3">
-            <div className="mb-3 relative">
-              <Search size={16} className="absolute left-4 top-3.5 text-on-surface-variant/50" />
+            <div className="mb-3 brandops-input-with-icon">
+              <Search size={16} />
               <input
                 value={filter}
                 onChange={(event) => setFilter(event.target.value)}
                 placeholder="Buscar por nome, slug..."
-                className="w-full rounded-lg border border-outline bg-surface-container/50 py-2.5 pl-10 pr-3 text-sm text-on-surface outline-none transition focus:border-secondary/50 focus:bg-surface-container"
+                className="brandops-input w-full"
               />
             </div>
 
@@ -281,7 +281,7 @@ export default function AdminStoresPage() {
                         setIsCreating(false);
                         setActiveTab("general");
                       }}
-                      className={`w-full group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all ${
+                      className={`w-full group flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-all ${
                         isSelected
                           ? "border-secondary/40 bg-secondary/5"
                           : "border-outline bg-transparent hover:border-secondary/30 hover:bg-surface-container/40"
@@ -400,7 +400,7 @@ export default function AdminStoresPage() {
                             href={selectedBrand.website_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 rounded-md border border-outline bg-background px-2 py-1 font-medium text-on-surface transition hover:border-secondary/40 hover:text-secondary"
+                            className="brandops-button brandops-button-ghost min-h-[1.9rem] px-2.5 py-1 text-[11px]"
                           >
                             Site
                           </a>
@@ -486,11 +486,11 @@ export default function AdminStoresPage() {
                             Credencial pronta
                           </p>
                           <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                            <div className="rounded-lg border border-outline bg-background px-3 py-2.5">
+                            <div className="brandops-command-slab px-3 py-3">
                               <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">Email</p>
                               <p className="mt-1 text-sm font-semibold text-on-surface">{lastProvisionedAccess.email}</p>
                             </div>
-                            <div className="rounded-lg border border-outline bg-background px-3 py-2.5">
+                            <div className="brandops-command-slab px-3 py-3">
                               <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">Senha inicial</p>
                               <p className="mt-1 text-sm font-semibold text-on-surface">{lastProvisionedAccess.password}</p>
                             </div>
@@ -507,21 +507,21 @@ export default function AdminStoresPage() {
                           value={inviteForm.fullName}
                           onChange={(event) => setInviteForm((current) => ({ ...current, fullName: event.target.value }))}
                           placeholder="Nome completo..."
-                          className="w-full rounded-lg border border-outline bg-background px-3 py-2.5 text-sm text-on-surface outline-none transition focus:border-secondary/60 focus:bg-surface-container/50"
+                          className="brandops-input w-full"
                         />
                         <input
                           value={inviteForm.email}
                           onChange={(event) => setInviteForm((current) => ({ ...current, email: event.target.value }))}
                           placeholder="Email corporativo..."
-                          className="w-full rounded-lg border border-outline bg-background px-3 py-2.5 text-sm text-on-surface outline-none transition focus:border-secondary/60 focus:bg-surface-container/50"
+                          className="brandops-input w-full"
                         />
                         <input
                           value={inviteForm.password}
                           onChange={(event) => setInviteForm((current) => ({ ...current, password: event.target.value }))}
                           placeholder="Senha inicial (opcional)"
-                          className="w-full rounded-lg border border-outline bg-background px-3 py-2.5 text-sm text-on-surface outline-none transition focus:border-secondary/60 focus:bg-surface-container/50"
+                          className="brandops-input w-full"
                         />
-                        <div className="rounded-lg border border-outline bg-background px-3 py-2.5 text-sm text-on-surface-variant">
+                        <div className="brandops-command-slab px-3 py-3 text-sm text-on-surface-variant">
                           Perfil criado: <span className="font-semibold text-on-surface">acesso da marca</span>
                         </div>
                         <button
@@ -560,7 +560,7 @@ export default function AdminStoresPage() {
                               setSending(false);
                             }
                           }}
-                          className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold tracking-wide text-on-secondary transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="brandops-button brandops-button-primary mt-1 inline-flex w-full items-center justify-center gap-2"
                         >
                           <MailPlus size={16} />
                           {sending ? "Criando acesso..." : "Criar acesso"}
@@ -619,7 +619,7 @@ function StatCard({ icon: Icon, label, value, hint }: { icon: ComponentType<{ si
     <SurfaceCard className="flex flex-col justify-between p-3.5">
       <div className="flex items-start justify-between">
         <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{label}</p>
-        <div className="rounded-lg border border-outline bg-background/50 p-2 text-secondary">
+        <div className="brandops-command-slab p-2 text-secondary">
           <Icon size={15} />
         </div>
       </div>
@@ -721,7 +721,7 @@ function Field({
   onChange: (value: string) => void;
   multiline?: boolean;
 }) {
-  const baseClassName = "brandops-input w-full rounded-lg border border-outline bg-background/50 px-3 py-2.5 text-sm font-medium text-on-surface outline-none transition focus:border-secondary focus:bg-background";
+  const baseClassName = "brandops-input w-full";
   return (
     <label className="space-y-1.5 block">
       <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant flex items-center justify-between">
@@ -764,7 +764,7 @@ function SkeletonCard() {
 
 function MiniStat({ label, value, className = "" }: { label: string; value: string; className?: string }) {
   return (
-    <div className={`rounded-lg border border-outline bg-background px-3 py-2 ${className}`.trim()}>
+    <div className={`brandops-command-slab px-3 py-2 ${className}`.trim()}>
       <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{label}</p>
       <p className="mt-1 truncate text-sm font-semibold text-on-surface">{value}</p>
     </div>

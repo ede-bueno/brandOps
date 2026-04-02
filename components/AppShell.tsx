@@ -25,6 +25,9 @@ import {
 } from "lucide-react";
 import { useBrandOps } from "./BrandOpsProvider";
 import type { PeriodFilter } from "@/lib/brandops/types";
+import { BRANDING } from "@/lib/branding";
+import { ThemeToggle } from "./ThemeToggle";
+import { AtlasOrb } from "./AtlasOrb";
 
 /* -------------------------------------------------------
    Navigation Groups
@@ -98,12 +101,13 @@ function NavSection({
             href={item.href}
             onClick={onNavigate}
             title={collapsed ? item.label : undefined}
-            className={`brandops-navlink flex items-center rounded-md px-2 py-1.5 text-[13px] transition-all border border-transparent ${
-              collapsed ? "justify-center" : "gap-3"
+            data-active={isActive ? "true" : "false"}
+            className={`brandops-navlink flex items-center border text-[13px] transition-all ${
+              collapsed ? "justify-center rounded-xl px-0 py-0 h-11 w-11 mx-auto" : "gap-3 rounded-xl px-2.5 py-2"
             } ${
               isActive
-                ? "bg-surface-container-highest text-primary font-medium"
-                : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
+                ? "atlas-navlink-active bg-surface-container-highest text-primary font-semibold"
+                : "border-transparent text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
             }`}
           >
             <span
@@ -111,9 +115,9 @@ function NavSection({
                 isActive ? "text-primary" : "text-on-surface-variant"
               }`}
             >
-              <Icon size={14} />
+              <Icon size={collapsed ? 17 : 16} />
             </span>
-            {!collapsed && <span className="truncate">{item.label}</span>}
+            {!collapsed && <span className="truncate text-[13.5px] font-medium">{item.label}</span>}
           </Link>
         );
       })}
@@ -122,9 +126,9 @@ function NavSection({
 }
 
 function NavGroupLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
-  if (collapsed) return <div className="my-1.5 h-px bg-outline mx-2" />;
+  if (collapsed) return <div className="mx-3 my-2 h-px bg-outline/70" />;
   return (
-    <p className="mb-1 mt-4 px-2 text-[9px] font-bold uppercase tracking-[0.2em] text-ink-muted first:mt-0">
+    <p className="mb-1.5 mt-4 px-2.5 text-[9px] font-bold uppercase tracking-[0.2em] text-ink-muted first:mt-0">
       {label}
     </p>
   );
@@ -187,16 +191,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (shouldBlockShell) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background relative overflow-hidden">
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
         {/* Decorative blur elements for modern premium feel */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[80px]" />
         
-        <div className="relative z-10 flex flex-col items-center gap-6 rounded-3xl border border-outline/50 bg-surface/60 backdrop-blur-xl px-10 py-12 shadow-2xl">
-          <div className="relative flex items-center justify-center w-16 h-16">
-            <div className="absolute inset-0 rounded-full border-[3px] border-primary/20" />
-            <div className="absolute inset-0 rounded-full border-[3px] border-primary border-t-transparent animate-spin" />
-            <Sparkles className="w-6 h-6 text-primary animate-pulse" />
-          </div>
+        <div className="relative z-10 flex flex-col items-center gap-6 rounded-3xl border border-outline/50 bg-surface/60 px-10 py-12 shadow-2xl backdrop-blur-xl">
+          <AtlasOrb size="lg" />
           
           <div className="text-center space-y-2">
             <h3 className="font-headline text-lg font-semibold tracking-tight text-on-surface">
@@ -228,11 +228,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="text-center space-y-3">
              <p className="eyebrow text-secondary uppercase tracking-[0.3em]">Seleção de Contexto</p>
              <h1 className="font-headline text-4xl font-semibold tracking-tight text-on-surface lg:text-5xl">
-                Em qual operação deseja entrar hoje?
+                Qual operação POD deseja abrir agora?
              </h1>
              <p className="text-on-surface-variant max-w-2xl mx-auto">
                 Como Superadmin, você tem acesso a todas as marcas do grupo. 
-                Selecione uma marca para abrir o dashboard e os fluxos de operação específicos.
+                Selecione uma marca para abrir a torre de controle, catálogo, mídia e operação específicos.
              </p>
           </div>
 
@@ -271,13 +271,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="brandops-shell min-h-screen bg-background text-on-surface brandops-selection">
-      <div className="flex min-h-screen gap-2 p-2 lg:gap-3 lg:p-3">
+    <div className="brandops-shell brandops-selection h-[100dvh] overflow-hidden bg-background text-on-surface">
+      <div className="flex h-full gap-0 p-0 sm:gap-2 sm:p-2 lg:gap-3 lg:p-3">
 
         {/* ---- Desktop Sidebar ---- */}
         <aside
-          className={`brandops-panel sticky top-3 hidden h-[calc(100vh-1.5rem)] shrink-0 flex-col overflow-hidden lg:flex transition-[width] duration-300 ease-in-out ${
-            isSidebarCollapsed ? "w-[64px]" : "w-[220px]"
+          className={`brandops-panel atlas-tech-grid atlas-sidebar hidden h-full shrink-0 flex-col overflow-hidden lg:flex transition-[width] duration-300 ease-in-out ${
+            isSidebarCollapsed ? "w-[82px]" : "w-[252px]"
           }`}
         >
           {/* Header */}
@@ -287,32 +287,45 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             }`}
           >
             <div className={`flex min-w-0 items-center gap-2 ${isSidebarCollapsed ? "flex-col" : ""}`}>
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-container text-primary">
-                <Sparkles size={16} />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/15 bg-primary-container text-primary shadow-sm">
+                <Sparkles size={17} />
               </div>
               {!isSidebarCollapsed && (
                 <div className="min-w-0">
-                  <p className="eyebrow text-primary">BrandOps</p>
+                  <p className="eyebrow text-primary">{BRANDING.shortName}</p>
+                  <p className="truncate font-headline text-[15px] font-semibold tracking-tight text-on-surface">
+                    {BRANDING.appName}
+                  </p>
                   <p className="truncate text-[11px] font-medium text-on-surface-variant">
-                    Op. Multi-marca
+                    Núcleo operacional do ecossistema
                   </p>
                 </div>
               )}
             </div>
             <button
               onClick={() => setIsSidebarCollapsed((c) => !c)}
-              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
             >
               {isSidebarCollapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
             </button>
           </div>
 
-          {/* Nav */}
-          <div className="flex-1 overflow-y-auto px-1.5 py-2">
+          {/* Nav */} 
+          <div className="atlas-sidebar-nav min-h-0 flex-1 overflow-y-auto px-2 py-2">
             {isLoading ? (
               <SidebarSkeleton />
             ) : (
               <>
+                {!isSidebarCollapsed && (
+                  <div className="atlas-brand-shell mb-3 rounded-xl border bg-surface-container-low px-2.5 py-2.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
+                      Console ativo
+                    </p>
+                    <p className="mt-1 truncate font-headline text-sm font-semibold text-on-surface">
+                      {selectedBrandName}
+                    </p>
+                  </div>
+                )}
                 <NavGroupLabel label="Operação" collapsed={isSidebarCollapsed} />
                 <NavSection items={operationsNav} pathname={pathname} collapsed={isSidebarCollapsed} />
 
@@ -333,19 +346,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Footer */}
-          <div className="shrink-0 border-t border-outline p-2">
+          <div className="atlas-sidebar-footer shrink-0 border-t border-outline p-2">
             {!isSidebarCollapsed && (
-              <div className="mb-2 rounded-md bg-surface-container px-2 py-1.5">
+              <div className="mb-2 rounded-lg bg-surface-container px-2.5 py-2">
                 <p className="truncate text-[11px] font-medium text-on-surface">
                   {profile?.fullName ?? profile?.email ?? "Usuário"}
                 </p>
               </div>
             )}
             <div className={`flex gap-1 ${isSidebarCollapsed ? "flex-col items-center" : "items-center"}`}>
+              <ThemeToggle />
               <button
                 onClick={() => void signOut()}
-                className={`brandops-button-ghost flex flex-1 items-center justify-center rounded-md px-2 py-1.5 text-xs ${
-                  isSidebarCollapsed ? "w-8 p-0 h-8" : "gap-2"
+                className={`brandops-button-ghost flex flex-1 items-center justify-center rounded-lg px-2 py-1.5 text-xs ${
+                  isSidebarCollapsed ? "h-9 w-9 p-0" : "gap-2"
                 }`}
               >
                 <LogOut size={13} />
@@ -356,54 +370,73 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* ---- Main Content ---- */}
-        <div className="min-w-0 flex-1">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {/* Header */}
-          <header className="brandops-panel sticky top-3 z-30 px-3 py-3 lg:px-4">
+          <header className="brandops-panel atlas-command-strip z-30 shrink-0 rounded-none border-x-0 border-t-0 px-3 py-3 sm:rounded-2xl sm:border-x sm:border-t lg:px-4">
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                 <button
                   onClick={() => setIsMobileMenuOpen((c) => !c)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-outline bg-surface-container text-on-surface lg:hidden"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-outline bg-surface-container text-on-surface lg:hidden"
                 >
                   {isMobileMenuOpen ? <X size={15} /> : <Menu size={15} />}
                 </button>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="truncate font-headline text-lg font-semibold tracking-tight text-on-surface">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="truncate font-headline text-[1.05rem] font-semibold tracking-tight text-on-surface sm:text-lg">
                       {selectedBrandName}
                     </h2>
                     <span className="status-chip">{selectedPeriodLabel}</span>
+                    {!isSidebarCollapsed && (
+                      <span className="status-chip atlas-command-chip">
+                        <AtlasOrb
+                          size="sm"
+                          title="Atlas Command"
+                          status="escutando"
+                          hints={[
+                            "Atlas vai antecipar pressão de margem e sugerir correções por frente.",
+                            "A camada proativa vai cruzar mídia, catálogo e operação para decidir o próximo passo.",
+                            "Interaja com o orbe para abrir a entidade que acompanhará o sistema.",
+                          ]}
+                        />
+                        Atlas Command
+                      </span>
+                    )}
                   </div>
+                  <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted sm:text-[11px] sm:tracking-[0.16em]">
+                    Operação, aquisição, catálogo e margem em um único workspace
+                  </p>
                 </div>
                 </div>
 
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <div className="brandops-input min-w-[160px]">
-                  <select
-                    value={activeBrandId ?? ""}
-                    onChange={(e) => {
-                      const newId = e.target.value;
-                      if (!newId) return;
-                      if (activeBrandId && newId !== activeBrandId) {
-                        if (window.confirm("Deseja trocar de marca? Os dados da tela atual serão atualizados.")) {
-                          setActiveBrandId(newId);
-                        }
-                      } else {
+                <div className="flex lg:hidden">
+                  <ThemeToggle />
+                </div>
+                <select
+                  value={activeBrandId ?? ""}
+                  onChange={(e) => {
+                    const newId = e.target.value;
+                    if (!newId) return;
+                    if (activeBrandId && newId !== activeBrandId) {
+                      if (window.confirm("Deseja trocar de marca? Os dados da tela atual serão atualizados.")) {
                         setActiveBrandId(newId);
                       }
-                    }}
-                    className="w-full bg-transparent text-xs p-1.5 outline-none font-bold"
-                    disabled={!brands.length}
-                  >
-                    {!brands.length && <option value="">Nenhuma marca...</option>}
-                    {brands.map((brand) => (
-                      <option key={brand.id} value={brand.id} className="bg-surface text-on-surface">
-                        {brand.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    } else {
+                      setActiveBrandId(newId);
+                    }
+                  }}
+                  className="brandops-input min-w-[172px] font-semibold"
+                  disabled={!brands.length}
+                >
+                  {!brands.length && <option value="">Nenhuma marca...</option>}
+                  {brands.map((brand) => (
+                    <option key={brand.id} value={brand.id} className="bg-surface text-on-surface">
+                      {brand.name}
+                    </option>
+                  ))}
+                </select>
                 </div>
               </div>
             </div>
@@ -424,9 +457,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
 
               {selectedPeriod === "custom" && (
-                <div className="grid gap-2 sm:grid-cols-2 xl:max-w-[420px]">
-                  <label className="brandops-input flex items-center gap-2 px-3 py-2 text-xs">
-                    <span className="whitespace-nowrap font-semibold text-on-surface-variant">De</span>
+                <div className="brandops-toolbar-panel xl:max-w-[460px]">
+                  <div className="grid gap-2 sm:grid-cols-2">
+                  <label className="brandops-field-stack">
+                    <span className="brandops-field-label">De</span>
                     <input
                       type="date"
                       value={customDateRange.from}
@@ -436,11 +470,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           from: event.target.value,
                         })
                       }
-                      className="w-full bg-transparent outline-none"
+                      className="brandops-input"
                     />
                   </label>
-                  <label className="brandops-input flex items-center gap-2 px-3 py-2 text-xs">
-                    <span className="whitespace-nowrap font-semibold text-on-surface-variant">Até</span>
+                  <label className="brandops-field-stack">
+                    <span className="brandops-field-label">Até</span>
                     <input
                       type="date"
                       value={customDateRange.to}
@@ -450,26 +484,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           to: event.target.value,
                         })
                       }
-                      className="w-full bg-transparent outline-none"
+                      className="brandops-input"
                     />
                   </label>
+                  </div>
                 </div>
               )}
             </div>
-
-            {/* Mobile Nav */}
-            {isMobileMenuOpen && (
-              <div className="mt-2 rounded-lg border border-outline bg-surface-container-low p-2 lg:hidden">
-                <NavGroupLabel label="Operação" collapsed={false} />
-                <NavSection items={operationsNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
-                <NavGroupLabel label="Aquisição" collapsed={false} />
-                <NavSection items={acquisitionNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
-                <NavGroupLabel label="Catálogo" collapsed={false} />
-                <NavSection items={catalogNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
-                <NavGroupLabel label="Admin" collapsed={false} />
-                <NavSection items={adminNavigation} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
-              </div>
-            )}
 
             {errorMessage && (
               <div className="mt-2 rounded-md border border-error/20 bg-error/10 px-3 py-2 text-xs text-error">
@@ -479,11 +500,83 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </header>
 
           {/* Children Space */}
-          <main className="min-w-0 px-0.5 py-4 lg:py-5">
-            <div className="space-y-4">{children}</div>
+          <main className="atlas-content-scroll min-w-0 flex-1 px-2 py-3 sm:px-0.5 sm:py-4 lg:py-5">
+            <div className="atlas-page-stack">{children}</div>
           </main>
         </div>
       </div>
+
+      {isMobileMenuOpen ? (
+        <div className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm lg:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 h-full w-full cursor-default"
+            aria-label="Fechar menu"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <aside className="brandops-panel atlas-sidebar atlas-tech-grid absolute inset-y-2 left-2 flex w-[min(86vw,320px)] flex-col overflow-hidden rounded-2xl">
+            <div className="flex items-center justify-between gap-2 border-b border-outline px-3 py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/15 bg-primary-container text-primary shadow-sm">
+                  <Sparkles size={17} />
+                </div>
+                <div className="min-w-0">
+                  <p className="eyebrow text-primary">{BRANDING.shortName}</p>
+                  <p className="truncate font-headline text-[15px] font-semibold tracking-tight text-on-surface">
+                    {BRANDING.appName}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-outline bg-surface-container text-on-surface-variant"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="px-3 py-3">
+              <div className="atlas-brand-shell rounded-xl border bg-surface-container-low px-3 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
+                  Console ativo
+                </p>
+                <p className="mt-1 truncate font-headline text-sm font-semibold text-on-surface">
+                  {selectedBrandName}
+                </p>
+              </div>
+            </div>
+
+            <div className="atlas-sidebar-nav min-h-0 flex-1 overflow-y-auto px-2 py-1">
+              <NavGroupLabel label="Operação" collapsed={false} />
+              <NavSection items={operationsNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
+              <NavGroupLabel label="Aquisição" collapsed={false} />
+              <NavSection items={acquisitionNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
+              <NavGroupLabel label="Catálogo" collapsed={false} />
+              <NavSection items={catalogNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
+              <NavGroupLabel label="Admin" collapsed={false} />
+              <NavSection items={adminNavigation} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
+            </div>
+
+            <div className="atlas-sidebar-footer border-t border-outline p-3">
+              <div className="mb-2 rounded-lg bg-surface-container px-2.5 py-2">
+                <p className="truncate text-[11px] font-medium text-on-surface">
+                  {profile?.fullName ?? profile?.email ?? "Usuário"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <button
+                  onClick={() => void signOut()}
+                  className="brandops-button brandops-button-ghost flex-1"
+                >
+                  <LogOut size={14} />
+                  Sair
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      ) : null}
     </div>
   );
 }

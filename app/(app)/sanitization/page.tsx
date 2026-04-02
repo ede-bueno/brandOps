@@ -1,11 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Search } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, ProcessingOverlay, SurfaceCard } from "@/components/ui-shell";
-import { buildMediaAnomalies, buildSanitizationHistory } from "@/lib/brandops/metrics";
+import { fetchSanitizationReport } from "@/lib/brandops/database";
+import type { SanitizationReport } from "@/lib/brandops/types";
 import { cn } from "@/lib/utils";
+
+const EMPTY_REPORT: SanitizationReport = {
+  pending: [],
+  history: [],
+  meta: {
+    generatedAt: "",
+    pendingCount: 0,
+    historyCount: 0,
+    hasData: false,
+  },
+};
 
 function statusLabel(status: "PENDING" | "KEPT" | "IGNORED") {
   if (status === "KEPT") return "Mantido";
@@ -22,6 +35,9 @@ function statusClasses(status: "PENDING" | "KEPT" | "IGNORED") {
 export default function SanitizationPage() {
   const {
     activeBrand,
+    activeBrandId,
+    brands,
+    isBrandHydrating,
     ignoreMediaRow,
     keepMediaRow,
     restoreMediaRow,
@@ -30,12 +46,17 @@ export default function SanitizationPage() {
     restoreOrder,
   } = useBrandOps();
   const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [targetFilter, setTargetFilter] = useState<"all" | "MEDIA" | "ORDER">("all");
   const [reasonDrafts, setReasonDrafts] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState("Atualizando o saneamento da marca.");
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(
     null,
   );
+  const [report, setReport] = useState<SanitizationReport>(EMPTY_REPORT);
+  const [isReportLoading, setIsReportLoading] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!feedback) {
@@ -46,22 +67,104 @@ export default function SanitizationPage() {
     return () => window.clearTimeout(timeoutId);
   }, [feedback]);
 
-  if (!activeBrand || (!activeBrand.media.length && !activeBrand.paidOrders.length)) {
+  useEffect(() => {
+    if (!activeBrandId) {
+      setReport(EMPTY_REPORT);
+      setReportError(null);
+      setIsReportLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const currentBrandId = activeBrandId;
+
+    async function loadReport() {
+      setIsReportLoading(true);
+      setReportError(null);
+
+      try {
+        const nextReport = await fetchSanitizationReport(currentBrandId);
+        if (!cancelled) {
+          setReport(nextReport);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setReport(EMPTY_REPORT);
+          setReportError(
+            error instanceof Error
+              ? error.message
+              : "Não foi possível carregar o relatório de saneamento.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsReportLoading(false);
+        }
+      }
+    }
+
+    void loadReport();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeBrandId, isBrandHydrating]);
+
+  const selectedBrandName =
+    activeBrand?.name ??
+    brands.find((brand) => brand.id === activeBrandId)?.name ??
+    "Loja";
+  const pendingAnomalies = report.pending;
+  const historyAnomalies = report.history;
+  const visibleAnomalies = useMemo(() => {
+    const base = activeTab === "pending" ? pendingAnomalies : historyAnomalies;
+    const normalizedTerm = searchTerm.trim().toLowerCase();
+
+    return base.filter((anomaly) => {
+      const matchesTarget = targetFilter === "all" ? true : anomaly.target === targetFilter;
+      const matchesSearch =
+        !normalizedTerm ||
+        anomaly.campaignName.toLowerCase().includes(normalizedTerm) ||
+        anomaly.reason.toLowerCase().includes(normalizedTerm) ||
+        anomaly.value.toLowerCase().includes(normalizedTerm) ||
+        anomaly.metric.toLowerCase().includes(normalizedTerm) ||
+        (anomaly.orderNumber ?? "").toLowerCase().includes(normalizedTerm) ||
+        (anomaly.adsetName ?? "").toLowerCase().includes(normalizedTerm) ||
+        (anomaly.adName ?? "").toLowerCase().includes(normalizedTerm);
+
+      return matchesTarget && matchesSearch;
+    });
+  }, [activeTab, historyAnomalies, pendingAnomalies, searchTerm, targetFilter]);
+  const allKnownAnomalies = [...pendingAnomalies, ...historyAnomalies];
+
+  if (activeBrandId && (!activeBrand || isBrandHydrating || isReportLoading)) {
     return (
-      <EmptyState
-        title="Nenhum dado carregado para saneamento"
-        description="Importe mídia e pedidos para revisar as linhas suspeitas antes de fechar os números."
-      />
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Decisão operacional"
+          title="Saneamento"
+          description={`Carregando histórico e pendências de saneamento da loja ${selectedBrandName}.`}
+          badge="Histórico completo da marca"
+        />
+        <div className="space-y-6 animate-pulse">
+          <div className="h-14 rounded-2xl bg-surface-container" />
+          <div className="h-[420px] rounded-2xl bg-surface-container" />
+        </div>
+      </div>
     );
   }
 
-  const anomalies = buildMediaAnomalies(activeBrand);
-  const pendingAnomalies = anomalies.filter(
-    (anomaly) => anomaly.sanitizationStatus === "PENDING",
-  );
-  const historyAnomalies = buildSanitizationHistory(activeBrand);
-  const visibleAnomalies = activeTab === "pending" ? pendingAnomalies : historyAnomalies;
-  const allKnownAnomalies = [...pendingAnomalies, ...historyAnomalies];
+  if (!activeBrand || (!activeBrand.media.length && !activeBrand.paidOrders.length)) {
+    return (
+      <EmptyState
+        title={reportError ? "Saneamento indisponível" : "Nenhum dado carregado para saneamento"}
+        description={
+          reportError ??
+          "Importe mídia e pedidos para revisar as linhas suspeitas antes de fechar os números."
+        }
+      />
+    );
+  }
 
   const commitDecision = async (
     anomalyId: string,
@@ -106,6 +209,11 @@ export default function SanitizationPage() {
         }
 
         setReasonDrafts((current) => ({ ...current, [anomalyId]: "" }));
+      }
+
+      if (activeBrandId) {
+        const nextReport = await fetchSanitizationReport(activeBrandId);
+        setReport(nextReport);
       }
 
       setActiveTab(decision === "PENDING" ? "pending" : "history");
@@ -159,25 +267,65 @@ export default function SanitizationPage() {
         ) : null}
 
         <div className="border-b border-outline px-5 py-4">
-          <div className="flex flex-wrap gap-2">
-            {[
-              { key: "pending", label: `Para decisão (${pendingAnomalies.length})` },
-              { key: "history", label: `Histórico (${historyAnomalies.length})` },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key as "pending" | "history")}
-                disabled={isProcessing}
-                className={cn(
-                  "rounded-xl px-4 py-2 text-sm font-semibold transition-all",
-                  activeTab === tab.key
-                    ? "bg-secondary-container text-on-secondary-container"
-                    : "bg-surface-container text-on-surface-variant hover:text-on-surface",
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                  Modo de revisão
+                </p>
+                <p className="mt-1 text-sm text-on-surface-variant">
+                  Decida no bloco pendente e audite o histórico completo sem depender do filtro global.
+                </p>
+              </div>
+              <div className="brandops-subtabs">
+                {[
+                  { key: "pending", label: `Para decisão (${report.meta.pendingCount})` },
+                  { key: "history", label: `Histórico (${report.meta.historyCount})` },
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key as "pending" | "history")}
+                    disabled={isProcessing}
+                    className="brandops-subtab"
+                    data-active={activeTab === tab.key}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="brandops-toolbar-panel" data-compact="true">
+            <div className="brandops-toolbar-grid" data-columns="2">
+              <label className="brandops-field-stack">
+                <span className="brandops-field-label">Buscar ocorrência</span>
+                <div className="brandops-input-with-icon">
+                  <Search size={16} />
+                  <input
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Campanha, pedido, métrica ou motivo"
+                    className="brandops-input"
+                    disabled={isProcessing}
+                  />
+                </div>
+              </label>
+
+              <label className="brandops-field-stack">
+                <span className="brandops-field-label">Filtrar alvo</span>
+                <select
+                  value={targetFilter}
+                  onChange={(event) => setTargetFilter(event.target.value as "all" | "MEDIA" | "ORDER")}
+                  className="brandops-input"
+                  disabled={isProcessing}
+                >
+                  <option value="all">Todos</option>
+                  <option value="MEDIA">Mídia</option>
+                  <option value="ORDER">Pedido</option>
+                </select>
+              </label>
+            </div>
+            </div>
           </div>
         </div>
 
@@ -238,7 +386,7 @@ export default function SanitizationPage() {
                             }))
                           }
                           placeholder="Contexto da decisão do operador"
-                          className="brandops-input min-h-[92px] w-[260px] p-3 text-xs"
+                          className="brandops-input min-h-[92px] w-[260px] text-xs"
                           disabled={isProcessing}
                         />
                       </td>

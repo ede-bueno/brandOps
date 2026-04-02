@@ -8,6 +8,7 @@ import {
   Pencil,
   Plus,
   ReceiptText,
+  Search,
   Tags,
   Trash2,
   X,
@@ -121,6 +122,7 @@ export default function CostCenterPage() {
   } = useBrandOps();
 
   const [activeTab, setActiveTab] = useState<CostCenterTab>("launches");
+  const [launchView, setLaunchView] = useState<"overview" | "ledger">("overview");
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
@@ -560,6 +562,33 @@ export default function CostCenterPage() {
 
       {activeTab === "launches" ? (
         <div className="space-y-6">
+          <SurfaceCard>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <SectionHeading
+                title="Operação de lançamentos"
+                description="Separe a leitura consolidada do livro operacional para manter a tela mais objetiva."
+              />
+              <div className="brandops-subtabs">
+                <button
+                  type="button"
+                  className="brandops-subtab"
+                  data-active={launchView === "overview"}
+                  onClick={() => setLaunchView("overview")}
+                >
+                  Resumo do mês
+                </button>
+                <button
+                  type="button"
+                  className="brandops-subtab"
+                  data-active={launchView === "ledger"}
+                  onClick={() => setLaunchView("ledger")}
+                >
+                  Livro de lançamentos
+                </button>
+              </div>
+            </div>
+          </SurfaceCard>
+
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               label="Competência em foco"
@@ -587,208 +616,209 @@ export default function CostCenterPage() {
             />
           </section>
 
-          <div className="grid gap-6 xl:grid-cols-[1.45fr_1fr]">
-            <SurfaceCard>
-              <div className="space-y-4">
-                <SectionHeading
-                  title="Tabela mensal de despesas"
-                  description="Visão consolidada por competência para entender rapidamente o peso das despesas no DRE."
-                  aside={`${monthlyLedger.length} competências registradas`}
-                />
-                {monthlyLedger.length ? (
-                  <div className="brandops-table-container">
-                    <table className="brandops-table-compact">
-                      <thead>
-                        <tr>
-                          <th>Mês</th>
-                          <th className="text-right">Lançamentos</th>
-                          <th className="text-right">Categorias</th>
-                          <th className="text-right">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {monthlyLedger.map((row) => (
-                          <tr key={row.month}>
-                            <td className="font-medium text-on-surface">
-                              {formatCompetencyLabel(`${row.month}-01`)}
-                            </td>
-                            <td className="text-right">{integerFormatter.format(row.entries)}</td>
-                            <td className="text-right">
-                              {integerFormatter.format(row.categories)}
-                            </td>
-                            <td className="text-right font-semibold text-on-surface">
-                              {currencyFormatter.format(row.total)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <EmptyState
-                    title="Nenhuma despesa lançada"
-                    description="Crie o primeiro lançamento para começar a montar o DRE operacional."
-                    ctaLabel="Novo lançamento"
-                    ctaHref="/cost-center"
+          {launchView === "overview" ? (
+            <div className="grid gap-6 xl:grid-cols-[1.45fr_1fr]">
+              <SurfaceCard>
+                <div className="space-y-4">
+                  <SectionHeading
+                    title="Tabela mensal de despesas"
+                    description="Visão consolidada por competência para entender rapidamente o peso das despesas no DRE."
+                    aside={`${monthlyLedger.length} competências registradas`}
                   />
-                )}
-              </div>
-            </SurfaceCard>
+                  {monthlyLedger.length ? (
+                    <div className="brandops-table-container">
+                      <table className="brandops-table-compact">
+                        <thead>
+                          <tr>
+                            <th>Mês</th>
+                            <th className="text-right">Lançamentos</th>
+                            <th className="text-right">Categorias</th>
+                            <th className="text-right">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {monthlyLedger.map((row) => (
+                            <tr key={row.month}>
+                              <td className="font-medium text-on-surface">
+                                {formatCompetencyLabel(`${row.month}-01`)}
+                              </td>
+                              <td className="text-right">{integerFormatter.format(row.entries)}</td>
+                              <td className="text-right">
+                                {integerFormatter.format(row.categories)}
+                              </td>
+                              <td className="text-right font-semibold text-on-surface">
+                                {currencyFormatter.format(row.total)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <EmptyState
+                      title="Nenhuma despesa lançada"
+                      description="Crie o primeiro lançamento para começar a montar o DRE operacional."
+                      ctaLabel="Novo lançamento"
+                      ctaHref="/cost-center"
+                    />
+                  )}
+                </div>
+              </SurfaceCard>
 
-            <SurfaceCard>
-              <div className="space-y-4">
-                <SectionHeading
-                  title="Leitura por categoria"
-                  description="Distribuição acumulada das despesas por categoria para apoiar análise e revisão."
-                />
-                {categorySummary.length ? (
-                  <div className="space-y-3">
-                    {categorySummary.slice(0, 8).map((row) => (
-                      <div
-                        key={row.categoryId}
-                        className="rounded-xl border border-outline bg-surface-container-low p-3"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
+              <SurfaceCard>
+                <div className="space-y-4">
+                  <SectionHeading
+                    title="Leitura por categoria"
+                    description="Distribuição acumulada das despesas por categoria para apoiar análise e revisão."
+                  />
+                  {categorySummary.length ? (
+                    <div className="space-y-3">
+                      {categorySummary.slice(0, 8).map((row) => (
+                        <div
+                          key={row.categoryId}
+                          className="rounded-xl border border-outline bg-surface-container-low p-3"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-on-surface">
+                                {row.categoryName}
+                              </p>
+                              <p className="text-xs text-on-surface-variant">
+                                {integerFormatter.format(row.entries)} lançamentos
+                              </p>
+                            </div>
                             <p className="text-sm font-semibold text-on-surface">
-                              {row.categoryName}
-                            </p>
-                            <p className="text-xs text-on-surface-variant">
-                              {integerFormatter.format(row.entries)} lançamentos
+                              {currencyFormatter.format(row.total)}
                             </p>
                           </div>
-                          <p className="text-sm font-semibold text-on-surface">
-                            {currencyFormatter.format(row.total)}
-                          </p>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-outline p-4 text-sm text-on-surface-variant">
+                      As categorias começam a aparecer aqui conforme os lançamentos são feitos.
+                    </div>
+                  )}
+                </div>
+              </SurfaceCard>
+            </div>
+          ) : (
+            <SurfaceCard>
+              <div className="space-y-4">
+                <SectionHeading
+                  title="Livro de lançamentos"
+                  description="Histórico operacional para editar, revisar ou excluir movimentos do DRE."
+                />
+
+                <div className="brandops-toolbar-panel">
+                  <div className="brandops-toolbar-grid xl:grid-cols-[minmax(0,1fr)_260px_200px_auto]">
+                  <label className="brandops-field-stack">
+                    <span className="brandops-field-label">Buscar</span>
+                    <div className="brandops-input-shell">
+                      <Search size={15} className="brandops-input-icon" />
+                      <input
+                        value={bookSearch}
+                        onChange={(event) => setBookSearch(event.target.value)}
+                        placeholder="Descrição ou categoria"
+                        className="brandops-input brandops-input-leading"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="brandops-field-stack">
+                    <span className="brandops-field-label">Categoria</span>
+                    <select
+                      value={categoryFilter}
+                      onChange={(event) => setCategoryFilter(event.target.value)}
+                      className="brandops-input"
+                    >
+                      <option value="all">Todas as categorias</option>
+                      {expenseCategories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <div className="panel-muted px-4 py-3">
+                    <p className="brandops-field-label">Total filtrado</p>
+                    <p className="mt-1 text-sm font-semibold text-on-surface">
+                      {currencyFormatter.format(
+                        bookEntries.reduce((accumulator, expense) => accumulator + expense.amount, 0),
+                      )}
+                    </p>
                   </div>
-                ) : (
-                  <div className="rounded-xl border border-dashed border-outline p-4 text-sm text-on-surface-variant">
-                    As categorias começam a aparecer aqui conforme os lançamentos são feitos.
-                  </div>
-                )}
-              </div>
-            </SurfaceCard>
-          </div>
 
-          <SurfaceCard>
-            <div className="space-y-4">
-              <SectionHeading
-                title="Livro de lançamentos"
-                description="Histórico operacional para editar, revisar ou excluir movimentos do DRE."
-              />
-
-              <div className="grid gap-3 xl:grid-cols-[1fr_280px_180px_auto]">
-                <label className="space-y-1">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
-                    Buscar
-                  </span>
-                  <input
-                    value={bookSearch}
-                    onChange={(event) => setBookSearch(event.target.value)}
-                    placeholder="Descrição ou categoria"
-                    className="brandops-input w-full"
-                  />
-                </label>
-
-                <label className="space-y-1">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
-                    Categoria
-                  </span>
-                  <select
-                    value={categoryFilter}
-                    onChange={(event) => setCategoryFilter(event.target.value)}
-                    className="brandops-input w-full"
+                  <button
+                    type="button"
+                    className="brandops-button brandops-button-primary h-[2.85rem] self-end"
+                    onClick={openNewExpenseModal}
                   >
-                    <option value="all">Todas as categorias</option>
-                    {expenseCategories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <div className="rounded-xl border border-outline bg-surface-container-low px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-on-surface-variant">
-                    Total filtrado
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-on-surface">
-                    {currencyFormatter.format(
-                      bookEntries.reduce((accumulator, expense) => accumulator + expense.amount, 0),
-                    )}
-                  </p>
+                    <Plus size={15} />
+                    Lançar despesa
+                  </button>
+                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  className="brandops-button brandops-button-primary h-[46px] self-end"
-                  onClick={openNewExpenseModal}
-                >
-                  <Plus size={15} />
-                  Lançar despesa
-                </button>
-              </div>
-
-              <div className="brandops-table-container">
-                <table className="brandops-table-compact">
-                  <thead>
-                    <tr>
-                      <th>Competência</th>
-                      <th>Categoria</th>
-                      <th>Descrição</th>
-                      <th className="text-right">Valor</th>
-                      <th className="text-right">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bookEntries.length ? (
-                      bookEntries.map((expense) => (
-                        <tr key={expense.id}>
-                          <td>{formatCompetencyLabel(expense.incurredOn)}</td>
-                          <td>{expense.categoryName}</td>
-                          <td className="text-on-surface">{expense.description}</td>
-                          <td className="text-right font-semibold text-on-surface">
-                            {currencyFormatter.format(expense.amount)}
-                          </td>
-                          <td>
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                className="brandops-button brandops-button-ghost !px-3 !py-2"
-                                onClick={() => openEditExpenseModal(expense.id)}
-                              >
-                                <Pencil size={14} />
-                                Editar
-                              </button>
-                              <button
-                                type="button"
-                                className="brandops-button brandops-button-danger !px-3 !py-2"
-                                onClick={() => handleDeleteExpense(expense.id)}
-                              >
-                                <Trash2 size={14} />
-                                Excluir
-                              </button>
+                <div className="brandops-table-container">
+                  <table className="brandops-table-compact">
+                    <thead>
+                      <tr>
+                        <th>Competência</th>
+                        <th>Categoria</th>
+                        <th>Descrição</th>
+                        <th className="text-right">Valor</th>
+                        <th className="text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bookEntries.length ? (
+                        bookEntries.map((expense) => (
+                          <tr key={expense.id}>
+                            <td>{formatCompetencyLabel(expense.incurredOn)}</td>
+                            <td>{expense.categoryName}</td>
+                            <td className="text-on-surface">{expense.description}</td>
+                            <td className="text-right font-semibold text-on-surface">
+                              {currencyFormatter.format(expense.amount)}
+                            </td>
+                            <td>
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="brandops-button brandops-button-ghost !px-3 !py-2"
+                                  onClick={() => openEditExpenseModal(expense.id)}
+                                >
+                                  <Pencil size={14} />
+                                  Editar
+                                </button>
+                                <button
+                                  type="button"
+                                  className="brandops-button brandops-button-danger !px-3 !py-2"
+                                  onClick={() => handleDeleteExpense(expense.id)}
+                                >
+                                  <Trash2 size={14} />
+                                  Excluir
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5}>
+                            <div className="py-10 text-center text-sm text-on-surface-variant">
+                              Nenhum lançamento encontrado para os filtros atuais.
                             </div>
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={5}>
-                          <div className="py-10 text-center text-sm text-on-surface-variant">
-                            Nenhum lançamento encontrado para os filtros atuais.
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          </SurfaceCard>
+            </SurfaceCard>
+          )}
         </div>
       ) : (
         <div className="space-y-6">

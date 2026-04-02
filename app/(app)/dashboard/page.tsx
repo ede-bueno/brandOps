@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { MetricCard } from "@/components/MetricCard";
 import { useBrandOps } from "@/components/BrandOpsProvider";
@@ -10,25 +11,24 @@ import {
   integerFormatter,
   percentFormatter,
 } from "@/lib/brandops/format";
-import { buildExpenseSummary, computeBrandMetrics } from "@/lib/brandops/metrics";
 
 export default function DashboardPage() {
+  const [activeSection, setActiveSection] = useState<"kpis" | "workflow">("kpis");
   const { 
     activeBrand, 
     activeBrandId,
     brands,
-    filteredBrand, 
     selectedPeriodLabel, 
     isLoading: isDatasetLoading,
     isMetricsLoading,
-    dashboardMetrics,
+    financialReportFiltered,
   } = useBrandOps();
   const selectedBrandName =
     activeBrand?.name ??
     brands.find((brand) => brand.id === activeBrandId)?.name ??
     "Loja";
   const isBrandLoading =
-    Boolean(activeBrandId) && (isDatasetLoading || !activeBrand || !filteredBrand);
+    Boolean(activeBrandId) && (isDatasetLoading || isMetricsLoading || !activeBrand);
 
   if (isBrandLoading) {
     return (
@@ -68,7 +68,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (!activeBrand || !filteredBrand) {
+  if (!activeBrand) {
     return (
       <EmptyState
         title="Dados da loja indisponíveis"
@@ -77,35 +77,22 @@ export default function DashboardPage() {
     );
   }
 
-  if (isDatasetLoading || isMetricsLoading) {
+  const metrics = financialReportFiltered?.total;
+  const expenseSummary = financialReportFiltered?.expenseBreakdown.slice(0, 4) ?? [];
+
+  if (!metrics || !financialReportFiltered) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-32 bg-surface-container rounded-3xl" />
-        <div className="grid gap-4 md:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 bg-surface-container rounded-2xl" />
-          ))}
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="h-[300px] bg-surface-container rounded-3xl" />
-          <div className="h-[300px] bg-surface-container rounded-3xl" />
-        </div>
-      </div>
+      <EmptyState
+        title="Relatório indisponível"
+        description="Não foi possível carregar a leitura financeira canônica desta loja no momento."
+      />
     );
   }
 
-  const metrics = dashboardMetrics ?? computeBrandMetrics(filteredBrand);
-  const expenseSummary = buildExpenseSummary(filteredBrand).slice(0, 4);
-  const variableCostShare =
-    metrics.rld > 0 ? (metrics.cmvTotal + metrics.mediaSpend) / metrics.rld : 0;
+  const variableCostShare = financialReportFiltered.analysis.shares.variableCostShare;
   const breakEvenValue =
-    metrics.contributionMargin > 0 && metrics.operatingExpensesTotal > 0
-      ? currencyFormatter.format(metrics.breakEvenPoint)
-      : "N/A";
-  const breakEvenHelp =
-    metrics.contributionMargin > 0 && metrics.operatingExpensesTotal > 0
-      ? "RLD necessário para cobrir despesas"
-      : "Não calculável com a margem atual";
+    metrics.breakEvenDisplay !== null ? currencyFormatter.format(metrics.breakEvenDisplay) : "N/A";
+  const breakEvenHelp = metrics.breakEvenReason;
 
   return (
     <div className="space-y-6">
@@ -121,7 +108,7 @@ export default function DashboardPage() {
         }
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="atlas-command-room grid grid-cols-2 gap-3 xl:grid-cols-4">
         <MetricCard
           label="Pedidos pagos"
           value={integerFormatter.format(metrics.paidOrderCount)}
@@ -145,7 +132,7 @@ export default function DashboardPage() {
         />
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <MetricCard
           label="Faturado"
           value={currencyFormatter.format(metrics.grossRevenue)}
@@ -156,6 +143,7 @@ export default function DashboardPage() {
           label="Descontos totais"
           value={currencyFormatter.format(metrics.discounts)}
           help={`Via cupom identificado: ${currencyFormatter.format(metrics.couponDiscounts)}`}
+          accent="warning"
         />
         <MetricCard
           label="Comissão INK"
@@ -167,40 +155,77 @@ export default function DashboardPage() {
           label="Lucro médio"
           value={currencyFormatter.format(metrics.averageInkProfit)}
           help="Comissão INK por item vendido"
+          accent={metrics.averageInkProfit >= 0 ? "positive" : "negative"}
         />
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="atlas-command-room grid grid-cols-2 gap-3 xl:grid-cols-5">
         <MetricCard
           label="Investimento mídia"
           value={currencyFormatter.format(metrics.mediaSpend)}
           help={`ROAS bruto ${metrics.grossRoas.toFixed(2)}x`}
+          accent="warning"
         />
         <MetricCard
           label="CMV aplicado"
           value={currencyFormatter.format(metrics.cmvTotal)}
           help="Custo histórico por item vendido"
+          accent="warning"
         />
         <MetricCard
           label="Despesas operacionais"
           value={currencyFormatter.format(metrics.operatingExpensesTotal)}
           help={`${expenseSummary.length} categorias lançadas no período`}
+          accent="warning"
         />
         <MetricCard
           label="Margem de contribuição"
           value={currencyFormatter.format(metrics.contributionAfterMedia)}
           help={percentFormatter.format(metrics.contributionMargin)}
-          accent={metrics.contributionAfterMedia >= 0 ? "positive" : "warning"}
+          accent={metrics.contributionAfterMedia >= 0 ? "positive" : "negative"}
+          href="/dashboard/contribution-margin"
+          detailLabel="Explorar"
         />
         <MetricCard
           label="Ponto de equilíbrio"
           value={breakEvenValue}
-          help={breakEvenHelp}
-          accent="secondary"
+          help={
+            metrics.breakEvenDisplay !== null
+              ? `${breakEvenHelp} Meta mensal de RLD.`
+              : breakEvenHelp
+          }
+          accent={metrics.breakEvenDisplay !== null ? "secondary" : "warning"}
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <SurfaceCard>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <SectionHeading
+            title="Centro de comando"
+            description="Troque entre leitura financeira rápida e próximos passos operacionais sem alongar a tela."
+          />
+          <div className="brandops-subtabs">
+            <button
+              type="button"
+              className="brandops-subtab"
+              data-active={activeSection === "kpis"}
+              onClick={() => setActiveSection("kpis")}
+            >
+              Leitura rápida
+            </button>
+            <button
+              type="button"
+              className="brandops-subtab"
+              data-active={activeSection === "workflow"}
+              onClick={() => setActiveSection("workflow")}
+            >
+              Próximos passos
+            </button>
+          </div>
+        </div>
+      </SurfaceCard>
+
+      {activeSection === "kpis" ? (
         <SurfaceCard>
           <SectionHeading
             title="Leitura rápida"
@@ -230,7 +255,7 @@ export default function DashboardPage() {
               <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                 Resultado operacional
               </p>
-              <p className="mt-2 font-headline text-2xl font-semibold text-on-surface">
+              <p className={`mt-2 font-headline text-2xl font-semibold ${metrics.netResult >= 0 ? "atlas-semantic-positive" : "atlas-semantic-negative"}`}>
                 {currencyFormatter.format(metrics.netResult)}
               </p>
             </article>
@@ -254,7 +279,7 @@ export default function DashboardPage() {
                   <div key={expense.categoryName} className="flex items-center justify-between gap-3 text-sm">
                     <span className="truncate text-on-surface-variant">{expense.categoryName}</span>
                     <span className="font-semibold text-on-surface">
-                      {currencyFormatter.format(expense.amount)}
+                      {currencyFormatter.format(expense.total)}
                     </span>
                   </div>
                 ))}
@@ -262,13 +287,13 @@ export default function DashboardPage() {
             </div>
           ) : null}
         </SurfaceCard>
-
+      ) : (
         <SurfaceCard>
           <SectionHeading
             title="Próximos passos"
             description="Fluxos mais importantes para fechar o período sem perder consistência."
           />
-          <div className="mt-5 grid gap-3">
+          <div className="mt-5 grid gap-3 xl:grid-cols-3">
             <article className="panel-muted p-4">
               <h3 className="font-semibold text-on-surface">1. Importação incremental</h3>
               <p className="mt-2 text-sm leading-6 text-on-surface-variant">
@@ -289,7 +314,7 @@ export default function DashboardPage() {
             </article>
           </div>
         </SurfaceCard>
-      </section>
+      )}
     </div>
   );
 }

@@ -1,0 +1,24 @@
+
+> brandops@0.1.0 dev
+> node scripts/run-next-dev.js
+
+   ▲ Next.js 15.1.12
+   - Local:        http://localhost:3008
+   - Network:      http://192.168.18.38:3008
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 2.6s
+ ○ Compiling /login ...
+ ✓ Compiled /login in 8.3s (775 modules)
+ GET /login 200 in 8941ms
+ GET /login 200 in 44ms
+ ✓ Compiled in 504ms (363 modules)
+ ⚠ Found a change in next.config.ts. Restarting the server to apply the changes...
+   ▲ Next.js 15.1.12
+   - Local:        http://localhost:3008
+   - Network:      http://192.168.18.38:3008
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1875ms

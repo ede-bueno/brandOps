@@ -1,18 +1,20 @@
 const { spawn } = require("node:child_process");
+const fs = require("node:fs");
+const path = require("node:path");
+
+function cleanDistDir() {
+  fs.rmSync(path.resolve(process.cwd(), ".next"), {
+    recursive: true,
+    force: true,
+  });
+}
 
 function runBuild() {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [require.resolve("next/dist/bin/next"), "build"], {
-      env: {
-        ...process.env,
-        BRANDOPS_DIST_DIR: (process.env.BRANDOPS_DIST_DIR || "").trim() || ".next",
-        BRANDOPS_OUTPUT_MODE: (process.env.BRANDOPS_OUTPUT_MODE || "").trim() || "standalone",
-      },
-      stdio: ["inherit", "pipe", "pipe"],
+      env: process.env,
+      stdio: "inherit",
     });
-
-    child.stdout.on("data", (chunk) => process.stdout.write(chunk));
-    child.stderr.on("data", (chunk) => process.stderr.write(chunk));
 
     child.on("exit", (code, signal) => {
       resolve({ code: code ?? 0, signal });
@@ -21,6 +23,7 @@ function runBuild() {
 }
 
 (async () => {
+  cleanDistDir();
   const firstRun = await runBuild();
   if (firstRun.signal) {
     process.kill(process.pid, firstRun.signal);
@@ -35,6 +38,7 @@ function runBuild() {
     "\n[brandops] Primeira execução do next build falhou. Reexecutando automaticamente uma vez...\n",
   );
 
+  cleanDistDir();
   const secondRun = await runBuild();
   if (secondRun.signal) {
     process.kill(process.pid, secondRun.signal);

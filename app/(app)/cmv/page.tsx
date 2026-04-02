@@ -160,24 +160,29 @@ export default function CmvPage() {
         description="O custo é mantido por tipo de peça, com vigência histórica para preservar períodos já fechados. A alteração de 01/03/2026 já está refletida nesta base."
       />
 
-      <section className="flex flex-wrap gap-2">
-        {[
-          { key: "types", label: "Gestão por tipo" },
-          { key: "orders", label: "Detalhamento por pedido" },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveView(tab.key as "types" | "orders")}
-            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
-              activeView === tab.key
-                ? "bg-secondary-container text-on-secondary-container"
-                : "bg-surface-container text-on-surface-variant hover:text-on-surface"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </section>
+      <SurfaceCard>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <SectionHeading
+            title="Modo de gestão do CMV"
+            description="Separe manutenção por tipo da auditoria por pedido para não alongar a tela principal."
+          />
+          <div className="brandops-subtabs">
+            {[
+              { key: "types", label: "Gestão por tipo" },
+              { key: "orders", label: "Detalhamento por pedido" },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveView(tab.key as "types" | "orders")}
+                className="brandops-subtab"
+                data-active={activeView === tab.key}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </SurfaceCard>
 
       <section className="grid gap-4 md:grid-cols-3">
         <SurfaceCard>
@@ -255,18 +260,26 @@ export default function CmvPage() {
               description="Use o checkpoint depois de revisar os custos para congelar a aplicação do CMV."
             />
             <div className="mt-5 space-y-4">
-              <input
-                type="date"
-                value={checkpointDate}
-                onChange={(event) => setCheckpointDate(event.target.value)}
-                className="brandops-input w-full px-3 py-2.5"
-              />
-              <textarea
-                value={checkpointNote}
-                onChange={(event) => setCheckpointNote(event.target.value)}
-                placeholder="Ex.: Fechamento CMV março/2026"
-                className="brandops-input min-h-[96px] w-full p-3"
-              />
+              <div className="brandops-toolbar-panel">
+                <label className="brandops-field-stack">
+                  <span className="brandops-field-label">Data do checkpoint</span>
+                  <input
+                    type="date"
+                    value={checkpointDate}
+                    onChange={(event) => setCheckpointDate(event.target.value)}
+                    className="brandops-input"
+                  />
+                </label>
+                <label className="brandops-field-stack">
+                  <span className="brandops-field-label">Nota operacional</span>
+                  <textarea
+                    value={checkpointNote}
+                    onChange={(event) => setCheckpointNote(event.target.value)}
+                    placeholder="Ex.: Fechamento CMV março/2026"
+                    className="brandops-input min-h-[96px]"
+                  />
+                </label>
+              </div>
               <button
                 onClick={async () => {
                   setIsApplyingCheckpoint(true);
@@ -455,7 +468,7 @@ export default function CmvPage() {
                     type="date"
                     value={effectiveDate}
                     onChange={(event) => setEffectiveDate(event.target.value)}
-                    className="brandops-input w-full px-3 py-2.5"
+                    className="brandops-input w-full"
                   />
                 </label>
                 <label className="block">
@@ -466,7 +479,7 @@ export default function CmvPage() {
                     value={draftCost}
                     onChange={(event) => setDraftCost(event.target.value)}
                     placeholder="0,00"
-                    className="brandops-input w-full px-3 py-2.5"
+                    className="brandops-input w-full"
                   />
                 </label>
                 <button

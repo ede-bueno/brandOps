@@ -1,63 +1,34 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
+import { ContributionTrendPanel, mapContributionTrendPoints } from "@/components/finance/ContributionTrendPanel";
 import { MetricCard } from "@/components/MetricCard";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { currencyFormatter, percentFormatter } from "@/lib/brandops/format";
-import {
-  buildAnnualDreReport,
-  computeBrandMetrics,
-  filterDreMonthlyByRange,
-} from "@/lib/brandops/metrics";
 import { cn } from "@/lib/utils";
 
 export default function DrePage() {
   const [viewMode, setViewMode] = useState<"historical" | "filtered">("historical");
+  const [activeSection, setActiveSection] = useState<"overview" | "matrix">("overview");
   const { 
     activeBrand, 
     activeBrandId,
     brands,
-    filteredBrand, 
     selectedPeriodLabel, 
     isLoading: isDatasetLoading,
-    dreMonthly,
+    financialReportFiltered,
+    financialReportHistorical,
     isDreLoading,
-    dashboardMetrics,
-    periodRange,
   } = useBrandOps();
   const selectedBrandName =
     activeBrand?.name ??
     brands.find((brand) => brand.id === activeBrandId)?.name ??
     "Loja";
   const isBrandLoading =
-    Boolean(activeBrandId) && (isDatasetLoading || isDreLoading || !activeBrand || !filteredBrand);
-
-  const filteredSummary = useMemo(() => {
-    if (!filteredBrand) return dashboardMetrics;
-    return computeBrandMetrics(filteredBrand);
-  }, [dashboardMetrics, filteredBrand]);
-
-  const historicalSummary = useMemo(() => {
-    if (!activeBrand) return null;
-    return computeBrandMetrics(activeBrand);
-  }, [activeBrand]);
-
-  const filteredReport = useMemo(() => {
-    if (!filteredBrand || !filteredSummary) return null;
-    return buildAnnualDreReport(
-      filteredBrand,
-      filterDreMonthlyByRange(dreMonthly, periodRange),
-      filteredSummary,
-    );
-  }, [dreMonthly, filteredBrand, filteredSummary, periodRange]);
-
-  const historicalReport = useMemo(() => {
-    if (!activeBrand || !historicalSummary) return null;
-    return buildAnnualDreReport(activeBrand, dreMonthly, historicalSummary);
-  }, [activeBrand, dreMonthly, historicalSummary]);
+    Boolean(activeBrandId) && (isDatasetLoading || isDreLoading || !activeBrand);
 
   if (isBrandLoading) {
     return (
@@ -89,10 +60,9 @@ export default function DrePage() {
     );
   }
 
-  const report = viewMode === "historical" ? historicalReport : filteredReport;
-  const summary = viewMode === "historical" ? historicalSummary : filteredSummary;
+  const report = viewMode === "historical" ? financialReportHistorical : financialReportFiltered;
 
-  if (!report || !summary) {
+  if (!report) {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-32 bg-surface-container rounded-3xl" />
@@ -106,15 +76,12 @@ export default function DrePage() {
     );
   }
 
-  const topExpense = report.expenseBreakdown[0] ?? null;
+  const topExpense = report.analysis.topExpenseCategory;
+  const trendData = mapContributionTrendPoints(report.months);
+  const latestMonth = report.analysis.latestMonth;
   const breakEvenValue =
-    summary.contributionMargin > 0 && summary.operatingExpensesTotal > 0
-      ? currencyFormatter.format(summary.breakEvenPoint)
-      : "N/A";
-  const breakEvenHelp =
-    summary.contributionMargin > 0 && summary.operatingExpensesTotal > 0
-      ? "Valor de RLD necessário para cobrir as despesas fixas com a margem atual."
-      : "Não calculável com a margem de contribuição atual.";
+    report.total.breakEvenDisplay !== null ? currencyFormatter.format(report.total.breakEvenDisplay) : "N/A";
+  const breakEvenHelp = report.total.breakEvenReason;
 
   return (
     <div className="space-y-6">
@@ -153,11 +120,11 @@ export default function DrePage() {
         }
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-        <MetricCard label="Faturado" value={currencyFormatter.format(report.total.rob)} />
-        <MetricCard label="RLD" value={currencyFormatter.format(report.total.rld)} />
-        <MetricCard label="CMV" value={currencyFormatter.format(report.total.cmvTotal)} />
-        <MetricCard label="Mídia" value={currencyFormatter.format(report.total.mediaSpend)} />
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-6">
+        <MetricCard label="Faturado" value={currencyFormatter.format(report.total.rob)} accent="secondary" />
+        <MetricCard label="RLD" value={currencyFormatter.format(report.total.rld)} accent="info" />
+        <MetricCard label="CMV" value={currencyFormatter.format(report.total.cmvTotal)} accent="warning" />
+        <MetricCard label="Mídia" value={currencyFormatter.format(report.total.mediaSpend)} accent="warning" />
         <MetricCard
           label="Despesas operacionais"
           value={currencyFormatter.format(report.total.fixedExpensesTotal)}
@@ -166,25 +133,127 @@ export default function DrePage() {
               ? `${report.expenseBreakdown.length} categorias lançadas`
               : "Sem lançamentos no período"
           }
+          accent="warning"
         />
         <MetricCard
           label="Resultado"
           value={currencyFormatter.format(report.total.netResult)}
-          accent={report.total.netResult >= 0 ? "positive" : "warning"}
+          accent={report.total.netResult >= 0 ? "positive" : "negative"}
           help={`Margem final ${percentFormatter.format(report.total.operatingMargin)}`}
         />
       </section>
 
-      <SurfaceCard className="p-0 overflow-hidden">
-        <div className="border-b border-outline p-5">
+      <SurfaceCard>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <SectionHeading
-            title="DRE mensal"
-            description="A matriz abaixo usa faturado da INK como entrada comercial e cruza descontos, CMV, mídia e despesas por competência."
+            title="Exploração do DRE"
+            description="Alterne entre a leitura executiva e a grade mensal sem alongar a tela principal."
           />
+          <div className="brandops-subtabs">
+            <button
+              type="button"
+              className="brandops-subtab"
+              data-active={activeSection === "overview"}
+              onClick={() => setActiveSection("overview")}
+            >
+              Resumo executivo
+            </button>
+            <button
+              type="button"
+              className="brandops-subtab"
+              data-active={activeSection === "matrix"}
+              onClick={() => setActiveSection("matrix")}
+            >
+              Grade mensal
+            </button>
+          </div>
         </div>
+      </SurfaceCard>
 
-        <div className="brandops-table-container rounded-none border-0">
-          <table className="brandops-table-compact min-w-[1080px] w-full">
+      {activeSection === "overview" ? (
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.9fr)_minmax(260px,0.52fr)]">
+          <SurfaceCard>
+            <SectionHeading
+              title="Tendência da margem"
+              description="Leitura consolidada da margem de contribuição e do resultado líquido mês a mês para localizar ganho de eficiência ou compressão da operação."
+              aside={
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <span className="status-chip">
+                    {viewMode === "historical" ? "Base histórica completa" : "Base do filtro atual"}
+                  </span>
+                  {latestMonth ? <span className="status-chip">Último mês: {latestMonth.label}</span> : null}
+                </div>
+              }
+            />
+            <div className="mt-5">
+              <ContributionTrendPanel data={trendData} height={320} />
+            </div>
+          </SurfaceCard>
+
+          <SurfaceCard>
+            <SectionHeading
+              title="Drivers do DRE"
+              description="Resumo curto do que mais pesa no resultado final do período."
+            />
+            <div className="mt-5 grid gap-3">
+              <article className="panel-muted p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                  Margem de contribuição
+                </p>
+                <p className={`mt-2 font-headline text-2xl font-semibold ${report.total.contributionMargin >= 0 ? "atlas-semantic-positive" : "atlas-semantic-negative"}`}>
+                  {percentFormatter.format(report.total.contributionMargin)}
+                </p>
+                <p className="mt-1 text-xs text-on-surface-variant">
+                  Percentual da RLD que sobra após CMV e mídia.
+                </p>
+              </article>
+              <article className="panel-muted p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                  Ponto de equilíbrio
+                </p>
+                <p className={`mt-2 font-headline text-2xl font-semibold ${report.total.breakEvenDisplay !== null ? "atlas-semantic-info" : "atlas-semantic-warning"}`}>
+                  {breakEvenValue}
+                </p>
+                <p className="mt-1 text-xs text-on-surface-variant">{breakEvenHelp}</p>
+                {report.total.breakEvenDisplay !== null ? (
+                  <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-muted">
+                    Meta mensal de RLD para cobrir a média de despesas fixas
+                  </p>
+                ) : null}
+              </article>
+              {topExpense ? (
+                <article className="panel-muted p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    Maior grupo de despesa
+                  </p>
+                  <div className="mt-2 flex items-center justify-between gap-4">
+                    <span className="text-sm text-on-surface-variant">{topExpense.categoryName}</span>
+                    <span className="font-semibold text-on-surface">
+                      {currencyFormatter.format(topExpense.total)}
+                    </span>
+                  </div>
+                </article>
+              ) : null}
+              <Link href="/dashboard/contribution-margin" className="panel-muted p-4 transition hover:border-secondary/20 hover:bg-secondary-container/15">
+                <p className="font-semibold text-on-surface">Abrir detalhe da margem</p>
+                <p className="mt-1 text-sm leading-6 text-on-surface-variant">
+                  Ver a linha do tempo completa da contribuição e cruzar com mídia, CMV e despesas.
+                </p>
+              </Link>
+            </div>
+          </SurfaceCard>
+        </section>
+      ) : (
+        <SurfaceCard className="p-0 overflow-hidden">
+          <div className="border-b border-outline p-5">
+            <SectionHeading
+              title="DRE mensal"
+              description="A matriz abaixo usa faturado da INK como entrada comercial e cruza descontos, CMV, mídia e despesas por competência."
+            />
+          </div>
+
+          <div className="brandops-table-container rounded-none border-0">
+            <table className="brandops-table-compact min-w-[1080px] w-full">
             <thead>
               <tr>
                 <th className="sticky left-0 z-10 bg-surface text-left min-w-[240px]">Indicador</th>
@@ -339,88 +408,80 @@ export default function DrePage() {
                 </td>
               </tr>
             </tbody>
-          </table>
-        </div>
-      </SurfaceCard>
-
-      <section className="grid gap-4 xl:grid-cols-[0.72fr_1.28fr]">
-        <SurfaceCard>
-          <SectionHeading
-            title="Ponto de equilíbrio"
-            description={breakEvenHelp}
-          />
-          <p className="mt-5 font-headline text-3xl font-semibold text-on-surface">
-            {breakEvenValue}
-          </p>
+            </table>
+          </div>
         </SurfaceCard>
+      )}
 
-        <SurfaceCard>
-          <SectionHeading
-            title="Margem de contribuição"
-            description="Parcela da RLD que sobra após CMV e mídia, antes das despesas operacionais."
-          />
-          <p className="mt-5 font-headline text-3xl font-semibold text-on-surface">
-            {percentFormatter.format(report.total.contributionMargin)}
-          </p>
-          {topExpense ? (
-            <div className="mt-4 rounded-2xl border border-outline bg-surface-container-low p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                Maior grupo de despesa
-              </p>
-              <div className="mt-2 flex items-center justify-between gap-4">
-                <span className="text-sm text-on-surface-variant">{topExpense.categoryName}</span>
-                <span className="font-semibold text-on-surface">
-                  {currencyFormatter.format(topExpense.total)}
-                </span>
-              </div>
-            </div>
-          ) : null}
-        </SurfaceCard>
-
+      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <SurfaceCard className="p-0 overflow-hidden">
           <div className="border-b border-outline p-5">
             <SectionHeading
               title="Composição das despesas"
-              description="Ranking das categorias lançadas que alimentam o DRE do período."
+              description="Participação das categorias lançadas que mais pressionam o resultado."
             />
           </div>
-          <div className="brandops-table-container rounded-none border-0">
-            <table className="brandops-table-compact w-full min-w-[520px]">
-              <thead>
-                <tr>
-                  <th>Categoria</th>
-                  <th className="text-right">Total</th>
-                  <th className="text-right">Participação</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.expenseBreakdown.length ? (
-                  report.expenseBreakdown.map((category) => {
-                    const share = report.total.fixedExpensesTotal
-                      ? category.total / report.total.fixedExpensesTotal
-                      : 0;
+          <div className="space-y-3 p-5">
+            {report.expenseBreakdown.length ? (
+              report.expenseBreakdown.map((category) => {
+                const share = report.total.fixedExpensesTotal
+                  ? category.total / report.total.fixedExpensesTotal
+                  : 0;
 
-                    return (
-                      <tr key={category.categoryId}>
-                        <td className="font-medium text-on-surface">{category.categoryName}</td>
-                        <td className="text-right">
-                          {currencyFormatter.format(category.total)}
-                        </td>
-                        <td className="text-right">
-                          {percentFormatter.format(share)}
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={3} className="py-8 text-center text-sm text-on-surface-variant">
-                      Nenhuma despesa lançada para compor o DRE.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                return (
+                  <article key={category.categoryId} className="panel-muted p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-medium text-on-surface">{category.categoryName}</p>
+                        <p className="mt-1 text-xs text-on-surface-variant">
+                          {percentFormatter.format(share)} da despesa operacional do período
+                        </p>
+                      </div>
+                      <p className="text-sm font-semibold text-on-surface">
+                        {currencyFormatter.format(category.total)}
+                      </p>
+                    </div>
+                    <div className="mt-3 h-2 rounded-full bg-surface-container-high">
+                      <div
+                        className="h-full rounded-full bg-secondary"
+                        style={{ width: `${Math.min(share * 100, 100)}%` }}
+                      />
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <div className="py-10 text-center text-sm text-on-surface-variant">
+                Nenhuma despesa lançada para compor o DRE.
+              </div>
+            )}
+          </div>
+        </SurfaceCard>
+
+        <SurfaceCard>
+          <SectionHeading
+            title="Navegação do DRE"
+            description="Atalhos para tratar rapidamente o que mais afeta o relatório."
+          />
+          <div className="mt-5 grid gap-3">
+            <Link href="/cost-center" className="panel-muted p-4 transition hover:border-secondary/20 hover:bg-secondary-container/15">
+              <p className="font-semibold text-on-surface">Gerenciar lançamentos</p>
+              <p className="mt-1 text-sm leading-6 text-on-surface-variant">
+                Abrir o livro de lançamentos, filtrar despesas e corrigir competências.
+              </p>
+            </Link>
+            <Link href="/cmv" className="panel-muted p-4 transition hover:border-secondary/20 hover:bg-secondary-container/15">
+              <p className="font-semibold text-on-surface">Revisar custos (CMV)</p>
+              <p className="mt-1 text-sm leading-6 text-on-surface-variant">
+                Validar vigência de custos e o impacto por categoria de produto.
+              </p>
+            </Link>
+            <Link href="/media" className="panel-muted p-4 transition hover:border-secondary/20 hover:bg-secondary-container/15">
+              <p className="font-semibold text-on-surface">Cruzar com mídia</p>
+              <p className="mt-1 text-sm leading-6 text-on-surface-variant">
+                Conferir se a pressão veio de gasto, queda de retorno ou mudança de mix.
+              </p>
+            </Link>
           </div>
         </SurfaceCard>
       </section>

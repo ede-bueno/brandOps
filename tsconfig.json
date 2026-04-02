@@ -37,6 +37,7 @@
   ],
   "exclude": [
     "node_modules",
+    "StyleGuide.tsx",
     ".codex",
     ".next",
     ".next-dev",

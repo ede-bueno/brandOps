@@ -1,70 +1,152 @@
 @import "tailwindcss";
 
 /* ============================================================
-   BRANDOPS — LIGHT DESIGN SYSTEM
-   Tema ativo: claro. A infraestrutura de tema permanece no código,
-   mas a interface pública opera somente no modo light.
+   ATLAS — DESIGN SYSTEM
+   Light e dark compartilham a mesma semântica de tokens.
+   O shell deve parecer um console operacional denso e técnico.
    ============================================================ */
 
 @theme {
-  --color-primary: #0f9d73;
-  --color-on-primary: #f5fffb;
-  --color-primary-container: #d7f4ea;
-  --color-on-primary-container: #064936;
-
-  --color-secondary: #2563eb;
-  --color-on-secondary: #f8fbff;
-  --color-secondary-container: #dbeafe;
-  --color-on-secondary-container: #1d4ed8;
-
-  --color-tertiary: #d97706;
-  --color-on-tertiary: #fff8ed;
-  --color-tertiary-container: #ffedd5;
-  --color-on-tertiary-container: #9a3412;
-
-  --color-error: #dc2626;
-  --color-on-error: #fff6f6;
-  --color-error-container: #fee2e2;
-  --color-on-error-container: #991b1b;
-  --color-positive: #0f9d73;
-  --color-warning: #d97706;
-
-  --color-background: #f3f6fb;
-  --color-on-background: #172033;
-  --color-surface: #ffffff;
-  --color-on-surface: #111827;
-  --color-surface-variant: #f8fafc;
-  --color-on-surface-variant: #5b6578;
-
-  --color-outline: #d6deea;
-  --color-outline-variant: #e9eef6;
-
-  --color-surface-container-highest: #e8eef7;
-  --color-surface-container-high: #f1f5fb;
-  --color-surface-container: #f8fafd;
-  --color-surface-container-low: #fcfdff;
-  --color-surface-container-lowest: #ffffff;
-
-  --color-ink-strong: #111827;
-  --color-ink-soft: #475569;
-  --color-ink-muted: #94a3b8;
-  --color-ink-inverse: #ffffff;
-
-  /* --- Fonts --- */
-  --font-headline: 'Space Grotesk', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  --font-headline: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
 }
 
 html {
   color-scheme: light;
+  --color-primary: #0891b2;
+  --color-on-primary: #ecfeff;
+  --color-primary-container: #cffafe;
+  --color-on-primary-container: #155e75;
+
+  --color-secondary: #2563eb;
+  --color-on-secondary: #eff6ff;
+  --color-secondary-container: #dbeafe;
+  --color-on-secondary-container: #1d4ed8;
+
+  --color-tertiary: #d97706;
+  --color-on-tertiary: #fff7ed;
+  --color-tertiary-container: #ffedd5;
+  --color-on-tertiary-container: #9a3412;
+
+  --color-error: #e11d48;
+  --color-on-error: #fff1f2;
+  --color-error-container: #ffe4e6;
+  --color-on-error-container: #9f1239;
+
+  --color-positive: #059669;
+  --color-warning: #d97706;
+  --color-info: #2563eb;
+
+  --color-background: #eff3f8;
+  --color-on-background: #101828;
+  --color-surface: #ffffff;
+  --color-on-surface: #0f172a;
+  --color-surface-variant: #f7f9fc;
+  --color-on-surface-variant: #5b6578;
+
+  --color-outline: #d3dce9;
+  --color-outline-variant: #e7edf5;
+
+  --color-surface-container-highest: #e5ecf6;
+  --color-surface-container-high: #eef3f9;
+  --color-surface-container: #f6f9fc;
+  --color-surface-container-low: #fbfcfe;
+  --color-surface-container-lowest: #ffffff;
+
+  --color-ink-strong: #0f172a;
+  --color-ink-soft: #475569;
+  --color-ink-muted: #90a0b7;
+  --color-ink-faint: #b6c1d1;
+  --color-ink-inverse: #f8fafc;
+
+  --atlas-page-grid: rgba(120, 138, 171, 0.18);
+  --atlas-page-glow-a: rgba(8, 145, 178, 0.12);
+  --atlas-page-glow-b: rgba(37, 99, 235, 0.08);
+  --atlas-page-glow-c: rgba(99, 102, 241, 0.06);
+  --atlas-shell-overlay: rgba(255, 255, 255, 0.72);
+  --atlas-shell-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 18px 42px rgba(15, 23, 42, 0.06);
+  --atlas-shell-shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 20px rgba(15, 23, 42, 0.05);
+  --atlas-brand-shell: rgba(8, 145, 178, 0.08);
+  --atlas-brand-shell-strong: rgba(8, 145, 178, 0.14);
+  --atlas-neon-shadow: 0 0 0 1px rgba(8, 145, 178, 0.18), 0 0 0 4px rgba(8, 145, 178, 0.08);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+html.dark {
+  color-scheme: dark;
+  --color-primary: #36c7e8;
+  --color-on-primary: #062630;
+  --color-primary-container: rgba(14, 116, 144, 0.26);
+  --color-on-primary-container: #a5f3fc;
+
+  --color-secondary: #7cb3ff;
+  --color-on-secondary: #071a33;
+  --color-secondary-container: rgba(37, 99, 235, 0.22);
+  --color-on-secondary-container: #dbeafe;
+
+  --color-tertiary: #f59e0b;
+  --color-on-tertiary: #261403;
+  --color-tertiary-container: rgba(217, 119, 6, 0.22);
+  --color-on-tertiary-container: #fed7aa;
+
+  --color-error: #fb7185;
+  --color-on-error: #340510;
+  --color-error-container: rgba(225, 29, 72, 0.18);
+  --color-on-error-container: #fecdd3;
+
+  --color-positive: #34d399;
+  --color-warning: #f59e0b;
+  --color-info: #60a5fa;
+
+  --color-background: #07111f;
+  --color-on-background: #e2e8f0;
+  --color-surface: #0b1728;
+  --color-on-surface: #e6edf7;
+  --color-surface-variant: #0f1d31;
+  --color-on-surface-variant: #9cb0cb;
+
+  --color-outline: #183047;
+  --color-outline-variant: #102136;
+
+  --color-surface-container-highest: #1a2a41;
+  --color-surface-container-high: #132236;
+  --color-surface-container: #0f1c2e;
+  --color-surface-container-low: #0c1727;
+  --color-surface-container-lowest: #08111d;
+
+  --color-ink-strong: #f8fafc;
+  --color-ink-soft: #b2c3da;
+  --color-ink-muted: #8395ae;
+  --color-ink-faint: #5e718c;
+  --color-ink-inverse: #07111f;
+
+  --atlas-page-grid: rgba(98, 122, 161, 0.2);
+  --atlas-page-glow-a: rgba(34, 211, 238, 0.12);
+  --atlas-page-glow-b: rgba(96, 165, 250, 0.08);
+  --atlas-page-glow-c: rgba(168, 85, 247, 0.05);
+  --atlas-shell-overlay: rgba(6, 14, 26, 0.72);
+  --atlas-shell-shadow: 0 1px 2px rgba(2, 6, 23, 0.38), 0 22px 48px rgba(2, 6, 23, 0.24);
+  --atlas-shell-shadow-soft: 0 1px 2px rgba(2, 6, 23, 0.26), 0 10px 24px rgba(2, 6, 23, 0.16);
+  --atlas-brand-shell: rgba(34, 211, 238, 0.1);
+  --atlas-brand-shell-strong: rgba(34, 211, 238, 0.18);
+  --atlas-neon-shadow: 0 0 0 1px rgba(34, 211, 238, 0.24), 0 0 0 4px rgba(34, 211, 238, 0.08);
 }
 
 body {
   min-height: 100vh;
-  background: var(--color-background);
   color: var(--color-on-background);
   font-family: var(--font-body);
+  overflow: hidden;
   overflow-x: hidden;
+  background:
+    radial-gradient(circle at top right, var(--atlas-page-glow-a), transparent 24rem),
+    radial-gradient(circle at 16% 8%, var(--atlas-page-glow-b), transparent 20rem),
+    radial-gradient(circle at 82% 26%, var(--atlas-page-glow-c), transparent 24rem),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-background) 96%, white 4%) 0%, var(--color-background) 100%);
   transition: background 0.2s ease, color 0.2s ease;
 }
 
@@ -74,109 +156,323 @@ body {
 
 .eyebrow {
   font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-weight: 800;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-primary);
 }
 
-/* ============================================================
-   PANELS & CARDS (TECH & FLAT)
-   ============================================================ */
-
 .brandops-shell {
-  background: transparent;
+  position: relative;
+  isolation: isolate;
+  background-image:
+    radial-gradient(circle at 1px 1px, var(--atlas-page-grid) 1px, transparent 0),
+    linear-gradient(180deg, transparent, transparent);
+  background-size: 24px 24px, 100% 100%;
+}
+
+.brandops-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, var(--atlas-shell-overlay), color-mix(in srgb, var(--atlas-shell-overlay) 80%, transparent 20%)),
+    radial-gradient(circle at 0% 0%, var(--atlas-page-glow-a), transparent 20rem),
+    radial-gradient(circle at 100% 0%, var(--atlas-page-glow-b), transparent 20rem);
 }
 
 .brandops-panel {
-  background: var(--color-surface);
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent 6%);
   border: 1px solid var(--color-outline);
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.04);
-  border-radius: 18px;
+  box-shadow: var(--atlas-shell-shadow-soft);
+  border-radius: 14px;
+  backdrop-filter: blur(18px);
 }
 
 .brandops-panel-soft {
-  background: var(--color-surface-container);
+  background: color-mix(in srgb, var(--color-surface-container) 92%, transparent 8%);
   border: 1px solid var(--color-outline-variant);
   box-shadow: none;
-  border-radius: 18px;
-}
-
-.brandops-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-outline);
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 6px 16px rgba(16, 24, 40, 0.04);
-  border-radius: 14px;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
-}
-
-.brandops-card:hover {
-  border-color: color-mix(in srgb, var(--color-primary) 22%, var(--color-outline));
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 10px 24px rgba(16, 24, 40, 0.06);
-}
-
-.panel-muted {
-  background: var(--color-surface-container);
-  border: 1px solid var(--color-outline-variant);
   border-radius: 12px;
 }
 
-/* ============================================================
-   INPUTS & BUTTONS (COMPACT)
-   ============================================================ */
+.brandops-card {
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent 4%);
+  border: 1px solid var(--color-outline);
+  box-shadow: var(--atlas-shell-shadow-soft);
+  border-radius: 14px;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease,
+    background 0.18s ease;
+}
+
+.brandops-card:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 26%, var(--color-outline));
+  box-shadow: var(--atlas-shell-shadow);
+}
+
+html.dark .brandops-panel,
+html.dark .brandops-card,
+html.dark .brandops-table-container,
+html.dark .brandops-tabs,
+html.dark .status-chip,
+html.dark .brandops-filter-pill,
+html.dark .brandops-input {
+  border-color: color-mix(in srgb, var(--color-outline) 78%, transparent 22%);
+}
+
+html.dark .brandops-panel,
+html.dark .brandops-card,
+html.dark .brandops-table-container {
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent 10%);
+}
+
+.atlas-metric-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.atlas-metric-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-outline) 80%, transparent 20%), transparent);
+  opacity: 0.8;
+}
+
+.atlas-metric-card[data-accent="positive"]::before {
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-positive) 86%, white 14%), transparent);
+}
+
+.atlas-metric-card[data-accent="negative"]::before,
+.atlas-metric-card[data-accent="warning"]::before {
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-error) 78%, var(--color-warning) 22%), transparent);
+}
+
+.atlas-metric-card[data-accent="secondary"]::before,
+.atlas-metric-card[data-accent="info"]::before {
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-secondary) 82%, white 18%), transparent);
+}
+
+.atlas-metric-card[data-accent="positive"] {
+  border-color: color-mix(in srgb, var(--color-positive) 26%, var(--color-outline));
+  box-shadow:
+    var(--atlas-shell-shadow-soft),
+    inset 0 1px 0 color-mix(in srgb, var(--color-positive) 10%, transparent 90%);
+}
+
+.atlas-metric-card[data-accent="negative"],
+.atlas-metric-card[data-accent="warning"] {
+  border-color: color-mix(in srgb, var(--color-error) 24%, var(--color-outline));
+  box-shadow:
+    var(--atlas-shell-shadow-soft),
+    inset 0 1px 0 color-mix(in srgb, var(--color-error) 10%, transparent 90%);
+}
+
+.atlas-metric-card[data-accent="secondary"],
+.atlas-metric-card[data-accent="info"] {
+  border-color: color-mix(in srgb, var(--color-secondary) 20%, var(--color-outline));
+  box-shadow:
+    var(--atlas-shell-shadow-soft),
+    inset 0 1px 0 color-mix(in srgb, var(--color-secondary) 9%, transparent 91%);
+}
+
+.atlas-metric-icon-shell {
+  border-radius: 10px;
+  border: 1px solid var(--color-outline-variant);
+}
+
+.atlas-metric-card[data-accent="positive"] .atlas-metric-icon-shell {
+  background: color-mix(in srgb, var(--color-positive) 14%, var(--color-surface-container));
+  border-color: color-mix(in srgb, var(--color-positive) 24%, var(--color-outline));
+}
+
+.atlas-metric-card[data-accent="negative"] .atlas-metric-icon-shell,
+.atlas-metric-card[data-accent="warning"] .atlas-metric-icon-shell {
+  background: color-mix(in srgb, var(--color-error) 12%, var(--color-surface-container));
+  border-color: color-mix(in srgb, var(--color-error) 20%, var(--color-outline));
+}
+
+.atlas-metric-card[data-accent="secondary"] .atlas-metric-icon-shell,
+.atlas-metric-card[data-accent="info"] .atlas-metric-icon-shell {
+  background: color-mix(in srgb, var(--color-secondary) 14%, var(--color-surface-container));
+  border-color: color-mix(in srgb, var(--color-secondary) 20%, var(--color-outline));
+}
+
+.atlas-metric-value {
+  color: var(--color-on-surface);
+}
+
+.atlas-metric-card[data-accent="positive"] .atlas-metric-value {
+  color: color-mix(in srgb, var(--color-positive) 78%, var(--color-on-surface) 22%);
+}
+
+.atlas-metric-card[data-accent="negative"] .atlas-metric-value,
+.atlas-metric-card[data-accent="warning"] .atlas-metric-value {
+  color: color-mix(in srgb, var(--color-error) 82%, var(--color-on-surface) 18%);
+}
+
+.atlas-metric-card[data-accent="secondary"] .atlas-metric-value,
+.atlas-metric-card[data-accent="info"] .atlas-metric-value {
+  color: color-mix(in srgb, var(--color-secondary) 78%, var(--color-on-surface) 22%);
+}
+
+.panel-muted {
+  background: color-mix(in srgb, var(--color-surface-container) 96%, transparent 4%);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 10px;
+}
 
 .brandops-input {
-  background: var(--color-surface-container-high);
+  display: flex;
+  align-items: center;
+  min-height: 3rem;
+  width: 100%;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface-container-high) 92%, transparent 8%),
+      color-mix(in srgb, var(--color-surface-container) 94%, transparent 6%)
+    );
   border: 1px solid var(--color-outline);
   color: var(--color-on-surface);
-  border-radius: 10px;
-  font-size: 0.8125rem;
-  transition: border-color 0.1s ease;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-surface) 18%, transparent 82%);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, transform 0.12s ease;
+}
+
+input.brandops-input,
+select.brandops-input,
+textarea.brandops-input {
+  padding: 0.85rem 1rem;
+  font-weight: 500;
+}
+
+textarea.brandops-input {
+  min-height: 7rem;
+  align-items: flex-start;
+  resize: vertical;
+}
+
+select.brandops-input {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--color-ink-muted) 50%),
+    linear-gradient(135deg, var(--color-ink-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 1px),
+    calc(100% - 12px) calc(50% - 1px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 2.5rem;
+}
+
+input.brandops-input[type="month"],
+input.brandops-input[type="date"] {
+  min-width: 0;
 }
 
 .brandops-input::placeholder {
-  color: var(--color-ink-muted);
+  color: var(--color-ink-faint);
 }
 
 .brandops-input:focus,
 .brandops-input:focus-within {
-  border-color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 70%, var(--color-outline));
+  box-shadow: var(--atlas-neon-shadow);
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent 4%);
   outline: none;
+}
+
+.brandops-input-with-icon {
+  position: relative;
+}
+
+.brandops-input-with-icon > svg {
+  position: absolute;
+  left: 0.95rem;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+  color: var(--color-ink-muted);
+  pointer-events: none;
+}
+
+.brandops-input-with-icon > .brandops-input {
+  padding-left: 2.8rem;
+}
+
+.brandops-input-shell {
+  position: relative;
+}
+
+.brandops-input-icon {
+  position: absolute;
+  left: 0.95rem;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+  color: var(--color-ink-muted);
+  pointer-events: none;
+}
+
+.brandops-input-leading {
+  padding-left: 2.8rem !important;
 }
 
 .brandops-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.375rem 0.875rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.95rem;
   font-size: 0.8125rem;
-  font-weight: 500;
-  border-radius: 10px;
-  transition: all 0.1s ease;
-  gap: 0.375rem;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: all 0.12s ease;
+  gap: 0.4rem;
   cursor: pointer;
   white-space: nowrap;
 }
 
 .brandops-button-primary {
-  background: var(--color-primary);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 88%, white 12%), var(--color-primary));
   color: var(--color-on-primary);
-  border: 1px solid transparent;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 72%, black 12%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 .brandops-button-primary:hover {
-  background: #7ee0b8;
+  filter: brightness(1.03);
+}
+
+.brandops-button-danger {
+  background: color-mix(in srgb, var(--color-error-container) 76%, transparent 24%);
+  color: var(--color-error);
+  border: 1px solid color-mix(in srgb, var(--color-error) 24%, var(--color-outline));
+}
+
+.brandops-button-danger:hover {
+  background: color-mix(in srgb, var(--color-error-container) 92%, transparent 8%);
+  border-color: color-mix(in srgb, var(--color-error) 34%, var(--color-outline));
 }
 
 .brandops-button-secondary {
-  background: var(--color-surface-container-high);
+  background: color-mix(in srgb, var(--color-surface-container-high) 88%, transparent 12%);
   color: var(--color-on-surface);
   border: 1px solid var(--color-outline);
 }
 
 .brandops-button-secondary:hover {
   background: var(--color-surface-container-highest);
-  border-color: var(--color-outline-variant);
+  border-color: color-mix(in srgb, var(--color-primary) 16%, var(--color-outline));
 }
 
 .brandops-button-ghost {
@@ -190,6 +486,39 @@ body {
   color: var(--color-on-surface);
 }
 
+.brandops-navlink {
+  position: relative;
+}
+
+.atlas-navlink-active {
+  border-color: color-mix(in srgb, var(--color-primary) 24%, var(--color-outline));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--atlas-brand-shell) 100%, transparent 0%), color-mix(in srgb, var(--atlas-brand-shell-strong) 82%, transparent 18%));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-primary) 12%, transparent 88%),
+    0 0 0 1px color-mix(in srgb, var(--color-primary) 10%, transparent 90%);
+}
+
+.atlas-navlink-active::before {
+  content: "";
+  position: absolute;
+  left: 0.4rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 90%, white 10%), color-mix(in srgb, var(--color-secondary) 74%, var(--color-primary) 26%));
+}
+
+html.dark .atlas-navlink-active {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--atlas-brand-shell) 82%, transparent 18%), color-mix(in srgb, var(--atlas-brand-shell-strong) 84%, transparent 16%));
+}
+
+html.dark .atlas-navlink-active::before {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 92%, white 8%), color-mix(in srgb, var(--color-secondary) 68%, var(--color-primary) 32%));
+}
+
 .brandops-input:focus-visible,
 .brandops-button:focus-visible,
 .brandops-navlink:focus-visible,
@@ -197,35 +526,82 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 1px;
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 75%, transparent);
+  outline-offset: 2px;
 }
-
-/* ============================================================
-   TABLES (EXTREME DENSITY)
-   ============================================================ */
 
 .brandops-table-container {
   overflow-x: auto;
   border: 1px solid var(--color-outline);
-  border-radius: 12px;
-  background: var(--color-surface);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent 4%);
+  box-shadow: var(--atlas-shell-shadow-soft);
+}
+
+.brandops-table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.9rem;
+  padding: 1rem 1rem 0;
+}
+
+.brandops-table-toolbar-group {
+  display: flex;
+  flex: 1 1 20rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.brandops-toolbar-panel {
+  border-radius: 14px;
+  border: 1px solid var(--color-outline);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%),
+      color-mix(in srgb, var(--color-surface-container) 92%, transparent 8%)
+    );
+  padding: 1rem;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-surface) 16%, transparent 84%);
+}
+
+.brandops-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.brandops-toolbar-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+@media (min-width: 900px) {
+  .brandops-toolbar-grid[data-columns="2"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .brandops-toolbar-grid[data-columns="3"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .brandops-table-compact th,
 .brandops-table-compact td {
-  padding: 0.375rem 0.625rem;
+  padding: 0.45rem 0.75rem;
   font-size: 0.75rem;
-  line-height: 1.1;
+  line-height: 1.15;
   white-space: nowrap;
 }
 
 .brandops-table-compact th {
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--color-ink-muted);
+  background: color-mix(in srgb, var(--color-surface-container) 94%, transparent 6%);
   border-bottom: 1px solid var(--color-outline);
 }
 
@@ -233,35 +609,56 @@ select:focus-visible {
   border-bottom: 1px solid var(--color-outline-variant);
 }
 
+.brandops-table-compact tbody tr:hover {
+  background: color-mix(in srgb, var(--color-surface-container) 84%, transparent 16%);
+}
+
+.brandops-table-compact tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--color-surface-container-low) 76%, transparent 24%);
+}
+
+html.dark .brandops-table-compact tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--color-surface-container-low) 90%, transparent 10%);
+}
+
 .brandops-table-compact tbody tr:last-child td {
   border-bottom: none;
 }
 
-/* ============================================================
-   STATUS CHIPS
-   ============================================================ */
-
 .status-chip {
   display: inline-flex;
   align-items: center;
-  padding: 0.125rem 0.5rem;
-  border-radius: 6px;
+  min-height: 1.65rem;
+  padding: 0.125rem 0.55rem;
+  border-radius: 8px;
   font-size: 0.6875rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  background: var(--color-surface-container-high);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-container-high) 92%, transparent 8%),
+    color-mix(in srgb, var(--color-surface-container) 92%, transparent 8%)
+  );
   border: 1px solid var(--color-outline);
   color: var(--color-on-surface-variant);
+  letter-spacing: 0.08em;
 }
 
 .brandops-tabs {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem;
+  gap: 0.3rem;
+  padding: 0.32rem;
   border: 1px solid var(--color-outline);
-  border-radius: 0.625rem;
-  background: var(--color-surface-container-low);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-surface-container-low) 94%, transparent 6%);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.brandops-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .brandops-tab {
@@ -269,14 +666,15 @@ select:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  min-height: 2.125rem;
-  padding: 0.45rem 0.8rem;
-  border-radius: 0.5rem;
+  min-height: 2.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 11px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--color-on-surface-variant);
-  font-size: 0.8125rem;
-  font-weight: 600;
+  font-size: 0.8375rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   white-space: nowrap;
 }
@@ -287,15 +685,41 @@ select:focus-visible {
 }
 
 .brandops-tab[data-active="true"] {
-  background: var(--color-surface);
-  border-color: var(--color-outline);
-  color: var(--color-secondary);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent 6%);
+  border-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-outline));
+  color: var(--color-primary);
+  box-shadow: var(--atlas-shell-shadow-soft);
 }
 
-/* ============================================================
-   SECTION DIVIDER
-   ============================================================ */
+.brandops-subtabs {
+  display: inline-flex;
+  gap: 0.35rem;
+  padding: 0.24rem;
+  border-radius: 14px;
+  border: 1px solid var(--color-outline-variant);
+  background: color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%);
+}
+
+.brandops-subtab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.15rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-on-surface-variant);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.brandops-subtab[data-active="true"] {
+  border-color: color-mix(in srgb, var(--color-primary) 16%, var(--color-outline));
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent 4%);
+  color: var(--color-primary);
+}
 
 .app-divider {
   height: 1px;
@@ -303,62 +727,515 @@ select:focus-visible {
   margin: 1rem 0;
 }
 
-/* ============================================================
-   SKELETON LOADING
-   ============================================================ */
-
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.52;
+  }
 }
 
 .skeleton {
-  border-radius: 4px;
-  background: #d8e6fb;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-secondary-container) 60%, var(--color-surface-container-high));
   animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .brandops-filterbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.15rem;
+  scrollbar-width: none;
+}
+
+.brandops-filterbar::-webkit-scrollbar {
+  display: none;
 }
 
 .brandops-filter-pill {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.25rem;
+  min-height: 2.3rem;
   padding: 0.45rem 0.85rem;
   border-radius: 10px;
   border: 1px solid var(--color-outline);
-  background: var(--color-surface-container-low);
+  background: color-mix(in srgb, var(--color-surface-container-low) 94%, transparent 6%);
   color: var(--color-on-surface-variant);
   font-size: 0.8125rem;
-  font-weight: 600;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  font-weight: 700;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 .brandops-filter-pill:hover {
   background: var(--color-surface-container);
   color: var(--color-on-surface);
+  transform: translateY(-1px);
 }
 
 .brandops-filter-pill[data-active="true"] {
-  background: var(--color-secondary-container);
-  color: var(--color-on-secondary-container);
-  border-color: color-mix(in srgb, var(--color-secondary) 18%, var(--color-outline));
+  background: color-mix(in srgb, var(--color-primary-container) 75%, transparent 25%);
+  color: var(--color-on-primary-container);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-outline));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.brandops-field-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.brandops-toolbar-panel {
+  display: grid;
+  gap: 0.9rem;
+  padding: 0.95rem;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 12px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface-container-low) 94%, transparent 6%),
+      color-mix(in srgb, var(--color-surface-container) 90%, transparent 10%)
+    );
+}
+
+.brandops-toolbar-panel[data-compact="true"] {
+  padding: 0.75rem;
+  gap: 0.75rem;
+}
+
+.brandops-field-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-on-surface-variant);
+}
+
+.brandops-input-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.brandops-input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.brandops-input-with-icon svg {
+  position: absolute;
+  left: 0.9rem;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+  color: var(--color-ink-muted);
+  pointer-events: none;
+}
+
+.brandops-input-with-icon .brandops-input {
+  padding-left: 2.65rem;
+}
+
+.brandops-input-leading {
+  padding-left: 2.65rem !important;
+}
+
+.brandops-input-icon {
+  position: absolute;
+  left: 0.9rem;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+  color: var(--color-ink-muted);
+  pointer-events: none;
+}
+
+.brandops-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.6rem;
+}
+
+.brandops-tab-panel {
+  display: block;
+}
+
+.brandops-command-slab {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%), color-mix(in srgb, var(--color-surface-container) 92%, transparent 8%));
+  border: 1px solid var(--color-outline);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-surface) 18%, transparent 82%);
+}
+
+.atlas-content-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.1rem;
+  overscroll-behavior: contain;
+}
+
+.atlas-page-stack {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 1rem;
+}
+
+@media (max-width: 1023px) {
+  .brandops-shell {
+    background-size: 18px 18px, 100% 100%;
+  }
+
+  .brandops-panel,
+  .brandops-card,
+  .brandops-table-container,
+  .brandops-toolbar-panel,
+  .brandops-command-slab {
+    border-radius: 12px;
+  }
+
+  .brandops-tabs,
+  .brandops-subtabs {
+    width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+
+  .brandops-tabs::-webkit-scrollbar,
+  .brandops-subtabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .brandops-tab,
+  .brandops-subtab {
+    flex: 0 0 auto;
+  }
+
+  .brandops-button {
+    min-height: 2.35rem;
+    padding: 0.5rem 0.82rem;
+  }
+
+  .brandops-table-toolbar {
+    padding: 0.85rem 0.85rem 0;
+  }
+
+  .atlas-content-scroll {
+    padding-right: 0;
+  }
+
+  .atlas-page-stack {
+    gap: 0.8rem;
+    padding-bottom: 0.85rem;
+  }
+
+  .atlas-sidebar-nav {
+    padding-bottom: 1rem;
+  }
 }
 
 .brandops-loader {
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 9999px;
-  border: 4px solid #dbeafe;
+  border: 4px solid color-mix(in srgb, var(--color-secondary-container) 70%, transparent 30%);
   border-top-color: var(--color-secondary);
   border-right-color: var(--color-primary);
   animation: brandops-spin 0.9s linear infinite;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 10%, transparent 90%);
+}
+
+.atlas-tech-grid {
+  position: relative;
+}
+
+.atlas-tech-grid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--atlas-page-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--atlas-page-grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 74%);
+}
+
+.atlas-header-panel,
+.atlas-command-strip {
+  position: relative;
+  overflow: hidden;
+}
+
+.atlas-header-panel::before,
+.atlas-command-strip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 8%, transparent 92%), transparent 30%),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-secondary) 5%, transparent 95%), transparent 50%);
+}
+
+.atlas-command-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.atlas-command-chip .atlas-orb {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-primary) 20%, transparent),
+    0 0 20px color-mix(in srgb, var(--color-primary) 14%, transparent 86%);
+}
+
+.atlas-header-panel::after,
+.atlas-command-strip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--atlas-page-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--atlas-page-grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.16), transparent 82%);
+}
+
+.atlas-data-value {
+  font-family: var(--font-headline);
+  letter-spacing: -0.035em;
+}
+
+.atlas-section-kicker {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+.atlas-sidebar {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 94%, transparent 6%), color-mix(in srgb, var(--color-surface-container-low) 94%, transparent 6%)),
+    linear-gradient(180deg, transparent, transparent);
+}
+
+.atlas-sidebar-nav {
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+html.dark .atlas-sidebar {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 96%, transparent 4%), color-mix(in srgb, var(--color-surface-container-low) 96%, transparent 4%)),
+    linear-gradient(180deg, transparent, transparent);
+}
+
+.atlas-sidebar-footer {
+  background: color-mix(in srgb, var(--color-surface-container-low) 90%, transparent 10%);
+}
+
+.atlas-command-strip {
+  box-shadow: var(--atlas-shell-shadow-soft);
+}
+
+.atlas-orb {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  --atlas-orb-x: 0.5;
+  --atlas-orb-y: 0.5;
+  background:
+    radial-gradient(circle at calc(var(--atlas-orb-x) * 100%) calc(var(--atlas-orb-y) * 100%), color-mix(in srgb, var(--color-primary) 64%, white 36%), transparent 32%),
+    radial-gradient(circle at 36% 34%, color-mix(in srgb, var(--color-primary) 82%, white 18%), transparent 42%),
+    radial-gradient(circle at 66% 70%, color-mix(in srgb, var(--color-secondary) 78%, white 22%), transparent 48%),
+    radial-gradient(circle at 52% 50%, color-mix(in srgb, var(--color-surface) 20%, transparent 80%), transparent 58%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 22%, transparent 78%), color-mix(in srgb, var(--color-surface) 8%, transparent 92%));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-primary) 18%, transparent 82%),
+    0 0 24px color-mix(in srgb, var(--color-primary) 16%, transparent 84%),
+    0 0 42px color-mix(in srgb, var(--color-secondary) 12%, transparent 88%);
+  isolation: isolate;
+  overflow: visible;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+.atlas-orb::before,
+.atlas-orb::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent 80%);
+  animation: atlas-orb-pulse 2.8s ease-in-out infinite;
+}
+
+.atlas-orb::after {
+  inset: -10px;
+  border-color: color-mix(in srgb, var(--color-secondary) 18%, transparent 82%);
+  animation-delay: 0.8s;
+}
+
+.atlas-orb-core {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  border-radius: inherit;
+  border: 1px solid color-mix(in srgb, var(--color-surface) 28%, transparent 72%);
+  backdrop-filter: blur(14px) saturate(120%);
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.26), transparent 26%),
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--color-surface) 22%, transparent 78%), transparent 55%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 14%, transparent 86%), color-mix(in srgb, var(--color-surface) 4%, transparent 96%));
+}
+
+.atlas-orb-core::after {
+  content: "";
+  position: absolute;
+  inset: 16%;
+  border-radius: inherit;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 14%, transparent 86%);
+  opacity: 0.7;
+}
+
+.atlas-orb-interactive {
+  cursor: pointer;
+}
+
+.atlas-orb-interactive:hover,
+.atlas-orb-interactive:focus-visible,
+.atlas-orb-interactive[aria-expanded="true"] {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-primary) 28%, transparent 72%),
+    0 0 28px color-mix(in srgb, var(--color-primary) 20%, transparent 80%),
+    0 0 52px color-mix(in srgb, var(--color-secondary) 15%, transparent 85%);
+}
+
+.atlas-orb-anchor {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.atlas-orb-panel {
+  will-change: transform, opacity;
+}
+
+.atlas-orb-panel-inner {
+  pointer-events: auto;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-outline));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 84%, transparent 16%), color-mix(in srgb, var(--color-surface-container-low) 90%, transparent 10%));
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.12),
+    0 18px 40px rgba(15, 23, 42, 0.14),
+    inset 0 1px 0 color-mix(in srgb, var(--color-surface) 24%, transparent 76%);
+  padding: 1rem;
+  backdrop-filter: blur(18px) saturate(120%);
+}
+
+html.dark .atlas-orb-panel-inner {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 74%, transparent 26%), color-mix(in srgb, var(--color-surface-container-low) 80%, transparent 20%));
+}
+
+.atlas-orb-panel-icon {
+  display: inline-flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-outline));
+  background:
+    radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--color-primary) 30%, transparent 70%), transparent 32%),
+    color-mix(in srgb, var(--color-primary-container) 56%, transparent 44%);
+  color: var(--color-primary);
+}
+
+.atlas-orb-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.4rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-outline));
+  background: color-mix(in srgb, var(--color-primary-container) 52%, transparent 48%);
+  color: var(--color-primary);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.atlas-orb-insight {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  border-radius: 12px;
+  border: 1px solid var(--color-outline-variant);
+  background: color-mix(in srgb, var(--color-surface-container-low) 82%, transparent 18%);
+  padding: 0.72rem 0.8rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--color-on-surface-variant);
+}
+
+.atlas-command-room {
+  position: relative;
+}
+
+.atlas-command-room::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 5%, transparent 95%), transparent 18%),
+    linear-gradient(180deg, transparent, color-mix(in srgb, var(--color-secondary) 5%, transparent 95%));
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 85%);
+}
+
+.atlas-semantic-positive {
+  color: var(--color-positive);
+}
+
+.atlas-semantic-negative {
+  color: var(--color-error);
+}
+
+.atlas-semantic-warning {
+  color: var(--color-warning);
+}
+
+.atlas-semantic-info {
+  color: var(--color-secondary);
+}
+
+.atlas-brand-shell {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--atlas-brand-shell) 96%, transparent 4%), color-mix(in srgb, var(--atlas-brand-shell-strong) 72%, transparent 28%));
+  border-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-outline));
 }
 
 @keyframes brandops-spin {
@@ -367,18 +1244,31 @@ select:focus-visible {
   }
 }
 
-/* ============================================================
-   SCROLLBARS & UTILS
-   ============================================================ */
+@keyframes atlas-orb-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.12;
+    transform: scale(1.05);
+  }
+}
 
 .brandops-selection::selection {
   background: var(--color-primary-container);
   color: var(--color-on-primary-container);
 }
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-outline) 92%, transparent 8%) transparent;
+}
+
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -386,10 +1276,10 @@ select:focus-visible {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-outline);
-  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-outline) 92%, transparent 8%);
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-ink-muted);
+  background: color-mix(in srgb, var(--color-ink-muted) 88%, transparent 12%);
 }

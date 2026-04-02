@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MetaRowPayload } from "@/lib/brandops/canonical-ingest";
+import { replaceCatalogProductsBySource } from "@/lib/brandops/database";
+import type { CatalogProduct } from "@/lib/brandops/types";
 
 const PURCHASE_ACTION_PRIORITY = [
   "offsite_conversion.fb_pixel_purchase",
@@ -59,6 +61,41 @@ type MetaApiResponse = {
   };
 };
 
+type MetaCatalogProductRow = {
+  id?: string;
+  retailer_id?: string;
+  name?: string;
+  description?: string;
+  url?: string;
+  image_url?: string;
+  additional_image_urls?: string[] | string;
+  availability?: string;
+  condition?: string;
+  brand?: string;
+  price?: string | { amount?: string | number; currency?: string } | null;
+  sale_price?: string | { amount?: string | number; currency?: string } | null;
+  google_product_category?: string;
+  fb_product_category?: string;
+  color?: string;
+  gender?: string;
+  material?: string;
+  age_group?: string;
+  size?: string;
+  custom_label_0?: string;
+  custom_label_1?: string;
+  custom_label_2?: string;
+};
+
+type MetaCatalogApiResponse = {
+  data?: MetaCatalogProductRow[];
+  paging?: {
+    next?: string;
+  };
+  error?: {
+    message?: string;
+  };
+};
+
 type FetchMetaInsightsOptions = {
   adAccountId: string;
   startDate: string;
@@ -67,8 +104,13 @@ type FetchMetaInsightsOptions = {
 
 export type MetaIntegrationSettings = {
   adAccountId?: string | null;
+  catalogId?: string | null;
   manualFallback?: boolean;
   syncWindowDays?: number | null;
+  catalogSyncAt?: string | null;
+  catalogSyncStatus?: string | null;
+  catalogSyncError?: string | null;
+  catalogProductCount?: number | null;
 };
 
 export type MetaSyncResult = {
@@ -77,6 +119,14 @@ export type MetaSyncResult = {
   rows: number;
   inserted: number;
   updated: number;
+  syncedAt: string;
+};
+
+export type MetaCatalogSyncResult = {
+  rows: number;
+  inserted: number;
+  updated: number;
+  deleted: number;
   syncedAt: string;
 };
 
@@ -171,6 +221,118 @@ function formatMetaApiError(payload: MetaApiResponse) {
   return message;
 }
 
+function formatMetaCatalogApiError(payload: MetaCatalogApiResponse) {
+  const message = payload.error?.message?.trim();
+  if (!message) {
+    return "Falha ao consultar o catálogo da Meta.";
+  }
+
+  return message;
+}
+
+function buildMetaCatalogUrl(catalogId: string) {
+  const normalized = catalogId.trim();
+  if (!normalized) {
+    throw new Error("ID do catálogo da Meta não informado.");
+  }
+
+  const params = new URLSearchParams({
+    fields: [
+      "id",
+      "retailer_id",
+      "name",
+      "description",
+      "url",
+      "image_url",
+      "additional_image_urls",
+      "availability",
+      "condition",
+      "brand",
+      "price",
+      "sale_price",
+      "google_product_category",
+      "fb_product_category",
+      "color",
+      "gender",
+      "material",
+      "age_group",
+      "size",
+      "custom_label_0",
+      "custom_label_1",
+      "custom_label_2",
+    ].join(","),
+    limit: "500",
+    access_token: getMetaAccessToken(),
+  });
+
+  return `https://graph.facebook.com/${getMetaApiVersion()}/${normalized}/products?${params.toString()}`;
+}
+
+function parseMetaCatalogPrice(
+  value?: string | { amount?: string | number; currency?: string } | null,
+) {
+  if (!value) {
+    return 0;
+  }
+
+  if (typeof value === "object") {
+    const parsed = Number(value.amount ?? 0);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  const normalized = value.replace(/[^\d,.-]/g, "").replace(/\.(?=\d{3}\b)/g, "").replace(",", ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function parseMetaCatalogList(value?: string[] | string) {
+  if (Array.isArray(value)) {
+    return value.map((item) => item.trim()).filter(Boolean);
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+function mapMetaCatalogRow(row: MetaCatalogProductRow): CatalogProduct | null {
+  const productId = row.retailer_id?.trim() || row.id?.trim() || "";
+  if (!productId) {
+    return null;
+  }
+
+  return {
+    id: productId,
+    title: row.name?.trim() || productId,
+    description: row.description?.trim() || undefined,
+    imageUrl: row.image_url?.trim() || undefined,
+    additionalImageUrls: parseMetaCatalogList(row.additional_image_urls),
+    link: row.url?.trim() || undefined,
+    price: parseMetaCatalogPrice(row.price),
+    salePrice: row.sale_price ? parseMetaCatalogPrice(row.sale_price) : null,
+    availability: row.availability?.trim() || undefined,
+    condition: row.condition?.trim() || undefined,
+    googleProductCategory: row.google_product_category?.trim() || undefined,
+    fbProductCategory: row.fb_product_category?.trim() || undefined,
+    brand: row.brand?.trim() || undefined,
+    productType: row.custom_label_0?.trim() || undefined,
+    collections: parseMetaCatalogList(row.custom_label_1),
+    keywords: parseMetaCatalogList(row.custom_label_2),
+    color: row.color?.trim() || undefined,
+    gender: row.gender?.trim() || undefined,
+    material: row.material?.trim() || undefined,
+    ageGroup: row.age_group?.trim() || undefined,
+    size: row.size?.trim() || undefined,
+    dataSource: "meta_catalog",
+    externalCatalogId: row.id?.trim() || null,
+  };
+}
+
 function mapMetaInsightsRow(row: MetaInsightsRow): MetaRowPayload | null {
   const reportStart = row.date_start?.slice(0, 10) ?? "";
   if (!reportStart) {
@@ -256,6 +418,41 @@ export async function fetchMetaDailyInsights({
       row.ad_name ?? "",
     ].join("::");
     deduped.set(key, row);
+  });
+
+  return [...deduped.values()];
+}
+
+export async function fetchMetaCatalogProducts(catalogId: string): Promise<CatalogProduct[]> {
+  const rows: CatalogProduct[] = [];
+  let nextUrl: string | null = buildMetaCatalogUrl(catalogId);
+
+  while (nextUrl) {
+    const response = await fetch(nextUrl, {
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
+    const payload = (await response.json()) as MetaCatalogApiResponse;
+
+    if (!response.ok || payload.error) {
+      throw new Error(formatMetaCatalogApiError(payload));
+    }
+
+    (payload.data ?? []).forEach((row) => {
+      const mapped = mapMetaCatalogRow(row);
+      if (mapped) {
+        rows.push(mapped);
+      }
+    });
+
+    nextUrl = payload.paging?.next ?? null;
+  }
+
+  const deduped = new Map<string, CatalogProduct>();
+  rows.forEach((row) => {
+    deduped.set(row.id, row);
   });
 
   return [...deduped.values()];
@@ -458,6 +655,64 @@ export async function syncMetaRowsForBrand(
     rows: rows.length,
     inserted: result.inserted,
     updated: result.updated,
+    syncedAt,
+  };
+}
+
+export async function syncMetaCatalogForBrand(
+  supabase: SupabaseClient,
+  options: {
+    brandId: string;
+    integrationId: string;
+    settings: MetaIntegrationSettings;
+  },
+): Promise<MetaCatalogSyncResult> {
+  const { brandId, integrationId, settings } = options;
+  const catalogId = settings.catalogId?.trim();
+  if (!catalogId) {
+    throw new Error("ID do catálogo da Meta não configurado para esta loja.");
+  }
+
+  await supabase
+    .from("brand_integrations")
+    .update({
+      settings: {
+        ...settings,
+        catalogId,
+        catalogSyncStatus: "running",
+        catalogSyncError: null,
+      },
+    })
+    .eq("id", integrationId);
+
+  const products = await fetchMetaCatalogProducts(catalogId);
+  const result = await replaceCatalogProductsBySource(
+    supabase,
+    brandId,
+    products,
+    "meta_catalog",
+  );
+
+  const syncedAt = new Date().toISOString();
+  await supabase
+    .from("brand_integrations")
+    .update({
+      settings: {
+        ...settings,
+        catalogId,
+        catalogSyncAt: syncedAt,
+        catalogSyncStatus: "success",
+        catalogSyncError: null,
+        catalogProductCount: result.total,
+      },
+    })
+    .eq("id", integrationId);
+
+  return {
+    rows: products.length,
+    inserted: result.inserted,
+    updated: result.updated,
+    deleted: result.deleted,
     syncedAt,
   };
 }

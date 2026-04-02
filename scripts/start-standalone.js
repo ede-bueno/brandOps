@@ -1,17 +1,10 @@
-const { cpSync, existsSync, mkdirSync, readFileSync } = require("node:fs");
+const { readFileSync, existsSync } = require("node:fs");
 const { join } = require("node:path");
 const { spawn } = require("node:child_process");
 
 const projectRoot = join(__dirname, "..");
-const distDir = (process.env.BRANDOPS_DIST_DIR || "").trim() || ".next";
-
-const sourceStatic = join(projectRoot, distDir, "static");
-const sourceStandalone = join(projectRoot, distDir, "standalone");
-const targetStatic = join(sourceStandalone, ".next", "static");
-const sourcePublic = join(projectRoot, "public");
-const targetPublic = join(sourceStandalone, "public");
-const serverEntrypoint = join(sourceStandalone, "server.js");
 const envFilePath = join(projectRoot, ".env.local");
+const port = String(process.env.PORT || "3008");
 
 function loadLocalEnvFile() {
   if (!existsSync(envFilePath)) {
@@ -46,28 +39,17 @@ function loadLocalEnvFile() {
   }
 }
 
-function ensureDirectory(path) {
-  mkdirSync(path, { recursive: true });
-}
-
-function syncDirectory(source, target) {
-  if (!existsSync(source)) {
-    return;
-  }
-
-  ensureDirectory(target);
-  cpSync(source, target, { recursive: true, force: true });
-}
-
-syncDirectory(sourceStatic, targetStatic);
-syncDirectory(sourcePublic, targetPublic);
 loadLocalEnvFile();
 
-const child = spawn(process.execPath, [serverEntrypoint], {
-  cwd: sourceStandalone,
-  stdio: "inherit",
-  env: process.env,
-});
+const child = spawn(
+  process.execPath,
+  [require.resolve("next/dist/bin/next"), "start", "-p", port],
+  {
+    cwd: projectRoot,
+    stdio: "inherit",
+    env: process.env,
+  },
+);
 
 child.on("exit", (code, signal) => {
   if (signal) {
