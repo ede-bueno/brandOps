@@ -13,8 +13,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  AnalyticsCalloutCard,
+  AnalyticsKpiCard,
+} from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
-import { MetricCard } from "@/components/MetricCard";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { fetchTrafficReport } from "@/lib/brandops/database";
@@ -46,8 +49,8 @@ const EMPTY_TRAFFIC_REPORT: TrafficReport = {
   sources: [],
   campaigns: [],
   landingPages: [],
-  story: "Ainda não há sessões suficientes no período para formar uma leitura gerencial do tráfego.",
-  frictionSignal: "Assim que houver tráfego, o sistema passa a comparar intenção, checkout e compra para localizar atritos do funil.",
+  story: "Ainda não há sessões suficientes no período para localizar com confiança onde o tráfego está performando melhor.",
+  frictionSignal: "Quando houver volume suficiente, o Atlas passa a apontar onde o funil perde força entre sessão, carrinho, checkout e compra.",
   highlights: {
     topSource: null,
     topCampaign: null,
@@ -58,22 +61,22 @@ const EMPTY_TRAFFIC_REPORT: TrafficReport = {
     revenuePerSession: {
       tone: "neutral",
       title: "Amostra insuficiente",
-      description: "Ainda não há volume suficiente para uma leitura confiável.",
+      description: "Falta volume suficiente para uma leitura confiável.",
     },
     sessionToCartRate: {
       tone: "neutral",
       title: "Amostra insuficiente",
-      description: "Ainda não há volume suficiente para uma leitura confiável.",
+      description: "Falta volume suficiente para uma leitura confiável.",
     },
     checkoutRate: {
       tone: "neutral",
       title: "Amostra insuficiente",
-      description: "Ainda não há volume suficiente para uma leitura confiável.",
+      description: "Falta volume suficiente para uma leitura confiável.",
     },
     purchaseRate: {
       tone: "neutral",
       title: "Amostra insuficiente",
-      description: "Ainda não há volume suficiente para uma leitura confiável.",
+      description: "Falta volume suficiente para uma leitura confiável.",
     },
   },
   playbook: {
@@ -91,7 +94,7 @@ const EMPTY_TRAFFIC_REPORT: TrafficReport = {
     },
     monitor: {
       title: "Monitorar",
-      description: "Entradas ainda em observação, com amostra insuficiente para decisão forte.",
+      description: "Entradas ainda em observação, com volume baixo para decisão mais firme.",
       count: 0,
       items: [],
     },
@@ -99,7 +102,7 @@ const EMPTY_TRAFFIC_REPORT: TrafficReport = {
   analysis: {
     narrativeTitle: "Amostra insuficiente",
     narrativeBody:
-      "Ainda não há sessões suficientes no período para formar uma leitura gerencial do tráfego.",
+      "Ainda não há sessões suficientes no período para decidir com segurança onde aumentar, revisar ou redistribuir o tráfego.",
     nextActions: [],
     topOpportunity: null,
     topRisk: null,
@@ -392,20 +395,20 @@ export default function TrafficPage() {
     return (
       <EmptyState
         title="Ainda não há dados de tráfego"
-        description="Sincronize o GA4 na tela de Integrações para começar a acompanhar sessões, funil e receita por canal."
+        description="Sincronize o GA4 em Integrações para acompanhar sessões, funil e receita por canal."
       />
     );
   }
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Analytics"
-        title="Tráfego Digital"
-        description="Camada gerencial do GA4 para entender qualidade de tráfego, força de landing pages e eficiência do funil no período ativo."
-        badge={`Período analisado: ${selectedPeriodLabel}`}
-        actions={
-          <div className="flex flex-wrap items-center justify-end gap-2">
+        <PageHeader
+          eyebrow="Analytics"
+          title="Tráfego Digital"
+          description="Leitura executiva do GA4 para entender qualidade de tráfego, força de landing pages e eficiência do funil no período ativo."
+          badge={`Período analisado: ${selectedPeriodLabel}`}
+          actions={
+            <div className="flex flex-wrap items-center justify-end gap-2">
             <div className="brandops-tabs">
               <button
                 type="button"
@@ -439,49 +442,51 @@ export default function TrafficPage() {
         }
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AnalyticsKpiCard
           label="Sessões"
           value={integerFormatter.format(metrics.sessions)}
-          help="Sessões totais registradas pelo GA4 no período."
+          description="Sessões totais registradas pelo GA4 no período."
+          tone="info"
         />
-        <MetricCard
+        <AnalyticsKpiCard
           label="Usuários"
           value={integerFormatter.format(metrics.totalUsers)}
-          help="Usuários totais no período."
+          description="Usuários totais no período."
+          tone="default"
         />
-        <MetricCard
+        <AnalyticsKpiCard
           label="Receita GA4"
           value={currencyFormatter.format(metrics.purchaseRevenue)}
-          help="Receita registrada no GA4. Não substitui a venda real da INK."
-          accent={metrics.purchaseRevenue > 0 ? "positive" : "default"}
+          description="Receita registrada no GA4. Não substitui a venda real da INK."
+          tone={metrics.purchaseRevenue > 0 ? "positive" : "default"}
         />
-        <MetricCard
+        <AnalyticsKpiCard
           label="Receita por sessão"
           value={currencyFormatter.format(metrics.revenuePerSession)}
-          help={signals.revenuePerSession.description}
-          accent={signalAccent(signals.revenuePerSession)}
+          description={signals.revenuePerSession.description}
+          tone={signalAccent(signals.revenuePerSession)}
         />
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        <MetricCard
+      <section className="grid gap-3 sm:grid-cols-3">
+        <AnalyticsKpiCard
           label="Sessão → carrinho"
           value={percentFormatter.format(metrics.sessionToCartRate)}
-          help={signals.sessionToCartRate.description}
-          accent={signalAccent(signals.sessionToCartRate)}
+          description={signals.sessionToCartRate.description}
+          tone={signalAccent(signals.sessionToCartRate)}
         />
-        <MetricCard
+        <AnalyticsKpiCard
           label="Carrinho → checkout"
           value={percentFormatter.format(metrics.checkoutRate)}
-          help={signals.checkoutRate.description}
-          accent={signalAccent(signals.checkoutRate)}
+          description={signals.checkoutRate.description}
+          tone={signalAccent(signals.checkoutRate)}
         />
-        <MetricCard
+        <AnalyticsKpiCard
           label="Sessão → compra"
           value={percentFormatter.format(metrics.purchaseRate)}
-          help={signals.purchaseRate.description}
-          accent={signalAccent(signals.purchaseRate)}
+          description={signals.purchaseRate.description}
+          tone={signalAccent(signals.purchaseRate)}
         />
       </section>
 
@@ -491,24 +496,24 @@ export default function TrafficPage() {
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <SectionHeading
                 title="Modo executivo"
-                description="Quebre a análise entre comando, playbook e destaques para reduzir a rolagem."
+                description="Abra a leitura do período, siga as ações sugeridas ou revise os destaques que mais afetam tráfego e intenção."
               />
               <div className="brandops-subtabs">
                 <button type="button" className="brandops-subtab" data-active={executiveSection === "command"} onClick={() => setExecutiveSection("command")}>Comando</button>
-                <button type="button" className="brandops-subtab" data-active={executiveSection === "playbook"} onClick={() => setExecutiveSection("playbook")}>Playbook</button>
+                <button type="button" className="brandops-subtab" data-active={executiveSection === "playbook"} onClick={() => setExecutiveSection("playbook")}>Ações</button>
                 <button type="button" className="brandops-subtab" data-active={executiveSection === "highlights"} onClick={() => setExecutiveSection("highlights")}>Destaques</button>
               </div>
             </div>
           </SurfaceCard>
 
           {executiveSection === "command" ? (
-          <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <section className="grid gap-6 xl:grid-cols-[1.42fr_0.58fr]">
             <SurfaceCard>
               <SectionHeading
                 title="Tráfego x receita por dia"
-                description="Leitura do ritmo diário de sessões e da receita gerada por esse tráfego."
+                description="Curva diária para detectar quando a sessão sobe sem receita ou quando a receita começa a concentrar em poucos dias."
               />
-              <div className="mt-5 h-[320px] min-w-0">
+              <div className="mt-5 h-[360px] min-w-0 xl:h-[400px]">
                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
                   <AreaChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" vertical={false} />
@@ -577,51 +582,52 @@ export default function TrafficPage() {
             <SurfaceCard>
               <SectionHeading
                 title="Leitura executiva"
-                description="Resumo do que o tráfego está dizendo sobre o funil da loja."
+                description="Resumo curto para decidir onde o Atlas deve agir no funil sem abrir as tabelas completas."
               />
               <div className="mt-5 grid gap-3">
-                <article className="panel-muted p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                    Diagnóstico principal
-                  </p>
-                  <p className="mt-2 font-semibold text-on-surface">{analysis.narrativeTitle}</p>
-                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">{analysis.narrativeBody}</p>
-                </article>
-
-                <article className="panel-muted p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                    Atrito do funil
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-                    {report.frictionSignal}
-                  </p>
-                </article>
-
-                <article className="panel-muted p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                    Maior oportunidade
-                  </p>
-                  <p className="mt-2 font-semibold text-on-surface">
-                    {analysis.topOpportunity ?? "Sem oportunidade dominante"}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-                    {topSource?.summary
-                      ? topSource.summary
-                      : "Assim que houver amostra suficiente, o Atlas aponta a entrada mais promissora."}
-                  </p>
-                </article>
-
-                <article className="panel-muted p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                    Maior risco
-                  </p>
-                  <p className="mt-2 font-semibold text-on-surface">
-                    {analysis.topRisk ?? signals.purchaseRate.title}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-                    {signals.purchaseRate.description}
-                  </p>
-                </article>
+                <AnalyticsCalloutCard
+                  eyebrow={analysis.narrativeTitle}
+                  title="Diagnóstico principal"
+                  description={analysis.narrativeBody}
+                  footer={report.frictionSignal}
+                />
+                <div className="grid gap-3 md:grid-cols-2">
+                  <AnalyticsCalloutCard
+                    eyebrow="Maior oportunidade"
+                    title={analysis.topOpportunity ?? "Sem oportunidade dominante"}
+                    description={
+                      topSource?.summary
+                        ? topSource.summary
+                        : "Assim que houver amostra suficiente, o Atlas aponta a entrada mais promissora."
+                    }
+                    tone="positive"
+                    footer={topSource?.label ?? "Sem canal em destaque"}
+                  />
+                  <AnalyticsCalloutCard
+                    eyebrow="Maior risco"
+                    title={analysis.topRisk ?? signals.purchaseRate.title}
+                    description={signals.purchaseRate.description}
+                    tone="warning"
+                    footer={topCampaign?.label ?? "Sem campanha em alerta"}
+                  />
+                </div>
+                {analysis.nextActions.length ? (
+                  <article className="rounded-2xl border border-outline/70 bg-surface-container-low/80 p-4 shadow-sm">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                      Próximos passos
+                    </p>
+                    <div className="mt-3 space-y-2">
+                      {analysis.nextActions.map((action) => (
+                        <div
+                          key={action}
+                          className="rounded-xl border border-outline bg-surface px-3 py-2 text-sm leading-6 text-on-surface-variant"
+                        >
+                          {action}
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                ) : null}
               </div>
             </SurfaceCard>
           </section>
@@ -650,7 +656,7 @@ export default function TrafficPage() {
                 ))
               ) : (
                 <article className="panel-muted p-4 text-sm leading-6 text-on-surface-variant md:col-span-3">
-                  Ainda não há próximos passos fortes para o recorte atual.
+                  Ainda não há um próximo passo dominante para o recorte atual.
                 </article>
               )}
             </div>
@@ -732,13 +738,13 @@ export default function TrafficPage() {
       ) : null}
 
       {view === "detail" ? (
-        <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <section className="grid gap-6">
           <SurfaceCard>
             <SectionHeading
               title="Conversão diária"
               description="Compra por sessão e receita por sessão ao longo da janela selecionada."
             />
-            <div className="mt-5 h-[320px] min-w-0">
+            <div className="mt-5 h-[360px] min-w-0 xl:h-[420px]">
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
                 <ComposedChart data={trendData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" vertical={false} />
@@ -800,33 +806,36 @@ export default function TrafficPage() {
             </div>
           </SurfaceCard>
 
-          <SurfaceCard>
-            <SectionHeading
-              title="Leituras laterais"
-              description="Apoios rápidos para leitura do comportamento e do valor do tráfego."
-            />
-            <div className="mt-5 grid gap-3">
-              <article className="panel-muted p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Receita por sessão
-                </p>
-                <p className="mt-2 font-headline text-2xl font-semibold text-on-surface">
+          <section className="grid gap-4 xl:grid-cols-[0.4fr_0.6fr]">
+            <SurfaceCard>
+              <SectionHeading
+                title="Receita por sessão"
+                description="Valor médio que cada sessão deixa na janela analisada."
+              />
+              <div className="mt-5">
+                <p className="font-headline text-[clamp(1.8rem,4vw,2.4rem)] font-semibold text-on-surface">
                   {currencyFormatter.format(metrics.revenuePerSession)}
                 </p>
-              </article>
-              <article className="panel-muted p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Página mais valiosa
+              </div>
+            </SurfaceCard>
+
+            <SurfaceCard>
+              <SectionHeading
+                title="Página mais valiosa"
+                description="Landing page que mais converteu receita no período."
+              />
+              <div className="mt-5 space-y-2">
+                <p className="break-words font-semibold text-on-surface">
+                  {topRevenueLanding?.label ?? "Sem página líder"}
                 </p>
-                <p className="mt-2 font-semibold text-on-surface">{topRevenueLanding?.label ?? "Sem página líder"}</p>
-                <p className="mt-1 text-sm leading-6 text-on-surface-variant">
+                <p className="text-sm leading-6 text-on-surface-variant">
                   {topRevenueLanding?.summary
                     ? topRevenueLanding.summary
                     : "Sem leitura suficiente para destacar uma página."}
                 </p>
-              </article>
-            </div>
-          </SurfaceCard>
+              </div>
+            </SurfaceCard>
+          </section>
         </section>
       ) : null}
     </div>

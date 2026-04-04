@@ -13,8 +13,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  AnalyticsCalloutCard,
+  AnalyticsKpiCard,
+} from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
-import { MetricCard } from "@/components/MetricCard";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { fetchMediaReport } from "@/lib/brandops/database";
@@ -48,7 +51,7 @@ const EMPTY_MEDIA_REPORT: MediaReport = {
   commandRoom: {
     bestScale: null,
     priorityReview: null,
-    narrative: "Ainda não há investimento suficiente no período para formar uma leitura gerencial da mídia.",
+    narrative: "Ainda não há investimento suficiente no período para indicar escala ou revisão com confiança.",
     bestScaleSummary: null,
     priorityReviewSummary: null,
   },
@@ -59,27 +62,27 @@ const EMPTY_MEDIA_REPORT: MediaReport = {
     attributedRoas: {
       tone: "neutral",
       title: "Amostra insuficiente",
-      description: "Ainda não há investimento suficiente no período para leitura confiável.",
+      description: "Falta investimento suficiente no período para uma leitura confiável.",
     },
     ctrAll: {
       tone: "neutral",
       title: "Amostra insuficiente",
-      description: "Ainda não há impressões suficientes para leitura confiável do CTR.",
+      description: "Faltam impressões suficientes para ler o CTR com confiança.",
     },
     ctrLink: {
       tone: "neutral",
       title: "Amostra insuficiente",
-      description: "Ainda não há impressões suficientes para leitura confiável do CTR link.",
+      description: "Faltam impressões suficientes para ler o CTR link com confiança.",
     },
     cpc: {
       tone: "neutral",
       title: "Amostra insuficiente",
-      description: "Ainda não há cliques suficientes para leitura confiável do CPC.",
+      description: "Faltam cliques suficientes para ler o CPC com confiança.",
     },
     cpa: {
       tone: "neutral",
       title: "Amostra insuficiente",
-      description: "Ainda não há compras suficientes para leitura confiável do CPA.",
+      description: "Faltam compras suficientes para ler o CPA com confiança.",
     },
   },
   playbook: {
@@ -89,7 +92,7 @@ const EMPTY_MEDIA_REPORT: MediaReport = {
   },
   analysis: {
     narrativeTitle: "Amostra insuficiente",
-    narrativeBody: "Ainda não há investimento suficiente no período para formar uma leitura gerencial da mídia.",
+    narrativeBody: "Ainda não há sinais suficientes para decidir escala, revisão ou pausa com segurança.",
     nextActions: [],
     topRisk: null,
     topOpportunity: null,
@@ -260,20 +263,20 @@ export default function MediaPage() {
     return (
       <EmptyState
         title="Ainda não há mídia carregada"
-        description="Sincronize a Meta ou importe o CSV para acompanhar investimento, retorno e leitura gerencial da aquisição."
+        description="Sincronize a Meta ou importe o CSV para acompanhar investimento, retorno e pontos de atenção da aquisição."
       />
     );
   }
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Aquisição"
-        title="Performance Mídia"
-        description="Camada gerencial da Meta para decidir onde escalar, manter ou revisar verba e criativos no período ativo."
-        badge={`Período analisado: ${selectedPeriodLabel}`}
-        actions={
-          <div className="flex flex-wrap items-center justify-end gap-2">
+        <PageHeader
+          eyebrow="Aquisição"
+          title="Performance Mídia"
+          description="Leitura executiva da Meta para decidir onde escalar, segurar ou revisar verba e criativos no período ativo."
+          badge={`Período analisado: ${selectedPeriodLabel}`}
+          actions={
+            <div className="flex flex-wrap items-center justify-end gap-2">
             <div className="brandops-tabs">
               <button
                 type="button"
@@ -308,54 +311,56 @@ export default function MediaPage() {
       />
 
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <MetricCard
+        <AnalyticsKpiCard
           label="Investimento"
           value={currencyFormatter.format(summary.spend)}
-          help="Gasto ativo da Meta no período saneado."
+          description="Gasto ativo da Meta no período saneado."
+          tone="default"
         />
-        <MetricCard
+        <AnalyticsKpiCard
           label="Receita Meta atribuída"
           value={currencyFormatter.format(summary.purchaseValue)}
-          accent="positive"
-          help="Receita de compra atribuída pela Meta. Não substitui o faturado real da INK."
+          tone="positive"
+          description="Receita de compra atribuída pela Meta. Não substitui o faturado real da INK."
         />
-        <MetricCard
+        <AnalyticsKpiCard
           label="Compras Meta"
           value={integerFormatter.format(summary.purchases)}
-          help="Volume de compras atribuídas pela plataforma."
+          description="Volume de compras atribuídas pela plataforma."
+          tone="info"
         />
-        <MetricCard
+        <AnalyticsKpiCard
           label="ROAS atribuído"
           value={`${summary.attributedRoas.toFixed(2)}x`}
-          help={signals.attributedRoas.description}
-          accent={signalAccent(signals.attributedRoas)}
+          description={signals.attributedRoas.description}
+          tone={signalAccent(signals.attributedRoas)}
         />
       </section>
 
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <MetricCard
+        <AnalyticsKpiCard
           label="CTR (todos)"
           value={percentFormatter.format(summary.ctrAll)}
-          help={signals.ctrAll.description}
-          accent={signalAccent(signals.ctrAll)}
+          description={signals.ctrAll.description}
+          tone={signalAccent(signals.ctrAll)}
         />
-        <MetricCard
+        <AnalyticsKpiCard
           label="CTR link"
           value={percentFormatter.format(summary.ctrLink)}
-          help={signals.ctrLink.description}
-          accent={signalAccent(signals.ctrLink)}
+          description={signals.ctrLink.description}
+          tone={signalAccent(signals.ctrLink)}
         />
-        <MetricCard
+        <AnalyticsKpiCard
           label="CPC"
           value={currencyFormatter.format(summary.cpc)}
-          help={signals.cpc.description}
-          accent={signalAccent(signals.cpc)}
+          description={signals.cpc.description}
+          tone={signalAccent(signals.cpc)}
         />
-        <MetricCard
+        <AnalyticsKpiCard
           label="CPA meta"
           value={summary.purchases ? currencyFormatter.format(summary.cpa) : "-"}
-          help={signals.cpa.description}
-          accent={signalAccent(signals.cpa)}
+          description={signals.cpa.description}
+          tone={signalAccent(signals.cpa)}
         />
       </section>
 
@@ -365,24 +370,24 @@ export default function MediaPage() {
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <SectionHeading
                 title="Modo executivo"
-                description="Divida a operação entre sala de comando, playbook e sinais sem alongar a página."
+                description="Abra a leitura do período, siga as ações sugeridas ou valide os sinais que mais impactam mídia e retorno."
               />
               <div className="brandops-subtabs">
                 <button type="button" className="brandops-subtab" data-active={executiveSection === "command"} onClick={() => setExecutiveSection("command")}>Sala de comando</button>
-                <button type="button" className="brandops-subtab" data-active={executiveSection === "playbook"} onClick={() => setExecutiveSection("playbook")}>Playbook</button>
+                <button type="button" className="brandops-subtab" data-active={executiveSection === "playbook"} onClick={() => setExecutiveSection("playbook")}>Ações</button>
                 <button type="button" className="brandops-subtab" data-active={executiveSection === "signals"} onClick={() => setExecutiveSection("signals")}>Sinais</button>
               </div>
             </div>
           </SurfaceCard>
 
           {executiveSection === "command" ? (
-          <section className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
+          <section className="grid gap-6 xl:grid-cols-[1.42fr_0.58fr]">
             <SurfaceCard>
               <SectionHeading
                 title="Investimento x retorno por dia"
-                description="A curva mostra o ritmo de investimento diário e o quanto a Meta atribuiu de receita na mesma janela."
+                description="Curva diária para detectar quando o gasto sobe antes da receita ou quando o retorno começa a comprimir."
               />
-              <div className="mt-5 h-[320px] min-w-0">
+              <div className="mt-5 h-[360px] min-w-0 xl:h-[400px]">
                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
                   <AreaChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" vertical={false} />
@@ -440,59 +445,56 @@ export default function MediaPage() {
             <SurfaceCard>
               <SectionHeading
                 title="Sala de comando"
-                description="Leitura rápida do que fazer agora com a verba e com as campanhas."
+                description="Leitura curta para decidir verba, prioridade e ajuste de criativo sem abrir a tabela inteira."
               />
               <div className="mt-5 grid gap-3">
-                <article className="panel-muted p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                    {analysis.narrativeTitle}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-                    {analysis.narrativeBody}
-                  </p>
-                </article>
-                <article className="panel-muted p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                    Melhor sinal de escala
-                  </p>
-                  <p className="mt-2 font-semibold text-on-surface">
-                    {bestScale ? bestScale.campaignName : "Sem campanha elegível"}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-                    {report.commandRoom.bestScaleSummary ??
-                      "Ainda não há dados suficientes para recomendar escala."}
-                  </p>
-                </article>
-
-                <article className="panel-muted p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                    Principal ponto de revisão
-                  </p>
-                  <p className="mt-2 font-semibold text-on-surface">
-                    {priorityReview ? priorityReview.campaignName : "Sem alerta crítico"}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-                    {report.commandRoom.priorityReviewSummary ??
-                      "Nenhuma campanha relevante apareceu com sinal forte de revisão nesta janela."}
-                  </p>
-                </article>
-
-                <article className="panel-muted p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                    Leitura do período
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-                    {report.commandRoom.narrative}
-                  </p>
-                </article>
+                <AnalyticsCalloutCard
+                  eyebrow={analysis.narrativeTitle}
+                  title="Leitura do período"
+                  description={analysis.narrativeBody}
+                  footer={report.commandRoom.narrative}
+                />
+                <div className="grid gap-3 md:grid-cols-2">
+                  <AnalyticsCalloutCard
+                    eyebrow="Escalar agora"
+                    title={bestScale ? bestScale.campaignName : "Sem campanha elegível"}
+                    description={
+                      report.commandRoom.bestScaleSummary ??
+                      "Ainda não há sinal forte o bastante para ampliar verba com segurança."
+                    }
+                    tone="positive"
+                    footer={
+                      bestScale
+                        ? `${bestScale.roas.toFixed(2)}x ROAS · ${percentFormatter.format(bestScale.ctrAll)} CTR`
+                        : "Aguardando campanha com sinal consistente."
+                    }
+                  />
+                  <AnalyticsCalloutCard
+                    eyebrow="Revisar agora"
+                    title={priorityReview ? priorityReview.campaignName : "Sem alerta crítico"}
+                    description={
+                      report.commandRoom.priorityReviewSummary ??
+                      "Nenhuma campanha relevante apareceu com sinal forte de revisão nesta janela."
+                    }
+                    tone="warning"
+                    footer={
+                      priorityReview
+                        ? `${priorityReview.roas.toFixed(2)}x ROAS · ${percentFormatter.format(priorityReview.ctrAll)} CTR`
+                        : "Sem campanha crítica no recorte."
+                    }
+                  />
+                </div>
                 {analysis.nextActions.length ? (
-                  <article className="panel-muted p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                  <article className="rounded-2xl border border-outline/70 bg-surface-container-low/80 p-4 shadow-sm">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
                       Próximos passos
                     </p>
                     <div className="mt-3 space-y-2">
                       {analysis.nextActions.map((item) => (
-                        <div key={item} className="rounded-xl border border-outline bg-surface px-3 py-2 text-sm text-on-surface-variant">
+                        <div
+                          key={item}
+                          className="rounded-xl border border-outline bg-surface px-3 py-2 text-sm text-on-surface-variant"
+                        >
                           {item}
                         </div>
                       ))}
@@ -632,13 +634,13 @@ export default function MediaPage() {
       ) : null}
 
       {view === "trend" ? (
-        <section className="grid gap-6 xl:grid-cols-2">
+        <section className="grid gap-6">
           <SurfaceCard>
             <SectionHeading
               title="Cadência do gasto"
               description="Acompanhe a subida ou queda do investimento ao longo dos dias."
             />
-            <div className="mt-5 h-[320px] min-w-0">
+            <div className="mt-5 h-[340px] min-w-0 xl:h-[380px]">
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
                 <BarChart data={trendData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" vertical={false} />
@@ -671,73 +673,109 @@ export default function MediaPage() {
             </div>
           </SurfaceCard>
 
-          <SurfaceCard>
-            <SectionHeading
-              title="Eficiência diária"
-              description="ROAS atribuído e compras ajudam a entender se o ganho de investimento veio com eficiência."
-            />
-            <div className="mt-5 h-[320px] min-w-0">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
-                <AreaChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" vertical={false} />
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={formatCompactDate}
-                    stroke="var(--color-on-surface-variant)"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <YAxis
-                    yAxisId="left"
-                    stroke="var(--color-on-surface-variant)"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    stroke="var(--color-on-surface-variant)"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <Tooltip
-                    formatter={(value, name) =>
-                      name === "attributedRoas"
-                        ? [`${Number(value ?? 0).toFixed(2)}x`, "ROAS"]
-                        : [integerFormatter.format(Number(value ?? 0)), "Compras"]
-                    }
-                    labelFormatter={(label) => formatCompactDate(String(label ?? ""))}
-                    contentStyle={{
-                      borderRadius: 14,
-                      border: "1px solid var(--color-outline)",
-                      backgroundColor: "var(--color-surface)",
-                    }}
-                  />
-                  <Area
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="attributedRoas"
-                    stroke="var(--color-primary)"
-                    fill="var(--color-primary-container)"
-                    fillOpacity={0.35}
-                    strokeWidth={2}
-                  />
-                  <Area
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="purchases"
-                    stroke="var(--color-secondary)"
-                    fill="var(--color-secondary-container)"
-                    fillOpacity={0.18}
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </SurfaceCard>
+          <section className="grid gap-4 xl:grid-cols-[0.54fr_0.46fr]">
+            <SurfaceCard>
+              <SectionHeading
+                title="Eficiência diária"
+                description="ROAS atribuído e compras ajudam a entender se o ganho de investimento veio com eficiência."
+              />
+              <div className="mt-5 h-[340px] min-w-0 xl:h-[380px]">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
+                  <AreaChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={formatCompactDate}
+                      stroke="var(--color-on-surface-variant)"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 11 }}
+                    />
+                    <YAxis
+                      yAxisId="left"
+                      stroke="var(--color-on-surface-variant)"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 11 }}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      stroke="var(--color-on-surface-variant)"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 11 }}
+                    />
+                    <Tooltip
+                      formatter={(value, name) =>
+                        name === "attributedRoas"
+                          ? [`${Number(value ?? 0).toFixed(2)}x`, "ROAS"]
+                          : [integerFormatter.format(Number(value ?? 0)), "Compras"]
+                      }
+                      labelFormatter={(label) => formatCompactDate(String(label ?? ""))}
+                      contentStyle={{
+                        borderRadius: 14,
+                        border: "1px solid var(--color-outline)",
+                        backgroundColor: "var(--color-surface)",
+                      }}
+                    />
+                    <Area
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="attributedRoas"
+                      stroke="var(--color-primary)"
+                      fill="var(--color-primary-container)"
+                      fillOpacity={0.35}
+                      strokeWidth={2}
+                    />
+                    <Area
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="purchases"
+                      stroke="var(--color-secondary)"
+                      fill="var(--color-secondary-container)"
+                      fillOpacity={0.18}
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </SurfaceCard>
+
+            <SurfaceCard>
+              <SectionHeading
+                title="Leitura do período"
+                description="Resumo rápido para saber se o ganho de verba veio com retorno ou só com volume."
+              />
+              <div className="mt-5 grid gap-3">
+                <article className="panel-muted p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    ROAS atribuído médio
+                  </p>
+                  <p className="mt-2 font-headline text-[clamp(1.7rem,3vw,2.2rem)] font-semibold text-on-surface">
+                    {summary.attributedRoas.toFixed(2)}x
+                  </p>
+                  <p className="mt-1 text-xs text-on-surface-variant">
+                    Receita atribuída dividida pelo investimento do período.
+                  </p>
+                </article>
+                <article className="panel-muted p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    Compras atribuídas
+                  </p>
+                  <p className="mt-2 font-headline text-[clamp(1.7rem,3vw,2.2rem)] font-semibold text-on-surface">
+                    {integerFormatter.format(summary.purchases)}
+                  </p>
+                  <p className="mt-1 text-xs text-on-surface-variant">
+                    Volume de compras puxado pelas campanhas da janela ativa.
+                  </p>
+                </article>
+                <article className="panel-muted p-4 text-sm leading-6 text-on-surface-variant">
+                  {report.commandRoom.narrative}
+                </article>
+              </div>
+            </SurfaceCard>
+          </section>
         </section>
       ) : null}
 

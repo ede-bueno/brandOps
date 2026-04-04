@@ -2,17 +2,21 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import {
+  AnalyticsCalloutCard,
+  AnalyticsKpiCard,
+  AnalyticsPanel,
+} from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { ContributionTrendPanel, mapContributionTrendPoints } from "@/components/finance/ContributionTrendPanel";
-import { MetricCard } from "@/components/MetricCard";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import { EntityChip, PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { currencyFormatter, percentFormatter } from "@/lib/brandops/format";
 import { cn } from "@/lib/utils";
 
 export default function DrePage() {
   const [viewMode, setViewMode] = useState<"historical" | "filtered">("historical");
-  const [activeSection, setActiveSection] = useState<"overview" | "matrix">("overview");
+  const [activeSection, setActiveSection] = useState<"overview" | "matrix">("matrix");
   const { 
     activeBrand, 
     activeBrandId,
@@ -120,34 +124,102 @@ export default function DrePage() {
         }
       />
 
-      <section className="grid grid-cols-2 gap-3 xl:grid-cols-6">
-        <MetricCard label="Faturado" value={currencyFormatter.format(report.total.rob)} accent="secondary" />
-        <MetricCard label="RLD" value={currencyFormatter.format(report.total.rld)} accent="info" />
-        <MetricCard label="CMV" value={currencyFormatter.format(report.total.cmvTotal)} accent="warning" />
-        <MetricCard label="Mídia" value={currencyFormatter.format(report.total.mediaSpend)} accent="warning" />
-        <MetricCard
-          label="Despesas operacionais"
-          value={currencyFormatter.format(report.total.fixedExpensesTotal)}
-          help={
-            report.expenseBreakdown.length
-              ? `${report.expenseBreakdown.length} categorias lançadas`
-              : "Sem lançamentos no período"
+      <section className="grid gap-4 xl:grid-cols-3">
+        <AnalyticsPanel
+          eyebrow="Entrada comercial"
+          title="Receita e base"
+          description="Os números que mostram o tamanho da operação antes da pressão de custo."
+        >
+          <AnalyticsKpiCard
+            label="Faturado"
+            value={currencyFormatter.format(report.total.rob)}
+            description="Entrada comercial exportada pela INK."
+            tone="secondary"
+          />
+          <AnalyticsKpiCard
+            label="RLD"
+            value={currencyFormatter.format(report.total.rld)}
+            description="Receita líquida de desconto para a leitura do DRE."
+            tone="info"
+          />
+          <AnalyticsKpiCard
+            label="Resultado"
+            value={currencyFormatter.format(report.total.netResult)}
+            description={`Margem final ${percentFormatter.format(report.total.operatingMargin)}.`}
+            tone={report.total.netResult >= 0 ? "positive" : "negative"}
+          />
+        </AnalyticsPanel>
+
+        <AnalyticsPanel
+          eyebrow="Pressão direta"
+          title="Custos que comem margem"
+          description="O que mais consome o caixa operacional antes do fechamento do resultado."
+        >
+          <AnalyticsKpiCard
+            label="CMV"
+            value={currencyFormatter.format(report.total.cmvTotal)}
+            description="Custo histórico aplicado por competência."
+            tone="warning"
+          />
+          <AnalyticsKpiCard
+            label="Mídia"
+            value={currencyFormatter.format(report.total.mediaSpend)}
+            description="Investimento atribuído ao período."
+            tone="warning"
+          />
+          <AnalyticsKpiCard
+            label="Despesas operacionais"
+            value={currencyFormatter.format(report.total.fixedExpensesTotal)}
+            description={
+              report.expenseBreakdown.length
+                ? `${report.expenseBreakdown.length} categorias lançadas.`
+                : "Sem lançamentos no período."
+            }
+            tone="warning"
+          />
+        </AnalyticsPanel>
+
+        <AnalyticsPanel
+          eyebrow="Controle"
+          title="Margem e equilíbrio"
+          description="O que sobra depois da pressão e o que falta para a operação se pagar."
+          footer={
+            <Link
+              href="/dashboard/contribution-margin"
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Abrir detalhe da margem
+            </Link>
           }
-          accent="warning"
-        />
-        <MetricCard
-          label="Resultado"
-          value={currencyFormatter.format(report.total.netResult)}
-          accent={report.total.netResult >= 0 ? "positive" : "negative"}
-          help={`Margem final ${percentFormatter.format(report.total.operatingMargin)}`}
-        />
+        >
+          <AnalyticsKpiCard
+            label="Margem de contribuição"
+            value={percentFormatter.format(report.total.contributionMargin)}
+            description="Percentual da RLD que sobra após CMV e mídia."
+            tone={report.total.contributionMargin >= 0 ? "positive" : "negative"}
+          />
+          <AnalyticsKpiCard
+            label="Ponto de equilíbrio"
+            value={breakEvenValue}
+            description={breakEvenHelp}
+            tone={report.total.breakEvenDisplay !== null ? "secondary" : "warning"}
+          />
+          {topExpense ? (
+            <AnalyticsKpiCard
+              label="Maior grupo de despesa"
+              value={topExpense.categoryName}
+              description={currencyFormatter.format(topExpense.total)}
+              tone="default"
+            />
+          ) : null}
+        </AnalyticsPanel>
       </section>
 
-      <SurfaceCard>
+      <SurfaceCard className="p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <SectionHeading
             title="Exploração do DRE"
-            description="Alterne entre a leitura executiva e a grade mensal sem alongar a tela principal."
+            description="Use as abas para alternar entre leitura executiva e matriz mensal sem alongar a navegação."
           />
           <div className="brandops-subtabs">
             <button
@@ -171,17 +243,15 @@ export default function DrePage() {
       </SurfaceCard>
 
       {activeSection === "overview" ? (
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.9fr)_minmax(260px,0.52fr)]">
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(220px,0.45fr)]">
           <SurfaceCard>
             <SectionHeading
               title="Tendência da margem"
-              description="Leitura consolidada da margem de contribuição e do resultado líquido mês a mês para localizar ganho de eficiência ou compressão da operação."
+              description="Margem de contribuição e resultado líquido mês a mês para localizar ganho de eficiência ou compressão da operação."
               aside={
                 <div className="flex flex-wrap items-center justify-end gap-2">
-                  <span className="status-chip">
-                    {viewMode === "historical" ? "Base histórica completa" : "Base do filtro atual"}
-                  </span>
-                  {latestMonth ? <span className="status-chip">Último mês: {latestMonth.label}</span> : null}
+                  <EntityChip text={viewMode === "historical" ? "Base histórica completa" : "Base do filtro atual"} />
+                  {latestMonth ? <EntityChip text={`Último mês: ${latestMonth.label}`} /> : null}
                 </div>
               }
             />
@@ -193,53 +263,38 @@ export default function DrePage() {
           <SurfaceCard>
             <SectionHeading
               title="Drivers do DRE"
-              description="Resumo curto do que mais pesa no resultado final do período."
+              description="Pressões que mais puxam o resultado para baixo no período."
             />
             <div className="mt-5 grid gap-3">
-              <article className="panel-muted p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Margem de contribuição
-                </p>
-                <p className={`mt-2 font-headline text-2xl font-semibold ${report.total.contributionMargin >= 0 ? "atlas-semantic-positive" : "atlas-semantic-negative"}`}>
-                  {percentFormatter.format(report.total.contributionMargin)}
-                </p>
-                <p className="mt-1 text-xs text-on-surface-variant">
-                  Percentual da RLD que sobra após CMV e mídia.
-                </p>
-              </article>
-              <article className="panel-muted p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Ponto de equilíbrio
-                </p>
-                <p className={`mt-2 font-headline text-2xl font-semibold ${report.total.breakEvenDisplay !== null ? "atlas-semantic-info" : "atlas-semantic-warning"}`}>
-                  {breakEvenValue}
-                </p>
-                <p className="mt-1 text-xs text-on-surface-variant">{breakEvenHelp}</p>
-                {report.total.breakEvenDisplay !== null ? (
-                  <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-muted">
-                    Meta mensal de RLD para cobrir a média de despesas fixas
-                  </p>
-                ) : null}
-              </article>
+              <AnalyticsKpiCard
+                label="Margem de contribuição"
+                value={percentFormatter.format(report.total.contributionMargin)}
+                description="Percentual da RLD que sobra após CMV e mídia."
+                tone={report.total.contributionMargin >= 0 ? "positive" : "negative"}
+              />
+              <AnalyticsKpiCard
+                label="Ponto de equilíbrio"
+                value={breakEvenValue}
+                description={breakEvenHelp}
+                tone={report.total.breakEvenDisplay !== null ? "info" : "warning"}
+                footer={report.total.breakEvenDisplay !== null ? "Meta mensal de RLD para cobrir a média de despesas fixas" : undefined}
+              />
               {topExpense ? (
-                <article className="panel-muted p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                    Maior grupo de despesa
-                  </p>
-                  <div className="mt-2 flex items-center justify-between gap-4">
-                    <span className="text-sm text-on-surface-variant">{topExpense.categoryName}</span>
-                    <span className="font-semibold text-on-surface">
-                      {currencyFormatter.format(topExpense.total)}
-                    </span>
-                  </div>
-                </article>
+                <AnalyticsCalloutCard
+                  eyebrow="Maior grupo de despesa"
+                  title={topExpense.categoryName}
+                  description="Categoria com maior peso sobre o resultado no recorte atual."
+                  footer={currencyFormatter.format(topExpense.total)}
+                  tone="warning"
+                />
               ) : null}
-              <Link href="/dashboard/contribution-margin" className="panel-muted p-4 transition hover:border-secondary/20 hover:bg-secondary-container/15">
-                <p className="font-semibold text-on-surface">Abrir detalhe da margem</p>
-                <p className="mt-1 text-sm leading-6 text-on-surface-variant">
-                  Ver a linha do tempo completa da contribuição e cruzar com mídia, CMV e despesas.
-                </p>
-              </Link>
+              <AnalyticsCalloutCard
+                eyebrow="Navegação"
+                title="Abrir detalhe da margem"
+                description="Ver a linha do tempo completa da contribuição e cruzar com mídia, CMV e despesas."
+                href="/dashboard/contribution-margin"
+                actionLabel="Abrir"
+              />
             </div>
           </SurfaceCard>
         </section>
@@ -248,7 +303,11 @@ export default function DrePage() {
           <div className="border-b border-outline p-5">
             <SectionHeading
               title="DRE mensal"
-              description="A matriz abaixo usa faturado da INK como entrada comercial e cruza descontos, CMV, mídia e despesas por competência."
+              description={
+                viewMode === "historical"
+                  ? "A matriz histórica completa permanece como a leitura principal do DRE para auditar mês a mês toda a operação."
+                  : "A matriz abaixo usa faturado da INK como entrada comercial e cruza descontos, CMV, mídia e despesas por competência."
+              }
             />
           </div>
 
@@ -421,35 +480,55 @@ export default function DrePage() {
               description="Participação das categorias lançadas que mais pressionam o resultado."
             />
           </div>
-          <div className="space-y-3 p-5">
+          <div className="p-5">
             {report.expenseBreakdown.length ? (
-              report.expenseBreakdown.map((category) => {
-                const share = report.total.fixedExpensesTotal
-                  ? category.total / report.total.fixedExpensesTotal
-                  : 0;
+              <div className="brandops-table-container border-0 rounded-none shadow-none">
+                <table className="brandops-table-compact w-full min-w-0">
+                  <thead>
+                    <tr>
+                      <th>Categoria</th>
+                      <th className="text-right">Participação</th>
+                      <th className="text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.expenseBreakdown.map((category) => {
+                      const share = report.total.fixedExpensesTotal
+                        ? category.total / report.total.fixedExpensesTotal
+                        : 0;
 
-                return (
-                  <article key={category.categoryId} className="panel-muted p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="font-medium text-on-surface">{category.categoryName}</p>
-                        <p className="mt-1 text-xs text-on-surface-variant">
-                          {percentFormatter.format(share)} da despesa operacional do período
-                        </p>
-                      </div>
-                      <p className="text-sm font-semibold text-on-surface">
-                        {currencyFormatter.format(category.total)}
-                      </p>
-                    </div>
-                    <div className="mt-3 h-2 rounded-full bg-surface-container-high">
-                      <div
-                        className="h-full rounded-full bg-secondary"
-                        style={{ width: `${Math.min(share * 100, 100)}%` }}
-                      />
-                    </div>
-                  </article>
-                );
-              })
+                      return (
+                        <tr key={category.categoryId}>
+                          <td>
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div className="h-2 w-2 shrink-0 rounded-full bg-secondary" />
+                              <div className="min-w-0">
+                                <p className="truncate font-medium text-on-surface">{category.categoryName}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="text-right">
+                            <div className="inline-flex min-w-[8rem] items-center justify-end gap-3">
+                              <div className="hidden h-1.5 w-20 overflow-hidden rounded-full bg-surface-container-high sm:block">
+                                <div
+                                  className="h-full rounded-full bg-secondary"
+                                  style={{ width: `${Math.min(share * 100, 100)}%` }}
+                                />
+                              </div>
+                              <span className="font-medium text-on-surface-variant">
+                                {percentFormatter.format(share)}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="text-right font-semibold text-on-surface">
+                            {currencyFormatter.format(category.total)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <div className="py-10 text-center text-sm text-on-surface-variant">
                 Nenhuma despesa lançada para compor o DRE.
@@ -464,24 +543,24 @@ export default function DrePage() {
             description="Atalhos para tratar rapidamente o que mais afeta o relatório."
           />
           <div className="mt-5 grid gap-3">
-            <Link href="/cost-center" className="panel-muted p-4 transition hover:border-secondary/20 hover:bg-secondary-container/15">
-              <p className="font-semibold text-on-surface">Gerenciar lançamentos</p>
-              <p className="mt-1 text-sm leading-6 text-on-surface-variant">
-                Abrir o livro de lançamentos, filtrar despesas e corrigir competências.
-              </p>
-            </Link>
-            <Link href="/cmv" className="panel-muted p-4 transition hover:border-secondary/20 hover:bg-secondary-container/15">
-              <p className="font-semibold text-on-surface">Revisar custos (CMV)</p>
-              <p className="mt-1 text-sm leading-6 text-on-surface-variant">
-                Validar vigência de custos e o impacto por categoria de produto.
-              </p>
-            </Link>
-            <Link href="/media" className="panel-muted p-4 transition hover:border-secondary/20 hover:bg-secondary-container/15">
-              <p className="font-semibold text-on-surface">Cruzar com mídia</p>
-              <p className="mt-1 text-sm leading-6 text-on-surface-variant">
-                Conferir se a pressão veio de gasto, queda de retorno ou mudança de mix.
-              </p>
-            </Link>
+            <AnalyticsCalloutCard
+              href="/cost-center"
+              eyebrow="Próxima ação"
+              title="Gerenciar lançamentos"
+              description="Abrir o livro de lançamentos, filtrar despesas e corrigir competências."
+            />
+            <AnalyticsCalloutCard
+              href="/cmv"
+              eyebrow="Próxima ação"
+              title="Revisar custos (CMV)"
+              description="Validar vigência de custos e o impacto por categoria de produto."
+            />
+            <AnalyticsCalloutCard
+              href="/media"
+              eyebrow="Próxima ação"
+              title="Cruzar com mídia"
+              description="Conferir se a pressão veio de gasto, queda de retorno ou mudança de mix."
+            />
           </div>
         </SurfaceCard>
       </section>

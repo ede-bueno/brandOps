@@ -110,12 +110,12 @@ export function MetricCard({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {href ? (
-            <span className="inline-flex items-center gap-1 rounded-lg border border-outline px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant transition group-hover:border-secondary/40 group-hover:text-secondary">
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant transition group-hover:text-secondary">
               {detailLabel}
               <ChevronRight size={12} />
             </span>
           ) : null}
-          <div className="atlas-metric-icon-shell flex h-6.5 w-6.5 items-center justify-center sm:h-7 sm:w-7">
+          <div className="atlas-metric-icon-shell flex h-6 w-6 items-center justify-center sm:h-6.5 sm:w-6.5">
             {createElement(resolvedIcon, { size: 13, className: config.iconColor })}
           </div>
         </div>
@@ -141,7 +141,7 @@ export function MetricCard({
         </div>
 
         {help && (
-          <p className="mt-2 min-h-[1.9rem] border-t border-outline-variant/70 pt-2 text-[10px] font-medium leading-relaxed text-on-surface-variant sm:text-[10.5px]">
+          <p className="mt-2 min-h-[1.8rem] border-t border-outline-variant/45 pt-2 text-[10px] font-medium leading-relaxed text-on-surface-variant sm:text-[10.5px]">
             {help}
           </p>
         )}
@@ -149,7 +149,7 @@ export function MetricCard({
     </>
   );
 
-  const shellClass = `atlas-metric-card brandops-card group flex min-h-[7.35rem] flex-col justify-between p-3.5 sm:min-h-[8rem] sm:p-4 transition-transform duration-150 hover:-translate-y-0.5`;
+  const shellClass = `atlas-metric-card brandops-card group flex min-h-[7rem] flex-col justify-between p-3.25 sm:min-h-[7.6rem] sm:p-3.75`;
 
   if (href) {
     return (

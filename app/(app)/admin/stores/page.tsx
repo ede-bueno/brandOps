@@ -1,24 +1,31 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { ComponentType } from "react";
 import {
-  Building2,
   CopyPlus,
-  Link2,
   MailPlus,
   MapPin,
   Search,
   Settings2,
-  Users2,
   Store,
   CheckCircle2,
   AlertCircle
 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
+import {
+  AnalyticsCalloutCard,
+  AnalyticsKpiCard,
+} from "@/components/analytics/AnalyticsPrimitives";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { formatLongDateTime } from "@/lib/brandops/format";
-import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import {
+  EntityChip,
+  FormField,
+  InlineNotice,
+  PageHeader,
+  SectionHeading,
+  SurfaceCard,
+} from "@/components/ui-shell";
 
 type AdminBrand = {
   id: string;
@@ -149,7 +156,7 @@ export default function AdminStoresPage() {
   const [saving, setSaving] = useState(false);
   const [creating, setCreating] = useState(false);
   const [sending, setSending] = useState(false);
-  const [activeTab, setActiveTab] = useState<"general" | "team">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "team" | "invite">("general");
   const [isCreating, setIsCreating] = useState(false);
 
   const selectedBrand = brands.find((brand) => brand.id === selectedBrandId) ?? null;
@@ -214,14 +221,14 @@ export default function AdminStoresPage() {
       <PageHeader
         eyebrow="Superadmin"
         title="Lojas e Convites"
-        description="Gerencie marcas, dados institucionais e acessos sem sair do workspace."
+        description="Gerencie marcas, time e acessos do ecossistema Atlas em uma única área operacional."
         actions={
           <button
             onClick={() => {
               setIsCreating(true);
               setNotice(null);
             }}
-            className="brandops-button brandops-button-primary flex items-center rounded-lg px-4 py-2"
+            className="brandops-button brandops-button-primary"
           >
             <CopyPlus size={16} className="mr-2" />
             Nova Loja
@@ -230,23 +237,37 @@ export default function AdminStoresPage() {
       />
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={Building2} label="Lojas Ativas" value={brands.length} hint="Cadastradas no workspace" />
-        <StatCard icon={Users2} label="Membros Totais" value={totalMembers} hint="Vínculos vigentes" />
-        <StatCard icon={Link2} label="Lojas Online" value={brands.filter((brand) => Boolean(brand.website_url)).length} hint="Com portal vinculado" />
-        <StatCard icon={MapPin} label="Georeferenciadas" value={brands.filter((brand) => Boolean(brand.address_line)).length} hint="Com endereço completo" />
+        <AnalyticsKpiCard
+          label="Lojas ativas"
+          value={String(brands.length)}
+          description="Marcas já cadastradas no workspace."
+        />
+        <AnalyticsKpiCard
+          label="Membros totais"
+          value={String(totalMembers)}
+          description="Vínculos ativos com acesso às lojas."
+        />
+        <AnalyticsKpiCard
+          label="Lojas online"
+          value={String(brands.filter((brand) => Boolean(brand.website_url)).length)}
+          description="Operações com portal vinculado."
+          tone="info"
+        />
+        <AnalyticsKpiCard
+          label="Georeferenciadas"
+          value={String(brands.filter((brand) => Boolean(brand.address_line)).length)}
+          description="Lojas com endereço comercial completo."
+        />
       </section>
 
       {notice ? (
-        <div
-          className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium ${
-            notice.kind === "success"
-              ? "border-secondary/20 bg-secondary/5 text-secondary"
-              : "border-tertiary/20 bg-tertiary/5 text-tertiary"
-          }`}
+        <InlineNotice
+          tone={notice.kind === "success" ? "success" : "error"}
+          icon={notice.kind === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+          className="text-sm font-medium"
         >
-          {notice.kind === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
           {notice.text}
-        </div>
+        </InlineNotice>
       ) : null}
 
       <section className="grid gap-4 xl:grid-cols-[300px_1fr]">
@@ -311,7 +332,7 @@ export default function AdminStoresPage() {
                   );
                 })
               ) : (
-                <div className="rounded-xl border border-dashed border-outline bg-surface-container/30 px-4 py-6 text-center text-sm font-medium text-on-surface-variant">
+                <div className="atlas-inline-notice justify-center text-center text-sm font-medium text-on-surface-variant">
                   Nenhuma loja encontrada.
                 </div>
               )}
@@ -325,7 +346,7 @@ export default function AdminStoresPage() {
               <div className="border-b border-outline bg-surface-container/20 px-5 py-4 sm:px-6">
                 <SectionHeading
                   title="Cadastrar nova loja"
-                  description="Preencha os dados principais da marca para liberar a operação e o cadastro de acessos."
+                  description="Preencha a ficha da marca para liberar operação, identidade e acessos iniciais."
                 />
               </div>
               <div className="px-5 py-5 sm:px-6">
@@ -369,7 +390,7 @@ export default function AdminStoresPage() {
               </div>
             </SurfaceCard>
           ) : !selectedBrand ? (
-            <div className="flex h-full min-h-[360px] flex-col items-center justify-center rounded-2xl border border-dashed border-outline bg-surface-container/20 p-10 text-center text-on-surface-variant opacity-70">
+            <div className="atlas-empty-state flex h-full min-h-[360px] flex-col items-center justify-center p-10 text-center opacity-70">
                <Store size={40} className="mb-4 opacity-30" />
                <p className="mb-1 text-sm font-semibold uppercase tracking-widest">Nada selecionado</p>
                <p className="max-w-xs text-xs">Escolha uma loja na lista ao lado ou crie uma nova para visualizar seus detalhes.</p>
@@ -393,14 +414,18 @@ export default function AdminStoresPage() {
                         {selectedBrand.name}
                       </h2>
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-on-surface-variant">
-                        {selectedBrand.contact_email ? <MetaChip icon={MailPlus} text={selectedBrand.contact_email} /> : null}
-                        {selectedLocation ? <MetaChip icon={MapPin} text={selectedLocation} /> : null}
+                        {selectedBrand.contact_email ? (
+                          <EntityChip icon={<MailPlus size={13} />} text={selectedBrand.contact_email} />
+                        ) : null}
+                        {selectedLocation ? (
+                          <EntityChip icon={<MapPin size={13} />} text={selectedLocation} />
+                        ) : null}
                         {selectedBrand.website_url ? (
                           <a
                             href={selectedBrand.website_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="brandops-button brandops-button-ghost min-h-[1.9rem] px-2.5 py-1 text-[11px]"
+                            className="brandops-button brandops-button-secondary"
                           >
                             Site
                           </a>
@@ -409,79 +434,185 @@ export default function AdminStoresPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    <MiniStat label="Membros" value={selectedMemberCount.toString()} />
-                    <MiniStat label="Site" value={selectedBrand.website_url ? "ativo" : "pendente"} />
-                    <MiniStat label="Atualizado" value={formatLongDateTime(selectedBrand.updated_at)} className="col-span-2 sm:col-span-1" />
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
+                    <AnalyticsKpiCard
+                      label="Membros"
+                      value={selectedMemberCount.toString()}
+                      description="Usuários vinculados ao workspace da marca."
+                    />
+                    <AnalyticsKpiCard
+                      label="Site"
+                      value={selectedBrand.website_url ? "ativo" : "pendente"}
+                      description="Estado atual do canal público da loja."
+                      tone={selectedBrand.website_url ? "positive" : "warning"}
+                    />
+                    <AnalyticsKpiCard
+                      label="Atualizado"
+                      value={formatLongDateTime(selectedBrand.updated_at)}
+                      description="Última alteração institucional registrada."
+                    />
+                    <AnalyticsKpiCard
+                      label="Local"
+                      value={selectedLocation || "Sem endereço"}
+                      description="Referência comercial da operação."
+                    />
                   </div>
                 </div>
               </div>
 
               <div className="border-b border-outline bg-surface-container/10 px-5 py-3 sm:px-6">
-                <div className="brandops-tabs overflow-x-auto">
-                <button
-                  onClick={() => setActiveTab("general")}
-                  data-active={activeTab === "general"}
-                  className="brandops-tab"
-                >
-                  Configurações
-                </button>
-                <button
-                  onClick={() => setActiveTab("team")}
-                  data-active={activeTab === "team"}
-                  className="brandops-tab"
-                >
-                  Membros do Time
-                  <span className="rounded-full bg-surface-container-high px-2 py-0.5 text-[10px]">{selectedMemberCount}</span>
-                </button>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="brandops-tabs overflow-x-auto">
+                    <button
+                      onClick={() => setActiveTab("general")}
+                      data-active={activeTab === "general"}
+                      className="brandops-tab"
+                    >
+                      Configurações
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("team")}
+                      data-active={activeTab === "team"}
+                      className="brandops-tab"
+                    >
+                      Time
+                      <span className="rounded-full bg-surface-container-high px-2 py-0.5 text-[10px]">{selectedMemberCount}</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("invite")}
+                      data-active={activeTab === "invite"}
+                      className="brandops-tab"
+                    >
+                      Novo acesso
+                    </button>
+                  </div>
+                  <span className="status-chip">Loja ativa</span>
                 </div>
               </div>
 
               <div className="px-5 py-5 sm:px-6">
                 {activeTab === "general" ? (
-                  <BrandForm
-                    form={selectedForm}
-                    onChange={setSelectedForm}
-                    onSubmit={async () => {
-                      if (!session?.access_token || !selectedBrandId) return;
-                      setSaving(true);
-                      setNotice(null);
-                      try {
-                        const response = await fetch(`/api/admin/brands/${selectedBrandId}`, {
-                          method: "PATCH",
-                          headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${session.access_token}`,
-                          },
-                          body: JSON.stringify(selectedForm),
-                        });
-                        const payload = await response.json();
-                        if (!response.ok) throw new Error(payload.error ?? "Falha ao atualizar loja.");
-                        setNotice({ kind: "success", text: `Painel de loja atualizado.` });
-                        await loadBrands(selectedBrandId);
-                        await refreshActiveBrand();
-                      } catch (error) {
-                        setNotice({
-                          kind: "error",
-                          text: error instanceof Error ? error.message : "Falha ao atualizar loja.",
-                        });
-                      } finally {
-                        setSaving(false);
-                      }
-                    }}
-                    submitLabel={saving ? "Salvando alterações..." : "Salvar configurações"}
-                    disabled={saving}
-                    mode="edit"
-                  />
+                  <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+                    <BrandForm
+                      form={selectedForm}
+                      onChange={setSelectedForm}
+                      onSubmit={async () => {
+                        if (!session?.access_token || !selectedBrandId) return;
+                        setSaving(true);
+                        setNotice(null);
+                        try {
+                          const response = await fetch(`/api/admin/brands/${selectedBrandId}`, {
+                            method: "PATCH",
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${session.access_token}`,
+                            },
+                            body: JSON.stringify(selectedForm),
+                          });
+                          const payload = await response.json();
+                          if (!response.ok) throw new Error(payload.error ?? "Falha ao atualizar loja.");
+                          setNotice({ kind: "success", text: `Painel de loja atualizado.` });
+                          await loadBrands(selectedBrandId);
+                          await refreshActiveBrand();
+                        } catch (error) {
+                          setNotice({
+                            kind: "error",
+                            text: error instanceof Error ? error.message : "Falha ao atualizar loja.",
+                          });
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                      submitLabel={saving ? "Salvando alterações..." : "Salvar configurações"}
+                      disabled={saving}
+                      mode="edit"
+                    />
+                    <div className="space-y-3">
+                      <SectionHeading
+                        title="Leitura rápida da loja"
+                        description="Resumo executivo para não depender da tela inteira antes de agir."
+                      />
+                      <AnalyticsCalloutCard
+                        title={selectedBrand.slug ?? "Sem slug"}
+                        description="Identificador legível da marca no Atlas."
+                        eyebrow="Slug"
+                      />
+                      <AnalyticsCalloutCard
+                        eyebrow="Contato"
+                        title={selectedBrand.contact_email ?? "Sem email"}
+                        description="Canal principal para recuperação de acesso e operação."
+                      />
+                      <AnalyticsCalloutCard
+                        eyebrow="Convites"
+                        title={String(selectedMemberCount)}
+                        description="Quantidade de acessos ativos nesta marca."
+                      />
+                    </div>
+                  </div>
+                ) : activeTab === "team" ? (
+                  <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+                    <div className="space-y-4">
+                      <SectionHeading
+                        title="Time da loja"
+                        description="Pessoas com acesso ativo ao workspace desta marca."
+                      />
+                      {selectedBrand?.brand_members?.length ? (
+                        <div className="space-y-2">
+                          {selectedBrand.brand_members.map((member) => (
+                            <div key={`${selectedBrand.id}-${member.user_id}`} className="atlas-list-row group flex items-center justify-between transition-colors hover:border-secondary/30">
+                              <div className="flex items-center gap-4">
+                                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-container font-bold text-on-surface-variant transition-colors group-hover:bg-secondary/10 group-hover:text-secondary">
+                                    {(member.user_profiles?.full_name || member.user_profiles?.email || member.user_id).slice(0, 1).toUpperCase()}
+                                 </div>
+                                 <div className="min-w-0">
+                                   <p className="truncate text-sm font-semibold text-on-surface">
+                                     {member.user_profiles?.full_name || "Membro confirmado"}
+                                   </p>
+                                   <p className="mt-0.5 truncate text-xs font-medium text-on-surface-variant">
+                                     {member.user_profiles?.email ?? "Email ocultado"}
+                                   </p>
+                                 </div>
+                              </div>
+                              <span className="status-chip shrink-0">
+                                {member.user_profiles?.role === "SUPER_ADMIN" ? "S-ADMIN" : "MARCA"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="atlas-empty-state px-6 py-8 text-center">
+                          <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant/70">Workspace indefinido</p>
+                          <p className="mx-auto mt-1 max-w-[220px] text-xs text-on-surface-variant/50">Ninguém possui acesso direto a este ambiente no momento.</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-3">
+                      <SectionHeading
+                        title="Resumo do time"
+                        description="Visão curta para decidir convite, ajuste ou revisão de acesso."
+                      />
+                      <AnalyticsKpiCard
+                        label="Membros ativos"
+                        value={selectedMemberCount.toString()}
+                        description="Usuários vinculados à marca."
+                      />
+                      <AnalyticsCalloutCard
+                        eyebrow="Próximo passo"
+                        title="Convidar ou revisar"
+                        description="Gere acesso, confirme o papel e valide o workspace na mesma sessão."
+                        tone="info"
+                      />
+                    </div>
+                  </div>
                 ) : (
-                  <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
                     <div className="space-y-4">
                       <SectionHeading
                         title="Criar acesso"
                         description="Cadastre um responsável com senha definida. O acesso fica isolado apenas nesta marca."
                       />
                       {lastProvisionedAccess ? (
-                        <div className="rounded-xl border border-secondary/25 bg-secondary/6 p-4">
+                        <div className="panel-muted p-4">
                           <p className="text-[11px] font-bold uppercase tracking-widest text-secondary">
                             Credencial pronta
                           </p>
@@ -502,7 +633,7 @@ export default function AdminStoresPage() {
                           </p>
                         </div>
                       ) : null}
-                      <div className="space-y-3 rounded-xl border border-outline bg-surface-container/20 p-4">
+                      <div className="brandops-toolbar-panel space-y-3">
                         <input
                           value={inviteForm.fullName}
                           onChange={(event) => setInviteForm((current) => ({ ...current, fullName: event.target.value }))}
@@ -560,7 +691,7 @@ export default function AdminStoresPage() {
                               setSending(false);
                             }
                           }}
-                          className="brandops-button brandops-button-primary mt-1 inline-flex w-full items-center justify-center gap-2"
+                          className="brandops-button brandops-button-primary mt-1 w-full"
                         >
                           <MailPlus size={16} />
                           {sending ? "Criando acesso..." : "Criar acesso"}
@@ -568,40 +699,22 @@ export default function AdminStoresPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <SectionHeading
-                        title="Time da loja"
-                        description="Pessoas com acesso ativo ao workspace desta marca."
+                        title="Resumo do time"
+                        description="Os dados resumidos ajudam a não alongar a área de convite."
                       />
-                      <div className="space-y-2">
-                        {selectedBrand?.brand_members?.length ? (
-                          selectedBrand.brand_members.map((member) => (
-                            <div key={`${selectedBrand.id}-${member.user_id}`} className="group flex items-center justify-between rounded-xl border border-outline bg-background px-4 py-3 transition-colors hover:border-secondary/40">
-                              <div className="flex items-center gap-4">
-                                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-container font-bold text-on-surface-variant transition-colors group-hover:bg-secondary/10 group-hover:text-secondary">
-                                    {(member.user_profiles?.full_name || member.user_profiles?.email || member.user_id).slice(0, 1).toUpperCase()}
-                                 </div>
-                                 <div className="min-w-0">
-                                   <p className="truncate text-sm font-semibold text-on-surface">
-                                     {member.user_profiles?.full_name || "Membro confirmado"}
-                                   </p>
-                                   <p className="mt-0.5 truncate text-xs font-medium text-on-surface-variant">
-                                     {member.user_profiles?.email ?? "Email ocultado"}
-                                   </p>
-                                 </div>
-                              </div>
-                              <span className="status-chip shrink-0">
-                                {member.user_profiles?.role === "SUPER_ADMIN" ? "S-ADMIN" : "MARCA"}
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="rounded-xl border border-dashed border-outline bg-surface-container/30 px-6 py-8 text-center">
-                            <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant/70">Workspace indefinido</p>
-                            <p className="mx-auto mt-1 max-w-[220px] text-xs text-on-surface-variant/50">Ninguém possui acesso direto a este ambiente no momento.</p>
-                          </div>
-                        )}
-                      </div>
+                      <article className="panel-muted p-4">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-on-surface-variant">Membros ativos</p>
+                        <p className="mt-2 text-3xl font-semibold text-on-surface">{selectedMemberCount}</p>
+                        <p className="mt-1 text-sm text-on-surface-variant">Usuários vinculados à marca.</p>
+                      </article>
+                      <article className="panel-muted p-4">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-on-surface-variant">Próximo passo</p>
+                        <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                          Gere o acesso, copie a credencial e valide o papel atribuído na mesma sessão.
+                        </p>
+                      </article>
                     </div>
                   </div>
                 )}
@@ -611,23 +724,6 @@ export default function AdminStoresPage() {
         </div>
       </section>
     </div>
-  );
-}
-
-function StatCard({ icon: Icon, label, value, hint }: { icon: ComponentType<{ size?: number; className?: string }>; label: string; value: number; hint: string; }) {
-  return (
-    <SurfaceCard className="flex flex-col justify-between p-3.5">
-      <div className="flex items-start justify-between">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{label}</p>
-        <div className="brandops-command-slab p-2 text-secondary">
-          <Icon size={15} />
-        </div>
-      </div>
-      <div>
-        <p className="mt-3 text-2xl font-bold tracking-tight text-on-surface">{value}</p>
-        <p className="mt-1 text-xs font-semibold text-on-surface-variant/60 uppercase tracking-widest">{hint}</p>
-      </div>
-    </SurfaceCard>
   );
 }
 
@@ -660,7 +756,7 @@ function BrandForm({
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {section.fields.map(([key, label, placeholder]) => (
-              <Field
+              <FormInputField
                 key={key}
                 label={label}
                 value={form[key as keyof BrandFormState]}
@@ -678,8 +774,8 @@ function BrandForm({
            <div className="h-px flex-1 bg-outline" />
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-           <Field label="Descrição curta" value={form.description} placeholder="Proposta de valor" onChange={(value) => onChange({ ...form, description: value })} multiline />
-           <Field label="Anotações internas" value={form.notes} placeholder="Condições, tarifas, links" onChange={(value) => onChange({ ...form, notes: value })} multiline />
+           <FormInputField label="Descrição curta" value={form.description} placeholder="Proposta de valor" onChange={(value) => onChange({ ...form, description: value })} multiline />
+           <FormInputField label="Anotações internas" value={form.notes} placeholder="Condições, tarifas, links" onChange={(value) => onChange({ ...form, notes: value })} multiline />
         </div>
       </div>
 
@@ -689,7 +785,7 @@ function BrandForm({
              type="button"
              disabled={disabled}
              onClick={onCancel}
-             className="w-full rounded-lg border border-outline bg-surface-container/50 px-5 py-2.5 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container hover:text-on-surface disabled:opacity-50 sm:w-auto"
+             className="brandops-button brandops-button-secondary w-full sm:w-auto"
            >
              Cancelar
            </button>
@@ -698,7 +794,7 @@ function BrandForm({
           type="button"
           disabled={disabled}
           onClick={() => void onSubmit()}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-secondary px-5 py-2.5 text-sm font-semibold tracking-wide text-on-secondary transition hover:bg-secondary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="brandops-button brandops-button-primary flex-1"
         >
           <Settings2 size={18} />
           {submitLabel}
@@ -708,7 +804,7 @@ function BrandForm({
   );
 }
 
-function Field({
+function FormInputField({
   label,
   value,
   placeholder,
@@ -723,11 +819,18 @@ function Field({
 }) {
   const baseClassName = "brandops-input w-full";
   return (
-    <label className="space-y-1.5 block">
-      <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant flex items-center justify-between">
-         {label}
-         {!value && <span className="opacity-0 group-focus-within:opacity-100 text-tertiary transition-opacity">*</span>}
-      </span>
+    <FormField
+      label={
+        <span className="flex items-center justify-between gap-2">
+          <span>{label}</span>
+          {!value ? (
+            <span className="opacity-0 transition-opacity group-focus-within:opacity-100 text-tertiary">
+              *
+            </span>
+          ) : null}
+        </span>
+      }
+    >
       {multiline ? (
         <textarea
           value={value}
@@ -744,7 +847,7 @@ function Field({
           className={`${baseClassName} placeholder:text-on-surface-variant/40`}
         />
       )}
-    </label>
+    </FormField>
   );
 }
 
@@ -762,26 +865,3 @@ function SkeletonCard() {
   );
 }
 
-function MiniStat({ label, value, className = "" }: { label: string; value: string; className?: string }) {
-  return (
-    <div className={`brandops-command-slab px-3 py-2 ${className}`.trim()}>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{label}</p>
-      <p className="mt-1 truncate text-sm font-semibold text-on-surface">{value}</p>
-    </div>
-  );
-}
-
-function MetaChip({
-  icon: Icon,
-  text,
-}: {
-  icon: ComponentType<{ size?: number; className?: string }>;
-  text: string;
-}) {
-  return (
-    <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-outline bg-background px-2 py-1 font-medium text-on-surface">
-      <Icon size={13} className="shrink-0 text-on-surface-variant" />
-      <span className="truncate">{text}</span>
-    </span>
-  );
-}

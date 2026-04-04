@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   BarChart3,
-  ChevronsLeft,
+  ChevronDown,
   ChevronsRight,
   FileUp,
   Images,
@@ -14,6 +14,8 @@ import {
   Landmark,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   PlugZap,
   Receipt,
   Settings2,
@@ -21,6 +23,7 @@ import {
   Sparkles,
   Tags,
   TrendingUp,
+  UserRound,
   X,
 } from "lucide-react";
 import { useBrandOps } from "./BrandOpsProvider";
@@ -74,6 +77,133 @@ const periodOptions: Array<{ value: PeriodFilter; label: string }> = [
   { value: "all", label: "Todo período" },
   { value: "custom", label: "Período livre" },
 ];
+
+function getAtlasOrbContext(pathname: string, brandName: string, periodLabel: string) {
+  const contexts = [
+    {
+      match: (value: string) => value.startsWith("/dashboard/contribution-margin"),
+      status: "foco em margem",
+      description: `Atlas está acompanhando a curva histórica de contribuição da ${brandName} para localizar compressão, ganho de eficiência e risco operacional no recorte ${periodLabel.toLowerCase()}.`,
+      hints: [
+        "Cruze contribuição, resultado e despesas para separar ruído de tendência estrutural.",
+        "Quando a margem vira antes do resultado, o Atlas tende a sinalizar a mudança primeiro aqui.",
+        "Use esta leitura para entender se a operação está respirando ou só adiando pressão.",
+      ],
+    },
+    {
+      match: (value: string) => value.startsWith("/dashboard"),
+      status: "centro de comando",
+      description: `Atlas está observando os sinais executivos da ${brandName} para destacar desvios, prioridades e oportunidades com clareza operacional.`,
+      hints: [
+        "Priorize onde há compressão de margem, mídia acima do retorno e despesas dominando o período.",
+        "Os próximos blocos devem apontar primeiro o que pede ação, não só o que mudou.",
+        "Esta camada tende a virar a sua mesa de comando rápida para abrir o detalhe certo.",
+      ],
+    },
+    {
+      match: (value: string) => value.startsWith("/dre"),
+      status: "leitura financeira",
+      description: `Atlas está cruzando faturado, RLD, CMV, mídia e despesas da ${brandName} para mostrar o que realmente sustenta ou corrói resultado.`,
+      hints: [
+        "A leitura financeira precisa falar de pressão e alívio, não só listar blocos contábeis.",
+        "Use os drivers para entender onde a operação pede ajuste estrutural.",
+        "O ponto de equilíbrio só aparece quando a contribuição permite meta calculável com confiança.",
+      ],
+    },
+    {
+      match: (value: string) => value.startsWith("/media"),
+      status: "mapeando mídia",
+      description: `Atlas está lendo investimento, retorno atribuído e campanhas da ${brandName} para decidir onde escalar, revisar criativo ou proteger verba.`,
+      hints: [
+        "Campanhas com gasto relevante e retorno fraco devem aparecer como prioridade de revisão.",
+        "A recomendação certa aqui é mover orçamento, não admirar o dashboard.",
+        "No futuro, o Atlas vai narrar risco, oportunidade e próxima ação por campanha.",
+      ],
+    },
+    {
+      match: (value: string) => value.startsWith("/traffic"),
+      status: "lendo tráfego",
+      description: `Atlas está acompanhando a jornada de tráfego da ${brandName} para localizar onde o funil ganha força, perde intenção ou monetiza melhor.`,
+      hints: [
+        "A camada inteligente de tráfego deve mostrar atrito e monetização por entrada.",
+        "Source, campanha e landing page precisam competir por atenção com clareza.",
+        "O objetivo aqui é decidir distribuição de tráfego, não espelhar o GA4.",
+      ],
+    },
+    {
+      match: (value: string) => value.startsWith("/product-insights"),
+      status: "vigiando estampas",
+      description: `Atlas está cruzando intenção, venda real e momentum da ${brandName} para dizer o que merece escala, mais tráfego ou revisão de vitrine.`,
+      hints: [
+        "A estampa em foco deve responder o que fazer agora, não só descrever métricas.",
+        "Use esta camada para transformar comportamento em decisão comercial.",
+        "No futuro, o Atlas vai ligar estampas, catálogo e criativos em uma mesma trilha de ação.",
+      ],
+    },
+    {
+      match: (value: string) => value.startsWith("/feed"),
+      status: "lendo catálogo",
+      description: `Atlas está organizando o catálogo da ${brandName} para mostrar cobertura visual, oportunidade de escala e lacunas entre Meta e feed manual.`,
+      hints: [
+        "Catálogo bom não é só bonito; ele precisa abrir espaço para mídia e criativo.",
+        "Produtos sem galeria ou sem tração devem entrar rápido em revisão visual.",
+        "A convivência Meta Catalog + feed manual precisa parecer uma fonte única para o operador.",
+      ],
+    },
+    {
+      match: (value: string) => value.startsWith("/sanitization"),
+      status: "auditando anomalias",
+      description: `Atlas está protegendo a leitura da ${brandName} contra extremos e ruído operacional, preservando histórico e confiança nos números.`,
+      hints: [
+        "Pendências pedem decisão rápida; histórico pede rastreabilidade limpa.",
+        "Tudo que for ignorado ou mantido precisa continuar auditável depois da reimportação.",
+        "Saneamento é defesa de confiança, não um anexo do sistema.",
+      ],
+    },
+    {
+      match: (value: string) => value.startsWith("/cost-center"),
+      status: "cuidando despesas",
+      description: `Atlas está estruturando os lançamentos de despesas da ${brandName} para que o DRE reflita a operação de verdade, sem improviso nem ruído de competência.`,
+      hints: [
+        "A operação precisa lançar rápido e localizar fácil o que já entrou.",
+        "Categorias e livro de lançamentos devem trabalhar como uma mesa financeira, não como formulário solto.",
+        "A próxima camada aqui é reduzir atrito entre lançamento, auditoria e efeito no DRE.",
+      ],
+    },
+    {
+      match: (value: string) => value.startsWith("/sales"),
+      status: "lendo vendas",
+      description: `Atlas está consolidando a operação comercial da ${brandName} para traduzir pedido, item, ticket e desconto em leitura acionável.`,
+      hints: [
+        "Vendas precisa apontar onde a receita ganhou corpo e onde a densidade de pedido caiu.",
+        "A leitura aqui deve dialogar com margem, catálogo e tráfego sem repetir blocos.",
+        "O melhor uso desta tela é decidir o próximo ajuste comercial com rapidez.",
+      ],
+    },
+    {
+      match: (value: string) => value.startsWith("/integrations"),
+      status: "sincronizando sinais",
+      description: `Atlas está observando a malha de integrações da ${brandName} para manter Meta, GA4 e importações operando como uma única base confiável.`,
+      hints: [
+        "Integração não deve parecer configuração técnica; deve parecer prontidão operacional.",
+        "Quando algo falhar, a mensagem precisa dizer impacto e próximo passo.",
+        "Esta área vai virar o centro de saúde das fontes do sistema.",
+      ],
+    },
+    {
+      match: () => true,
+      status: "escutando",
+      description: `Atlas acompanha a ${brandName} de ponta a ponta e vai começar a antecipar risco, pressão e oportunidade conforme você navega pelo console.`,
+      hints: [
+        "Arraste o orbe para o canto que fizer mais sentido e deixe a entidade acompanhar sua navegação.",
+        "A camada proativa vai cruzar mídia, catálogo e operação para decidir o próximo passo.",
+        "O Atlas deve falar pouco, mas puxar sua atenção para o dado que realmente pede ação.",
+      ],
+    },
+  ];
+
+  return contexts.find((context) => context.match(pathname))!;
+}
 
 /* -------------------------------------------------------
    NavSection
@@ -156,6 +286,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return window.localStorage.getItem("brandops.sidebar.collapsed") === "1";
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const {
     activeBrand,
     activeBrandId,
@@ -176,6 +307,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     activeBrand?.name ??
     brands.find((brand) => brand.id === activeBrandId)?.name ??
     "Nenhuma marca";
+  const atlasOrbContext = useMemo(
+    () => getAtlasOrbContext(pathname, selectedBrandName, selectedPeriodLabel),
+    [pathname, selectedBrandName, selectedPeriodLabel],
+  );
 
   useEffect(() => {
     if (!isLoading && !session) {
@@ -272,41 +407,39 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="brandops-shell brandops-selection h-[100dvh] overflow-hidden bg-background text-on-surface">
-      <div className="flex h-full gap-0 p-0 sm:gap-2 sm:p-2 lg:gap-3 lg:p-3">
+      <div className="flex h-full gap-0 p-0 sm:gap-4 sm:p-0 lg:gap-5 lg:p-0 xl:gap-6">
 
         {/* ---- Desktop Sidebar ---- */}
-        <aside
-          className={`brandops-panel atlas-tech-grid atlas-sidebar hidden h-full shrink-0 flex-col overflow-hidden lg:flex transition-[width] duration-300 ease-in-out ${
-            isSidebarCollapsed ? "w-[82px]" : "w-[252px]"
+          <aside
+          className={`atlas-tech-grid atlas-sidebar hidden my-3 shrink-0 self-stretch flex-col overflow-hidden lg:flex transition-[width] duration-300 ease-in-out ${
+            isSidebarCollapsed ? "w-[86px]" : "w-[264px]"
           }`}
         >
           {/* Header */}
           <div
-            className={`flex shrink-0 items-center gap-2 border-b border-outline px-3 py-3 ${
+            className={`atlas-sidebar-header flex shrink-0 items-center gap-2 border-b border-outline/50 px-3 py-3.5 ${
               isSidebarCollapsed ? "flex-col justify-center" : "justify-between"
             }`}
           >
             <div className={`flex min-w-0 items-center gap-2 ${isSidebarCollapsed ? "flex-col" : ""}`}>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/15 bg-primary-container text-primary shadow-sm">
+              <div className="atlas-sidebar-brandmark flex h-10 w-10 items-center justify-center rounded-2xl border border-primary/20 bg-primary-container/70 text-primary">
                 <Sparkles size={17} />
               </div>
               {!isSidebarCollapsed && (
-                <div className="min-w-0">
-                  <p className="eyebrow text-primary">{BRANDING.shortName}</p>
-                  <p className="truncate font-headline text-[15px] font-semibold tracking-tight text-on-surface">
-                    {BRANDING.appName}
-                  </p>
-                  <p className="truncate text-[11px] font-medium text-on-surface-variant">
-                    Núcleo operacional do ecossistema
-                  </p>
-                </div>
+                <p className="truncate font-headline text-[1rem] font-semibold tracking-tight text-on-surface">
+                  {BRANDING.appName}
+                </p>
               )}
             </div>
             <button
-              onClick={() => setIsSidebarCollapsed((c) => !c)}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              onClick={() => {
+                setIsUserMenuOpen(false);
+                setIsSidebarCollapsed((c) => !c);
+              }}
+              className="atlas-sidebar-toggle inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border text-on-surface-variant hover:text-on-surface"
+              aria-label={isSidebarCollapsed ? "Expandir navegação" : "Recolher navegação"}
             >
-              {isSidebarCollapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
+              {isSidebarCollapsed ? <PanelLeftOpen size={12} strokeWidth={1.8} /> : <PanelLeftClose size={12} strokeWidth={1.8} />}
             </button>
           </div>
 
@@ -316,16 +449,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <SidebarSkeleton />
             ) : (
               <>
-                {!isSidebarCollapsed && (
-                  <div className="atlas-brand-shell mb-3 rounded-xl border bg-surface-container-low px-2.5 py-2.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-                      Console ativo
-                    </p>
-                    <p className="mt-1 truncate font-headline text-sm font-semibold text-on-surface">
-                      {selectedBrandName}
-                    </p>
-                  </div>
-                )}
                 <NavGroupLabel label="Operação" collapsed={isSidebarCollapsed} />
                 <NavSection items={operationsNav} pathname={pathname} collapsed={isSidebarCollapsed} />
 
@@ -346,38 +469,86 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Footer */}
-          <div className="atlas-sidebar-footer shrink-0 border-t border-outline p-2">
-            {!isSidebarCollapsed && (
-              <div className="mb-2 rounded-lg bg-surface-container px-2.5 py-2">
-                <p className="truncate text-[11px] font-medium text-on-surface">
-                  {profile?.fullName ?? profile?.email ?? "Usuário"}
-                </p>
-              </div>
-            )}
-            <div className={`flex gap-1 ${isSidebarCollapsed ? "flex-col items-center" : "items-center"}`}>
-              <ThemeToggle />
-              <button
-                onClick={() => void signOut()}
-                className={`brandops-button-ghost flex flex-1 items-center justify-center rounded-lg px-2 py-1.5 text-xs ${
-                  isSidebarCollapsed ? "h-9 w-9 p-0" : "gap-2"
+          <div className="atlas-sidebar-footer relative shrink-0 border-t border-outline/50 p-2">
+            <button
+              type="button"
+              onClick={() => setIsUserMenuOpen((open) => !open)}
+              className={`atlas-user-trigger flex w-full items-center rounded-xl border border-transparent bg-transparent px-2 py-2 text-left transition hover:border-outline/60 hover:bg-surface-container-low ${
+                isSidebarCollapsed ? "justify-center" : "gap-2.5"
+              }`}
+              aria-expanded={isUserMenuOpen}
+              aria-label="Abrir menu do usuário"
+            >
+              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-outline/60 bg-surface-container text-on-surface-variant">
+                <UserRound size={14} />
+              </span>
+              {!isSidebarCollapsed ? (
+                <>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[12px] font-semibold text-on-surface">
+                      {profile?.fullName ?? "Conta Atlas"}
+                    </span>
+                    <span className="block truncate text-[11px] text-on-surface-variant">
+                      {profile?.email ?? "Sessão ativa"}
+                    </span>
+                  </span>
+                  <ChevronDown
+                    size={14}
+                    className={`shrink-0 text-on-surface-variant transition ${isUserMenuOpen ? "rotate-180" : ""}`}
+                  />
+                </>
+              ) : null}
+            </button>
+
+            {isUserMenuOpen ? (
+              <div
+                className={`atlas-user-menu brandops-panel-soft absolute bottom-full z-40 mb-2 p-2 ${
+                  isSidebarCollapsed ? "left-1/2 w-56 -translate-x-1/2" : "left-2 right-2"
                 }`}
               >
-                <LogOut size={13} />
-                {!isSidebarCollapsed && "Sair"}
-              </button>
-            </div>
+                <div className="rounded-xl bg-surface-container-low px-3 py-2.5">
+                  <p className="truncate text-[12px] font-semibold text-on-surface">
+                    {profile?.fullName ?? "Conta Atlas"}
+                  </p>
+                  <p className="truncate text-[11px] text-on-surface-variant">
+                    {profile?.email ?? "Sessão ativa"}
+                  </p>
+                </div>
+                <div className="mt-2 grid gap-2">
+                  <div className="flex items-center justify-between rounded-xl border border-outline/50 bg-surface px-3 py-2">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
+                        Aparência
+                      </p>
+                      <p className="text-[12px] text-on-surface">Modo claro / escuro</p>
+                    </div>
+                    <ThemeToggle />
+                  </div>
+                  <button
+                    onClick={() => void signOut()}
+                    className="brandops-button brandops-button-ghost w-full justify-center"
+                  >
+                    <LogOut size={14} />
+                    Sair
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </aside>
 
         {/* ---- Main Content ---- */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="atlas-main-stage">
           {/* Header */}
-          <header className="brandops-panel atlas-command-strip z-30 shrink-0 rounded-none border-x-0 border-t-0 px-3 py-3 sm:rounded-2xl sm:border-x sm:border-t lg:px-4">
+          <header className="atlas-command-strip z-30 shrink-0 border-b border-outline/50 px-3 py-3 sm:mt-3 sm:rounded-2xl sm:border sm:border-outline/50 sm:px-4 lg:mt-4 lg:px-5">
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                 <div className="flex min-w-0 items-center gap-2">
                 <button
-                  onClick={() => setIsMobileMenuOpen((c) => !c)}
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    setIsMobileMenuOpen((c) => !c);
+                  }}
                   className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-outline bg-surface-container text-on-surface lg:hidden"
                 >
                   {isMobileMenuOpen ? <X size={15} /> : <Menu size={15} />}
@@ -388,21 +559,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       {selectedBrandName}
                     </h2>
                     <span className="status-chip">{selectedPeriodLabel}</span>
-                    {!isSidebarCollapsed && (
-                      <span className="status-chip atlas-command-chip">
-                        <AtlasOrb
-                          size="sm"
-                          title="Atlas Command"
-                          status="escutando"
-                          hints={[
-                            "Atlas vai antecipar pressão de margem e sugerir correções por frente.",
-                            "A camada proativa vai cruzar mídia, catálogo e operação para decidir o próximo passo.",
-                            "Interaja com o orbe para abrir a entidade que acompanhará o sistema.",
-                          ]}
-                        />
-                        Atlas Command
-                      </span>
-                    )}
                   </div>
                   <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted sm:text-[11px] sm:tracking-[0.16em]">
                     Operação, aquisição, catálogo e margem em um único workspace
@@ -411,9 +567,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
 
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <div className="flex lg:hidden">
-                  <ThemeToggle />
-                </div>
                 <select
                   value={activeBrandId ?? ""}
                   onChange={(e) => {
@@ -441,7 +594,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-outline pt-3">
+            <div className="flex flex-col gap-3 border-t border-outline/50 pt-3">
               <div className="brandops-filterbar">
                 {periodOptions.map((opt) => (
                   <button
@@ -500,11 +653,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </header>
 
           {/* Children Space */}
-          <main className="atlas-content-scroll min-w-0 flex-1 px-2 py-3 sm:px-0.5 sm:py-4 lg:py-5">
+          <main className="atlas-content-scroll min-w-0 flex-1 py-3 sm:py-4 lg:py-5">
             <div className="atlas-page-stack">{children}</div>
           </main>
         </div>
       </div>
+
+      <AtlasOrb
+        floating
+        size="md"
+        title="Atlas"
+        status={atlasOrbContext.status}
+        description={atlasOrbContext.description}
+        panelAlign="left"
+        hints={atlasOrbContext.hints}
+      />
 
       {isMobileMenuOpen ? (
         <div className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm lg:hidden">
@@ -512,20 +675,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             type="button"
             className="absolute inset-0 h-full w-full cursor-default"
             aria-label="Fechar menu"
-            onClick={() => setIsMobileMenuOpen(false)}
+            onClick={() => {
+              setIsUserMenuOpen(false);
+              setIsMobileMenuOpen(false);
+            }}
           />
-          <aside className="brandops-panel atlas-sidebar atlas-tech-grid absolute inset-y-2 left-2 flex w-[min(86vw,320px)] flex-col overflow-hidden rounded-2xl">
-            <div className="flex items-center justify-between gap-2 border-b border-outline px-3 py-3">
+          <aside className="atlas-sidebar atlas-tech-grid absolute inset-y-2 left-2 flex w-[min(86vw,320px)] flex-col overflow-hidden rounded-2xl">
+            <div className="atlas-sidebar-header flex items-center justify-between gap-2 border-b border-outline/50 px-3 py-3">
               <div className="flex min-w-0 items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/15 bg-primary-container text-primary shadow-sm">
+                <div className="atlas-sidebar-brandmark flex h-10 w-10 items-center justify-center rounded-2xl border border-primary/20 bg-primary-container/70 text-primary">
                   <Sparkles size={17} />
                 </div>
-                <div className="min-w-0">
-                  <p className="eyebrow text-primary">{BRANDING.shortName}</p>
-                  <p className="truncate font-headline text-[15px] font-semibold tracking-tight text-on-surface">
-                    {BRANDING.appName}
-                  </p>
-                </div>
+                <p className="truncate font-headline text-[1rem] font-semibold tracking-tight text-on-surface">
+                  {BRANDING.appName}
+                </p>
               </div>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -535,44 +698,91 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </button>
             </div>
 
-            <div className="px-3 py-3">
-              <div className="atlas-brand-shell rounded-xl border bg-surface-container-low px-3 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-                  Console ativo
-                </p>
-                <p className="mt-1 truncate font-headline text-sm font-semibold text-on-surface">
-                  {selectedBrandName}
-                </p>
-              </div>
-            </div>
-
             <div className="atlas-sidebar-nav min-h-0 flex-1 overflow-y-auto px-2 py-1">
               <NavGroupLabel label="Operação" collapsed={false} />
-              <NavSection items={operationsNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
+              <NavSection
+                items={operationsNav}
+                pathname={pathname}
+                collapsed={false}
+                onNavigate={() => {
+                  setIsUserMenuOpen(false);
+                  setIsMobileMenuOpen(false);
+                }}
+              />
               <NavGroupLabel label="Aquisição" collapsed={false} />
-              <NavSection items={acquisitionNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
+              <NavSection
+                items={acquisitionNav}
+                pathname={pathname}
+                collapsed={false}
+                onNavigate={() => {
+                  setIsUserMenuOpen(false);
+                  setIsMobileMenuOpen(false);
+                }}
+              />
               <NavGroupLabel label="Catálogo" collapsed={false} />
-              <NavSection items={catalogNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
+              <NavSection
+                items={catalogNav}
+                pathname={pathname}
+                collapsed={false}
+                onNavigate={() => {
+                  setIsUserMenuOpen(false);
+                  setIsMobileMenuOpen(false);
+                }}
+              />
               <NavGroupLabel label="Admin" collapsed={false} />
-              <NavSection items={adminNavigation} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
+              <NavSection
+                items={adminNavigation}
+                pathname={pathname}
+                collapsed={false}
+                onNavigate={() => {
+                  setIsUserMenuOpen(false);
+                  setIsMobileMenuOpen(false);
+                }}
+              />
             </div>
 
-            <div className="atlas-sidebar-footer border-t border-outline p-3">
-              <div className="mb-2 rounded-lg bg-surface-container px-2.5 py-2">
-                <p className="truncate text-[11px] font-medium text-on-surface">
-                  {profile?.fullName ?? profile?.email ?? "Usuário"}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <ThemeToggle />
-                <button
-                  onClick={() => void signOut()}
-                  className="brandops-button brandops-button-ghost flex-1"
-                >
-                  <LogOut size={14} />
-                  Sair
-                </button>
-              </div>
+            <div className="atlas-sidebar-footer relative border-t border-outline/50 p-3">
+              <button
+                type="button"
+                onClick={() => setIsUserMenuOpen((open) => !open)}
+                className="atlas-user-trigger flex w-full items-center gap-2.5 rounded-xl border border-transparent bg-transparent px-2 py-2 text-left transition hover:border-outline/60 hover:bg-surface-container-low"
+                aria-expanded={isUserMenuOpen}
+                aria-label="Abrir menu do usuário"
+              >
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-outline/60 bg-surface-container text-on-surface-variant">
+                  <UserRound size={14} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[12px] font-semibold text-on-surface">
+                    {profile?.fullName ?? "Conta Atlas"}
+                  </span>
+                  <span className="block truncate text-[11px] text-on-surface-variant">
+                    {profile?.email ?? "Sessão ativa"}
+                  </span>
+                </span>
+                <ChevronDown size={14} className={`shrink-0 text-on-surface-variant transition ${isUserMenuOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {isUserMenuOpen ? (
+                <div className="atlas-user-menu brandops-panel-soft absolute bottom-full left-3 right-3 z-40 mb-2 p-2">
+                  <div className="flex items-center justify-between rounded-xl border border-outline/50 bg-surface px-3 py-2">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
+                        Aparência
+                      </p>
+                      <p className="text-[12px] text-on-surface">Modo claro / escuro</p>
+                    </div>
+                    <ThemeToggle />
+                  </div>
+                  <button
+                    onClick={() => void signOut()}
+                    className="brandops-button brandops-button-ghost mt-2 w-full justify-center"
+                  >
+                    <LogOut size={14} />
+                    Sair
+                  </button>
+                </div>
+              ) : null}
             </div>
           </aside>
         </div>

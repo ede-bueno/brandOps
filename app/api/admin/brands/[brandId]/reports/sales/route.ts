@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireBrandAccess } from "@/lib/brandops/admin";
 import { parseDateParam } from "@/lib/brandops/server/report-params";
+import { normalizeSalesDetailReportPayload } from "@/lib/brandops/server/sales-report";
 
 export async function GET(
   request: Request,
@@ -23,7 +24,12 @@ export async function GET(
       throw error;
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(
+      normalizeSalesDetailReportPayload(data, {
+        from,
+        to,
+      }),
+    );
   } catch (error) {
     return NextResponse.json(
       {

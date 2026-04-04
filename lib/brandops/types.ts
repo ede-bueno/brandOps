@@ -421,6 +421,45 @@ export interface SalesReport {
 export interface SalesDetailReport {
   dailySeries: DailySalesPoint[];
   topProducts: TopProductPerformance[];
+  highlights: {
+    bestDay: DailySalesPoint | null;
+    topProduct: TopProductPerformance | null;
+    revenuePerItem: number;
+    discountPerOrder: number;
+  };
+  playbook: {
+    protect: {
+      title: string;
+      description: string;
+      count: number;
+      items: TopProductPerformance[];
+    };
+    grow: {
+      title: string;
+      description: string;
+      count: number;
+      items: TopProductPerformance[];
+    };
+    review: {
+      title: string;
+      description: string;
+      count: number;
+      items: TopProductPerformance[];
+    };
+  };
+  analysis: {
+    narrativeTitle: string;
+    narrativeBody: string;
+    nextActions: string[];
+    topOpportunity: string | null;
+    topRisk: string | null;
+  };
+  meta: {
+    generatedAt: string;
+    from: string | null;
+    to: string | null;
+    hasData: boolean;
+  };
 }
 
 export interface MediaReportSummary {

@@ -1,10 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { AlertCircle, Ban, CheckCircle2, RotateCcw, Search, ShieldCheck } from "lucide-react";
+import { AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, ProcessingOverlay, SurfaceCard } from "@/components/ui-shell";
+import {
+  InlineNotice,
+  PageHeader,
+  ProcessingOverlay,
+  SectionHeading,
+  SurfaceCard,
+} from "@/components/ui-shell";
 import { fetchSanitizationReport } from "@/lib/brandops/database";
 import type { SanitizationReport } from "@/lib/brandops/types";
 import { cn } from "@/lib/utils";
@@ -19,6 +26,12 @@ const EMPTY_REPORT: SanitizationReport = {
     hasData: false,
   },
 };
+
+const targetOptions = [
+  { value: "all", label: "Tudo" },
+  { value: "MEDIA", label: "Mídia" },
+  { value: "ORDER", label: "Pedido" },
+] as const;
 
 function statusLabel(status: "PENDING" | "KEPT" | "IGNORED") {
   if (status === "KEPT") return "Mantido";
@@ -111,11 +124,15 @@ export default function SanitizationPage() {
   }, [activeBrandId, isBrandHydrating]);
 
   const selectedBrandName =
-    activeBrand?.name ??
-    brands.find((brand) => brand.id === activeBrandId)?.name ??
-    "Loja";
+    activeBrand?.name ?? brands.find((brand) => brand.id === activeBrandId)?.name ?? "Loja";
+
   const pendingAnomalies = report.pending;
   const historyAnomalies = report.history;
+  const allKnownAnomalies = useMemo(
+    () => [...pendingAnomalies, ...historyAnomalies],
+    [pendingAnomalies, historyAnomalies],
+  );
+
   const visibleAnomalies = useMemo(() => {
     const base = activeTab === "pending" ? pendingAnomalies : historyAnomalies;
     const normalizedTerm = searchTerm.trim().toLowerCase();
@@ -135,7 +152,16 @@ export default function SanitizationPage() {
       return matchesTarget && matchesSearch;
     });
   }, [activeTab, historyAnomalies, pendingAnomalies, searchTerm, targetFilter]);
-  const allKnownAnomalies = [...pendingAnomalies, ...historyAnomalies];
+
+  const summary = useMemo(
+    () => ({
+      pending: report.meta.pendingCount,
+      history: report.meta.historyCount,
+      media: allKnownAnomalies.filter((anomaly) => anomaly.target === "MEDIA").length,
+      orders: allKnownAnomalies.filter((anomaly) => anomaly.target === "ORDER").length,
+    }),
+    [allKnownAnomalies, report.meta.historyCount, report.meta.pendingCount],
+  );
 
   if (activeBrandId && (!activeBrand || isBrandHydrating || isReportLoading)) {
     return (
@@ -147,7 +173,11 @@ export default function SanitizationPage() {
           badge="Histórico completo da marca"
         />
         <div className="space-y-6 animate-pulse">
-          <div className="h-14 rounded-2xl bg-surface-container" />
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-24 rounded-2xl bg-surface-container" />
+            ))}
+          </div>
           <div className="h-[420px] rounded-2xl bg-surface-container" />
         </div>
       </div>
@@ -238,7 +268,7 @@ export default function SanitizationPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <ProcessingOverlay
         open={isProcessing}
         title="Atualizando saneamento"
@@ -248,85 +278,121 @@ export default function SanitizationPage() {
       <PageHeader
         eyebrow="Decisão operacional"
         title="Saneamento"
-        description="O sistema aponta divergências, mas a decisão final fica com o operador. Mantido ou ignorado, o histórico permanece salvo no banco mesmo após reimportações."
+        description="Revise divergências, decida o que entra no cálculo e preserve o histórico completo da marca no banco."
         badge="Histórico completo da marca"
       />
 
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AnalyticsKpiCard
+          label="Pendentes"
+          value={String(summary.pending)}
+          description="Ocorrências que ainda precisam de decisão."
+          tone="warning"
+        />
+        <AnalyticsKpiCard
+          label="Histórico"
+          value={String(summary.history)}
+          description="Decisões já registradas no banco."
+          tone="info"
+        />
+        <AnalyticsKpiCard
+          label="Mídia"
+          value={String(summary.media)}
+          description="Linhas relacionadas a campanhas e investimento."
+          tone="default"
+        />
+        <AnalyticsKpiCard
+          label="Pedidos"
+          value={String(summary.orders)}
+          description="Ocorrências vindas da camada comercial."
+          tone="default"
+        />
+      </section>
+
       <SurfaceCard className="p-0 overflow-hidden">
         {feedback ? (
-          <div
-            className={cn(
-              "border-b px-5 py-3 text-sm",
-              feedback.type === "success"
-                ? "border-secondary/20 bg-secondary/10 text-secondary"
-                : "border-error/20 bg-error/10 text-error",
-            )}
-          >
-            {feedback.message}
+          <div className="border-b border-outline/60 px-5 py-3">
+            <InlineNotice
+              tone={feedback.type === "success" ? "success" : "error"}
+              icon={
+                feedback.type === "success" ? (
+                  <CheckCircle2 size={16} />
+                ) : (
+                  <AlertCircle size={16} />
+                )
+              }
+            >
+              <p className="text-sm leading-6">{feedback.message}</p>
+            </InlineNotice>
           </div>
         ) : null}
 
         <div className="border-b border-outline px-5 py-4">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Modo de revisão
-                </p>
-                <p className="mt-1 text-sm text-on-surface-variant">
-                  Decida no bloco pendente e audite o histórico completo sem depender do filtro global.
-                </p>
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <SectionHeading
+              title="Fila operacional"
+              description="Revise a base pendente ou o histórico completo sem sair do contexto da loja."
+            />
+            <div className="brandops-subtabs">
+              {[
+                { key: "pending", label: `Para decisão (${report.meta.pendingCount})` },
+                { key: "history", label: `Histórico (${report.meta.historyCount})` },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key as "pending" | "history")}
+                  disabled={isProcessing}
+                  className="brandops-subtab"
+                  data-active={activeTab === tab.key}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4 brandops-toolbar-panel">
+            <label className="brandops-field-stack xl:col-span-2">
+              <span className="brandops-field-label">Buscar ocorrência</span>
+              <div className="brandops-input-with-icon">
+                <Search size={16} />
+                <input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Campanha, pedido, métrica ou motivo"
+                  className="brandops-input"
+                  disabled={isProcessing}
+                />
               </div>
-              <div className="brandops-subtabs">
-                {[
-                  { key: "pending", label: `Para decisão (${report.meta.pendingCount})` },
-                  { key: "history", label: `Histórico (${report.meta.historyCount})` },
-                ].map((tab) => (
+            </label>
+
+            <div className="brandops-field-stack">
+              <span className="brandops-field-label">Filtrar alvo</span>
+              <div className="flex flex-wrap gap-2">
+                {targetOptions.map((option) => (
                   <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key as "pending" | "history")}
-                    disabled={isProcessing}
+                    key={option.value}
+                    type="button"
+                    onClick={() => setTargetFilter(option.value)}
                     className="brandops-subtab"
-                    data-active={activeTab === tab.key}
+                    data-active={targetFilter === option.value}
+                    disabled={isProcessing}
                   >
-                    {tab.label}
+                    {option.label}
                   </button>
                 ))}
               </div>
             </div>
-
-            <div className="brandops-toolbar-panel" data-compact="true">
-            <div className="brandops-toolbar-grid" data-columns="2">
-              <label className="brandops-field-stack">
-                <span className="brandops-field-label">Buscar ocorrência</span>
-                <div className="brandops-input-with-icon">
-                  <Search size={16} />
-                  <input
-                    value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
-                    placeholder="Campanha, pedido, métrica ou motivo"
-                    className="brandops-input"
-                    disabled={isProcessing}
-                  />
-                </div>
-              </label>
-
-              <label className="brandops-field-stack">
-                <span className="brandops-field-label">Filtrar alvo</span>
-                <select
-                  value={targetFilter}
-                  onChange={(event) => setTargetFilter(event.target.value as "all" | "MEDIA" | "ORDER")}
-                  className="brandops-input"
-                  disabled={isProcessing}
-                >
-                  <option value="all">Todos</option>
-                  <option value="MEDIA">Mídia</option>
-                  <option value="ORDER">Pedido</option>
-                </select>
-              </label>
-            </div>
-            </div>
           </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-outline px-5 py-3 text-xs text-on-surface-variant">
+          <span>
+            Exibindo {visibleAnomalies.length} ocorrência(s) em {activeTab === "pending" ? "pendência" : "histórico"}.
+          </span>
+          <span className="status-chip">
+            {activeTab === "pending" ? "Decisão aberta" : "Auditoria concluída"}
+          </span>
         </div>
 
         {!visibleAnomalies.length ? (
@@ -334,8 +400,8 @@ export default function SanitizationPage() {
             Nenhuma ocorrência encontrada nesta categoria no histórico operacional da marca.
           </div>
         ) : (
-          <div className="brandops-table-container rounded-none border-0">
-            <table className="brandops-table-compact min-w-[1120px] w-full">
+          <div className="brandops-table-container rounded-none border-0 max-h-[72vh] overflow-auto">
+            <table className="brandops-table-compact min-w-[1040px] w-full">
               <thead>
                 <tr>
                   <th>Alvo</th>
@@ -372,7 +438,7 @@ export default function SanitizationPage() {
                           {anomaly.metric}
                         </p>
                         <p className="mt-1 font-semibold text-on-surface">{anomaly.value}</p>
-                        <p className="mt-2 max-w-[420px] whitespace-normal break-words text-xs leading-5 text-on-surface-variant">
+                        <p className="mt-2 max-w-[360px] whitespace-normal break-words text-xs leading-5 text-on-surface-variant">
                           {anomaly.reason}
                         </p>
                       </td>
@@ -386,7 +452,7 @@ export default function SanitizationPage() {
                             }))
                           }
                           placeholder="Contexto da decisão do operador"
-                          className="brandops-input min-h-[92px] w-[260px] text-xs"
+                          className="brandops-input min-h-[88px] w-full max-w-[220px] text-xs"
                           disabled={isProcessing}
                         />
                       </td>
@@ -417,26 +483,29 @@ export default function SanitizationPage() {
                             <>
                               <button
                                 onClick={() => void commitDecision(anomaly.id, "KEPT", note)}
-                                className="brandops-button brandops-button-secondary min-w-[148px]"
+                                className="brandops-button brandops-button-secondary min-w-[136px]"
                                 disabled={isProcessing}
                               >
-                                Manter cálculo
+                                <ShieldCheck size={14} />
+                                Manter
                               </button>
                               <button
                                 onClick={() => void commitDecision(anomaly.id, "IGNORED", note)}
-                                className="brandops-button brandops-button-primary min-w-[148px]"
+                                className="brandops-button brandops-button-primary min-w-[136px]"
                                 disabled={isProcessing}
                               >
-                                Ignorar cálculo
+                                <Ban size={14} />
+                                Ignorar
                               </button>
                             </>
                           ) : (
                             <button
                               onClick={() => void commitDecision(anomaly.id, "PENDING")}
-                              className="brandops-button brandops-button-ghost min-w-[148px]"
+                              className="brandops-button brandops-button-ghost min-w-[136px]"
                               disabled={isProcessing}
                             >
-                              Voltar para pendente
+                              <RotateCcw size={14} />
+                              Voltar
                             </button>
                           )}
                         </div>

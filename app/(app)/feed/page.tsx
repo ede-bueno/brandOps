@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ExternalLink, Images, Search } from "lucide-react";
+import { AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
@@ -242,11 +243,11 @@ export default function FeedPage() {
       <PageHeader
         eyebrow="Catalogo visual"
         title="Feed de Produtos"
-        description="O Atlas expõe o catálogo a partir do backend e já prepara a transição para Meta Catalog com fallback manual."
+        description="Leitura executiva do catálogo com base no backend e transição pronta para Meta Catalog com fallback manual."
         badge={`Fonte atual: ${report.meta.sourceLabel}`}
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <SurfaceCard>
           <p className="text-sm text-on-surface-variant">SKUs no recorte</p>
           <p className="mt-3 text-3xl font-semibold text-on-surface">
@@ -273,14 +274,14 @@ export default function FeedPage() {
         </SurfaceCard>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <SurfaceCard>
           <SectionHeading
-            title="Filtros do catalogo"
-            description="Busca, tipo, colecao e status agora rodam no backend para reduzir carga local."
+            title="Filtro de catálogo"
+            description="Busca, tipo, coleção e status são aplicados no backend para reduzir carga local."
           />
-          <div className="mt-5 brandops-toolbar-grid lg:grid-cols-[1.4fr_0.7fr_0.7fr_0.7fr]">
-            <label className="brandops-field-stack">
+          <div className="mt-5 brandops-toolbar-grid lg:grid-cols-2">
+            <label className="brandops-field-stack lg:col-span-2">
               <span className="brandops-field-label">Busca</span>
               <div className="brandops-input-with-icon">
                 <Search size={16} />
@@ -295,27 +296,27 @@ export default function FeedPage() {
             <label className="brandops-field-stack">
               <span className="brandops-field-label">Tipo</span>
               <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="brandops-input">
-              <option value="all">Todos os tipos</option>
-              {report.options.productTypes.map((type) => (
-                <option key={type} value={type}>{type}</option>
-              ))}
+                <option value="all">Todos os tipos</option>
+                {report.options.productTypes.map((type) => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
               </select>
             </label>
             <label className="brandops-field-stack">
               <span className="brandops-field-label">Coleção</span>
               <select value={collectionFilter} onChange={(event) => setCollectionFilter(event.target.value)} className="brandops-input">
-              <option value="all">Todas as colecoes</option>
-              {report.options.collections.map((collection) => (
-                <option key={collection} value={collection}>{collection}</option>
-              ))}
+                <option value="all">Todas as coleções</option>
+                {report.options.collections.map((collection) => (
+                  <option key={collection} value={collection}>{collection}</option>
+                ))}
               </select>
             </label>
             <label className="brandops-field-stack">
               <span className="brandops-field-label">Status</span>
               <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as CatalogStatusFilter)} className="brandops-input">
-              <option value="all">Com ou sem venda</option>
-              <option value="sold">Somente com venda</option>
-              <option value="unsold">Somente sem venda</option>
+                <option value="all">Com ou sem venda</option>
+                <option value="sold">Somente com venda</option>
+                <option value="unsold">Somente sem venda</option>
               </select>
             </label>
           </div>
@@ -324,46 +325,50 @@ export default function FeedPage() {
         <SurfaceCard>
           <SectionHeading
             title={report.analysis.narrativeTitle}
-            description="Leitura executiva do Atlas para o catálogo ativo."
+            description="Leitura executiva compacta para orientar catálogo, distribuição e sync de fonte."
           />
           <div className="mt-5 grid gap-3">
-            <div className="rounded-2xl border border-outline bg-surface-container-low p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-on-surface-variant">Modo de origem</p>
-              <p className="mt-2 text-lg font-semibold text-on-surface">{report.meta.sourceLabel}</p>
-              <p className="mt-2 text-sm leading-6 text-on-surface-variant">{report.analysis.narrativeBody}</p>
+            <AnalyticsKpiCard
+              label="Modo de origem"
+              value={report.meta.sourceLabel}
+              description={report.analysis.narrativeBody}
+              tone="info"
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <AnalyticsKpiCard
+                label="Meta Catalog"
+                value={integerFormatter.format(report.summary.metaCatalogProducts)}
+                description="Produtos já prontos para a fonte Meta."
+                tone="positive"
+              />
+              <AnalyticsKpiCard
+                label="Feed manual"
+                value={integerFormatter.format(report.summary.manualFeedProducts)}
+                description="Produtos ainda sustentados pelo feed da INK."
+                tone="default"
+              />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="panel-muted p-3">
-                <p className="text-xs uppercase tracking-wide text-on-surface-variant">Meta Catalog</p>
-                <p className="mt-1 text-xl font-semibold text-on-surface">{integerFormatter.format(report.summary.metaCatalogProducts)}</p>
-              </div>
-              <div className="panel-muted p-3">
-                <p className="text-xs uppercase tracking-wide text-on-surface-variant">Feed manual</p>
-                <p className="mt-1 text-xl font-semibold text-on-surface">{integerFormatter.format(report.summary.manualFeedProducts)}</p>
-              </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <AnalyticsKpiCard
+                label="Maior oportunidade"
+                value={report.analysis.topOpportunity ?? "Sem destaque"}
+                description="Ponto mais promissor do recorte atual."
+                tone="positive"
+              />
+              <AnalyticsKpiCard
+                label="Maior risco"
+                value={report.analysis.topRisk ?? "Sem risco dominante"}
+                description="Ponto que merece revisão primeiro."
+                tone="warning"
+              />
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="panel-muted p-3">
-                <p className="text-xs uppercase tracking-wide text-on-surface-variant">Maior oportunidade</p>
-                <p className="mt-1 font-semibold text-on-surface">{report.analysis.topOpportunity ?? "Sem destaque"}</p>
-              </div>
-              <div className="panel-muted p-3">
-                <p className="text-xs uppercase tracking-wide text-on-surface-variant">Maior risco</p>
-                <p className="mt-1 font-semibold text-on-surface">{report.analysis.topRisk ?? "Sem risco dominante"}</p>
-              </div>
-            </div>
-            <p className="text-sm leading-6 text-on-surface-variant">
-              {report.meta.metaCatalogReady
-                ? "A integracao Meta ja pode assumir o catalogo como fonte principal quando os produtos forem sincronizados."
-                : "O modulo segue pronto para Meta Catalog, mas a loja ainda depende do feed manual como fonte principal."}
-            </p>
           </div>
         </SurfaceCard>
       </section>
 
       <SurfaceCard>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <SectionHeading title="Exploração do catálogo" description="Divida o módulo entre visão geral, playbook e grade de produtos para evitar uma tela muito longa." />
+          <SectionHeading title="Exploração do catálogo" description="Visão geral, playbook e grade dividem o módulo sem alongar demais a tela." />
           <div className="brandops-subtabs">
             <button type="button" className="brandops-subtab" data-active={view === "overview"} onClick={() => setView("overview")}>Visão geral</button>
             <button type="button" className="brandops-subtab" data-active={view === "playbook"} onClick={() => setView("playbook")}>Playbook</button>

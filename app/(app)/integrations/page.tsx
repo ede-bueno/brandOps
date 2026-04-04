@@ -11,8 +11,16 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
+import { AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import {
+  FormField,
+  InlineNotice,
+  PageHeader,
+  SectionHeading,
+  StackItem,
+  SurfaceCard,
+} from "@/components/ui-shell";
 import Link from "next/link";
 import type {
   BrandIntegrationConfig,
@@ -40,9 +48,9 @@ const providerLabels: Record<IntegrationProvider, string> = {
 };
 
 const providerDescriptions: Record<IntegrationProvider, string> = {
-  ink: "Base comercial e operacional vinda por CSV da plataforma de vendas.",
-  meta: "Mídia paga com opção de manter upload manual como contingência, mesmo com API ligada.",
-  ga4: "Tráfego, origem/mídia e eventos de funil por propriedade da loja.",
+  ink: "Base comercial por CSV.",
+  meta: "Mídia paga com fallback manual.",
+  ga4: "Tráfego e eventos da propriedade.",
 };
 
 const providerEyebrows: Record<IntegrationProvider, string> = {
@@ -406,7 +414,7 @@ export default function IntegrationsPage() {
       <PageHeader
         eyebrow="Configuração por loja"
         title="Integrações"
-        description="Defina a origem de cada dado por marca. O BrandOps mantém o fluxo manual disponível onde ele ainda é necessário e prepara a evolução para API sem quebrar a operação."
+        description="Defina a origem de cada dado por marca. O Atlas preserva o manual quando necessário e prepara a evolução para API sem quebrar a operação."
         badge={`Escopo atual: ${activeBrand.name}`}
         actions={
           canManageIntegrations ? (
@@ -429,84 +437,91 @@ export default function IntegrationsPage() {
       />
 
       {notice ? (
-        <div
-          className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${
-            notice.kind === "success"
-              ? "border-secondary/20 bg-secondary-container/30 text-on-secondary-container"
-              : "border-error/20 bg-error-container/30 text-on-error-container"
-          }`}
+        <InlineNotice
+          tone={notice.kind === "success" ? "success" : "error"}
+          icon={notice.kind === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+          className="text-sm"
         >
-          {notice.kind === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
           <span>{notice.text}</span>
-        </div>
+        </InlineNotice>
       ) : null}
 
       {!canManageIntegrations ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-secondary/20 bg-secondary-container/20 px-4 py-3 text-sm text-on-surface">
-          <ShieldCheck size={18} className="text-secondary" />
+        <InlineNotice tone="info" icon={<ShieldCheck size={18} />} className="text-sm text-on-surface">
           <span>
             Você pode acompanhar o status e executar as sincronizações da sua loja. Alterações de configuração seguem restritas ao superadmin.
           </span>
-        </div>
+        </InlineNotice>
       ) : null}
 
-      <section className="grid gap-4 lg:grid-cols-3">
-        {(["ink", "meta", "ga4"] as const).map((provider) => {
-          const integration = integrationsMap.get(provider);
-          const isActive = activeProvider === provider;
-
-          return (
+      <SurfaceCard>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <SectionHeading
+            title={`Conector ${providerLabels[activeProvider]}`}
+            description={providerDescriptions[activeProvider]}
+          />
+          <div className="grid gap-3 sm:grid-cols-3">
+            <AnalyticsKpiCard
+              label="Modo"
+              value={
+                currentState.mode === "api"
+                  ? "API ativa"
+                  : currentState.mode === "disabled"
+                    ? "Integração desligada"
+                    : "Operação manual"
+              }
+              description="Forma atual de operação desta origem."
+              tone={currentState.mode === "api" ? "positive" : currentState.mode === "disabled" ? "warning" : "default"}
+            />
+            <AnalyticsKpiCard
+              label="Última sync"
+              value={formatSyncLabel(current)}
+              description="Última sincronização registrada nesta integração."
+            />
+            <AnalyticsKpiCard
+              label="Escopo"
+              value={providerEyebrows[activeProvider]}
+              description="Camada da operação atendida por este conector."
+              tone="info"
+            />
+          </div>
+        </div>
+        <div className="mt-4 brandops-subtabs overflow-x-auto">
+          {(["ink", "meta", "ga4"] as const).map((provider) => (
             <button
               key={provider}
               type="button"
+              data-active={activeProvider === provider}
               onClick={() => setActiveProvider(provider)}
-              className={`brandops-panel p-4 text-left transition-colors ${
-                isActive ? "border-secondary/40 bg-secondary/5" : "hover:border-secondary/25"
-              }`}
+              className="brandops-subtab"
             >
-              <p className="eyebrow mb-2">{providerEyebrows[provider]}</p>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-base font-semibold text-on-surface">{providerLabels[provider]}</h3>
-                  <p className="mt-1 text-xs text-on-surface-variant">
-                    {integration?.mode === "api"
-                      ? "API ativa"
-                      : integration?.mode === "disabled"
-                        ? "Integração desligada"
-                        : "Operação manual"}
-                  </p>
-                </div>
-                <span className="status-chip">{integration?.lastSyncStatus ?? "idle"}</span>
-              </div>
-              <p className="mt-4 text-xs text-on-surface-variant">
-                Última sync: {formatSyncLabel(integration)}
-              </p>
+              {providerLabels[provider]}
             </button>
-          );
-        })}
-      </section>
+          ))}
+        </div>
+      </SurfaceCard>
 
       <SurfaceCard>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <SectionHeading
-            title="Modo de trabalho"
-            description="Troque entre configuração, sincronização e regras sem empilhar tudo na mesma tela."
+            title="Painel operacional"
+            description="Escolha entre configurar a origem, acompanhar a sincronização ou revisar as regras desta integração."
           />
           <div className="brandops-subtabs">
             <button type="button" className="brandops-subtab" data-active={activeSection === "config"} onClick={() => setActiveSection("config")}>
-              Configuração
+              Config
             </button>
             <button type="button" className="brandops-subtab" data-active={activeSection === "sync"} onClick={() => setActiveSection("sync")}>
-              Sincronização
+              Sync
             </button>
             <button type="button" className="brandops-subtab" data-active={activeSection === "rules"} onClick={() => setActiveSection("rules")}>
-              Regras
+              Diretrizes
             </button>
           </div>
         </div>
       </SurfaceCard>
 
-      <section className={`grid gap-6 ${activeSection === "rules" ? "xl:grid-cols-[1.15fr_0.85fr]" : ""}`}>
+      <section className={`grid gap-6 ${activeSection === "rules" ? "xl:grid-cols-[1.1fr_0.9fr]" : ""}`}>
         <SurfaceCard>
           <div className="flex flex-col gap-4 border-b border-outline pb-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
@@ -516,18 +531,10 @@ export default function IntegrationsPage() {
                 {providerDescriptions[activeProvider]}
               </p>
             </div>
-            <div className="brandops-tabs overflow-x-auto">
-              {(["ink", "meta", "ga4"] as const).map((provider) => (
-                <button
-                  key={provider}
-                  type="button"
-                  data-active={activeProvider === provider}
-                  onClick={() => setActiveProvider(provider)}
-                  className="brandops-tab"
-                >
-                  {providerLabels[provider]}
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-2">
+              <span className="status-chip">{current?.mode === "api" ? "API" : current?.mode === "disabled" ? "OFF" : "MANUAL"}</span>
+              <span className="status-chip">{current?.lastSyncStatus ?? "idle"}</span>
+              <span className="status-chip">{formatSyncLabel(current)}</span>
             </div>
           </div>
 
@@ -535,8 +542,7 @@ export default function IntegrationsPage() {
             {activeSection === "config" ? (
             <div className="brandops-command-slab p-4 sm:p-5">
               <div className="brandops-toolbar-grid" data-columns="2">
-                <label className="brandops-field-stack text-sm lg:col-span-2">
-                  <span className="brandops-field-label">Origem principal</span>
+                <FormField label="Origem principal" className="text-sm lg:col-span-2">
                   <select
                     value={currentState.mode}
                     onChange={(event) =>
@@ -557,12 +563,11 @@ export default function IntegrationsPage() {
                       </option>
                     ))}
                   </select>
-                </label>
+                </FormField>
 
                 {activeProvider === "meta" ? (
                   <>
-                    <label className="brandops-field-stack text-sm">
-                      <span className="brandops-field-label">ID da conta de anúncios</span>
+                    <FormField label="ID da conta de anúncios" className="text-sm">
                       <input
                         value={currentState.adAccountId}
                         onChange={(event) =>
@@ -578,9 +583,8 @@ export default function IntegrationsPage() {
                         placeholder="act_1234567890"
                         disabled={!canManageIntegrations}
                       />
-                    </label>
-                    <label className="brandops-field-stack text-sm">
-                      <span className="brandops-field-label">Janela padrão de sync (dias)</span>
+                    </FormField>
+                    <FormField label="Janela padrão de sync (dias)" className="text-sm">
                       <input
                         type="number"
                         min={1}
@@ -598,9 +602,8 @@ export default function IntegrationsPage() {
                         className="brandops-input w-full"
                         disabled={!canManageIntegrations}
                       />
-                    </label>
-                    <label className="brandops-field-stack text-sm lg:col-span-2">
-                      <span className="brandops-field-label">ID do catálogo da Meta</span>
+                    </FormField>
+                    <FormField label="ID do catálogo da Meta" className="text-sm lg:col-span-2">
                       <input
                         value={currentState.catalogId}
                         onChange={(event) =>
@@ -616,7 +619,7 @@ export default function IntegrationsPage() {
                         placeholder="2384xxxxxxxxxx"
                         disabled={!canManageIntegrations}
                       />
-                    </label>
+                    </FormField>
                     <label className="flex items-start gap-3 rounded-xl border border-outline bg-surface-container-low p-4 text-sm text-on-surface-variant lg:col-span-2">
                       <input
                         type="checkbox"
@@ -642,8 +645,7 @@ export default function IntegrationsPage() {
 
                 {activeProvider === "ga4" ? (
                   <>
-                    <label className="brandops-field-stack text-sm">
-                      <span className="brandops-field-label">Property ID do GA4</span>
+                    <FormField label="Property ID do GA4" className="text-sm">
                       <input
                         value={currentState.propertyId}
                         onChange={(event) =>
@@ -659,9 +661,8 @@ export default function IntegrationsPage() {
                         placeholder="506034252"
                         disabled={!canManageIntegrations}
                       />
-                    </label>
-                    <label className="brandops-field-stack text-sm">
-                      <span className="brandops-field-label">Timezone da propriedade</span>
+                    </FormField>
+                    <FormField label="Timezone da propriedade" className="text-sm">
                       <input
                         value={currentState.timezone}
                         onChange={(event) =>
@@ -677,7 +678,7 @@ export default function IntegrationsPage() {
                         placeholder="America/Sao_Paulo"
                         disabled={!canManageIntegrations}
                       />
-                    </label>
+                    </FormField>
                   </>
                 ) : null}
               </div>
@@ -724,7 +725,7 @@ export default function IntegrationsPage() {
                       type="button"
                       onClick={handleMetaSync}
                       disabled={syncingMeta || currentState.mode !== "api" || !currentState.adAccountId}
-                      className="brandops-button brandops-button-secondary"
+                      className="brandops-button brandops-button-primary"
                     >
                       {syncingMeta ? (
                         <>
@@ -739,7 +740,7 @@ export default function IntegrationsPage() {
                       type="button"
                       onClick={handleMetaCatalogSync}
                       disabled={syncingCatalog || currentState.mode !== "api" || !currentState.catalogId}
-                      className="brandops-button brandops-button-secondary"
+                      className="brandops-button brandops-button-ghost"
                     >
                       {syncingCatalog ? (
                         <>
@@ -757,7 +758,7 @@ export default function IntegrationsPage() {
                     type="button"
                     onClick={handleGa4Sync}
                     disabled={syncingGa4 || currentState.mode !== "api" || !currentState.propertyId}
-                    className="brandops-button brandops-button-secondary"
+                    className="brandops-button brandops-button-primary"
                   >
                     {syncingGa4 ? (
                       <>
@@ -793,51 +794,44 @@ export default function IntegrationsPage() {
         <SurfaceCard>
           <SectionHeading
             title="Modelo operacional"
-            description="Resumo visual das regras, fallback e segurança desta área."
+            description="Regras de operação, contingência e segurança aplicadas a esta integração."
           />
           <div className="mt-5 grid gap-3">
-            <article className="panel-muted flex items-start gap-3 p-4">
-              <Link2 size={18} className="mt-0.5 text-secondary" />
-              <div className="text-sm text-on-surface-variant">
-                <p className="font-medium text-on-surface">Fonte por loja</p>
-                <p className="mt-1">
-                  Cada marca pode combinar `INK` manual, `Meta` por API e `GA4` desabilitado sem misturar contextos de origem.
-                </p>
-              </div>
-            </article>
+            <StackItem
+              title="Fonte por loja"
+              description="Cada marca pode combinar `INK` manual, `Meta` por API e `GA4` desabilitado sem misturar contextos de origem."
+              aside={<Link2 size={16} className="text-secondary" />}
+              tone="info"
+            />
             {activeProvider === "meta" ? (
-              <article className="panel-muted flex items-start gap-3 p-4">
-                <RefreshCcw size={18} className="mt-0.5 text-secondary" />
-                <div className="text-sm text-on-surface-variant">
-                  <p className="font-medium text-on-surface">Fallback manual</p>
-                  <p className="mt-1">
-                    A integração da Meta pode ficar em API com contingência manual, sem perder auditoria do CSV.
-                  </p>
-                </div>
-              </article>
+              <StackItem
+                title="Fallback manual"
+                description="A integração da Meta pode ficar em API com contingência manual, sem perder auditoria do CSV."
+                aside={<RefreshCcw size={16} className="text-secondary" />}
+                tone="default"
+              />
             ) : null}
-            <article className="panel-muted flex items-start gap-3 p-4">
-              <ShieldCheck size={18} className="mt-0.5 text-secondary" />
-              <div className="text-sm text-on-surface-variant">
-                <p className="font-medium text-on-surface">Segredos não ficam aqui</p>
-                <p className="mt-1">
-                  Esta tela guarda apenas configuração não sensível por marca. Tokens e chaves devem
-                  ficar em ambiente seguro do backend.
-                </p>
-              </div>
-            </article>
-            <article className="panel-muted flex items-start gap-3 p-4">
-              <Radar size={18} className="mt-0.5 text-secondary" />
-              <div className="text-sm text-on-surface-variant">
-                <p className="font-medium text-on-surface">{providerContextCard.title}</p>
-                <p className="mt-1">{providerContextCard.body}</p>
-                {providerContextCard.cta ? (
-                  <Link href={providerContextCard.cta} className="mt-3 inline-flex text-secondary hover:underline">
-                    Abrir painel de tráfego →
-                  </Link>
-                ) : null}
-              </div>
-            </article>
+            <StackItem
+              title="Segredos não ficam aqui"
+              description="Esta tela guarda apenas configuração não sensível por marca. Tokens e chaves devem ficar em ambiente seguro do backend."
+              aside={<ShieldCheck size={16} className="text-secondary" />}
+              tone="warning"
+            />
+            <StackItem
+              title={providerContextCard.title}
+              description={
+                <div className="space-y-2">
+                  <p>{providerContextCard.body}</p>
+                  {providerContextCard.cta ? (
+                    <Link href={providerContextCard.cta} className="inline-flex text-secondary hover:underline">
+                      Abrir painel relacionado →
+                    </Link>
+                  ) : null}
+                </div>
+              }
+              aside={<Radar size={16} className="text-secondary" />}
+              tone="info"
+            />
           </div>
         </SurfaceCard>
         ) : null}

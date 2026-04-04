@@ -11,10 +11,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
-import { MetricCard } from "@/components/MetricCard";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import { InlineNotice, PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { fetchSalesDetailReport } from "@/lib/brandops/database";
 import { currencyFormatter, formatCompactDate, integerFormatter } from "@/lib/brandops/format";
 import type { SalesDetailReport } from "@/lib/brandops/types";
@@ -22,6 +22,45 @@ import type { SalesDetailReport } from "@/lib/brandops/types";
 const EMPTY_SALES_DETAIL: SalesDetailReport = {
   dailySeries: [],
   topProducts: [],
+  highlights: {
+    bestDay: null,
+    topProduct: null,
+    revenuePerItem: 0,
+    discountPerOrder: 0,
+  },
+  playbook: {
+    protect: {
+      title: "",
+      description: "",
+      count: 0,
+      items: [],
+    },
+    grow: {
+      title: "",
+      description: "",
+      count: 0,
+      items: [],
+    },
+    review: {
+      title: "",
+      description: "",
+      count: 0,
+      items: [],
+    },
+  },
+  analysis: {
+    narrativeTitle: "",
+    narrativeBody: "",
+    nextActions: [],
+    topOpportunity: null,
+    topRisk: null,
+  },
+  meta: {
+    generatedAt: "",
+    from: null,
+    to: null,
+    hasData: false,
+  },
 };
 
 export default function SalesPage() {
@@ -95,13 +134,8 @@ export default function SalesPage() {
   const dailySales = salesDetail.dailySeries;
   const topProducts = salesDetail.topProducts;
   const hasSales = Boolean(metrics && metrics.paidOrderCount > 0);
-  const topProduct = topProducts[0] ?? null;
-  const bestDay = dailySales.reduce<{ date: string; revenue: number } | null>((best, row) => {
-    if (!best || row.revenue > best.revenue) {
-      return row;
-    }
-    return best;
-  }, null);
+  const topProduct = salesDetail.highlights.topProduct;
+  const bestDay = salesDetail.highlights.bestDay;
 
   const isBrandLoading = useMemo(
     () =>
@@ -172,20 +206,38 @@ export default function SalesPage() {
         }
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-        <MetricCard label="Pedidos pagos" value={integerFormatter.format(metrics.paidOrderCount)} />
-        <MetricCard label="Itens vendidos" value={integerFormatter.format(metrics.unitsSold)} />
-        <MetricCard label="Faturado" value={currencyFormatter.format(metrics.grossRevenue)} />
-        <MetricCard label="Descontos" value={currencyFormatter.format(metrics.discounts)} />
-        <MetricCard label="Comissão INK" value={currencyFormatter.format(metrics.inkProfit)} />
-        <MetricCard label="Ticket médio" value={currencyFormatter.format(metrics.averageTicket)} />
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <AnalyticsKpiCard
+          label="Pedidos pagos"
+          value={integerFormatter.format(metrics.paidOrderCount)}
+          description="Ordens concluídas no período comercial selecionado."
+          tone="info"
+        />
+        <AnalyticsKpiCard
+          label="Itens vendidos"
+          value={integerFormatter.format(metrics.unitsSold)}
+          description="Volume total de peças reconhecidas pela camada comercial."
+          tone="default"
+        />
+        <AnalyticsKpiCard
+          label="Faturado"
+          value={currencyFormatter.format(metrics.grossRevenue)}
+          description="Receita bruta exportada pela INK para o recorte atual."
+          tone="positive"
+        />
+        <AnalyticsKpiCard
+          label="Ticket médio"
+          value={currencyFormatter.format(metrics.averageTicket)}
+          description="Média de faturamento por pedido pago."
+          tone="default"
+        />
       </section>
 
       <SurfaceCard>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <SectionHeading
             title="Modo comercial"
-            description="Troque entre leitura rápida, cadência diária e ranking de produtos sem alongar a tela."
+            description="Alterne entre resumo do período, ritmo diário e ranking de produtos conforme a decisão que precisa tomar."
           />
           <div className="brandops-subtabs">
             <button type="button" className="brandops-subtab" data-active={view === "summary"} onClick={() => setView("summary")}>
@@ -205,63 +257,76 @@ export default function SalesPage() {
         <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
           <SurfaceCard>
             <SectionHeading
-              title="Leitura rápida"
-              description="Resumo do que mais puxou resultado comercial no período."
+              title={salesDetail.analysis.narrativeTitle || "Leitura comercial"}
+              description={
+                salesDetail.analysis.narrativeBody ||
+                "Resumo do que mais puxou resultado comercial no período."
+              }
             />
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <article className="panel-muted p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Pico de faturamento diário
-                </p>
-                <p className="mt-2 font-headline text-2xl font-semibold text-on-surface">
-                  {bestDay ? currencyFormatter.format(bestDay.revenue) : "-"}
-                </p>
-                <p className="mt-1 text-xs text-on-surface-variant">
-                  {bestDay ? formatCompactDate(bestDay.date) : "Sem série diária disponível"}
-                </p>
-              </article>
-              <article className="panel-muted p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Produto líder do período
-                </p>
-                <p className="mt-2 truncate font-headline text-xl font-semibold text-on-surface">
-                  {topProduct?.productName ?? "Sem produto líder"}
-                </p>
-                <p className="mt-1 text-xs text-on-surface-variant">
-                  {topProduct
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              <AnalyticsKpiCard
+                label="Pico de faturamento diário"
+                value={bestDay ? currencyFormatter.format(bestDay.revenue) : "-"}
+                description={bestDay ? formatCompactDate(bestDay.date) : "Sem série diária disponível"}
+                tone="positive"
+              />
+              <AnalyticsKpiCard
+                label="Produto líder do período"
+                value={topProduct?.productName ?? "Sem produto líder"}
+                description={
+                  topProduct
                     ? `${integerFormatter.format(topProduct.quantity)} peça(s) • ${currencyFormatter.format(topProduct.grossRevenue)}`
-                    : "Sem volume suficiente para ranking."}
-                </p>
-              </article>
+                    : "Sem volume suficiente para ranking."
+                }
+                tone="default"
+              />
             </div>
           </SurfaceCard>
 
           <SurfaceCard>
             <SectionHeading
-              title="Leitura de mix"
-              description="Atalhos para entender onde o comercial concentrou resultado."
+              title="Ações sobre o mix"
+              description="Os próximos movimentos sugeridos pelo Atlas para proteger receita e abrir espaço no catálogo."
             />
-            <div className="mt-5 space-y-3">
-              <article className="panel-muted p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Desconto médio por pedido
-                </p>
-                <p className="mt-2 font-headline text-2xl font-semibold text-on-surface">
-                  {metrics.paidOrderCount
-                    ? currencyFormatter.format(metrics.discounts / metrics.paidOrderCount)
-                    : currencyFormatter.format(0)}
-                </p>
-              </article>
-              <article className="panel-muted p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Receita por item
-                </p>
-                <p className="mt-2 font-headline text-2xl font-semibold text-on-surface">
-                  {metrics.unitsSold
-                    ? currencyFormatter.format(metrics.grossRevenue / metrics.unitsSold)
-                    : currencyFormatter.format(0)}
-                </p>
-              </article>
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              <AnalyticsKpiCard
+                label="Desconto médio por pedido"
+                value={currencyFormatter.format(salesDetail.highlights.discountPerOrder)}
+                description="Indica quanto da receita foi cedido em desconto por ordem."
+                tone="warning"
+              />
+              <AnalyticsKpiCard
+                label="Receita por item"
+                value={currencyFormatter.format(salesDetail.highlights.revenuePerItem)}
+                description="Leitura útil para comparar item avulso com mix de catálogo."
+                tone="positive"
+              />
+              <AnalyticsKpiCard
+                label="Oportunidade do período"
+                value={salesDetail.analysis.topOpportunity ?? "Sem oportunidade dominante"}
+                description="Produto com melhor sinal para puxar distribuição no período."
+                tone="positive"
+              />
+              <AnalyticsKpiCard
+                label="Item sob revisão"
+                value={salesDetail.analysis.topRisk ?? "Sem risco principal identificado"}
+                description="Item que merece revisão de vitrine, exposição ou permanência no mix."
+                tone="negative"
+              />
+            </div>
+            <div className="mt-4">
+              <InlineNotice tone="info">
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
+                    Próximas ações
+                  </p>
+                  <div className="space-y-1.5 text-sm text-on-surface-variant">
+                    {salesDetail.analysis.nextActions.map((action) => (
+                      <p key={action}>• {action}</p>
+                    ))}
+                  </div>
+                </div>
+              </InlineNotice>
             </div>
           </SurfaceCard>
         </section>
@@ -313,6 +378,30 @@ export default function SalesPage() {
             <SectionHeading
               title="Produtos que puxaram faturamento"
               description="Ranking por faturamento bruto e volume de peças."
+            />
+          </div>
+          <div className="grid gap-3 border-b border-outline/60 p-5 md:grid-cols-3">
+            <AnalyticsCalloutCard
+              eyebrow="Expandir"
+              title={salesDetail.analysis.topOpportunity ?? "Sem oportunidade dominante"}
+              description="Produto com melhor sinal para puxar distribuição no período."
+              tone="positive"
+            />
+            <AnalyticsCalloutCard
+              eyebrow="Revisar"
+              title={salesDetail.analysis.topRisk ?? "Sem risco principal identificado"}
+              description="Item que merece revisão de vitrine, exposição ou permanência no mix."
+              tone="warning"
+            />
+            <AnalyticsCalloutCard
+              eyebrow="Mix"
+              title={topProduct?.productName ?? "Sem produto líder"}
+              description={
+                topProduct
+                  ? `${integerFormatter.format(topProduct.quantity)} peça(s) • ${currencyFormatter.format(topProduct.grossRevenue)}`
+                  : "Sem volume suficiente para ranking."
+              }
+              tone="info"
             />
           </div>
           {salesDetailError ? (
