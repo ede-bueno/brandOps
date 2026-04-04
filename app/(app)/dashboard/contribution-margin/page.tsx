@@ -202,7 +202,7 @@ export default function ContributionMarginPage() {
       </SurfaceCard>
 
       {activeSection === "radar" ? (
-        <section className="grid gap-6 xl:grid-cols-[1.32fr_0.68fr]">
+        <section className="space-y-6">
           <SurfaceCard>
             <SectionHeading
               title="Evolução mensal"
@@ -225,7 +225,7 @@ export default function ContributionMarginPage() {
             </div>
           </SurfaceCard>
 
-          <div className="space-y-6">
+          <div className="grid gap-6 xl:grid-cols-2">
             <SurfaceCard>
               <SectionHeading
                 title={momentum.title}
