@@ -1,6 +1,8 @@
 import type {
   AnnualDreReport,
   BrandDataset,
+  FinancialReportSummary,
+  FinancialReportAnalysis,
   BrandSummaryMetrics,
   CampaignPerformance,
   CmvOrderDetail,
@@ -11,9 +13,6 @@ import type {
   MonthlyExpenseBreakdown,
   CustomDateRange,
   PeriodFilter,
-  ProductDecisionAction,
-  ProductInsightClassification,
-  ProductInsightRow,
   TrafficBreakdownRow,
   TrafficSummaryMetrics,
   TrafficTimeSeriesPoint,
@@ -41,6 +40,7 @@ export type AnalysisDateRange = {
 };
 
 const PAID_STATUS = new Set(["Pago"]);
+const BREAK_EVEN_MIN_MARGIN = 0.03;
 
 function parseDateValue(value: string) {
   const date = new Date(`${value}T00:00:00`);
@@ -138,14 +138,18 @@ function finalizeSummaryMetrics(metrics: BrandSummaryMetrics): BrandSummaryMetri
   const netAfterFees = rld;
   const cmvTotal = metrics.cmvTotal;
   const inkProfit = metrics.inkProfit || metrics.commissionTotal;
+  const operatingExpensesTotal = metrics.operatingExpensesTotal || metrics.fixedExpensesTotal;
+  const fixedExpensesTotal = metrics.fixedExpensesTotal || operatingExpensesTotal;
   const contributionAfterMedia = rld - cmvTotal - metrics.mediaSpend;
   const grossMargin = rld - cmvTotal;
   const contributionMargin = rld > 0 ? contributionAfterMedia / rld : 0;
-  const operatingResult = contributionAfterMedia - metrics.operatingExpensesTotal;
+  const operatingResult = contributionAfterMedia - operatingExpensesTotal;
 
   // Ponto de equilíbrio usa a margem de contribuição real após CMV e mídia.
   const breakEvenPoint =
-    contributionMargin > 0 ? metrics.operatingExpensesTotal / contributionMargin : 0;
+    contributionMargin >= BREAK_EVEN_MIN_MARGIN && operatingExpensesTotal > 0
+      ? operatingExpensesTotal / contributionMargin
+      : 0;
 
   return {
     grossRevenue: round(grossRevenue),
@@ -165,8 +169,8 @@ function finalizeSummaryMetrics(metrics: BrandSummaryMetrics): BrandSummaryMetri
     contributionMargin: round(contributionMargin, 4),
     commissionTotal: round(metrics.commissionTotal),
     cmvTotal: round(metrics.cmvTotal),
-    fixedExpensesTotal: round(metrics.fixedExpensesTotal),
-    operatingExpensesTotal: round(metrics.operatingExpensesTotal),
+    fixedExpensesTotal: round(fixedExpensesTotal),
+    operatingExpensesTotal: round(operatingExpensesTotal),
     operatingResult: round(operatingResult),
     netResult: round(operatingResult),
     operatingMargin: round(rld ? operatingResult / rld : 0, 4),
@@ -184,6 +188,76 @@ function finalizeSummaryMetrics(metrics: BrandSummaryMetrics): BrandSummaryMetri
           : 0,
     ),
     hasItemDetailCoverage: metrics.hasItemDetailCoverage,
+  };
+}
+
+export function describeBreakEvenPoint(
+  metrics: Pick<BrandSummaryMetrics, "contributionMargin" | "operatingExpensesTotal" | "breakEvenPoint">,
+) {
+  if (metrics.operatingExpensesTotal <= 0) {
+    return {
+      value: null,
+      help: "Sem despesas operacionais lançadas no período.",
+      isReliable: false,
+    };
+  }
+
+  if (metrics.contributionMargin <= 0) {
+    return {
+      value: null,
+      help: "Não calculável com a margem de contribuição atual.",
+      isReliable: false,
+    };
+  }
+
+  if (metrics.contributionMargin < BREAK_EVEN_MIN_MARGIN) {
+    return {
+      value: null,
+      help: "Margem muito comprimida no recorte atual. O ponto de equilíbrio fica instável e não é exibido.",
+      isReliable: false,
+    };
+  }
+
+  return {
+    value: metrics.breakEvenPoint,
+    help: "Valor de RLD necessário para cobrir as despesas fixas com a margem atual.",
+    isReliable: true,
+  };
+}
+
+function decorateFinancialSummary(summary: BrandSummaryMetrics): FinancialReportSummary {
+  const breakEven = describeBreakEvenPoint(summary);
+  return {
+    ...summary,
+    activeMonthCount: 0,
+    averageMonthlyFixedExpenses: 0,
+    breakEvenDisplay: breakEven.value,
+    breakEvenReliable: breakEven.isReliable,
+    breakEvenReason: breakEven.help,
+  };
+}
+
+function buildEmptyFinancialAnalysis(): FinancialReportAnalysis {
+  return {
+    bestContributionMonth: null,
+    worstContributionMonth: null,
+    latestMonth: null,
+    topExpenseCategory: null,
+    shares: {
+      cmvShare: 0,
+      mediaShare: 0,
+      expenseShare: 0,
+      variableCostShare: 0,
+    },
+    momentum: {
+      tone: "neutral",
+      title: "Série insuficiente",
+      description: "Ainda não há meses suficientes para comparar a tendência da margem.",
+      delta: 0,
+      currentAverage: 0,
+      previousAverage: 0,
+      hasComparison: false,
+    },
   };
 }
 
@@ -908,10 +982,8 @@ export function buildAnnualDreReport(
         metrics.inkProfit = row.commission_total || 0;
         metrics.cmvTotal = row.cmv_total || 0;
         metrics.mediaSpend = row.adcost || 0;
-        metrics.contributionMargin = row.contribution_margin || 0;
-        metrics.contributionAfterMedia = row.contribution_margin || 0;
         metrics.fixedExpensesTotal = row.fixed_expenses || 0;
-        metrics.netResult = row.resultado || 0;
+        metrics.operatingExpensesTotal = row.fixed_expenses || 0;
         metrics.orderCount = row.order_count || 0;
         metrics.paidOrderCount = row.order_count || 0;
 
@@ -940,8 +1012,9 @@ export function buildAnnualDreReport(
 
     return {
       months: months.sort((a, b) => a.monthKey.localeCompare(b.monthKey)),
-      total: summary,
+      total: decorateFinancialSummary(summary),
       expenseBreakdown: [...expenseByCategory.values()].sort((a, b) => b.total - a.total),
+      analysis: buildEmptyFinancialAnalysis(),
     };
   }
 
@@ -1032,8 +1105,9 @@ export function buildAnnualDreReport(
 
   return {
     months,
-    total: finalizeSummaryMetrics(total),
+    total: decorateFinancialSummary(finalizeSummaryMetrics(total)),
     expenseBreakdown: [...expenseByCategory.values()].sort((a, b) => b.total - a.total),
+    analysis: buildEmptyFinancialAnalysis(),
   };
 }
 
@@ -1737,6 +1811,8 @@ function buildTrafficBreakdown(
       beginCheckouts: 0,
       purchases: 0,
       purchaseRevenue: 0,
+      purchaseRate: 0,
+      revenuePerSession: 0,
     };
 
     current.sessions += row.sessions;
@@ -1753,6 +1829,8 @@ function buildTrafficBreakdown(
     .map((row) => ({
       ...row,
       purchaseRevenue: round(row.purchaseRevenue),
+      purchaseRate: row.sessions ? row.purchases / row.sessions : 0,
+      revenuePerSession: row.sessions ? round(row.purchaseRevenue / row.sessions) : 0,
     }))
     .sort((left, right) => right.sessions - left.sessions || right.purchaseRevenue - left.purchaseRevenue);
 }
@@ -1781,295 +1859,4 @@ export function buildTrafficByLandingPage(brand: BrandDataset) {
   );
 }
 
-function classifyProductInsight(
-  views: number,
-  addToCartRate: number,
-  conversionRate: number,
-): ProductInsightClassification {
-  if (views < 30) {
-    return "low_traffic";
-  }
 
-  if (views >= 250 && addToCartRate < 0.02) {
-    return "review";
-  }
-
-  if (addToCartRate >= 0.07 && conversionRate >= 0.01) {
-    return "validated";
-  }
-
-  if (addToCartRate >= 0.04 || conversionRate >= 0.008) {
-    return "opportunity";
-  }
-
-  return "review";
-}
-
-function aggregateProductInsights(rows: BrandDataset["ga4ItemDailyPerformance"]) {
-  const byKey = new Map<
-    string,
-    {
-      key: string;
-      stampName: string;
-      productType: string;
-      itemIds: Set<string>;
-      views: number;
-      addToCarts: number;
-      checkouts: number;
-      purchases: number;
-      quantity: number;
-      revenue: number;
-    }
-  >();
-
-  rows.forEach((row) => {
-    const stampName = extractPrintName(
-      row.itemName,
-      `${row.itemBrand} ${row.itemCategory} ${row.itemId}`,
-    );
-    const productType =
-      detectProductType(row.itemName, `${row.itemBrand} ${row.itemCategory}`) ?? "Sem tipo";
-    const key = `${normalizeText(stampName)}::${normalizeText(productType)}`;
-    const current = byKey.get(key) ?? {
-      key,
-      stampName,
-      productType,
-      itemIds: new Set<string>(),
-      views: 0,
-      addToCarts: 0,
-      checkouts: 0,
-      purchases: 0,
-      quantity: 0,
-      revenue: 0,
-    };
-
-    if (row.itemId?.trim()) {
-      current.itemIds.add(row.itemId.trim());
-    }
-
-    current.views += row.itemViews;
-    current.addToCarts += row.addToCarts;
-    current.checkouts += row.checkouts;
-    current.purchases += row.ecommercePurchases;
-    current.quantity += row.itemPurchaseQuantity;
-    current.revenue += row.itemRevenue;
-    byKey.set(key, current);
-  });
-
-  return byKey;
-}
-
-function aggregateRealProductSignals(brand: BrandDataset) {
-  const byKey = new Map<
-    string,
-    {
-      realUnitsSold: number;
-      realGrossRevenue: number;
-    }
-  >();
-
-  getActiveOrderItems(brand).forEach((item) => {
-    const stampName = extractPrintName(
-      item.productName,
-      `${item.productSpecs ?? ""} ${item.sku ?? ""}`,
-    );
-    const productType =
-      item.productType ??
-      detectProductType(item.productName, `${item.productSpecs ?? ""} ${item.sku ?? ""}`) ??
-      "Sem tipo";
-    const key = `${normalizeText(stampName)}::${normalizeText(productType)}`;
-    const current = byKey.get(key) ?? {
-      realUnitsSold: 0,
-      realGrossRevenue: 0,
-    };
-
-    current.realUnitsSold += item.quantity;
-    current.realGrossRevenue += item.grossValue;
-    byKey.set(key, current);
-  });
-
-  return byKey;
-}
-
-function resolveProductDecision(input: {
-  views: number;
-  addToCartRate: number;
-  checkoutRate: number;
-  purchaseRate: number;
-  viewGrowth: number;
-  addToCartRateDelta: number;
-  revenue: number;
-  realUnitsSold: number;
-}) {
-  const {
-    views,
-    addToCartRate,
-    checkoutRate,
-    purchaseRate,
-    viewGrowth,
-    addToCartRateDelta,
-    revenue,
-    realUnitsSold,
-  } = input;
-
-  const hasRealSales = realUnitsSold > 0 || revenue > 0;
-  const hasComfortableSample = views >= 150;
-  const hasModerateSample = views >= 60;
-
-  if (
-    hasComfortableSample &&
-    addToCartRate >= 0.08 &&
-    (checkoutRate >= 0.03 || purchaseRate >= 0.01 || hasRealSales)
-  ) {
-    return {
-      decision: "scale_now" as const,
-      confidence: hasRealSales && views >= 250 ? "high" as const : "medium" as const,
-      title: "Escalar agora",
-      summary: "A estampa já demonstra intenção de compra consistente e pode receber mais visibilidade.",
-      action: "Aumente exposição em catálogo e mídia de forma controlada, priorizando criativos já aprovados.",
-      rationale: [
-        "Volume de views suficiente para leitura confiável",
-        "Taxa de adição ao carrinho acima do piso de validação",
-        hasRealSales
-          ? "Sinal de venda real confirmado na operação"
-          : "Sinal de checkout/compra acima da média mínima",
-      ],
-    };
-  }
-
-  if (
-    (hasModerateSample && addToCartRate >= 0.05) ||
-    (views >= 30 && addToCartRate >= 0.06 && (viewGrowth > 0 || addToCartRateDelta > 0))
-  ) {
-    return {
-      decision: "boost_traffic" as const,
-      confidence: hasModerateSample ? "medium" as const : "low" as const,
-      title: "Dar mais tráfego",
-      summary: "A estampa tem sinal promissor, mas ainda precisa de mais exposição para fechar diagnóstico.",
-      action: "Ganhe visibilidade na home, coleções e campanhas de catálogo antes de decidir escalar forte.",
-      rationale: [
-        "Taxa de adição ao carrinho saudável para o volume atual",
-        viewGrowth > 0 ? "Tendência recente de interesse em alta" : "Amostra ainda em consolidação",
-        hasRealSales ? "Já existe venda real, mas ainda com pouca base" : "Ainda falta amostra para concluir",
-      ],
-    };
-  }
-
-  if ((hasComfortableSample && addToCartRate < 0.025) || (views >= 250 && purchaseRate === 0)) {
-    return {
-      decision: "review_listing" as const,
-      confidence: "high" as const,
-      title: "Revisar vitrine e criativo",
-      summary: "Há atenção suficiente, mas a conversão não acompanha. O gargalo parece estar na apresentação.",
-      action: "Revise mockup, thumb, peça base, enquadramento e aderência da oferta antes de investir mais tráfego.",
-      rationale: [
-        "Views altas sem resposta proporcional de carrinho",
-        purchaseRate === 0
-          ? "Nenhuma compra registrada na amostra relevante"
-          : "Conversão abaixo do esperado para o tráfego recebido",
-        "Melhor corrigir vitrine antes de ampliar distribuição",
-      ],
-    };
-  }
-
-  return {
-    decision: "watch" as const,
-    confidence: hasModerateSample ? "medium" as const : "low" as const,
-    title: "Observar",
-    summary: "O sinal atual ainda é inconclusivo para decidir escala ou corte.",
-    action: "Mantenha monitoramento e reavalie após nova rodada de tráfego ou merchandising.",
-    rationale: [
-      hasModerateSample
-        ? "Amostra existe, mas sem sinal forte o bastante"
-        : "Base ainda pequena para conclusão definitiva",
-      addToCartRateDelta > 0 ? "Há leve melhora recente no interesse" : "Sem mudança relevante na última janela",
-      hasRealSales
-        ? "Já houve venda real, mas o volume ainda é baixo"
-        : "Ainda não há venda real confirmada para apoiar decisão",
-    ],
-  };
-}
-
-export function buildProductInsights(
-  brand: BrandDataset,
-  previousRows: BrandDataset["ga4ItemDailyPerformance"] = [],
-): ProductInsightRow[] {
-  const currentMap = aggregateProductInsights(brand.ga4ItemDailyPerformance);
-  const previousMap = aggregateProductInsights(previousRows);
-  const realSignals = aggregateRealProductSignals(brand);
-  const decisionPriority: Record<ProductDecisionAction, number> = {
-    scale_now: 0,
-    boost_traffic: 1,
-    review_listing: 2,
-    watch: 3,
-  };
-
-  return [...currentMap.values()]
-    .map((item) => {
-      const previous = previousMap.get(item.key);
-      const addToCartRate = item.views ? item.addToCarts / item.views : 0;
-      const conversionRate = item.views ? item.quantity / item.views : 0;
-      const checkoutRate = item.views ? item.checkouts / item.views : 0;
-      const purchaseRate = item.views ? item.quantity / item.views : 0;
-      const previousViews = previous?.views ?? 0;
-      const previousAddToCartRate = previous?.views
-        ? previous.addToCarts / previous.views
-        : 0;
-      const viewGrowth =
-        previousViews > 0
-          ? (item.views - previousViews) / previousViews
-          : item.views > 0
-            ? 1
-            : 0;
-      const addToCartRateDelta = addToCartRate - previousAddToCartRate;
-      const realSignal = realSignals.get(item.key);
-      const decision = resolveProductDecision({
-        views: item.views,
-        addToCartRate,
-        checkoutRate,
-        purchaseRate,
-        viewGrowth,
-        addToCartRateDelta,
-        revenue: item.revenue,
-        realUnitsSold: realSignal?.realUnitsSold ?? 0,
-      });
-
-      return {
-        key: item.key,
-        itemIds: [...item.itemIds].sort(),
-        stampName: item.stampName,
-        productType: item.productType,
-        views: item.views,
-        addToCarts: item.addToCarts,
-        checkouts: item.checkouts,
-        purchases: item.purchases,
-        quantity: item.quantity,
-        revenue: round(item.revenue),
-        addToCartRate: round(addToCartRate, 4),
-        conversionRate: round(conversionRate, 4),
-        classification: classifyProductInsight(item.views, addToCartRate, conversionRate),
-        decision: decision.decision,
-        decisionConfidence: decision.confidence,
-        decisionTitle: decision.title,
-        decisionSummary: decision.summary,
-        recommendedAction: decision.action,
-        rationale: decision.rationale,
-        previousViews,
-        previousAddToCartRate: round(previousAddToCartRate, 4),
-        viewGrowth: round(viewGrowth, 4),
-        addToCartRateDelta: round(addToCartRateDelta, 4),
-        checkoutRate: round(checkoutRate, 4),
-        purchaseRate: round(purchaseRate, 4),
-        realUnitsSold: realSignal?.realUnitsSold ?? 0,
-        realGrossRevenue: round(realSignal?.realGrossRevenue ?? 0),
-      };
-    })
-    .sort(
-      (left, right) =>
-        decisionPriority[left.decision] - decisionPriority[right.decision] ||
-        right.views - left.views ||
-        right.realGrossRevenue - left.realGrossRevenue ||
-        right.revenue - left.revenue ||
-        left.stampName.localeCompare(right.stampName),
-    );
-}

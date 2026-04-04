@@ -13,6 +13,24 @@ const targetPublic = join(sourceStandalone, "public");
 const serverEntrypoint = join(sourceStandalone, "server.js");
 const envFilePath = join(projectRoot, ".env.local");
 
+function readCliOption(name) {
+  const prefix = `--${name}=`;
+  const inline = process.argv.find((arg) => arg.startsWith(prefix));
+  if (inline) {
+    return inline.slice(prefix.length).trim();
+  }
+
+  const index = process.argv.indexOf(`--${name}`);
+  if (index >= 0) {
+    const value = process.argv[index + 1];
+    if (value && !value.startsWith("--")) {
+      return value.trim();
+    }
+  }
+
+  return "";
+}
+
 function loadLocalEnvFile() {
   if (!existsSync(envFilePath)) {
     return;
@@ -63,11 +81,29 @@ syncDirectory(sourceStatic, targetStatic);
 syncDirectory(sourcePublic, targetPublic);
 loadLocalEnvFile();
 
+const requestedPort = readCliOption("port");
+const requestedHostname = readCliOption("hostname") || readCliOption("host");
+const shouldDetach = process.env.BRANDOPS_DETACHED === "1";
+
+if (requestedPort) {
+  process.env.PORT = requestedPort;
+}
+
+if (requestedHostname) {
+  process.env.HOSTNAME = requestedHostname;
+}
+
 const child = spawn(process.execPath, [serverEntrypoint], {
   cwd: sourceStandalone,
-  stdio: "inherit",
+  stdio: shouldDetach ? "ignore" : "inherit",
   env: process.env,
+  detached: shouldDetach,
 });
+
+if (shouldDetach) {
+  child.unref();
+  process.exit(0);
+}
 
 child.on("exit", (code, signal) => {
   if (signal) {

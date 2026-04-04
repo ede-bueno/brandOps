@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireBrandAccess } from "@/lib/brandops/admin";
+import { resolveGa4CredentialsForBrand } from "@/lib/brandops/integration-config";
 import {
   fetchGa4DailyPerformance,
   fetchGa4ItemDailyPerformance,
@@ -90,6 +91,11 @@ export async function POST(
         ? integration.settings.timezone
         : "America/Sao_Paulo";
 
+    const ga4Access = await resolveGa4CredentialsForBrand({
+      brandId,
+      settings: integration.settings,
+    });
+
     const now = new Date();
     const fallbackStart = new Date(now);
     fallbackStart.setDate(fallbackStart.getDate() - 90);
@@ -100,8 +106,12 @@ export async function POST(
     const endDate = now.toISOString().slice(0, 10);
 
     const [rows, itemRows] = await Promise.all([
-      fetchGa4DailyPerformance(propertyId, startDate, endDate),
-      fetchGa4ItemDailyPerformance(propertyId, startDate, endDate),
+      fetchGa4DailyPerformance(propertyId, startDate, endDate, {
+        credentials: ga4Access.credentials,
+      }),
+      fetchGa4ItemDailyPerformance(propertyId, startDate, endDate, {
+        credentials: ga4Access.credentials,
+      }),
     ]);
     const syncedAt = new Date().toISOString();
 

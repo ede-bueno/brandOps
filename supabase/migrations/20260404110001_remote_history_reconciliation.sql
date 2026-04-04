@@ -1,0 +1,4 @@
+-- Placeholder de reconciliacao.
+-- Esta versao ja existe no historico remoto do Supabase, mas o arquivo original
+-- nao esta presente nesta copia local do repositorio.
+-- Mantemos este arquivo vazio para alinhar o historico de migrations sem alterar schema.

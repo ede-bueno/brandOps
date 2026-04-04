@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireBrandAccess } from "@/lib/brandops/admin";
+import { resolveMetaAccessTokenForBrand } from "@/lib/brandops/integration-config";
 import { syncMetaRowsForBrand, type MetaIntegrationSettings } from "@/lib/integrations/meta";
 
 function formatError(error: unknown) {
@@ -43,6 +44,11 @@ export async function POST(
       throw new Error("A integração da Meta precisa estar em modo API para sincronizar.");
     }
 
+    const metaAccess = await resolveMetaAccessTokenForBrand({
+      brandId,
+      settings: integration.settings,
+    });
+
     const result = await syncMetaRowsForBrand(supabase, {
       brandId,
       integrationId: integration.id,
@@ -52,6 +58,7 @@ export async function POST(
         !Array.isArray(integration.settings)
           ? (integration.settings as MetaIntegrationSettings)
           : {},
+      accessToken: metaAccess.accessToken,
     });
 
     return NextResponse.json({
