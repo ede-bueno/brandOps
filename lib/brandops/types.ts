@@ -7,6 +7,7 @@ export type CsvFileKind =
   | "lista_itens";
 
 export type UserRole = "SUPER_ADMIN" | "BRAND_OWNER";
+export type BrandPlanTier = "starter" | "growth" | "scale" | "enterprise";
 
 export type PeriodFilter =
   | "today"
@@ -26,6 +27,12 @@ export type SanitizationReviewAction = "PENDING" | "KEPT" | "IGNORED";
 export type IntegrationProvider = "ink" | "meta" | "ga4" | "gemini";
 
 export type IntegrationMode = "manual_csv" | "api" | "disabled";
+export type AtlasAnalystBehaviorSkill =
+  | "auto"
+  | "executive_operator"
+  | "marketing_performance"
+  | "revenue_operator"
+  | "pod_strategist";
 
 export type IntegrationSyncStatus = "idle" | "running" | "success" | "error";
 export type MediaDataSource = "manual_csv" | "api";
@@ -64,6 +71,18 @@ export interface UserProfile {
   email: string;
   fullName?: string | null;
   role: UserRole;
+}
+
+export interface BrandFeatureFlags {
+  atlasAi: boolean;
+  atlasCommandCenter: boolean;
+  brandLearning: boolean;
+  geminiModelCatalog: boolean;
+}
+
+export interface BrandGovernance {
+  planTier: BrandPlanTier;
+  featureFlags: BrandFeatureFlags;
 }
 
 export interface CatalogProduct {
@@ -243,18 +262,29 @@ export interface BrandIntegrationConfig {
     syncWindowDays?: number;
     catalogSyncAt?: string | null;
     catalogSyncStatus?: string | null;
-    catalogSyncError?: string | null;
-    catalogProductCount?: number;
-    model?: string;
-    credentialSource?: "platform_key" | "brand_key";
-    hasApiKey?: boolean;
-    apiKeyHint?: string | null;
-    platformCredentialConfigured?: boolean;
-    platformCredentialHint?: string | null;
-  };
+      catalogSyncError?: string | null;
+      catalogProductCount?: number;
+      model?: string;
+      temperature?: number;
+      credentialSource?: "brand_key";
+      hasApiKey?: boolean;
+      apiKeyHint?: string | null;
+      analysisWindowDays?: number;
+      defaultSkill?: AtlasAnalystBehaviorSkill;
+      operatorGuidance?: string | null;
+    };
   lastSyncAt?: string | null;
   lastSyncStatus: IntegrationSyncStatus;
   lastSyncError?: string | null;
+}
+
+export interface GeminiAvailableModel {
+  id: string;
+  displayName: string;
+  description: string | null;
+  inputTokenLimit: number | null;
+  outputTokenLimit: number | null;
+  supportsGenerateContent: boolean;
 }
 
 export interface Ga4DailyPerformanceRow {
@@ -296,6 +326,7 @@ export interface BrandDataset {
   name: string;
   createdAt: string;
   updatedAt: string;
+  governance: BrandGovernance;
   hydration: {
     catalogLoaded: boolean;
     salesLinesLoaded: boolean;

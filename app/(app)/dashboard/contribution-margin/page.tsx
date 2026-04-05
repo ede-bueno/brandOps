@@ -40,7 +40,7 @@ export default function ContributionMarginPage() {
     return (
       <div className="space-y-6">
         <PageHeader
-          eyebrow="Control Tower"
+          eyebrow="Torre de Controle"
           title="Margem de contribuição"
           description={`Carregando a série histórica da loja ${selectedBrandName}.`}
           badge={selectedPeriodLabel}
@@ -92,24 +92,24 @@ export default function ContributionMarginPage() {
   const viewBadge =
     viewMode === "historical"
       ? "Série histórica completa"
-      : `Mesmo recorte ativo da Control Tower: ${selectedPeriodLabel}`;
+      : `Mesmo recorte ativo da Torre de Controle: ${selectedPeriodLabel}`;
   const contributionCardLabel =
     viewMode === "historical" ? "Contribuição acumulada" : "Contribuição do recorte";
   const contributionCardHelp =
     viewMode === "historical"
       ? "Soma da margem de contribuição em toda a série histórica disponível."
-      : "Margem de contribuição consolidada no filtro atual da Control Tower.";
+      : "Margem de contribuição consolidada no filtro atual da Torre de Controle.";
   const resultCardLabel =
     viewMode === "historical" ? "Resultado acumulado" : "Resultado do recorte";
   const resultCardHelp =
     viewMode === "historical"
       ? "Resultado líquido histórico após despesas operacionais em toda a série."
-      : "Mesmo resultado líquido exibido no recorte atual do DRE e da Control Tower.";
+      : "Mesmo resultado líquido exibido no recorte atual do DRE e da Torre de Controle.";
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Control Tower"
+        eyebrow="Torre de Controle"
         title="Margem de contribuição"
         description="Leitura histórica da capacidade da operação de transformar receita líquida em margem antes das despesas fixas."
         badge={viewBadge}
@@ -135,7 +135,7 @@ export default function ContributionMarginPage() {
             </div>
             <Link href="/dashboard" className="brandops-button brandops-button-secondary">
               <ArrowLeft size={14} />
-              Voltar para a Control Tower
+              Voltar para a Torre de Controle
             </Link>
           </div>
         }
@@ -234,9 +234,9 @@ export default function ContributionMarginPage() {
               <div className="mt-5 space-y-4">
                 <article
                   className={cn(
-                    "panel-muted p-4",
-                    momentum.tone === "positive" && "border-primary/20 bg-primary-container/30",
-                    momentum.tone === "warning" && "border-tertiary/20 bg-tertiary-container/28",
+                    "atlas-soft-subcard p-4",
+                    momentum.tone === "positive" && "border-primary/16 bg-primary-container/30",
+                    momentum.tone === "warning" && "border-tertiary/16 bg-tertiary-container/24",
                   )}
                 >
                   <div className="flex items-center gap-2">
@@ -256,7 +256,7 @@ export default function ContributionMarginPage() {
                   </p>
                 </article>
 
-                <article className="panel-muted p-4">
+                <article className="atlas-soft-subcard p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Pressão sobre a receita líquida
                   </p>
@@ -332,7 +332,7 @@ export default function ContributionMarginPage() {
         </section>
       ) : (
         <SurfaceCard className="p-0 overflow-hidden">
-          <div className="border-b border-outline p-5">
+          <div className="border-b border-outline/50 p-5">
             <SectionHeading
               title="Linha do tempo mensal"
               description="Tabela de apoio para localizar exatamente quando a margem ganhou tração ou perdeu fôlego."
@@ -340,9 +340,9 @@ export default function ContributionMarginPage() {
             />
           </div>
           <div className="grid gap-0 xl:grid-cols-[minmax(0,0.36fr)_minmax(0,1fr)]">
-            <div className="border-b border-outline p-5 xl:border-b-0 xl:border-r">
+            <div className="border-b border-outline/50 p-5 xl:border-b-0 xl:border-r xl:border-r-outline/50">
               <div className="grid gap-3">
-                <article className="panel-muted p-4">
+                <article className="atlas-soft-subcard p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Último resultado
                   </p>
@@ -353,7 +353,7 @@ export default function ContributionMarginPage() {
                     Resultado líquido do mês mais recente da série analisada.
                   </p>
                 </article>
-                <article className="panel-muted p-4">
+                <article className="atlas-soft-subcard p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Contribuição média
                   </p>
@@ -366,7 +366,7 @@ export default function ContributionMarginPage() {
                 </article>
               </div>
             </div>
-            <div className="brandops-table-container rounded-none border-0">
+            <div className="brandops-table-container rounded-none border-0 bg-transparent">
               <table className="brandops-table-compact w-full min-w-[860px]">
                 <thead>
                   <tr>

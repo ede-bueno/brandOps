@@ -43,6 +43,7 @@ export function AtlasOrb({
   hoverActions = [],
   attentionLevel = "idle",
   panelContent,
+  panelVariant = "default",
 }: {
   size?: "sm" | "md" | "lg";
   className?: string;
@@ -59,6 +60,7 @@ export function AtlasOrb({
   hoverActions?: AtlasOrbHoverAction[];
   attentionLevel?: "idle" | "notice" | "alert";
   panelContent?: ReactNode;
+  panelVariant?: "default" | "custom";
 }) {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -419,42 +421,48 @@ export function AtlasOrb({
           }
         >
           <div className="atlas-orb-panel-inner">
-            <div className="flex items-start gap-3">
-              <div className="atlas-orb-panel-icon">
-                <BrainCircuit size={18} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-headline text-sm font-semibold tracking-tight text-on-surface">
-                    {title}
-                  </p>
-                  <span className="atlas-orb-status">{status}</span>
+            {panelVariant === "custom" ? (
+              panelContent
+            ) : (
+              <>
+                <div className="flex items-start gap-3">
+                  <div className="atlas-orb-panel-icon">
+                    <BrainCircuit size={18} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-headline text-sm font-semibold tracking-tight text-on-surface">
+                        {title}
+                      </p>
+                      <span className="atlas-orb-status">{status}</span>
+                    </div>
+                    <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
+                      {description}
+                    </p>
+                  </div>
                 </div>
-                <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
-                  {description}
-                </p>
-              </div>
-            </div>
 
-            <div className="mt-4 space-y-2.5">
-              {hintList.map((hint) => (
-                <div key={hint} className="atlas-orb-insight">
-                  <TrendingUp size={13} className="shrink-0 text-primary" />
-                  <span>{hint}</span>
+                <div className="mt-4 space-y-2.5">
+                  {hintList.map((hint) => (
+                    <div key={hint} className="atlas-orb-insight">
+                      <TrendingUp size={13} className="shrink-0 text-primary" />
+                      <span>{hint}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            {panelContent}
+                {panelContent}
 
-            <div className="mt-4 flex items-center justify-between border-t border-outline/70 pt-3">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-                Camada proativa
-              </span>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
-                aberta por voce
-              </span>
-            </div>
+                <div className="mt-4 flex items-center justify-between border-t border-outline/70 pt-3">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
+                    Camada proativa
+                  </span>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
+                    aberta por voce
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       ) : null}

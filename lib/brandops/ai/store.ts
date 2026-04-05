@@ -8,6 +8,12 @@ import type {
   AtlasAnalystHistoryItem,
   AtlasAnalystReportId,
   AtlasAnalystResponse,
+  AtlasBrandLearningFeedbackPayload,
+  AtlasBrandLearningFeedbackSummary,
+  AtlasBrandLearningFeedbackVote,
+  AtlasBrandLearningRun,
+  AtlasBrandLearningSnapshot,
+  AtlasBrandLearningStatus,
   AtlasContextEntry,
   AtlasContextEntryImportance,
   AtlasContextEntryPayload,
@@ -75,6 +81,31 @@ function asJsonObject(value: unknown): Record<string, unknown> {
   return {};
 }
 
+function asLearningStatus(value: unknown): AtlasBrandLearningStatus {
+  return value === "running" || value === "completed" || value === "failed" ? value : "running";
+}
+
+function asLearningFeedbackVote(value: unknown): AtlasBrandLearningFeedbackVote | null {
+  return value === "aligned" || value === "needs_review" ? value : null;
+}
+
+function asConfidence(value: unknown): "low" | "medium" | "high" {
+  return value === "low" || value === "medium" || value === "high" ? value : "medium";
+}
+
+function asNumberOrNull(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
 function mapContextEntryRow(row: Record<string, unknown>): AtlasContextEntry {
   return {
     id: String(row.id ?? ""),
@@ -94,6 +125,49 @@ function mapContextEntryRow(row: Record<string, unknown>): AtlasContextEntry {
   };
 }
 
+function mapLearningRunRow(row: Record<string, unknown>): AtlasBrandLearningRun {
+  return {
+    id: String(row.id ?? ""),
+    brandId: String(row.brand_id ?? ""),
+    status: asLearningStatus(row.status),
+    scopeLabel: typeof row.scope_label === "string" ? row.scope_label : "Todo histórico disponível",
+    model: typeof row.model === "string" ? row.model : null,
+    temperature: asNumberOrNull(row.temperature),
+    summary: typeof row.summary === "string" ? row.summary : null,
+    errorMessage: typeof row.error_message === "string" ? row.error_message : null,
+    startedAt: typeof row.started_at === "string" ? row.started_at : new Date().toISOString(),
+    completedAt: typeof row.completed_at === "string" ? row.completed_at : null,
+  };
+}
+
+function mapLearningSnapshotRow(row: Record<string, unknown>): AtlasBrandLearningSnapshot {
+  const payload = asJsonObject(row.learning_payload);
+
+  return {
+    id: String(row.id ?? ""),
+    brandId: String(row.brand_id ?? ""),
+    runId: typeof row.run_id === "string" ? row.run_id : null,
+    scopeLabel: typeof row.scope_label === "string" ? row.scope_label : "Todo histórico disponível",
+    summary: typeof row.summary === "string" ? row.summary : "",
+    confidence: asConfidence(row.confidence),
+    businessProfile: typeof row.business_profile === "string" ? row.business_profile : "",
+    nicheProfile: typeof row.niche_profile === "string" ? row.niche_profile : "",
+    performanceBaseline:
+      typeof row.performance_baseline === "string" ? row.performance_baseline : "",
+    operationalRisks: asStringArray(row.operational_risks),
+    recurringErrors: asStringArray(row.recurring_errors),
+    growthOpportunities: asStringArray(row.growth_opportunities),
+    evidenceSources: asStringArray(row.evidence_sources),
+    dataGaps: asStringArray(row.data_gaps),
+    businessSignals: asStringArray(payload.businessSignals),
+    seasonalityPatterns: asStringArray(payload.seasonalityPatterns),
+    campaignPatterns: asStringArray(payload.campaignPatterns),
+    catalogPatterns: asStringArray(payload.catalogPatterns),
+    priorityStack: asStringArray(payload.priorityStack),
+    generatedAt: typeof row.generated_at === "string" ? row.generated_at : new Date().toISOString(),
+  };
+}
+
 export async function persistAtlasAnalystRun(
   supabase: SupabaseClient,
   userId: string,
@@ -101,6 +175,7 @@ export async function persistAtlasAnalystRun(
   response: AtlasAnalystResponse,
   options?: {
     model?: string;
+    temperature?: number;
   },
 ) {
   const { data, error } = await supabase
@@ -123,12 +198,16 @@ export async function persistAtlasAnalystRun(
       risks: response.risks,
       follow_ups: response.followUps,
       warnings: response.warnings,
-      used_reports: response.usedReports,
-      model: options?.model ?? DEFAULT_MODEL,
-      request_context: {
-        brandLabel: input.brandLabel ?? null,
-      },
-      created_at: response.generatedAt,
+        used_reports: response.usedReports,
+        model: options?.model ?? DEFAULT_MODEL,
+        request_context: {
+          brandLabel: input.brandLabel ?? null,
+          temperature:
+            typeof options?.temperature === "number" && Number.isFinite(options.temperature)
+              ? options.temperature
+              : null,
+        },
+        created_at: response.generatedAt,
     })
     .select("id")
     .single();
@@ -309,4 +388,279 @@ export async function createAtlasContextEntry(
   }
 
   return mapContextEntryRow(data as Record<string, unknown>);
+}
+
+export async function startAtlasBrandLearningRun(
+  supabase: SupabaseClient,
+  userId: string,
+  brandId: string,
+  options?: {
+    model?: string | null;
+    temperature?: number | null;
+    scopeLabel?: string | null;
+  },
+) {
+  const { data: runningRun, error: runningError } = await supabase
+    .from("atlas_brand_learning_runs")
+    .select("*")
+    .eq("brand_id", brandId)
+    .eq("status", "running")
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (runningError) {
+    throw runningError;
+  }
+
+  if (runningRun) {
+    throw new Error(
+      "Ja existe uma execucao de aprendizado em andamento para esta marca. Aguarde a conclusao antes de iniciar outra.",
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("atlas_brand_learning_runs")
+    .insert({
+      brand_id: brandId,
+      user_id: userId,
+      status: "running",
+      scope_label: options?.scopeLabel?.trim() || "Todo histórico disponível",
+      model: options?.model?.trim() || null,
+      temperature:
+        typeof options?.temperature === "number" && Number.isFinite(options.temperature)
+          ? options.temperature
+          : null,
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapLearningRunRow(data as Record<string, unknown>);
+}
+
+export async function completeAtlasBrandLearningRun(
+  supabase: SupabaseClient,
+  runId: string,
+  payload: {
+    summary: string;
+  },
+) {
+  const { data, error } = await supabase
+    .from("atlas_brand_learning_runs")
+    .update({
+      status: "completed",
+      summary: payload.summary,
+      completed_at: new Date().toISOString(),
+      error_message: null,
+    })
+    .eq("id", runId)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapLearningRunRow(data as Record<string, unknown>);
+}
+
+export async function failAtlasBrandLearningRun(
+  supabase: SupabaseClient,
+  runId: string,
+  errorMessage: string,
+) {
+  const { error } = await supabase
+    .from("atlas_brand_learning_runs")
+    .update({
+      status: "failed",
+      error_message: errorMessage,
+      completed_at: new Date().toISOString(),
+    })
+    .eq("id", runId);
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function saveAtlasBrandLearningSnapshot(
+  supabase: SupabaseClient,
+  runId: string,
+  snapshot: Omit<AtlasBrandLearningSnapshot, "id" | "generatedAt">,
+) {
+  const { data, error } = await supabase
+    .from("atlas_brand_learning_snapshots")
+    .insert({
+      brand_id: snapshot.brandId,
+      run_id: runId,
+      scope_label: snapshot.scopeLabel,
+      confidence: snapshot.confidence,
+      summary: snapshot.summary,
+      business_profile: snapshot.businessProfile,
+      niche_profile: snapshot.nicheProfile,
+      performance_baseline: snapshot.performanceBaseline,
+      operational_risks: snapshot.operationalRisks,
+      recurring_errors: snapshot.recurringErrors,
+      growth_opportunities: snapshot.growthOpportunities,
+      evidence_sources: snapshot.evidenceSources,
+      data_gaps: snapshot.dataGaps,
+      learning_payload: {
+        summary: snapshot.summary,
+        businessProfile: snapshot.businessProfile,
+        nicheProfile: snapshot.nicheProfile,
+        performanceBaseline: snapshot.performanceBaseline,
+        operationalRisks: snapshot.operationalRisks,
+        recurringErrors: snapshot.recurringErrors,
+      growthOpportunities: snapshot.growthOpportunities,
+      evidenceSources: snapshot.evidenceSources,
+      dataGaps: snapshot.dataGaps,
+      businessSignals: snapshot.businessSignals,
+      seasonalityPatterns: snapshot.seasonalityPatterns,
+      campaignPatterns: snapshot.campaignPatterns,
+      catalogPatterns: snapshot.catalogPatterns,
+      priorityStack: snapshot.priorityStack,
+      },
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapLearningSnapshotRow(data as Record<string, unknown>);
+}
+
+export async function listAtlasBrandLearningRuns(
+  supabase: SupabaseClient,
+  brandId: string,
+  limit = 6,
+): Promise<AtlasBrandLearningRun[]> {
+  const { data, error } = await supabase
+    .from("atlas_brand_learning_runs")
+    .select("*")
+    .eq("brand_id", brandId)
+    .order("started_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((row) => mapLearningRunRow(row as Record<string, unknown>));
+}
+
+export async function getLatestAtlasBrandLearningSnapshot(
+  supabase: SupabaseClient,
+  brandId: string,
+): Promise<AtlasBrandLearningSnapshot | null> {
+  const { data, error } = await supabase
+    .from("atlas_brand_learning_snapshots")
+    .select("*")
+    .eq("brand_id", brandId)
+    .order("generated_at", { ascending: false })
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ? mapLearningSnapshotRow(data as Record<string, unknown>) : null;
+}
+
+export async function listAtlasBrandLearningSnapshots(
+  supabase: SupabaseClient,
+  brandId: string,
+  limit = 2,
+): Promise<AtlasBrandLearningSnapshot[]> {
+  const safeLimit = Number.isFinite(limit) ? Math.min(Math.max(limit, 1), 12) : 2;
+  const { data, error } = await supabase
+    .from("atlas_brand_learning_snapshots")
+    .select("*")
+    .eq("brand_id", brandId)
+    .order("generated_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((row) => mapLearningSnapshotRow(row as Record<string, unknown>));
+}
+
+export async function getAtlasBrandLearningFeedbackSummary(
+  supabase: SupabaseClient,
+  brandId: string,
+  snapshotId: string,
+  userId: string,
+): Promise<AtlasBrandLearningFeedbackSummary> {
+  const { data, error } = await supabase
+    .from("atlas_brand_learning_feedback")
+    .select("user_id, vote")
+    .eq("brand_id", brandId)
+    .eq("snapshot_id", snapshotId);
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = data ?? [];
+  const currentVote = asLearningFeedbackVote(
+    rows.find((row) => row.user_id === userId)?.vote,
+  );
+
+  return {
+    snapshotId,
+    currentVote,
+    alignedCount: rows.filter((row) => row.vote === "aligned").length,
+    needsReviewCount: rows.filter((row) => row.vote === "needs_review").length,
+  };
+}
+
+export async function saveAtlasBrandLearningFeedback(
+  supabase: SupabaseClient,
+  brandId: string,
+  userId: string,
+  payload: AtlasBrandLearningFeedbackPayload,
+): Promise<AtlasBrandLearningFeedbackSummary> {
+  const { data: snapshot, error: snapshotError } = await supabase
+    .from("atlas_brand_learning_snapshots")
+    .select("id")
+    .eq("id", payload.snapshotId)
+    .eq("brand_id", brandId)
+    .maybeSingle();
+
+  if (snapshotError || !snapshot) {
+    throw new Error("Snapshot de aprendizado nao encontrado para esta marca.");
+  }
+
+  const vote = asLearningFeedbackVote(payload.vote);
+
+  if (!vote) {
+    throw new Error("Vote invalido para o aprendizado do Atlas.");
+  }
+
+  const { error } = await supabase
+    .from("atlas_brand_learning_feedback")
+    .upsert(
+      {
+        brand_id: brandId,
+        snapshot_id: payload.snapshotId,
+        user_id: userId,
+        vote,
+        note: payload.note?.trim() || null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "snapshot_id,user_id" },
+    );
+
+  if (error) {
+    throw error;
+  }
+
+  return getAtlasBrandLearningFeedbackSummary(supabase, brandId, payload.snapshotId, userId);
 }

@@ -1,6 +1,17 @@
 const { spawn } = require("node:child_process");
+const fs = require("node:fs");
+const path = require("node:path");
+
+function cleanupReservedPublicNextFolder() {
+  const reservedPath = path.join(process.cwd(), "public", "_next");
+  if (fs.existsSync(reservedPath)) {
+    fs.rmSync(reservedPath, { recursive: true, force: true });
+  }
+}
 
 function runBuild() {
+  cleanupReservedPublicNextFolder();
+
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [require.resolve("next/dist/bin/next"), "build"], {
       env: {

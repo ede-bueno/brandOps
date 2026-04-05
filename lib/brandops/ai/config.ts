@@ -1,12 +1,17 @@
 import "server-only";
 
-import type { IntegrationMode } from "@/lib/brandops/types";
+import type { AtlasAnalystBehaviorSkill, IntegrationMode } from "@/lib/brandops/types";
 import { getBrandIntegrationSecretMetadata, getBrandIntegrationSecretValue, upsertBrandIntegrationSecret, deleteBrandIntegrationSecret } from "@/lib/brandops/integration-secrets";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 
-export type AtlasGeminiCredentialSource = "platform_key" | "brand_key";
+export type AtlasGeminiCredentialSource = "brand_key";
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const DEFAULT_ANALYSIS_WINDOW_DAYS = 30;
+const DEFAULT_SKILL: AtlasAnalystBehaviorSkill = "executive_operator";
+const DEFAULT_TEMPERATURE = 0.25;
+
+export const ATLAS_GEMINI_DEFAULT_MODEL = DEFAULT_MODEL;
 
 type PostgrestLikeError = {
   code?: string;
@@ -105,6 +110,41 @@ function asSettingsObject(value: unknown) {
     : {};
 }
 
+function normalizeAnalysisWindowDays(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return DEFAULT_ANALYSIS_WINDOW_DAYS;
+  }
+
+  return Math.max(7, Math.min(120, Math.round(value)));
+}
+
+function normalizeTemperature(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return DEFAULT_TEMPERATURE;
+  }
+
+  const clamped = Math.max(0, Math.min(1, value));
+  return Math.round(clamped * 100) / 100;
+}
+
+function normalizeDefaultSkill(value: unknown): AtlasAnalystBehaviorSkill {
+  return value === "auto" ||
+    value === "executive_operator" ||
+    value === "marketing_performance" ||
+    value === "revenue_operator" ||
+    value === "pod_strategist"
+    ? value
+    : DEFAULT_SKILL;
+}
+
+function normalizeOperatorGuidance(value: unknown) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim().slice(0, 2400);
+}
+
 export function normalizeGeminiSettings(value: unknown) {
   const source = asSettingsObject(value);
   return {
@@ -119,6 +159,10 @@ export function normalizeGeminiSettings(value: unknown) {
       typeof source.apiKeyHint === "string" && source.apiKeyHint.trim()
         ? source.apiKeyHint.trim()
         : null,
+    analysisWindowDays: normalizeAnalysisWindowDays(source.analysisWindowDays),
+    temperature: normalizeTemperature(source.temperature),
+    defaultSkill: normalizeDefaultSkill(source.defaultSkill),
+    operatorGuidance: normalizeOperatorGuidance(source.operatorGuidance),
   };
 }
 
@@ -176,6 +220,10 @@ export async function saveBrandGeminiIntegration(options: {
   userId: string;
   mode: IntegrationMode;
   model?: string | null;
+  temperature?: number | null;
+  analysisWindowDays?: number | null;
+  defaultSkill?: AtlasAnalystBehaviorSkill | null;
+  operatorGuidance?: string | null;
   credentialSource?: AtlasGeminiCredentialSource | null;
   apiKey?: string | null;
   clearApiKey?: boolean;
@@ -228,6 +276,16 @@ export async function saveBrandGeminiIntegration(options: {
         mode: options.mode,
         settings: {
           model: options.model?.trim() || current.settings.model || DEFAULT_MODEL,
+          temperature: normalizeTemperature(options.temperature ?? current.settings.temperature),
+          analysisWindowDays: normalizeAnalysisWindowDays(
+            options.analysisWindowDays ?? current.settings.analysisWindowDays,
+          ),
+          defaultSkill: normalizeDefaultSkill(
+            options.defaultSkill ?? current.settings.defaultSkill,
+          ),
+          operatorGuidance: normalizeOperatorGuidance(
+            options.operatorGuidance ?? current.settings.operatorGuidance,
+          ),
           credentialSource: options.credentialSource ?? current.settings.credentialSource,
           hasApiKey,
           apiKeyHint: nextApiKeyHint,
@@ -246,13 +304,8 @@ export async function saveBrandGeminiIntegration(options: {
   return getBrandGeminiIntegration(options.brandId);
 }
 
-export async function resolveAtlasAnalystGeminiAccess(brandId: string) {
+export async function resolveBrandGeminiCatalogAccess(brandId: string) {
   const integration = await getBrandGeminiIntegration(brandId);
-  const mode = integration.mode;
-
-  if (mode !== "api") {
-    throw new Error("A integração Gemini desta marca está desabilitada no painel.");
-  }
 
   let brandSecret;
   try {
@@ -265,14 +318,38 @@ export async function resolveAtlasAnalystGeminiAccess(brandId: string) {
   }
 
   if (!brandSecret?.secret) {
-    throw new Error("Nenhuma chave própria do Gemini foi salva para esta marca. Cada loja precisa informar sua própria chave no painel de integrações.");
+    throw new Error(
+      "Nenhuma chave propria do Gemini foi salva para esta marca. Cada loja precisa informar sua propria chave no painel de integracoes.",
+    );
   }
 
   return {
     apiKey: brandSecret.secret,
     model: integration.settings.model || DEFAULT_MODEL,
+    settings: integration.settings,
     source: "brand_key" as const,
     secretHint: brandSecret.secretHint,
+    mode: integration.mode,
+  };
+}
+
+export async function resolveAtlasAnalystGeminiAccess(brandId: string) {
+  const integration = await resolveBrandGeminiCatalogAccess(brandId);
+  const mode = integration.mode;
+
+  if (mode !== "api") {
+    throw new Error("A integração Gemini desta marca está desabilitada no painel.");
+  }
+
+  return {
+    apiKey: integration.apiKey,
+    model: integration.settings.model || DEFAULT_MODEL,
+    temperature: normalizeTemperature(integration.settings.temperature),
+    analysisWindowDays: integration.settings.analysisWindowDays || DEFAULT_ANALYSIS_WINDOW_DAYS,
+    defaultSkill: normalizeDefaultSkill(integration.settings.defaultSkill),
+    operatorGuidance: normalizeOperatorGuidance(integration.settings.operatorGuidance),
+    source: "brand_key" as const,
+    secretHint: integration.secretHint,
   };
 }
 

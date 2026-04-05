@@ -6,6 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   BarChart3,
+  BookOpen,
+  CircleHelp,
   ChevronDown,
   ChevronsRight,
   FileUp,
@@ -31,7 +33,7 @@ import type { PeriodFilter } from "@/lib/brandops/types";
 import { BRANDING } from "@/lib/branding";
 import { ThemeToggle } from "./ThemeToggle";
 import { AtlasOrb } from "./AtlasOrb";
-import { AtlasAnalystPanel } from "./AtlasAnalystPanel";
+import { AtlasOrbRadarPanel, type AtlasOrbRadarTelemetry } from "./AtlasOrbRadarPanel";
 
 /* -------------------------------------------------------
    Navigation Groups
@@ -43,29 +45,51 @@ interface NavItem {
   icon: React.ElementType;
 }
 
-const operationsNav: NavItem[] = [
-  { href: "/dashboard", label: "Control Tower", icon: LayoutDashboard },
-  { href: "/dre", label: "DRE Consolidado", icon: Receipt },
-  { href: "/cost-center", label: "Lançamentos DRE", icon: Landmark },
-  { href: "/cmv", label: "Custos (CMV)", icon: Tags },
-  { href: "/sales", label: "Vendas", icon: BarChart3 },
-];
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
 
-const acquisitionNav: NavItem[] = [
-  { href: "/media", label: "Performance Mídia", icon: TrendingUp },
-  { href: "/traffic", label: "Tráfego Digital", icon: Activity },
-  { href: "/product-insights", label: "Insights Categorias", icon: Sparkles },
-];
-
-const catalogNav: NavItem[] = [
-  { href: "/feed", label: "Catálogo", icon: Images },
-  { href: "/import", label: "ETL / Importação", icon: FileUp },
-  { href: "/sanitization", label: "Saneamento", icon: ShieldAlert },
-];
-
-const adminNavigation: NavItem[] = [
-  { href: "/admin/stores", label: "Acessos", icon: Settings2 },
-  { href: "/integrations", label: "Integrações", icon: PlugZap },
+const navigationGroups: NavGroup[] = [
+  {
+    label: "Controle",
+    items: [{ href: "/dashboard", label: "Torre de Controle", icon: LayoutDashboard }],
+  },
+  {
+    label: "Negócio",
+    items: [
+      { href: "/dre", label: "DRE Consolidado", icon: Receipt },
+      { href: "/sales", label: "Receita e Vendas", icon: BarChart3 },
+      { href: "/product-insights", label: "Produtos e Insights", icon: Sparkles },
+    ],
+  },
+  {
+    label: "Aquisição",
+    items: [
+      { href: "/media", label: "Mídia e Performance", icon: TrendingUp },
+      { href: "/traffic", label: "Tráfego Digital", icon: Activity },
+    ],
+  },
+  {
+    label: "Operação",
+    items: [
+      { href: "/cost-center", label: "Despesas e Lançamentos", icon: Landmark },
+      { href: "/cmv", label: "Custos e CMV", icon: Tags },
+      { href: "/feed", label: "Catálogo", icon: Images },
+      { href: "/import", label: "ETL e Importação", icon: FileUp },
+      { href: "/sanitization", label: "Saneamento", icon: ShieldAlert },
+    ],
+  },
+  {
+    label: "Plataforma",
+    items: [
+      { href: "/settings", label: "Central Estratégica", icon: Settings2 },
+      { href: "/integrations", label: "Integrações", icon: PlugZap },
+      { href: "/integrations/tutorials", label: "Tutoriais", icon: BookOpen },
+      { href: "/admin/stores", label: "Acessos", icon: UserRound },
+      { href: "/help", label: "Ajuda", icon: CircleHelp },
+    ],
+  },
 ];
 
 const periodOptions: Array<{ value: PeriodFilter; label: string }> = [
@@ -79,26 +103,15 @@ const periodOptions: Array<{ value: PeriodFilter; label: string }> = [
   { value: "custom", label: "Período livre" },
 ];
 
-interface AtlasOrbTelemetry {
-  hasFinancialReport: boolean;
-  pendingSanitizationCount: number;
-  hasGa4Data: boolean;
+interface AtlasOrbContextTelemetry extends AtlasOrbRadarTelemetry {
   hasMediaData: boolean;
-  hasCatalogData: boolean;
-  mediaIntegrationError: boolean;
-  ga4IntegrationError: boolean;
-  geminiEnabled: boolean;
-  contributionAfterMedia: number | null;
-  netResult: number | null;
-  variableCostShare: number | null;
-  grossRoas: number | null;
 }
 
 function getAtlasOrbContext(
   pathname: string,
   brandName: string,
   periodLabel: string,
-  telemetry: AtlasOrbTelemetry,
+  telemetry: AtlasOrbContextTelemetry,
 ) {
   const contexts = [
     {
@@ -212,6 +225,16 @@ function getAtlasOrbContext(
       ],
     },
     {
+      match: (value: string) => value.startsWith("/settings"),
+      status: "ajustes do atlas",
+      description: `Atlas está concentrando integrações, acessos, parâmetros e aprendizado da ${brandName} para deixar a Torre focada só em diagnóstico e decisão.`,
+      hints: [
+        "Configuração boa reduz atrito sem invadir a leitura do dashboard.",
+        "Use a central para cuidar de acessos, fontes, parâmetros e memória do Atlas.",
+        "O Orb aqui funciona como radar e busca rápida entre ajustes e telas.",
+      ],
+    },
+    {
       match: () => true,
       status: "escutando",
       description: `Atlas acompanha a ${brandName} de ponta a ponta e vai começar a antecipar risco, pressão e oportunidade conforme você navega pelo console.`,
@@ -231,6 +254,7 @@ function getAtlasOrbContext(
   const isDre = pathname.startsWith("/dre");
   const isFeed = pathname.startsWith("/feed");
   const isIntegrations = pathname.startsWith("/integrations");
+  const isSettings = pathname.startsWith("/settings");
 
   let attentionLevel: "idle" | "notice" | "alert" = "idle";
 
@@ -284,6 +308,8 @@ function getAtlasOrbContext(
       : `Esta marca está usando a Torre de Controle sem IA ativa. O Orb segue discreto, só chamando atenção para contexto e próximos focos.`;
   } else if (isIntegrations) {
     hoverAlert = "O Atlas está acompanhando a saúde das fontes para não deixar o sistema operar em cima de dado quebrado.";
+  } else if (isSettings) {
+    hoverAlert = "Aqui ficam ajustes, acessos, parâmetros e memória do Atlas para a Torre permanecer focada em decisão.";
   }
 
   const hoverActions = [];
@@ -291,20 +317,20 @@ function getAtlasOrbContext(
   if (isDashboard) {
     if (telemetry.geminiEnabled) {
       hoverActions.push(
-        { label: "Ir para a casa do Atlas", action: "scroll" as const, targetId: "atlas-ai-home" },
-        { label: "Abrir Atlas Analyst", action: "open-panel" as const },
+        { label: "Ver alertas", action: "open-panel" as const },
+        { label: "Ir para Atlas IA", action: "scroll" as const, targetId: "atlas-ai-home" },
       );
     } else {
       hoverActions.push(
-        { label: "Ver status desta tela", action: "open-panel" as const },
-        { label: "Como ativar a IA", href: "/integrations" },
+        { label: "Ver alertas", action: "open-panel" as const },
+        { label: "Abrir Configurações", href: "/settings" },
       );
     }
 
     if (telemetry.pendingSanitizationCount > 0) {
       hoverActions.push({ label: "Revisar saneamento", href: "/sanitization" });
     } else {
-      hoverActions.push({ label: `Ler sinais de ${periodLabel}`, action: "open-panel" as const });
+      hoverActions.push({ label: "Abrir busca global", action: "open-panel" as const });
     }
   } else {
     if (telemetry.pendingSanitizationCount > 0 && !isSanitization) {
@@ -316,8 +342,10 @@ function getAtlasOrbContext(
     }
 
     hoverActions.push(
-      { label: "Ver alerta desta tela", action: "open-panel" as const },
-      { label: telemetry.geminiEnabled ? "Abrir Atlas Analyst" : "Ver leitura contextual", action: "open-panel" as const },
+      { label: "Ver alertas", action: "open-panel" as const },
+      isSettings
+        ? { label: "Ir para integrações", href: "/integrations" }
+        : { label: "Abrir busca global", action: "open-panel" as const },
     );
   }
 
@@ -433,7 +461,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     activeBrand?.name ??
     brands.find((brand) => brand.id === activeBrandId)?.name ??
     "Nenhuma marca";
-  const atlasOrbTelemetry = useMemo<AtlasOrbTelemetry>(() => {
+  const atlasOrbTelemetry = useMemo<AtlasOrbContextTelemetry>(() => {
     const mediaIntegration = activeBrand?.integrations.find((integration) => integration.provider === "meta");
     const ga4Integration = activeBrand?.integrations.find((integration) => integration.provider === "ga4");
     const geminiIntegration = activeBrand?.integrations.find((integration) => integration.provider === "gemini");
@@ -442,7 +470,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       (filteredBrand?.paidOrders.filter((order) => order.sanitizationStatus === "PENDING").length ?? 0);
 
     return {
-      hasFinancialReport: Boolean(financialReportFiltered?.total),
       pendingSanitizationCount,
       hasGa4Data: Boolean(filteredBrand?.ga4DailyPerformance.length),
       hasMediaData: Boolean(filteredBrand?.media.length),
@@ -598,21 +625,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <SidebarSkeleton />
             ) : (
               <>
-                <NavGroupLabel label="Operação" collapsed={isSidebarCollapsed} />
-                <NavSection items={operationsNav} pathname={pathname} collapsed={isSidebarCollapsed} />
-
-                <NavGroupLabel label="Aquisição" collapsed={isSidebarCollapsed} />
-                <NavSection items={acquisitionNav} pathname={pathname} collapsed={isSidebarCollapsed} />
-
-                <NavGroupLabel label="Catálogo" collapsed={isSidebarCollapsed} />
-                <NavSection items={catalogNav} pathname={pathname} collapsed={isSidebarCollapsed} />
-
-                <NavGroupLabel label="Admin" collapsed={isSidebarCollapsed} />
-                <NavSection
-                  items={adminNavigation}
-                  pathname={pathname}
-                  collapsed={isSidebarCollapsed}
-                />
+                {navigationGroups.map((group) => (
+                  <div key={group.label}>
+                    <NavGroupLabel label={group.label} collapsed={isSidebarCollapsed} />
+                    <NavSection
+                      items={group.items}
+                      pathname={pathname}
+                      collapsed={isSidebarCollapsed}
+                    />
+                  </div>
+                ))}
               </>
             )}
           </div>
@@ -809,6 +831,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <AtlasOrb
+        key={`atlas-orb-${pathname}`}
         floating
         size="md"
         title="Atlas"
@@ -819,7 +842,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         attentionLevel={atlasOrbContext.attentionLevel}
         hoverAlert={atlasOrbContext.hoverAlert}
         hoverActions={atlasOrbContext.hoverActions}
-        panelContent={<AtlasAnalystPanel variant={pathname.startsWith("/dashboard") ? "dashboard-orb" : "orb"} />}
+        panelVariant="custom"
+        panelContent={
+          <AtlasOrbRadarPanel
+            telemetry={atlasOrbTelemetry}
+            status={atlasOrbContext.status}
+            hoverAlert={atlasOrbContext.hoverAlert}
+          />
+        }
       />
 
       {isMobileMenuOpen ? (
@@ -852,46 +882,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="atlas-sidebar-nav min-h-0 flex-1 overflow-y-auto px-2 py-1">
-              <NavGroupLabel label="Operação" collapsed={false} />
-              <NavSection
-                items={operationsNav}
-                pathname={pathname}
-                collapsed={false}
-                onNavigate={() => {
-                  setIsUserMenuOpen(false);
-                  setIsMobileMenuOpen(false);
-                }}
-              />
-              <NavGroupLabel label="Aquisição" collapsed={false} />
-              <NavSection
-                items={acquisitionNav}
-                pathname={pathname}
-                collapsed={false}
-                onNavigate={() => {
-                  setIsUserMenuOpen(false);
-                  setIsMobileMenuOpen(false);
-                }}
-              />
-              <NavGroupLabel label="Catálogo" collapsed={false} />
-              <NavSection
-                items={catalogNav}
-                pathname={pathname}
-                collapsed={false}
-                onNavigate={() => {
-                  setIsUserMenuOpen(false);
-                  setIsMobileMenuOpen(false);
-                }}
-              />
-              <NavGroupLabel label="Admin" collapsed={false} />
-              <NavSection
-                items={adminNavigation}
-                pathname={pathname}
-                collapsed={false}
-                onNavigate={() => {
-                  setIsUserMenuOpen(false);
-                  setIsMobileMenuOpen(false);
-                }}
-              />
+              {navigationGroups.map((group) => (
+                <div key={group.label}>
+                  <NavGroupLabel label={group.label} collapsed={false} />
+                  <NavSection
+                    items={group.items}
+                    pathname={pathname}
+                    collapsed={false}
+                    onNavigate={() => {
+                      setIsUserMenuOpen(false);
+                      setIsMobileMenuOpen(false);
+                    }}
+                  />
+                </div>
+              ))}
             </div>
 
             <div className="atlas-sidebar-footer relative border-t border-outline/50 p-3">

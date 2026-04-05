@@ -82,7 +82,7 @@ export function AnalyticsKpiCard({
     </>
   );
 
-  const className = "atlas-analytics-card";
+  const className = "atlas-analytics-card text-left";
 
   if (href) {
     return (

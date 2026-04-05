@@ -39,6 +39,7 @@ import type { AnnualDreReport } from "@/lib/brandops/types";
 import { supabase } from "@/lib/supabase";
 import type {
   BrandDataset,
+  BrandGovernance,
   CmvMatchType,
   CustomDateRange,
   PeriodFilter,
@@ -50,6 +51,7 @@ type BrandOption = {
   name: string;
   created_at: string;
   updated_at: string;
+  governance: BrandGovernance;
 };
 
 interface BrandOpsContextValue {
@@ -126,6 +128,15 @@ function getBrandContextStorageKey(userId: string) {
   return `brandops.active-brand.${userId}`;
 }
 
+function isSessionStateError(error: unknown) {
+  return (
+    error instanceof Error &&
+    (error.message === "Sessão ausente." ||
+      error.message === "Sessão inválida." ||
+      error.message === "Sessão inválida. Faça login novamente.")
+  );
+}
+
 export function BrandOpsProvider({
   children,
 }: {
@@ -155,6 +166,7 @@ export function BrandOpsProvider({
   const lastVisibleRefreshRef = useRef(0);
   const fullHydrationTimerRef = useRef<number | null>(null);
   const userId = session?.user?.id ?? null;
+  const accessToken = session?.access_token ?? null;
 
   useEffect(() => {
     activeBrandIdRef.current = activeBrandId;
@@ -236,12 +248,21 @@ export function BrandOpsProvider({
 
   const refreshFilteredFinancialReport = useCallback(
     async (brandId: string) => {
+      if (!accessToken) {
+        if (activeBrandIdRef.current === brandId) {
+          setFinancialReportFiltered(null);
+        }
+        return;
+      }
+
       const report = await fetchFinancialReport(
         brandId,
         periodRange?.start ?? null,
         periodRange?.end ?? null,
       ).catch((error) => {
-        console.error("Failed to load filtered financial report from backend:", error);
+        if (!isSessionStateError(error)) {
+          console.error("Failed to load filtered financial report from backend:", error);
+        }
         return null;
       });
 
@@ -249,19 +270,28 @@ export function BrandOpsProvider({
         setFinancialReportFiltered(report);
       }
     },
-    [periodRange?.end, periodRange?.start],
+    [accessToken, periodRange?.end, periodRange?.start],
   );
 
   const refreshHistoricalFinancialReport = useCallback(async (brandId: string) => {
+    if (!accessToken) {
+      if (activeBrandIdRef.current === brandId) {
+        setFinancialReportHistorical(null);
+      }
+      return;
+    }
+
     const report = await fetchFinancialReport(brandId).catch((error) => {
-      console.error("Failed to load historical financial report from backend:", error);
+      if (!isSessionStateError(error)) {
+        console.error("Failed to load historical financial report from backend:", error);
+      }
       return null;
     });
 
     if (activeBrandIdRef.current === brandId) {
       setFinancialReportHistorical(report);
     }
-  }, []);
+  }, [accessToken]);
 
   const refreshSummaryResources = useCallback(
     async (brandId: string, options?: { includeHistorical?: boolean }) => {
@@ -428,7 +458,7 @@ export function BrandOpsProvider({
 
   useEffect(() => {
     async function loadFilteredFinancialReport() {
-      if (!activeBrandId) {
+      if (!activeBrandId || !accessToken) {
         setFinancialReportFiltered(null);
         setIsFinancialReportLoading(false);
         return;
@@ -451,11 +481,11 @@ export function BrandOpsProvider({
     }
 
     void loadFilteredFinancialReport();
-  }, [activeBrandId, refreshFilteredFinancialReport]);
+  }, [accessToken, activeBrandId, refreshFilteredFinancialReport]);
 
   useEffect(() => {
     async function loadHistoricalFinancialReport() {
-      if (!activeBrandId) {
+      if (!activeBrandId || !accessToken) {
         setFinancialReportHistorical(null);
         return;
       }
@@ -472,7 +502,7 @@ export function BrandOpsProvider({
     }
 
     void loadHistoricalFinancialReport();
-  }, [activeBrandId, refreshHistoricalFinancialReport]);
+  }, [accessToken, activeBrandId, refreshHistoricalFinancialReport]);
 
   useEffect(() => {
     let isMounted = true;
@@ -525,6 +555,11 @@ export function BrandOpsProvider({
         return;
       }
 
+      if (!accessToken) {
+        setIsLoading(true);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const [nextProfile, nextBrands] = await Promise.all([
@@ -546,15 +581,12 @@ export function BrandOpsProvider({
           if (storedBrandId && nextBrands.some((brand) => brand.id === storedBrandId)) {
             return storedBrandId;
           }
-          if (nextProfile.role === "SUPER_ADMIN") {
-            return null;
-          }
           return nextBrands[0]?.id ?? null;
         });
 
         setErrorMessage(null);
       } catch (error) {
-        console.error("Failed to load workspace:", error);
+        console.warn("Failed to load workspace:", error);
         setProfile(null);
         setBrands([]);
         setActiveBrandId(null);
@@ -572,7 +604,7 @@ export function BrandOpsProvider({
     }
 
     void loadWorkspace();
-  }, [userId]);
+  }, [accessToken, userId]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !userId) {

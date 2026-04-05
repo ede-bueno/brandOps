@@ -77,8 +77,40 @@ function syncDirectory(source, target) {
   cpSync(source, target, { recursive: true, force: true });
 }
 
-syncDirectory(sourceStatic, targetStatic);
-syncDirectory(sourcePublic, targetPublic);
+function resolveStartMode() {
+  if (existsSync(serverEntrypoint)) {
+    return "standalone";
+  }
+
+  return "next-dev";
+}
+
+function buildSpawnConfig(mode) {
+  const port = (process.env.PORT || "").trim();
+  const hostname = (process.env.HOSTNAME || "").trim();
+  const nextCliArgs = [
+    ...(port ? ["-p", port] : []),
+    ...(hostname ? ["-H", hostname] : []),
+  ];
+
+  if (mode === "standalone") {
+    syncDirectory(sourceStatic, targetStatic);
+    syncDirectory(sourcePublic, targetPublic);
+
+    return {
+      command: process.execPath,
+      args: [serverEntrypoint],
+      cwd: sourceStandalone,
+    };
+  }
+
+  return {
+    command: process.execPath,
+    args: [require.resolve("next/dist/bin/next"), "dev", ...nextCliArgs],
+    cwd: projectRoot,
+  };
+}
+
 loadLocalEnvFile();
 
 const requestedPort = readCliOption("port");
@@ -93,11 +125,25 @@ if (requestedHostname) {
   process.env.HOSTNAME = requestedHostname;
 }
 
-const child = spawn(process.execPath, [serverEntrypoint], {
-  cwd: sourceStandalone,
+const mode = resolveStartMode();
+const spawnConfig = buildSpawnConfig(mode);
+
+if (mode !== "standalone") {
+  process.stdout.write(
+    "[brandops] saída standalone indisponível. Iniciando em modo next dev.\n",
+  );
+}
+
+const child = spawn(spawnConfig.command, spawnConfig.args, {
+  cwd: spawnConfig.cwd,
   stdio: shouldDetach ? "ignore" : "inherit",
   env: process.env,
   detached: shouldDetach,
+});
+
+child.on("error", (error) => {
+  process.stderr.write(`[brandops] falha ao iniciar o servidor: ${error.message}\n`);
+  process.exit(1);
 });
 
 if (shouldDetach) {

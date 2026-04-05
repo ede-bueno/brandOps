@@ -34,8 +34,38 @@ import type {
   TrafficReport,
   UserProfile,
 } from "./types";
+import {
+  isMissingBrandGovernanceSchemaError,
+  normalizeBrandGovernance,
+} from "./governance";
 
 const PAGE_SIZE = 1000;
+
+type SupabaseLikeError = {
+  message?: string;
+  details?: string | null;
+  hint?: string | null;
+  code?: string;
+};
+
+function getReadableErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message && error.message !== "[object Object]") {
+    return error.message;
+  }
+
+  if (error && typeof error === "object") {
+    const candidate = error as SupabaseLikeError;
+    const parts = [candidate.message, candidate.details, candidate.hint]
+      .filter((value) => typeof value === "string" && value.trim())
+      .map((value) => value!.trim());
+
+    if (parts.length > 0) {
+      return parts.join(" ");
+    }
+  }
+
+  return fallback;
+}
 
 function chunkArray<T>(items: T[], size = 200) {
   const chunks: T[][] = [];
@@ -88,6 +118,45 @@ export async function fetchDashboardKpis(
   return data as Record<string, number | null>;
 }
 
+async function getValidAccessToken() {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw sessionError;
+  }
+
+  let accessToken = session?.access_token ?? null;
+  if (!accessToken) {
+    throw new Error("Sessão ausente.");
+  }
+
+  const validateToken = async (token: string) => {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
+
+    return !error && Boolean(user);
+  };
+
+  if (await validateToken(accessToken)) {
+    return accessToken;
+  }
+
+  const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+  accessToken = refreshed.session?.access_token ?? null;
+
+  if (refreshError || !accessToken || !(await validateToken(accessToken))) {
+    await supabase.auth.signOut().catch(() => undefined);
+    throw new Error("Sessão inválida. Faça login novamente.");
+  }
+
+  return accessToken;
+}
+
 async function fetchBrandReportFromApi<T>(
   brandId: string,
   reportPath: string,
@@ -98,13 +167,7 @@ async function fetchBrandReportFromApi<T>(
     errorMessage?: string;
   },
 ): Promise<T> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session?.access_token) {
-    throw new Error("Sessão ausente.");
-  }
+  const accessToken = await getValidAccessToken();
 
   const searchParams = new URLSearchParams();
   if (options?.from) {
@@ -124,7 +187,7 @@ async function fetchBrandReportFromApi<T>(
     `/api/admin/brands/${encodeURIComponent(brandId)}/reports/${reportPath}${query ? `?${query}` : ""}`,
     {
       headers: {
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       cache: "no-store",
     },
@@ -508,10 +571,18 @@ export async function fetchUserProfile(userId: string) {
     .from("user_profiles")
     .select("id, email, full_name, role")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
   if (error) {
-    throw error;
+    throw new Error(
+      getReadableErrorMessage(error, "Não foi possível carregar o perfil do usuário."),
+    );
+  }
+
+  if (!data) {
+    throw new Error(
+      "Seu usuário ainda não está habilitado na plataforma. Confirme o cadastro em user_profiles antes de continuar.",
+    );
   }
 
   return {
@@ -525,14 +596,73 @@ export async function fetchUserProfile(userId: string) {
 export async function fetchAccessibleBrands() {
   const { data, error } = await supabase
     .from("brands")
-    .select("id, name, created_at, updated_at")
+    .select("id, name, created_at, updated_at, plan_tier, feature_flags")
     .order("name");
 
   if (error) {
-    throw error;
+    if (isMissingBrandGovernanceSchemaError(error)) {
+      const fallback = await supabase
+        .from("brands")
+        .select("id, name, created_at, updated_at")
+        .order("name");
+
+      if (fallback.error) {
+        throw new Error(
+          getReadableErrorMessage(fallback.error, "Não foi possível carregar as marcas acessíveis."),
+        );
+      }
+
+      return (fallback.data ?? []).map((brand) => ({
+        ...brand,
+        governance: normalizeBrandGovernance(),
+      }));
+    }
+
+    throw new Error(
+      getReadableErrorMessage(error, "Não foi possível carregar as marcas acessíveis."),
+    );
+  }
+  return (data ?? []).map((brand) => ({
+    ...brand,
+    governance: normalizeBrandGovernance({
+      planTier: brand.plan_tier,
+      featureFlags: brand.feature_flags,
+    }),
+  }));
+}
+
+async function fetchBrandHeader(brandId: string) {
+  const result = await supabase
+    .from("brands")
+    .select("id, name, created_at, updated_at, plan_tier, feature_flags")
+    .eq("id", brandId)
+    .single();
+
+  if (result.error && isMissingBrandGovernanceSchemaError(result.error)) {
+    const fallback = await supabase
+      .from("brands")
+      .select("id, name, created_at, updated_at")
+      .eq("id", brandId)
+      .single();
+
+    if (fallback.error) {
+      return {
+        data: null,
+        error: fallback.error,
+      };
+    }
+
+    return {
+      data: {
+        ...fallback.data,
+        plan_tier: null,
+        feature_flags: null,
+      },
+      error: null,
+    };
   }
 
-  return data;
+  return result;
 }
 
 export async function fetchBrandDataset(
@@ -560,12 +690,8 @@ export async function fetchBrandDataset(
     ga4ItemDailyPerformanceResult,
     importLogsResult,
     anomalyReviewsResult,
-  ] = await Promise.all([
-    supabase
-      .from("brands")
-      .select("id, name, created_at, updated_at")
-      .eq("id", brandId)
-      .single(),
+    ] = await Promise.all([
+    fetchBrandHeader(brandId),
     shouldLoadFull
       ? fetchAllRows(async (from, to) =>
           supabase
@@ -1008,6 +1134,10 @@ export async function fetchBrandDataset(
     name: brandResult.data.name,
     createdAt: brandResult.data.created_at,
     updatedAt: brandResult.data.updated_at,
+    governance: normalizeBrandGovernance({
+      planTier: brandResult.data.plan_tier,
+      featureFlags: brandResult.data.feature_flags,
+    }),
     hydration: {
       catalogLoaded: shouldLoadFull,
       salesLinesLoaded: shouldLoadFull,

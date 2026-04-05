@@ -2,6 +2,7 @@
 
 import type { ElementType } from "react";
 import { useState } from "react";
+import Link from "next/link";
 import { AlertCircle, DatabaseZap, KeyRound, Link2, ShieldCheck, Sparkles } from "lucide-react";
 import {
   AnalyticsCalloutCard,
@@ -9,17 +10,18 @@ import {
 } from "@/components/analytics/AnalyticsPrimitives";
 import { PageHeader, SurfaceCard } from "@/components/ui-shell";
 
-type HelpTab = "operation" | "integrations" | "security";
+type HelpTab = "operation" | "integrations" | "configurations" | "security";
 
 const helpTabs: Array<{ key: HelpTab; label: string }> = [
   { key: "operation", label: "Operação" },
   { key: "integrations", label: "Integrações" },
+  { key: "configurations", label: "Configurações" },
   { key: "security", label: "Segurança" },
 ];
 
 const operationCards = [
   {
-    title: "Control Tower",
+    title: "Torre de Controle",
     icon: Sparkles,
     items: [
       "Faturado vem da exportação da INK.",
@@ -97,12 +99,12 @@ const integrationCards = [
 
 const securityCards = [
   {
-    title: "Infraestrutura mínima",
+    title: "Preparo da plataforma",
     icon: KeyRound,
     items: [
-      "NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY e SUPABASE_SERVICE_ROLE_KEY precisam existir no ambiente.",
-      "BRANDOPS_SECRET_ENCRYPTION_KEY é obrigatória para salvar segredos por marca.",
-      "A mesma BRANDOPS_SECRET_ENCRYPTION_KEY precisa ser mantida entre deploys.",
+      "Algumas integrações dependem de preparo técnico prévio da plataforma.",
+      "Se a loja salvou tudo corretamente e ainda assim não consegue operar, pode existir uma pendência estrutural do ambiente.",
+      "Nesse caso, o caminho certo é acionar o gestor da plataforma, não insistir na mesma credencial.",
     ],
   },
   {
@@ -110,7 +112,7 @@ const securityCards = [
     icon: ShieldCheck,
     items: [
       "Backend manda; frontend só renderiza e opera.",
-      "Segredo por loja não deve depender de variável global da plataforma.",
+      "Cada loja deve usar a própria credencial para Meta, GA4 e Gemini.",
       "Cálculo canônico não deve nascer no navegador.",
     ],
   },
@@ -118,9 +120,48 @@ const securityCards = [
     title: "Diagnóstico rápido",
     icon: AlertCircle,
     items: [
-      "Erro com BRANDOPS_SECRET_ENCRYPTION_KEY indica problema de infraestrutura, não da loja.",
+      "Se o erro aparecer logo ao salvar a credencial, revise primeiro se o problema é da loja ou do ambiente da plataforma.",
       "Erro (#100) da Meta indica token ou app sem permissão para a API do catálogo.",
       "Se a integração não existe, deixe o modo desabilitado.",
+    ],
+  },
+];
+
+const configurationCards = [
+  {
+    title: "Configurações",
+    icon: ShieldCheck,
+    items: [
+      "Modelo, temperatura, skill, janela e playbook da marca ficam aqui.",
+      "Aprendizado do Atlas e contexto do negócio devem sair da Torre e ser mantidos nesta central.",
+      "Use esta área para comportamento do agente, não para conexão técnica.",
+    ],
+  },
+  {
+    title: "Integrações",
+    icon: Link2,
+    items: [
+      "Meta, GA4 e Gemini devem receber credencial própria de cada loja.",
+      "Salve primeiro o modo e os IDs operacionais; salve a credencial depois.",
+      "A aba de integrações cuida de conexão, sync e saúde do conector.",
+    ],
+  },
+  {
+    title: "Governança SaaS",
+    icon: DatabaseZap,
+    items: [
+      "Plano da marca e liberações como Atlas IA, learning e catálogo de modelos pertencem à governança.",
+      "Esse controle deve ficar com o superadmin e não com a operação do dia a dia.",
+      "A marca pode enxergar recursos bloqueados, mas a liberação nasce em Admin > Lojas.",
+    ],
+  },
+  {
+    title: "Ambiente",
+    icon: KeyRound,
+    items: [
+      "Variáveis de ambiente e migrations são responsabilidade da plataforma.",
+      "A proteção dos segredos por marca é tratada na camada técnica da plataforma.",
+      "Erro de infraestrutura não deve ser tratado como erro do provedor da loja.",
     ],
   },
 ];
@@ -166,7 +207,7 @@ const providerTutorials = [
 ];
 
 function cardDescription(title: string) {
-  if (title === "Control Tower") return "Leitura rápida para receita, margem e pressão de custo.";
+  if (title === "Torre de Controle") return "Leitura rápida para receita, margem e pressão de custo.";
   if (title === "DRE consolidado") return "Separação clara entre série histórica e recorte filtrado.";
   if (title === "Saneamento") return "Trilha auditável para manter, ignorar ou devolver decisões.";
   if (title === "CMV e lançamentos") return "Base gerencial para custo histórico e competência mensal.";
@@ -174,9 +215,13 @@ function cardDescription(title: string) {
   if (title === "Meta Ads") return "Sincronização segura por loja, com fallback manual preservado.";
   if (title === "GA4") return "Ativo só quando propriedade e credencial estiverem corretas.";
   if (title === "Catálogo") return "Feed manual e Meta Catalog podem coexistir.";
-  if (title === "Infraestrutura mínima") return "Sem a base certa no ambiente, nenhum segredo por loja persiste.";
+  if (title === "Preparo da plataforma") return "Quando a loja configurou tudo certo e ainda falha, o problema pode estar na camada técnica da plataforma.";
   if (title === "Boas práticas") return "Backend manda; frontend só opera e apresenta.";
   if (title === "Diagnóstico rápido") return "Separar erro de infraestrutura de erro real do provedor reduz retrabalho.";
+  if (title === "Configurações") return "Central estratégica para comportamento do Atlas e contexto da marca.";
+  if (title === "Integrações") return "Conexão técnica, credenciais por loja e sincronizações.";
+  if (title === "Governança SaaS") return "Planos, limites e liberações por marca.";
+  if (title === "Ambiente") return "Infraestrutura, envs e migrações que sustentam a plataforma.";
   return "Leitura curta para agir sem abrir código nem documentação técnica.";
 }
 
@@ -337,6 +382,33 @@ export default function HelpPage() {
                   />
                 ))}
               </section>
+
+              <section className="rounded-3xl border border-outline bg-surface-container-low px-4 py-4 sm:px-5">
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                    Tutoriais detalhados
+                  </p>
+                  <h2 className="text-lg font-semibold text-on-surface">
+                    Abra o passo a passo por provedor
+                  </h2>
+                  <p className="text-sm leading-6 text-on-surface-variant">
+                    Quando a operação pedir mais detalhe, use os tutoriais completos da área de
+                    integrações.
+                  </p>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link href="/integrations/tutorials/meta" className="brandops-button brandops-button-ghost">
+                    Tutorial Meta
+                  </Link>
+                  <Link href="/integrations/tutorials/ga4" className="brandops-button brandops-button-ghost">
+                    Tutorial GA4
+                  </Link>
+                  <Link href="/integrations/tutorials/gemini" className="brandops-button brandops-button-ghost">
+                    Tutorial Gemini
+                  </Link>
+                </div>
+              </section>
             </div>
           )}
 
@@ -351,6 +423,71 @@ export default function HelpPage() {
                 />
               ))}
             </section>
+          )}
+
+          {activeTab === "configurations" && (
+            <div className="space-y-4">
+              <section className="grid gap-4 xl:grid-cols-2">
+                {configurationCards.map((card) => (
+                  <HelpCallout
+                    key={card.title}
+                    title={card.title}
+                    icon={card.icon}
+                    items={card.items}
+                  />
+                ))}
+              </section>
+
+              <section className="rounded-3xl border border-outline bg-surface-container-low px-4 py-4 sm:px-5">
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                    Arquitetura recomendada
+                  </p>
+                  <h2 className="text-lg font-semibold text-on-surface">
+                    Onde cada decisão deve morar
+                  </h2>
+                  <p className="text-sm leading-6 text-on-surface-variant">
+                    Manter conexão, comportamento, governança e resultado em lugares separados
+                    reduz ruído e deixa o Atlas mais pronto para escalar como SaaS.
+                  </p>
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-2xl border border-outline bg-surface px-4 py-3 text-sm leading-6 text-on-surface">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+                      Integrações
+                    </span>
+                    <p className="mt-1 text-on-surface-variant">
+                      Conectar fontes, salvar credenciais por loja e executar sincronizações.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-outline bg-surface px-4 py-3 text-sm leading-6 text-on-surface">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+                      Configurações
+                    </span>
+                    <p className="mt-1 text-on-surface-variant">
+                      Definir modelo, temperatura, skill, aprendizado e contexto do Atlas.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-outline bg-surface px-4 py-3 text-sm leading-6 text-on-surface">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+                      Admin &gt; Lojas
+                    </span>
+                    <p className="mt-1 text-on-surface-variant">
+                      Controlar plano, recursos liberados, governança e expansão SaaS.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-outline bg-surface px-4 py-3 text-sm leading-6 text-on-surface">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+                      Torre
+                    </span>
+                    <p className="mt-1 text-on-surface-variant">
+                      Consumir o que já foi configurado para mostrar pressão, prioridade e decisão.
+                    </p>
+                  </div>
+                </div>
+              </section>
+            </div>
           )}
         </div>
       </SurfaceCard>

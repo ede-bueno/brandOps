@@ -7,6 +7,8 @@ export type AtlasAnalystSkillId =
 
 export type AtlasAnalystResolvedSkillId = Exclude<AtlasAnalystSkillId, "auto">;
 export type AtlasAnalystFeedbackVote = "helpful" | "not_helpful";
+export type AtlasBrandLearningStatus = "running" | "completed" | "failed";
+export type AtlasBrandLearningFeedbackVote = "aligned" | "needs_review";
 
 export type AtlasContextEntryType = "campaign" | "promotion" | "launch" | "incident" | "insight";
 export type AtlasContextEntrySource = "manual" | "imported" | "analyst" | "system";
@@ -93,4 +95,60 @@ export interface AtlasAnalystFeedbackPayload {
   runId: string;
   vote: AtlasAnalystFeedbackVote;
   note?: string | null;
+}
+
+export interface AtlasBrandLearningSnapshot {
+  id: string;
+  brandId: string;
+  runId: string | null;
+  scopeLabel: string;
+  summary: string;
+  confidence: "low" | "medium" | "high";
+  businessProfile: string;
+  nicheProfile: string;
+  performanceBaseline: string;
+  operationalRisks: string[];
+  recurringErrors: string[];
+  growthOpportunities: string[];
+  evidenceSources: string[];
+  dataGaps: string[];
+  businessSignals: string[];
+  seasonalityPatterns: string[];
+  campaignPatterns: string[];
+  catalogPatterns: string[];
+  priorityStack: string[];
+  generatedAt: string;
+}
+
+export interface AtlasBrandLearningRun {
+  id: string;
+  brandId: string;
+  status: AtlasBrandLearningStatus;
+  scopeLabel: string;
+  model: string | null;
+  temperature: number | null;
+  summary: string | null;
+  errorMessage: string | null;
+  startedAt: string;
+  completedAt: string | null;
+}
+
+export interface AtlasBrandLearningResponse {
+  snapshot: AtlasBrandLearningSnapshot | null;
+  previousSnapshot?: AtlasBrandLearningSnapshot | null;
+  runs: AtlasBrandLearningRun[];
+  feedback?: AtlasBrandLearningFeedbackSummary | null;
+}
+
+export interface AtlasBrandLearningFeedbackPayload {
+  snapshotId: string;
+  vote: AtlasBrandLearningFeedbackVote;
+  note?: string | null;
+}
+
+export interface AtlasBrandLearningFeedbackSummary {
+  snapshotId: string;
+  currentVote: AtlasBrandLearningFeedbackVote | null;
+  alignedCount: number;
+  needsReviewCount: number;
 }

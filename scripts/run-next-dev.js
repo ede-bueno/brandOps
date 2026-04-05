@@ -18,14 +18,9 @@ function readCliOption(name) {
   return "";
 }
 
-const port =
-  readCliOption("port") ||
-  (process.env.PORT || "").trim() ||
-  "3009";
+const port = readCliOption("port") || (process.env.PORT || "").trim() || "3009";
 const hostname =
-  readCliOption("hostname") ||
-  readCliOption("host") ||
-  (process.env.HOSTNAME || "").trim();
+  readCliOption("hostname") || readCliOption("host") || (process.env.HOSTNAME || "").trim();
 
 const child = spawn(
   process.execPath,

@@ -11,15 +11,10 @@ import type {
   IntegrationMode,
   IntegrationProvider,
 } from "@/lib/brandops/types";
-import {
-  getGa4CredentialSourceHint,
-  getGa4ServiceAccountFromEnv,
-  parseGa4ServiceAccount,
-} from "@/lib/integrations/ga4";
-import { maskSecret } from "./integration-secrets";
+import { parseGa4ServiceAccount } from "@/lib/integrations/ga4";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 
-export type IntegrationCredentialSource = "platform_key" | "brand_key";
+export type IntegrationCredentialSource = "brand_key";
 export type SecretBackedIntegrationProvider = "meta" | "ga4";
 
 const SECRET_BACKED_PROVIDERS = new Set<IntegrationProvider>(["meta", "ga4"]);
@@ -84,15 +79,6 @@ export function normalizeIntegrationSettings(
         typeof source.apiKeyHint === "string" && source.apiKeyHint.trim()
           ? source.apiKeyHint.trim()
           : null,
-      platformCredentialConfigured:
-        typeof source.platformCredentialConfigured === "boolean"
-          ? source.platformCredentialConfigured
-          : undefined,
-      platformCredentialHint:
-        typeof source.platformCredentialHint === "string" &&
-        source.platformCredentialHint.trim()
-          ? source.platformCredentialHint.trim()
-          : null,
     };
   }
 
@@ -112,44 +98,10 @@ export function normalizeIntegrationSettings(
         typeof source.apiKeyHint === "string" && source.apiKeyHint.trim()
           ? source.apiKeyHint.trim()
           : null,
-      platformCredentialConfigured:
-        typeof source.platformCredentialConfigured === "boolean"
-          ? source.platformCredentialConfigured
-          : undefined,
-      platformCredentialHint:
-        typeof source.platformCredentialHint === "string" &&
-        source.platformCredentialHint.trim()
-          ? source.platformCredentialHint.trim()
-          : null,
     };
   }
 
   return source;
-}
-
-export async function getPlatformCredentialMetadata(
-  provider: SecretBackedIntegrationProvider,
-) {
-  if (provider === "meta") {
-    const token = process.env.META_ACCESS_TOKEN?.trim() || "";
-    return {
-      configured: Boolean(token),
-      hint: token ? maskSecret(token) : null,
-    };
-  }
-
-  try {
-    getGa4ServiceAccountFromEnv();
-    return {
-      configured: true,
-      hint: getGa4CredentialSourceHint(),
-    };
-  } catch {
-    return {
-      configured: false,
-      hint: null,
-    };
-  }
 }
 
 export async function hydrateIntegrationConfig(
@@ -160,10 +112,7 @@ export async function hydrateIntegrationConfig(
     return integration;
   }
 
-  const [secretMetadata, platformMetadata] = await Promise.all([
-    getBrandIntegrationSecretMetadata(brandId, integration.provider),
-    getPlatformCredentialMetadata(integration.provider),
-  ]);
+  const secretMetadata = await getBrandIntegrationSecretMetadata(brandId, integration.provider);
 
   const settings = normalizeIntegrationSettings(integration.provider, integration.settings);
 
@@ -173,8 +122,6 @@ export async function hydrateIntegrationConfig(
       ...settings,
       hasApiKey: secretMetadata.hasSecret,
       apiKeyHint: secretMetadata.secretHint,
-      platformCredentialConfigured: platformMetadata.configured,
-      platformCredentialHint: platformMetadata.hint,
     },
   };
 }
@@ -239,8 +186,6 @@ export async function saveSecretBackedIntegrationCredential(options: {
   const persistedSettings = {
     ...currentSettings,
   } as Record<string, unknown>;
-  delete persistedSettings.platformCredentialConfigured;
-  delete persistedSettings.platformCredentialHint;
 
   const nextSettings: Record<string, unknown> = {
     ...persistedSettings,

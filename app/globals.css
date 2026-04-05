@@ -66,8 +66,8 @@ html {
   --atlas-shell-overlay: rgba(252, 253, 255, 0.74);
   --atlas-shell-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 22px 44px rgba(15, 23, 42, 0.08);
   --atlas-shell-shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.05), 0 10px 24px rgba(15, 23, 42, 0.06);
-  --atlas-border-soft: color-mix(in srgb, var(--color-outline) 62%, transparent 38%);
-  --atlas-border-muted: color-mix(in srgb, var(--color-outline-variant) 56%, transparent 44%);
+  --atlas-border-soft: color-mix(in srgb, var(--color-outline) 44%, transparent 56%);
+  --atlas-border-muted: color-mix(in srgb, var(--color-outline-variant) 36%, transparent 64%);
   --atlas-brand-shell: rgba(37, 99, 235, 0.08);
   --atlas-brand-shell-strong: rgba(124, 58, 237, 0.12);
   --atlas-neon-shadow: 0 0 0 1px rgba(37, 99, 235, 0.16), 0 0 0 4px rgba(37, 99, 235, 0.07);
@@ -137,8 +137,8 @@ html.dark {
   --atlas-shell-overlay: rgba(3, 9, 18, 0.76);
   --atlas-shell-shadow: 0 1px 2px rgba(2, 6, 23, 0.42), 0 26px 54px rgba(2, 6, 23, 0.26);
   --atlas-shell-shadow-soft: 0 1px 2px rgba(2, 6, 23, 0.3), 0 12px 26px rgba(2, 6, 23, 0.18);
-  --atlas-border-soft: color-mix(in srgb, var(--color-outline) 42%, transparent 58%);
-  --atlas-border-muted: color-mix(in srgb, var(--color-outline-variant) 38%, transparent 62%);
+  --atlas-border-soft: color-mix(in srgb, var(--color-outline) 34%, transparent 66%);
+  --atlas-border-muted: color-mix(in srgb, var(--color-outline-variant) 28%, transparent 72%);
   --atlas-brand-shell: rgba(96, 165, 250, 0.1);
   --atlas-brand-shell-strong: rgba(167, 139, 250, 0.14);
   --atlas-neon-shadow: 0 0 0 1px rgba(96, 165, 250, 0.22), 0 0 0 4px rgba(96, 165, 250, 0.08);
@@ -217,7 +217,7 @@ body {
 .brandops-panel {
   background: color-mix(in srgb, var(--color-surface) 95%, transparent 5%);
   border: 1px solid var(--atlas-border-soft);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.025), 0 8px 18px rgba(15, 23, 42, 0.035);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.022), 0 10px 24px rgba(15, 23, 42, 0.028);
   border-radius: 16px;
   backdrop-filter: blur(18px);
 }
@@ -232,7 +232,7 @@ body {
 .brandops-card {
   background: color-mix(in srgb, var(--color-surface) 97%, transparent 3%);
   border: 1px solid var(--atlas-border-soft);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02), 0 8px 18px rgba(15, 23, 42, 0.03);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.018), 0 8px 18px rgba(15, 23, 42, 0.024);
   border-radius: 16px;
   transition:
     border-color 0.18s ease,
@@ -349,14 +349,18 @@ html.dark .brandops-table-container {
 
 .panel-muted {
   background: color-mix(in srgb, var(--color-surface-container-low) 97%, transparent 3%);
-  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 52%, transparent 48%);
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 34%, transparent 66%);
   border-radius: 14px;
 }
 
 .atlas-list-row {
-  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 48%, transparent 52%);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--color-surface-container-low) 96%, transparent 4%);
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 28%, transparent 72%);
+  border-radius: 14px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%),
+    color-mix(in srgb, var(--color-surface) 95%, transparent 5%)
+  );
   padding: 0.85rem 0.95rem;
 }
 
@@ -365,8 +369,12 @@ html.dark .brandops-table-container {
   align-items: flex-start;
   gap: 0.75rem;
   border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 74%, transparent 26%);
-  background: color-mix(in srgb, var(--color-surface-container-low) 96%, transparent 4%);
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 42%, transparent 58%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%),
+    color-mix(in srgb, var(--color-surface) 95%, transparent 5%)
+  );
   padding: 0.9rem 1rem;
   color: var(--color-on-surface);
 }
@@ -403,8 +411,8 @@ html.dark .brandops-table-container {
   min-height: 1.9rem;
   padding: 0.22rem 0.65rem;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 44%, transparent 56%);
-  background: color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%);
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 28%, transparent 72%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 88%, transparent 12%);
   color: var(--color-on-surface);
   font-size: 0.77rem;
   font-weight: 500;
@@ -422,17 +430,26 @@ html.dark .brandops-table-container {
   display: block;
   width: 100%;
   text-align: left;
-  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 52%, transparent 48%);
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 24%, transparent 76%);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--color-surface-container-low) 94%, var(--color-surface) 6%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 95%, transparent 5%),
+    color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%)
+  );
   box-shadow: none;
   padding: 0.95rem 1rem;
-  transition: border-color 0.14s ease, background 0.14s ease, transform 0.14s ease;
+  transition: border-color 0.14s ease, background 0.14s ease, transform 0.14s ease, box-shadow 0.14s ease;
 }
 
 .atlas-analytics-card:hover {
-  border-color: color-mix(in srgb, var(--color-primary) 6%, var(--atlas-border-soft));
-  background: color-mix(in srgb, var(--color-surface-container) 96%, var(--color-surface) 4%);
+  border-color: color-mix(in srgb, var(--color-primary) 12%, transparent 88%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 96%, transparent 4%),
+    color-mix(in srgb, var(--color-surface-container) 94%, transparent 6%)
+  );
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.026);
 }
 
 .atlas-analytics-card[data-tone="positive"] {
@@ -498,7 +515,7 @@ html.dark .brandops-table-container {
   gap: 0.2rem;
   min-height: 1.75rem;
   border-radius: 999px;
-  border: 1px solid var(--atlas-border-muted);
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 22%, transparent 78%);
   padding: 0.12rem 0.55rem;
   font-size: 0.62rem;
   font-weight: 700;
@@ -989,7 +1006,7 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
   min-height: 2.3rem;
   padding: 0.45rem 0.85rem;
   border-radius: 10px;
-  border: 1px solid var(--color-outline);
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 28%, transparent 72%);
   background: color-mix(in srgb, var(--color-surface-container-low) 94%, transparent 6%);
   color: var(--color-on-surface-variant);
   font-size: 0.8125rem;
@@ -1020,7 +1037,7 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
   display: grid;
   gap: 1rem;
   padding: 1rem;
-  border: 1px solid color-mix(in srgb, var(--color-outline-variant) 58%, transparent 42%);
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 30%, transparent 70%);
   border-radius: 16px;
   background:
     linear-gradient(
@@ -1097,11 +1114,95 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
 .brandops-command-slab {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--color-surface-container-low) 94%, transparent 6%), color-mix(in srgb, var(--color-surface-container) 94%, transparent 6%));
-  border: 1px solid color-mix(in srgb, var(--color-outline) 76%, transparent 24%);
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 34%, transparent 66%);
   border-radius: 16px;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--color-surface) 20%, transparent 80%),
     0 1px 0 color-mix(in srgb, var(--color-surface) 6%, transparent 94%);
+}
+
+.atlas-soft-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.9rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 26%, transparent 74%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 90%, transparent 10%);
+  padding: 0.32rem 0.72rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-on-surface-variant) 90%, transparent 10%);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.atlas-soft-pill[data-emphasis="primary"] {
+  border-color: color-mix(in srgb, var(--color-primary) 18%, transparent 82%);
+  background: color-mix(in srgb, var(--color-primary-container) 66%, var(--color-surface) 34%);
+  color: var(--color-on-primary-container);
+}
+
+.atlas-soft-pill[data-emphasis="active"] {
+  border-color: color-mix(in srgb, var(--color-primary) 22%, transparent 78%);
+  background: color-mix(in srgb, var(--color-primary-container) 54%, var(--color-surface) 46%);
+  color: color-mix(in srgb, var(--color-on-primary-container) 82%, var(--color-on-surface) 18%);
+}
+
+.atlas-soft-pill[data-interactive="true"]:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 16%, transparent 84%);
+  color: var(--color-on-surface);
+}
+
+.atlas-soft-section {
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 32%, transparent 68%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 95%, transparent 5%),
+    color-mix(in srgb, var(--color-surface-container-low) 93%, transparent 7%)
+  );
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.016), 0 6px 16px rgba(15, 23, 42, 0.022);
+}
+
+.atlas-soft-subcard {
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 24%, transparent 76%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 88%, transparent 12%);
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.atlas-soft-subcard:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 12%, transparent 88%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.02);
+}
+
+.atlas-soft-memory-card {
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 22%, transparent 78%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 95%, transparent 5%),
+    color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%)
+  );
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.atlas-soft-memory-card:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 14%, transparent 86%);
+}
+
+.atlas-tooltip-card {
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 36%, transparent 64%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 98%, transparent 2%),
+    color-mix(in srgb, var(--color-surface-container-low) 94%, transparent 6%)
+  );
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(14px);
 }
 
 .atlas-content-scroll {

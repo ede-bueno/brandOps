@@ -1,6 +1,4 @@
 "use client";
-
-import Link from "next/link";
 import { useState } from "react";
 import {
   AnalyticsCalloutCard,
@@ -18,11 +16,12 @@ import {
 } from "@/lib/brandops/format";
 
 export default function DashboardPage() {
-  const [activeSection, setActiveSection] = useState<"kpis" | "workflow">("kpis");
+  const [activeSection, setActiveSection] = useState<"kpis" | "diagnostics">("kpis");
   const { 
     activeBrand, 
     activeBrandId,
     brands,
+    filteredBrand,
     selectedPeriodLabel, 
     isLoading: isDatasetLoading,
     isMetricsLoading,
@@ -104,13 +103,8 @@ export default function DashboardPage() {
       <PageHeader
         eyebrow="Resumo executivo"
         title={activeBrand.name}
-        description="Visão curta da operação no período selecionado, separando a camada comercial da INK da análise gerencial usada no DRE."
+        description="Leitura executiva da operação no recorte atual."
         badge={selectedPeriodLabel}
-        actions={
-          <Link href="/help#dashboard" className="brandops-button brandops-button-ghost">
-            Entender os números
-          </Link>
-        }
       />
 
       <AtlasControlTowerHome />
@@ -179,11 +173,6 @@ export default function DashboardPage() {
           eyebrow="Pressão"
           title="Custo e equilíbrio"
           description="O que consome a RLD e o que falta para cobrir a operação sem surpresa."
-          footer={
-            <Link href="/help#dashboard" className="text-xs font-medium text-primary hover:underline">
-              Entender a lógica dos números
-            </Link>
-          }
         >
           <AnalyticsKpiCard
             label="Investimento mídia"
@@ -228,7 +217,7 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <SectionHeading
             title="Foco do período"
-            description="Escolha a leitura mais útil agora: resumo financeiro imediato ou ações para destravar a operação."
+            description="Alterne entre o resumo do corte e o diagnóstico prioritário."
           />
           <div className="brandops-subtabs">
             <button
@@ -242,10 +231,10 @@ export default function DashboardPage() {
             <button
               type="button"
               className="brandops-subtab"
-              data-active={activeSection === "workflow"}
-              onClick={() => setActiveSection("workflow")}
+              data-active={activeSection === "diagnostics"}
+              onClick={() => setActiveSection("diagnostics")}
             >
-              Ações
+              Diagnóstico
             </button>
           </div>
         </div>
@@ -304,27 +293,141 @@ export default function DashboardPage() {
       ) : (
         <SurfaceCard className="p-4">
           <SectionHeading
-            title="Ações sugeridas"
-            description="Três movimentos curtos para reduzir ruído e voltar para a margem."
+            title="Diagnóstico prioritário"
+            description="Sinais que merecem ação antes do resto."
           />
           <div className="mt-4 grid gap-3 xl:grid-cols-3">
-            <AnalyticsCalloutCard
-              eyebrow="1. Importação incremental"
-              title="Atualize a base comercial e de mídia"
-              description="Suba os blocos de venda e mídia do período. O sistema consolida duplicados por chave."
-            />
-            <AnalyticsCalloutCard
-              eyebrow="2. Saneamento"
-              title="Revise outliers antes da leitura"
-              description="Valide pedidos fora da curva e inconsistências antes de confiar nos números da Meta."
-              tone="warning"
-            />
-            <AnalyticsCalloutCard
-              eyebrow="3. DRE"
-              title="Feche a leitura gerencial"
-              description="Com mídia, CMV e despesas fechados, o DRE vira a referência final da operação."
-              tone="info"
-            />
+            {(() => {
+              const pendingSanitizationCount =
+                (filteredBrand?.media.filter((row) => row.sanitizationStatus === "PENDING").length ?? 0) +
+                (filteredBrand?.paidOrders.filter((order) => order.sanitizationStatus === "PENDING").length ?? 0);
+              const mediaIntegration =
+                activeBrand.integrations.find((integration) => integration.provider === "meta") ?? null;
+              const ga4Integration =
+                activeBrand.integrations.find((integration) => integration.provider === "ga4") ?? null;
+
+              const diagnostics = [];
+
+              if (metrics.contributionAfterMedia < 0) {
+                diagnostics.push({
+                  eyebrow: "Margem",
+                  title: "Contribuição depois de mídia virou negativa",
+                  description: "A rentabilidade do período já está invertida depois do gasto de mídia. Vale abrir a margem histórica e revisar campanhas antes de insistir em escala.",
+                  tone: "warning" as const,
+                  href: "/dashboard/contribution-margin",
+                });
+              }
+
+              if (metrics.netResult < 0) {
+                diagnostics.push({
+                  eyebrow: "Resultado",
+                  title: "Operação fechando no vermelho",
+                  description: "O resultado operacional está negativo neste recorte. O DRE consolidado deve ser o próximo corte para localizar a principal pressão.",
+                  tone: "warning" as const,
+                  href: "/dre",
+                });
+              }
+
+              if (pendingSanitizationCount > 0) {
+                diagnostics.push({
+                  eyebrow: "Base",
+                  title: "Há ruído pendente na leitura",
+                  description: `${pendingSanitizationCount} pendência(s) de saneamento ainda podem distorcer comparação e margem deste período.`,
+                  tone: "warning" as const,
+                  href: "/sanitization",
+                });
+              }
+
+              if (mediaIntegration?.lastSyncStatus === "error" || ga4Integration?.lastSyncStatus === "error") {
+                diagnostics.push({
+                  eyebrow: "Fonte",
+                  title: "Integração com erro recente",
+                  description: "Uma das fontes críticas reportou falha recente. Antes de decidir, vale validar se o corte atual está completo.",
+                  tone: "info" as const,
+                  href: "/integrations",
+                });
+              }
+
+              if (metrics.grossRoas > 0 && metrics.grossRoas < 2) {
+                diagnostics.push({
+                  eyebrow: "Mídia",
+                  title: "Retorno ainda curto para escalar",
+                  description: "O ROAS bruto do período sugere revisão de verba, campanha e criativo antes de expansão.",
+                  tone: "info" as const,
+                  href: "/media",
+                });
+              }
+
+              if (!diagnostics.length) {
+                diagnostics.push(
+                  {
+                    eyebrow: "Operação",
+                    title: "Sem alerta estrutural no corte atual",
+                    description: "A operação está estável o suficiente para aprofundar ganho de eficiência sem incêndio imediato.",
+                    tone: "default" as const,
+                    href: "/dashboard",
+                  },
+                  {
+                    eyebrow: "Catálogo",
+                    title: "Hora de procurar oportunidade de escala",
+                    description: "Com a leitura mais estável, vale cruzar catálogo, mídia e tráfego para decidir onde empurrar crescimento.",
+                    tone: "info" as const,
+                    href: "/product-insights",
+                  },
+                  {
+                    eyebrow: "Atlas",
+                    title: "Use a Torre para explorar o próximo corte",
+                    description: "Abra a casa do Atlas IA para pedir uma leitura mais direcionada do período e das alavancas da marca.",
+                    tone: "secondary" as const,
+                    href: "/dashboard#atlas-ai-home",
+                  },
+                );
+              }
+
+              return diagnostics.slice(0, 3).map((diagnostic) => (
+                <AnalyticsCalloutCard
+                  key={`${diagnostic.eyebrow}-${diagnostic.title}`}
+                  eyebrow={diagnostic.eyebrow}
+                  title={diagnostic.title}
+                  description={diagnostic.description}
+                  tone={diagnostic.tone}
+                  href={diagnostic.href}
+                />
+              ));
+            })()}
+          </div>
+          <div className="mt-4 grid gap-3 xl:grid-cols-3">
+            <div className="atlas-soft-subcard px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                Recorte ativo
+              </p>
+              <p className="mt-2 text-sm font-semibold text-on-surface">{selectedPeriodLabel}</p>
+              <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
+                A Torre já está focando só o período em que a decisão precisa acontecer.
+              </p>
+            </div>
+            <div className="atlas-soft-subcard px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                Resultado operacional
+              </p>
+              <p className="mt-2 text-sm font-semibold text-on-surface">
+                {currencyFormatter.format(metrics.netResult)}
+              </p>
+              <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
+                O Atlas prioriza primeiro onde a operação perdeu sustentação, não só volume.
+              </p>
+            </div>
+            <div className="atlas-soft-subcard px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                Margem depois da mídia
+              </p>
+              <p className="mt-2 text-sm font-semibold text-on-surface">
+                {currencyFormatter.format(metrics.contributionAfterMedia)}
+              </p>
+              <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
+                Quando esse bloco vira, a Torre passa a puxar atenção para margem e alocação.
+              </p>
+            </div>
           </div>
         </SurfaceCard>
       )}

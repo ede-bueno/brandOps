@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireBrandAccess } from "@/lib/brandops/admin";
-import {
-  saveSecretBackedIntegrationCredential,
-  type IntegrationCredentialSource,
-} from "@/lib/brandops/integration-config";
+import { saveSecretBackedIntegrationCredential } from "@/lib/brandops/integration-config";
 import type { IntegrationMode } from "@/lib/brandops/types";
 
 function normalizeMode(value: unknown): IntegrationMode {
@@ -35,10 +32,7 @@ export async function PATCH(
       provider: "meta",
       userId: context.user.id,
       mode: normalizeMode(body.mode),
-      credentialSource:
-        body.settings?.credentialSource === "brand_key"
-          ? ("brand_key" as IntegrationCredentialSource)
-          : ("platform_key" as IntegrationCredentialSource),
+      credentialSource: "brand_key",
       secret: typeof body.apiKey === "string" ? body.apiKey : null,
       clearSecret: Boolean(body.clearApiKey),
     });

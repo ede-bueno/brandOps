@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useId, useState, type FocusEvent, type ReactNode } from "react";
+import { Info } from "lucide-react";
 import { AtlasOrb } from "./AtlasOrb";
 
 export function PageHeader({
@@ -63,7 +64,7 @@ export function SectionHeading({
   description,
   aside,
 }: {
-  title: string;
+  title: ReactNode;
   description?: ReactNode;
   aside?: ReactNode;
 }) {
@@ -280,6 +281,59 @@ export function EntityChip({
     <span className={`atlas-entity-chip ${className}`.trim()}>
       {icon ? <span className="atlas-entity-chip-icon">{icon}</span> : null}
       <span className="truncate">{text}</span>
+    </span>
+  );
+}
+
+export function InfoHint({
+  label = "Mais contexto",
+  children,
+  align = "right",
+}: {
+  label?: string;
+  children: ReactNode;
+  align?: "left" | "right";
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const descriptionId = useId();
+
+  function handleBlur(event: FocusEvent<HTMLSpanElement>) {
+    const nextTarget = event.relatedTarget;
+    if (nextTarget && event.currentTarget.contains(nextTarget as Node)) {
+      return;
+    }
+    setIsOpen(false);
+  }
+
+  return (
+    <span
+      className="relative inline-flex items-center"
+      onMouseEnter={() => setIsOpen(true)}
+      onMouseLeave={() => setIsOpen(false)}
+      onFocus={() => setIsOpen(true)}
+      onBlur={handleBlur}
+    >
+      <button
+        type="button"
+        aria-label={label}
+        aria-describedby={isOpen ? descriptionId : undefined}
+        onClick={() => setIsOpen((current) => !current)}
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-outline/70 bg-surface-container-low text-on-surface-variant transition hover:border-secondary/30 hover:text-on-surface"
+      >
+        <Info size={11} />
+      </button>
+
+      {isOpen ? (
+        <span
+          id={descriptionId}
+          role="tooltip"
+          className={`atlas-tooltip-card absolute top-[calc(100%+0.45rem)] z-40 w-60 px-3 py-2.5 text-[11px] font-normal leading-5 text-on-surface-variant ${
+            align === "left" ? "left-0" : "right-0"
+          }`}
+        >
+          {children}
+        </span>
+      ) : null}
     </span>
   );
 }

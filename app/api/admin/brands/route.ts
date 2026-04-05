@@ -1,45 +1,159 @@
 import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/brandops/admin";
+import {
+  isMissingBrandGovernanceSchemaError,
+  normalizeBrandGovernance,
+  normalizeBrandPlanTier,
+} from "@/lib/brandops/governance";
+
+function stripGovernanceColumns<T extends Record<string, unknown>>(payload: T) {
+  return Object.fromEntries(
+    Object.entries(payload).filter(([key]) => key !== "plan_tier" && key !== "feature_flags"),
+  );
+}
 
 export async function GET(request: Request) {
   try {
     const { supabase } = await requireSuperAdmin(request);
-    const { data, error } = await supabase
+    const { data: brandsData, error: brandsError } = await supabase
       .from("brands")
-      .select(`
-        id,
-        name,
-        slug,
-        website_url,
-        description,
-        logo_url,
-        contact_email,
-        instagram_url,
-        facebook_url,
-        address_line,
-        city,
-        state,
-        postal_code,
-        tax_id,
-        notes,
-        created_at,
-        updated_at,
-        brand_members (
-          user_id,
-          user_profiles (
-            email,
-            full_name,
-            role
-          )
-        )
-      `)
+      .select(
+        `
+          id,
+          name,
+          slug,
+          website_url,
+          description,
+          logo_url,
+          contact_email,
+          instagram_url,
+          facebook_url,
+          address_line,
+          city,
+          state,
+          postal_code,
+          tax_id,
+          notes,
+          plan_tier,
+          feature_flags,
+          created_at,
+          updated_at
+        `,
+      )
       .order("name");
 
-    if (error) {
-      throw error;
+    let safeBrandsData = brandsData ?? [];
+
+    if (brandsError) {
+      if (!isMissingBrandGovernanceSchemaError(brandsError)) {
+        throw brandsError;
+      }
+
+      const fallback = await supabase
+        .from("brands")
+        .select(
+          `
+            id,
+            name,
+            slug,
+            website_url,
+            description,
+            logo_url,
+            contact_email,
+            instagram_url,
+            facebook_url,
+            address_line,
+            city,
+            state,
+            postal_code,
+            tax_id,
+            notes,
+            created_at,
+            updated_at
+          `,
+        )
+        .order("name");
+
+      if (fallback.error) {
+        throw fallback.error;
+      }
+
+      safeBrandsData = (fallback.data ?? []).map((brand) => ({
+        ...brand,
+        plan_tier: null,
+        feature_flags: null,
+      }));
     }
 
-    return NextResponse.json({ brands: data ?? [] });
+    const brandIds = safeBrandsData.map((brand) => brand.id);
+    let memberships: Array<{
+      brand_id: string;
+      user_id: string;
+      user_profiles: {
+        email?: string | null;
+        full_name?: string | null;
+        role?: string | null;
+      } | null;
+    }> = [];
+
+    if (brandIds.length > 0) {
+      const { data: membersData, error: membersError } = await supabase
+        .from("brand_members")
+        .select(
+          `
+            brand_id,
+            user_id,
+            user_profiles (
+              email,
+              full_name,
+              role
+            )
+          `,
+        )
+        .in("brand_id", brandIds);
+
+      if (membersError) {
+        throw membersError;
+      }
+
+      memberships = (membersData ?? []) as typeof memberships;
+    }
+
+    const membershipsByBrand = memberships.reduce<
+      Record<
+        string,
+        Array<{
+          user_id: string;
+          user_profiles: {
+            email?: string | null;
+            full_name?: string | null;
+            role?: string | null;
+          } | null;
+        }>
+      >
+    >((accumulator, membership) => {
+      if (!accumulator[membership.brand_id]) {
+        accumulator[membership.brand_id] = [];
+      }
+
+      accumulator[membership.brand_id].push({
+        user_id: membership.user_id,
+        user_profiles: membership.user_profiles ?? null,
+      });
+
+      return accumulator;
+    }, {});
+
+    return NextResponse.json({
+      brands: safeBrandsData.map((brand) => ({
+        ...brand,
+        brand_members: membershipsByBrand[brand.id] ?? [],
+        governance: normalizeBrandGovernance({
+          planTier: brand.plan_tier,
+          featureFlags: brand.feature_flags,
+        }),
+      })),
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Falha ao carregar lojas." },
@@ -52,6 +166,14 @@ export async function POST(request: Request) {
   try {
     const { supabase, user } = await requireSuperAdmin(request);
     const body = await request.json();
+
+    const governancePayload = {
+      plan_tier: normalizeBrandPlanTier(body.planTier),
+      feature_flags: normalizeBrandGovernance({
+        planTier: body.planTier,
+        featureFlags: body.featureFlags,
+      }).featureFlags,
+    };
 
     const payload = {
       name: String(body.name ?? "").trim(),
@@ -68,17 +190,25 @@ export async function POST(request: Request) {
       postal_code: body.postalCode ? String(body.postalCode).trim() : null,
       tax_id: body.taxId ? String(body.taxId).trim() : null,
       notes: body.notes ? String(body.notes).trim() : null,
+      ...governancePayload,
     };
 
     if (!payload.name) {
       throw new Error("Nome da loja é obrigatório.");
     }
 
-    const { data: brand, error: brandError } = await supabase
-      .from("brands")
-      .insert(payload)
-      .select("id, name")
-      .single();
+    let brandResponse = await supabase.from("brands").insert(payload).select("id, name").single();
+
+    if (brandResponse.error && isMissingBrandGovernanceSchemaError(brandResponse.error)) {
+      const fallbackPayload = stripGovernanceColumns(payload);
+      brandResponse = await supabase
+        .from("brands")
+        .insert(fallbackPayload)
+        .select("id, name")
+        .single();
+    }
+
+    const { data: brand, error: brandError } = brandResponse;
 
     if (brandError || !brand) {
       throw brandError ?? new Error("Não foi possível criar a loja.");

@@ -24,9 +24,11 @@ import {
 import Link from "next/link";
 import type {
   BrandIntegrationConfig,
+  BrandGovernance,
   IntegrationMode,
   IntegrationProvider,
 } from "@/lib/brandops/types";
+import { getIntegrationTutorial } from "@/lib/brandops/integration-tutorials";
 
 type IntegrationFormState = Record<
   IntegrationProvider,
@@ -42,8 +44,6 @@ type IntegrationFormState = Record<
     credentialSource: "brand_key";
     hasApiKey: boolean;
     apiKeyHint: string;
-    platformCredentialConfigured: boolean;
-    platformCredentialHint: string;
   }
 >;
 
@@ -81,8 +81,6 @@ const emptyIntegrationForm: IntegrationFormState = {
     credentialSource: "brand_key",
     hasApiKey: false,
     apiKeyHint: "",
-    platformCredentialConfigured: false,
-    platformCredentialHint: "",
   },
   meta: {
     mode: "manual_csv",
@@ -96,8 +94,6 @@ const emptyIntegrationForm: IntegrationFormState = {
     credentialSource: "brand_key",
     hasApiKey: false,
     apiKeyHint: "",
-    platformCredentialConfigured: false,
-    platformCredentialHint: "",
   },
   ga4: {
     mode: "disabled",
@@ -111,8 +107,6 @@ const emptyIntegrationForm: IntegrationFormState = {
     credentialSource: "brand_key",
     hasApiKey: false,
     apiKeyHint: "",
-    platformCredentialConfigured: false,
-    platformCredentialHint: "",
   },
   gemini: {
     mode: "disabled",
@@ -126,8 +120,6 @@ const emptyIntegrationForm: IntegrationFormState = {
     credentialSource: "brand_key",
     hasApiKey: false,
     apiKeyHint: "",
-    platformCredentialConfigured: false,
-    platformCredentialHint: "",
   },
 };
 
@@ -148,8 +140,6 @@ function toFormState(integrations: BrandIntegrationConfig[]): IntegrationFormSta
       credentialSource: "brand_key",
       hasApiKey: Boolean(integration.settings.hasApiKey),
       apiKeyHint: integration.settings.apiKeyHint ?? "",
-      platformCredentialConfigured: Boolean(integration.settings.platformCredentialConfigured),
-      platformCredentialHint: integration.settings.platformCredentialHint ?? "",
     };
   });
 
@@ -232,6 +222,76 @@ function getModeOptions(provider: IntegrationProvider) {
       label: "Desabilitado",
     },
   ] as const;
+}
+
+function resolveProviderHealth(
+  provider: IntegrationProvider,
+  integration: BrandIntegrationConfig | undefined,
+  governance: BrandGovernance,
+) {
+  if (provider === "gemini" && !governance.featureFlags.atlasAi) {
+    return {
+      label: "Bloqueado pelo plano",
+      description: "A camada Atlas IA ainda nao foi liberada para a marca.",
+      tone: "warning" as const,
+    };
+  }
+
+  if (!integration) {
+    return {
+      label: "Nao configurado",
+      description: "Ainda nao ha configuracao salva para este conector.",
+      tone: "default" as const,
+    };
+  }
+
+  if (integration.lastSyncStatus === "error") {
+    return {
+      label: "Com erro",
+      description: integration.lastSyncError ?? "A ultima execucao reportou falha.",
+      tone: "warning" as const,
+    };
+  }
+
+  if (integration.mode === "disabled") {
+    return {
+      label: "Desligado",
+      description: "O conector esta salvo, mas permanece desabilitado.",
+      tone: "default" as const,
+    };
+  }
+
+  if (provider === "ink") {
+    return {
+      label: "Manual",
+      description: "Fluxo manual por CSV, sem dependencia de API.",
+      tone: "info" as const,
+    };
+  }
+
+  const hasCredential = Boolean(integration.settings.hasApiKey);
+
+  if (integration.mode === "api" && !hasCredential) {
+    return {
+      label: "Credencial pendente",
+      description: "A API foi habilitada, mas a credencial da loja ainda nao esta pronta.",
+      tone: "warning" as const,
+    };
+  }
+
+  if (integration.mode === "api") {
+    return {
+      label: "Operando via API",
+      description: "Conector ativo com credencial propria da marca.",
+      tone: "positive" as const,
+    };
+  }
+
+  return {
+    label: "Manual",
+    description: "A operacao segue em modo manual neste conector.",
+    tone: "info" as const,
+  };
 }
 
 export default function IntegrationsPage() {
@@ -332,13 +392,26 @@ export default function IntegrationsPage() {
     );
   }
 
+  const geminiFeatureEnabled = activeBrand.governance.featureFlags.atlasAi;
+
   const canManageIntegrations = profile?.role === "SUPER_ADMIN";
   const canManageCurrentProvider =
     profile?.role === "SUPER_ADMIN" || activeProvider === "gemini";
 
   const current = integrationsMap.get(activeProvider);
   const currentState = formState[activeProvider];
+  const isInternalPlatformViewer = profile?.email?.toLowerCase() === "edbo84@gmail.com";
   const options = getModeOptions(activeProvider);
+  const providerHealthSummary = (["ink", "meta", "ga4", "gemini"] as const).map((provider) => {
+    const integration = integrationsMap.get(provider);
+    const health = resolveProviderHealth(provider, integration, activeBrand.governance);
+
+    return {
+      provider,
+      integration,
+      health,
+    };
+  });
   const providerContextCard = {
     ink: {
       title: "Origem comercial manual",
@@ -364,16 +437,36 @@ export default function IntegrationsPage() {
     gemini: {
       title: "Especialista analítico da marca",
       body:
-        currentState.mode === "api"
-          ? `O Atlas Analyst está habilitado para ${activeBrand.name} usando o modelo ${currentState.model} com credencial ${"da própria loja"}.${currentState.hasApiKey ? ` Chave da loja salva em ${currentState.apiKeyHint}.` : ""}`
+        !geminiFeatureEnabled
+          ? `O plano atual de ${activeBrand.name} ainda não libera a camada Atlas IA. Libere a capacidade da marca em Acessos antes da configuração técnica.`
+          : currentState.mode === "api"
+          ? `O Atlas Analyst está habilitado para ${activeBrand.name} com credencial da própria loja.${currentState.hasApiKey ? ` Chave da loja salva em ${currentState.apiKeyHint}.` : ""} O comportamento analítico fica centralizado em Configurações.`
           : `O Atlas Analyst da marca ${activeBrand.name} ainda está desabilitado no painel de integrações.`,
-      cta: currentState.mode === "api" ? "/dashboard" : null,
+      cta: !geminiFeatureEnabled
+        ? "/admin/stores"
+        : currentState.mode === "api"
+          ? "/settings#atlas-ai-settings"
+          : null,
     },
   }[activeProvider];
+  const providerTutorial = getIntegrationTutorial(activeProvider);
+  const tutorialHref = providerTutorial?.route ?? "/integrations/tutorials";
+  const tutorialCtaLabel =
+    activeProvider === "meta"
+      ? "Abrir tutorial Meta"
+      : activeProvider === "ga4"
+        ? "Abrir tutorial GA4"
+        : activeProvider === "gemini"
+          ? "Abrir tutorial Gemini"
+          : "Abrir tutoriais";
   const metaCredentialReady = formState.meta.hasApiKey;
   const ga4CredentialReady = formState.ga4.hasApiKey;
   const noticeText = notice?.text ?? "";
   const isEncryptionKeyNotice = noticeText.includes("BRANDOPS_SECRET_ENCRYPTION_KEY");
+  const isPlatformPreparationNotice =
+    noticeText.includes("brand_integration_secrets") ||
+    noticeText.includes("schema cache") ||
+    noticeText.includes("provider_check");
   const isMetaPermissionNotice = noticeText.includes("(#100)");
   const isMetaMissingCredentialNotice =
     activeProvider === "meta" &&
@@ -384,6 +477,12 @@ export default function IntegrationsPage() {
     activeProvider === "ga4" && noticeText.includes("Nenhuma credencial própria do GA4");
   const isGeminiMissingCredentialNotice =
     activeProvider === "gemini" && noticeText.includes("Nenhuma chave própria do Gemini");
+  const displayNoticeText =
+    notice?.kind === "error" &&
+    !isInternalPlatformViewer &&
+    (isEncryptionKeyNotice || isPlatformPreparationNotice)
+      ? "A plataforma ainda não está pronta para salvar ou operar esta credencial nesta loja. Acione o gestor da plataforma e tente novamente depois."
+      : notice?.text ?? null;
 
   function applyIntegrationsPayload(integrations: BrandIntegrationConfig[]) {
     setHydratedIntegrations(integrations);
@@ -471,6 +570,14 @@ export default function IntegrationsPage() {
       return;
     }
 
+    if (!geminiFeatureEnabled) {
+      setNotice({
+        kind: "error",
+        text: "O plano atual desta marca ainda nao libera o Atlas IA. Ajuste a governanca da marca em Acessos antes de salvar o Gemini.",
+      });
+      return;
+    }
+
     if (
       formState.gemini.mode === "api" &&
       formState.gemini.credentialSource === "brand_key" &&
@@ -497,7 +604,6 @@ export default function IntegrationsPage() {
         body: JSON.stringify({
           mode: formState.gemini.mode,
           settings: {
-            model: formState.gemini.model,
             credentialSource: formState.gemini.credentialSource,
           },
           apiKey: geminiApiKey.trim() || undefined,
@@ -537,6 +643,14 @@ export default function IntegrationsPage() {
       return;
     }
 
+    if (!geminiFeatureEnabled) {
+      setNotice({
+        kind: "error",
+        text: "O plano atual desta marca ainda nao libera o Atlas IA. Ajuste a governanca da marca em Acessos antes de operar o Gemini.",
+      });
+      return;
+    }
+
     try {
       setClearingGeminiKey(true);
       setNotice(null);
@@ -552,7 +666,6 @@ export default function IntegrationsPage() {
         body: JSON.stringify({
           mode: formState.gemini.mode,
           settings: {
-            model: formState.gemini.model,
             credentialSource: nextCredentialSource,
           },
           clearApiKey: true,
@@ -961,7 +1074,7 @@ export default function IntegrationsPage() {
                 <button
                   type="button"
                   onClick={handleClearGeminiKey}
-                  disabled={!canManageCurrentProvider || clearingGeminiKey}
+                  disabled={!canManageCurrentProvider || !geminiFeatureEnabled || clearingGeminiKey}
                   className="brandops-button brandops-button-ghost"
                 >
                   {clearingGeminiKey ? (
@@ -977,7 +1090,7 @@ export default function IntegrationsPage() {
               <button
                 type="button"
                 onClick={handleGeminiSave}
-                disabled={!canManageCurrentProvider || savingGemini}
+                disabled={!canManageCurrentProvider || !geminiFeatureEnabled || savingGemini}
                 className="brandops-button brandops-button-primary"
               >
                 {savingGemini ? (
@@ -1113,21 +1226,42 @@ export default function IntegrationsPage() {
           icon={notice.kind === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
           className="text-sm"
         >
-          <span>{notice.text}</span>
+          <span>{displayNoticeText}</span>
         </InlineNotice>
       ) : null}
 
       {isEncryptionKeyNotice ? (
         <InlineNotice tone="warning" icon={<ShieldCheck size={18} />} className="text-sm">
+          {isInternalPlatformViewer ? (
+            <div className="space-y-1">
+              <p>
+                O Atlas precisa da <span className="font-semibold">BRANDOPS_SECRET_ENCRYPTION_KEY</span> no ambiente da
+                Vercel para criptografar segredos por marca.
+              </p>
+              <p className="text-on-surface-variant">
+                Em <span className="font-semibold">Project Settings &gt; Environment Variables</span>, cadastre essa env em
+                <span className="font-semibold"> Production</span>, <span className="font-semibold">Preview</span> e
+                <span className="font-semibold"> Development</span>, depois faça um novo deploy.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <p>Falta uma preparação da plataforma antes que esta credencial possa ser usada na loja.</p>
+              <p className="text-on-surface-variant">
+                Acione o gestor da plataforma e tente novamente depois da regularização do ambiente.
+              </p>
+            </div>
+          )}
+        </InlineNotice>
+      ) : null}
+
+      {isPlatformPreparationNotice && !isEncryptionKeyNotice ? (
+        <InlineNotice tone="warning" icon={<ShieldCheck size={18} />} className="text-sm">
           <div className="space-y-1">
-            <p>
-              O Atlas precisa da <span className="font-semibold">BRANDOPS_SECRET_ENCRYPTION_KEY</span> no ambiente da
-              Vercel para criptografar segredos por marca.
-            </p>
+            <p>Esta integração depende de uma preparação técnica da plataforma que ainda não foi concluída.</p>
             <p className="text-on-surface-variant">
-              Em <span className="font-semibold">Project Settings &gt; Environment Variables</span>, cadastre essa env em
-              <span className="font-semibold"> Production</span>, <span className="font-semibold">Preview</span> e
-              <span className="font-semibold"> Development</span>, depois faça um novo deploy.
+              Se você é operador da loja, acione o gestor da plataforma. Se você é o gestor técnico, revise migrations e
+              preparo do banco.
             </p>
           </div>
         </InlineNotice>
@@ -1162,8 +1296,22 @@ export default function IntegrationsPage() {
           <div className="space-y-1">
             <p>Esta integração só fica operacional quando a credencial própria da marca é salva com sucesso.</p>
             <p className="text-on-surface-variant">
-              Se precisar de um passo a passo completo, abra a central em <Link href="/help" className="font-semibold text-primary underline underline-offset-4">Ajuda do Atlas</Link>.
+              Se precisar de um passo a passo completo, abra o{" "}
+              <Link href={tutorialHref} className="font-semibold text-primary underline underline-offset-4">
+                tutorial detalhado desta integração
+              </Link>.
             </p>
+          </div>
+        </InlineNotice>
+      ) : null}
+
+      {activeProvider === "gemini" && !geminiFeatureEnabled ? (
+        <InlineNotice tone="warning" icon={<AlertCircle size={18} />} className="text-sm">
+          <div className="space-y-1">
+            <p className="font-semibold">O plano atual desta marca ainda não libera o Atlas IA.</p>
+                <p className="text-on-surface-variant">
+                  Primeiro ajuste a governança em <Link href="/admin/stores" className="font-semibold text-primary underline underline-offset-4">Acessos</Link>. Depois disso, a configuração técnica do Gemini volta a ficar operacional.
+                </p>
           </div>
         </InlineNotice>
       ) : null}
@@ -1172,11 +1320,41 @@ export default function IntegrationsPage() {
         <InlineNotice tone="info" icon={<ShieldCheck size={18} />} className="text-sm text-on-surface">
           <span>
             {activeProvider === "gemini"
-              ? "Você pode configurar a credencial Gemini da sua própria loja sem expor a chave na interface."
+              ? geminiFeatureEnabled
+                ? "Você pode configurar a credencial Gemini da sua própria loja sem expor a chave na interface."
+                : "A credencial Gemini continua isolada por loja, mas esta marca ainda não tem a camada Atlas IA liberada."
               : "Você pode acompanhar o status e executar as sincronizações da sua loja. Alterações de configuração seguem restritas ao superadmin."}
           </span>
         </InlineNotice>
       ) : null}
+
+      <SurfaceCard>
+        <SectionHeading
+          title="Saúde das fontes"
+          description="Leitura rápida para localizar o conector que pede ação antes de entrar na configuração detalhada."
+        />
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {providerHealthSummary.map(({ provider, integration, health }) => (
+            <button
+              key={provider}
+              type="button"
+              onClick={() => setActiveProvider(provider)}
+              className="atlas-soft-subcard p-0 text-left"
+            >
+              <AnalyticsKpiCard
+                label={providerLabels[provider]}
+                value={health.label}
+                description={
+                  integration?.lastSyncStatus === "error"
+                    ? health.description
+                    : `${health.description} ${formatSyncLabel(integration)}.`
+                }
+                tone={health.tone}
+              />
+            </button>
+          ))}
+        </div>
+      </SurfaceCard>
 
       <SurfaceCard>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -1223,6 +1401,48 @@ export default function IntegrationsPage() {
             </button>
           ))}
         </div>
+        <div className="mt-4 grid gap-3 xl:grid-cols-3">
+          <div className="atlas-soft-subcard px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+              Estado atual
+            </p>
+            <p className="mt-2 text-sm font-semibold text-on-surface">
+              {current?.mode === "api"
+                ? "API ativa"
+                : current?.mode === "disabled"
+                  ? "Integração desligada"
+                  : "Fluxo manual"}
+            </p>
+            <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
+              O conector {providerLabels[activeProvider]} está operando no modo salvo para esta loja.
+            </p>
+          </div>
+          <div className="atlas-soft-subcard px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+              Última atividade
+            </p>
+            <p className="mt-2 text-sm font-semibold text-on-surface">{formatSyncLabel(current)}</p>
+            <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
+              Use esse sinal para distinguir conector parado de conector realmente quebrado.
+            </p>
+          </div>
+          <div className="atlas-soft-subcard px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+              Leitura operacional
+            </p>
+            <p className="mt-2 text-sm font-semibold text-on-surface">{providerContextCard.title}</p>
+            <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
+              {providerContextCard.body}
+            </p>
+            {providerTutorial ? (
+              <div className="mt-3">
+                <Link href={providerTutorial.route} className="inline-flex text-xs font-semibold text-secondary hover:underline">
+                  {tutorialCtaLabel} →
+                </Link>
+              </div>
+            ) : null}
+          </div>
+        </div>
       </SurfaceCard>
 
       <SurfaceCard>
@@ -1247,7 +1467,7 @@ export default function IntegrationsPage() {
 
       <section className={`grid gap-6 ${activeSection === "rules" ? "xl:grid-cols-[1.1fr_0.9fr]" : ""}`}>
         <SurfaceCard>
-          <div className="flex flex-col gap-4 border-b border-outline pb-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-4 border-b border-outline/50 pb-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="eyebrow mb-2">{providerEyebrows[activeProvider]}</p>
               <h2 className="text-xl font-semibold text-on-surface">{providerLabels[activeProvider]}</h2>
@@ -1256,9 +1476,9 @@ export default function IntegrationsPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <span className="status-chip">{current?.mode === "api" ? "API" : current?.mode === "disabled" ? "OFF" : "MANUAL"}</span>
-              <span className="status-chip">{current?.lastSyncStatus ?? "idle"}</span>
-              <span className="status-chip">{formatSyncLabel(current)}</span>
+              <span className="atlas-soft-pill">{current?.mode === "api" ? "API" : current?.mode === "disabled" ? "OFF" : "MANUAL"}</span>
+              <span className="atlas-soft-pill">{current?.lastSyncStatus ?? "idle"}</span>
+              <span className="atlas-soft-pill">{formatSyncLabel(current)}</span>
             </div>
           </div>
 
@@ -1292,7 +1512,7 @@ export default function IntegrationsPage() {
                 {activeProvider === "meta" ? (
                   <>
                     <FormField label="Credencial ativa" className="text-sm">
-                      <div className="rounded-2xl border border-outline bg-surface-container-low px-4 py-3 text-sm leading-6 text-on-surface">
+                      <div className="atlas-soft-subcard px-4 py-3 text-sm leading-6 text-on-surface">
                         Token da própria loja. O Atlas salva esse segredo criptografado no backend e usa a credencial da
                         marca atual nas sincronizações.
                       </div>
@@ -1347,7 +1567,7 @@ export default function IntegrationsPage() {
                           }
                           disabled={!canManageIntegrations}
                         />
-                        <div className="rounded-xl border border-outline bg-surface-container-low px-4 py-3 text-xs leading-5 text-on-surface-variant">
+                        <div className="atlas-soft-subcard px-4 py-3 text-xs leading-5 text-on-surface-variant">
                           <p>
                             {currentState.hasApiKey
                               ? `Token próprio salvo em ${currentState.apiKeyHint}. Se você preencher o campo acima, o token atual será substituído.`
@@ -1373,7 +1593,7 @@ export default function IntegrationsPage() {
                         disabled={!canManageIntegrations}
                       />
                     </FormField>
-                    <label className="flex items-start gap-3 rounded-xl border border-outline bg-surface-container-low p-4 text-sm text-on-surface-variant lg:col-span-2">
+                    <label className="atlas-soft-subcard flex items-start gap-3 p-4 text-sm text-on-surface-variant lg:col-span-2">
                       <input
                         type="checkbox"
                         checked={currentState.manualFallback}
@@ -1399,7 +1619,7 @@ export default function IntegrationsPage() {
                 {activeProvider === "ga4" ? (
                   <>
                     <FormField label="Credencial ativa" className="text-sm">
-                      <div className="rounded-2xl border border-outline bg-surface-container-low px-4 py-3 text-sm leading-6 text-on-surface">
+                      <div className="atlas-soft-subcard px-4 py-3 text-sm leading-6 text-on-surface">
                         JSON da própria loja. O Atlas usa a service account vinculada a esta marca para consultar a
                         propriedade GA4.
                       </div>
@@ -1451,7 +1671,7 @@ export default function IntegrationsPage() {
                           }
                           disabled={!canManageIntegrations}
                         />
-                        <div className="rounded-xl border border-outline bg-surface-container-low px-4 py-3 text-xs leading-5 text-on-surface-variant">
+                        <div className="atlas-soft-subcard px-4 py-3 text-xs leading-5 text-on-surface-variant">
                           <p>
                             {currentState.hasApiKey
                               ? `Credencial própria salva em ${currentState.apiKeyHint}. Se você preencher o campo acima, o JSON atual será substituído.`
@@ -1465,27 +1685,19 @@ export default function IntegrationsPage() {
 
                 {activeProvider === "gemini" ? (
                   <>
-                    <FormField label="Modelo padrão do Analyst" className="text-sm">
-                      <input
-                        value={currentState.model}
-                        onChange={(event) =>
-                          setFormState((previous) => ({
-                            ...previous,
-                            gemini: {
-                              ...previous.gemini,
-                              model: event.target.value,
-                            },
-                          }))
-                        }
-                        className="brandops-input w-full"
-                        placeholder="gemini-2.5-flash"
-                        disabled={!canManageCurrentProvider}
-                      />
-                    </FormField>
                     <FormField label="Credencial ativa" className="text-sm">
-                      <div className="rounded-2xl border border-outline bg-surface-container-low px-4 py-3 text-sm leading-6 text-on-surface">
+                      <div className="atlas-soft-subcard px-4 py-3 text-sm leading-6 text-on-surface">
                         Chave da própria loja. O Atlas Analyst usa a API key salva para esta marca e mantém o segredo
                         fora da interface.
+                      </div>
+                    </FormField>
+                    <FormField label="Central estratégica do Atlas" className="text-sm">
+                      <div className="atlas-soft-subcard px-4 py-3 text-sm leading-6 text-on-surface">
+                        Modelo, temperatura, skill padrão, janela de análise e guia da marca agora ficam na{" "}
+                        <Link href="/settings#atlas-ai-settings" className="text-secondary hover:underline">
+                          Central de Configurações
+                        </Link>
+                        .
                       </div>
                     </FormField>
                     <FormField label="Nova chave Gemini da loja" className="text-sm lg:col-span-2">
@@ -1502,7 +1714,7 @@ export default function IntegrationsPage() {
                           }
                           disabled={!canManageCurrentProvider}
                         />
-                        <div className="rounded-xl border border-outline bg-surface-container-low px-4 py-3 text-xs leading-5 text-on-surface-variant">
+                        <div className="atlas-soft-subcard px-4 py-3 text-xs leading-5 text-on-surface-variant">
                           {currentState.hasApiKey ? (
                             <p>
                               Chave própria salva para esta loja em{" "}
@@ -1542,17 +1754,24 @@ export default function IntegrationsPage() {
                       {currentState.mode === "api" ? "agent ready" : "disabled"}
                     </span>
                   </div>
-                  <div className="mt-4 border-t border-outline pt-4">
+                  <div className="mt-4 border-t border-outline/50 pt-4">
                     <p className="font-medium text-on-surface">Execução sob demanda</p>
                     <p className="mt-1 leading-6">
                       O Gemini não sincroniza dados em lote. Ele é consultado sob demanda pelo Atlas Analyst, sempre em cima dos relatórios internos já gravados no Atlas.
+                    </p>
+                    <p className="mt-3 leading-6">
+                      Decisões estratégicas como modelo, temperatura, skill e janela padrão ficam em{" "}
+                      <Link href="/settings#atlas-ai-settings" className="text-secondary hover:underline">
+                        Configurações
+                      </Link>
+                      .
                     </p>
                   </div>
                 </>
               ) : (
                 <>
               {activeProvider === "meta" || activeProvider === "ga4" ? (
-                <div className="mb-4 rounded-2xl border border-outline bg-background px-4 py-3">
+                <div className="atlas-soft-subcard mb-4 px-4 py-3">
                   <p className="font-medium text-on-surface">Status da credencial</p>
                   <p className="mt-1">
                     {currentState.hasApiKey
@@ -1569,10 +1788,12 @@ export default function IntegrationsPage() {
                 <span className="status-chip">{current?.lastSyncStatus ?? "idle"}</span>
               </div>
               {current?.lastSyncError ? (
-                <p className="mt-3 text-error">{current.lastSyncError}</p>
+                <div className="mt-3 rounded-xl border border-error/12 bg-error/8 px-4 py-3 text-error">
+                  {current.lastSyncError}
+                </div>
               ) : null}
               {activeProvider === "meta" ? (
-                <div className="mt-4 border-t border-outline pt-4">
+                <div className="mt-4 border-t border-outline/50 pt-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="font-medium text-on-surface">Sincronização do catálogo</p>
@@ -1588,7 +1809,9 @@ export default function IntegrationsPage() {
                     </p>
                   ) : null}
                   {current?.settings.catalogSyncError ? (
-                    <p className="mt-3 text-error">{current.settings.catalogSyncError}</p>
+                    <div className="mt-3 rounded-xl border border-error/12 bg-error/8 px-4 py-3 text-error">
+                      {current.settings.catalogSyncError}
+                    </div>
                   ) : null}
                 </div>
               ) : null}
@@ -1669,11 +1892,18 @@ export default function IntegrationsPage() {
               <div className="brandops-toolbar-panel text-sm text-on-surface-variant">
                 <p className="font-medium text-on-surface">{providerContextCard.title}</p>
                 <p className="leading-6">{providerContextCard.body}</p>
-                {providerContextCard.cta ? (
-                  <div>
-                    <Link href={providerContextCard.cta} className="brandops-button brandops-button-ghost">
-                      Abrir painel relacionado
-                    </Link>
+                {providerContextCard.cta || providerTutorial ? (
+                  <div className="flex flex-wrap gap-2">
+                    {providerContextCard.cta ? (
+                      <Link href={providerContextCard.cta} className="brandops-button brandops-button-ghost">
+                        Abrir painel relacionado
+                      </Link>
+                    ) : null}
+                    {providerTutorial ? (
+                      <Link href={providerTutorial.route} className="brandops-button brandops-button-ghost">
+                        {tutorialCtaLabel}
+                      </Link>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -1710,8 +1940,8 @@ export default function IntegrationsPage() {
             />
             {activeProvider === "gemini" ? (
               <StackItem
-                title="Fallback por credencial"
-                description="Cada lojista opera com a própria chave Gemini. O Atlas Analyst usa a credencial salva na marca antes de chamar o modelo."
+                title="Estratégia fora da conexão"
+                description="Cada lojista opera com a própria chave Gemini aqui. Modelo, temperatura, skill e playbook da marca ficam centralizados em Configurações."
                 aside={<RefreshCcw size={16} className="text-secondary" />}
                 tone="default"
               />
@@ -1721,11 +1951,18 @@ export default function IntegrationsPage() {
               description={
                 <div className="space-y-2">
                   <p>{providerContextCard.body}</p>
-                  {providerContextCard.cta ? (
-                    <Link href={providerContextCard.cta} className="inline-flex text-secondary hover:underline">
-                      Abrir painel relacionado →
-                    </Link>
-                  ) : null}
+                  <div className="flex flex-wrap gap-3">
+                    {providerContextCard.cta ? (
+                      <Link href={providerContextCard.cta} className="inline-flex text-secondary hover:underline">
+                        Abrir painel relacionado →
+                      </Link>
+                    ) : null}
+                    {providerTutorial ? (
+                      <Link href={providerTutorial.route} className="inline-flex text-secondary hover:underline">
+                        {tutorialCtaLabel} →
+                      </Link>
+                    ) : null}
+                  </div>
                 </div>
               }
               aside={<Radar size={16} className="text-secondary" />}

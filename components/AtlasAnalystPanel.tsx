@@ -13,6 +13,7 @@ import type {
   AtlasAnalystResponse,
   AtlasAnalystSkillId,
 } from "@/lib/brandops/ai/types";
+import { getLatestDatasetDate } from "@/lib/brandops/metrics";
 
 const SKILL_OPTIONS: Array<{ value: AtlasAnalystSkillId; label: string }> = [
   { value: "auto", label: "Auto" },
@@ -66,6 +67,23 @@ function formatRunDate(value: string) {
   }).format(new Date(value));
 }
 
+function formatIsoDate(value: Date) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function subtractDays(referenceDate: Date, days: number) {
+  const next = new Date(referenceDate);
+  next.setDate(next.getDate() - Math.max(days - 1, 0));
+  return next;
+}
+
+function getSkillLabel(skillId: AtlasAnalystSkillId) {
+  return SKILL_OPTIONS.find((option) => option.value === skillId)?.label ?? "Executivo";
+}
+
 export function AtlasAnalystPanel({
   variant = "orb",
 }: {
@@ -87,7 +105,8 @@ export function AtlasAnalystPanel({
     () => activeBrand?.integrations.find((integration) => integration.provider === "gemini") ?? null,
     [activeBrand?.integrations],
   );
-  const isAgentConfigured = geminiIntegration?.mode === "api";
+  const hasAtlasAiPlanAccess = activeBrand?.governance.featureFlags.atlasAi ?? false;
+  const isAgentConfigured = geminiIntegration?.mode === "api" && hasAtlasAiPlanAccess;
   const isDisabled = !activeBrandId || !session?.access_token || !isAgentConfigured;
   const latestEntry = result ?? history[0] ?? null;
   const latestQuestion = result ? question : history[0]?.question ?? null;
@@ -95,8 +114,38 @@ export function AtlasAnalystPanel({
   const isCommandCenter = variant === "command-center";
   const isDashboardOrb = variant === "dashboard-orb";
   const modelLabel = geminiIntegration?.settings.model ?? "gemini-2.5-flash";
-  const credentialLabel =
-    geminiIntegration?.settings.credentialSource === "brand_key" ? "Chave da loja" : "Chave da plataforma";
+  const temperatureLabel = `temp ${(geminiIntegration?.settings.temperature ?? 0.25).toFixed(2)}`;
+  const analysisWindowDays = geminiIntegration?.settings.analysisWindowDays ?? 30;
+  const defaultSkill = geminiIntegration?.settings.defaultSkill ?? "executive_operator";
+  const defaultSkillLabel =
+    defaultSkill === "auto" ? "Especialista dinâmico" : getSkillLabel(defaultSkill);
+  const hasOperatorGuidance = Boolean(geminiIntegration?.settings.operatorGuidance?.trim());
+  const credentialLabel = "Chave da loja";
+  const atlasPeriod = useMemo(() => {
+    if (!activeBrand || !isAgentConfigured) {
+      return {
+        label: selectedPeriodLabel,
+        from: periodRange?.start ?? null,
+        to: periodRange?.end ?? null,
+      };
+    }
+
+    const referenceDate = getLatestDatasetDate(activeBrand) ?? new Date();
+    const startDate = subtractDays(referenceDate, analysisWindowDays);
+
+    return {
+      label: `Atlas ${analysisWindowDays} dias`,
+      from: formatIsoDate(startDate),
+      to: formatIsoDate(referenceDate),
+    };
+  }, [
+    activeBrand,
+    analysisWindowDays,
+    isAgentConfigured,
+    periodRange?.end,
+    periodRange?.start,
+    selectedPeriodLabel,
+  ]);
 
   useEffect(() => {
     const accessToken = session?.access_token;
@@ -154,10 +203,10 @@ export function AtlasAnalystPanel({
       question: nextQuestion,
       skill,
       pageContext: pathname,
-      periodLabel: selectedPeriodLabel,
+      periodLabel: atlasPeriod.label,
       brandLabel: activeBrand?.name ?? null,
-      from: periodRange?.start ?? null,
-      to: periodRange?.end ?? null,
+      from: atlasPeriod.from,
+      to: atlasPeriod.to,
     };
   }
 
@@ -265,7 +314,7 @@ export function AtlasAnalystPanel({
                 Atlas em casa
               </p>
               <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
-                A Torre de Controle abriga a base nativa do Atlas IA. O Orb fica com atalhos e contexto rápido.
+                A Torre de Controle abriga a base nativa do Atlas IA quando o plano da marca libera essa camada. O Orb fica com atalhos e contexto rápido.
               </p>
             </div>
             <Sparkles size={16} className="text-primary" />
@@ -273,26 +322,49 @@ export function AtlasAnalystPanel({
 
           {!isAgentConfigured ? (
             <div className="mt-3 rounded-2xl border border-outline bg-surface-container-low px-3 py-3 text-[11px] leading-5 text-on-surface-variant">
-              <p className="font-semibold text-on-surface">Esta loja segue na Torre de Controle sem IA.</p>
+              <p className="font-semibold text-on-surface">
+                {hasAtlasAiPlanAccess
+                  ? "Esta loja segue na Torre de Controle sem IA."
+                  : "Esta loja ainda nao tem Atlas IA liberado no plano."}
+              </p>
               <p className="mt-1">
-                O Atlas IA continua opcional. Se a marca quiser ativar depois, a configuração fica em{" "}
-                <Link href="/integrations" className="text-secondary hover:underline">
-                  Integrações
-                </Link>
-                .
+                {hasAtlasAiPlanAccess ? (
+                  <>
+                    O Atlas IA continua opcional. Se a marca quiser ativar depois, a configuração fica em{" "}
+                    <Link href="/integrations" className="text-secondary hover:underline">
+                      Integrações
+                    </Link>
+                    .
+                  </>
+                ) : (
+                  <>
+                    Primeiro libere a capacidade da marca em{" "}
+                    <Link href="/admin/stores" className="text-secondary hover:underline">
+                      Acessos
+                    </Link>{" "}
+                    e depois conecte o Gemini em{" "}
+                    <Link href="/integrations" className="text-secondary hover:underline">
+                      Integrações
+                    </Link>
+                    .
+                  </>
+                )}
               </p>
             </div>
           ) : (
             <>
               <div className="mt-3 flex flex-wrap gap-2">
                 <span className="rounded-full border border-primary/20 bg-primary-container px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-on-primary-container">
-                  {selectedPeriodLabel}
+                  {atlasPeriod.label}
                 </span>
                 <span className="rounded-full border border-outline px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
                   {modelLabel}
                 </span>
                 <span className="rounded-full border border-outline px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
-                  {credentialLabel}
+                  {temperatureLabel}
+                </span>
+                <span className="rounded-full border border-outline px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
+                  Base {defaultSkillLabel}
                 </span>
               </div>
 
@@ -357,7 +429,7 @@ export function AtlasAnalystPanel({
           </p>
           <p className={`mt-1 leading-5 text-on-surface-variant ${isCommandCenter ? "text-[12px]" : "text-[11px]"}`}>
             {isCommandCenter
-              ? "O backend segue como fonte de verdade. Aqui o Atlas cruza contexto histórico, memória recente e leituras internas para recomendar o próximo movimento da operação."
+              ? "O backend segue como fonte de verdade. Aqui o Atlas cruza contexto histórico, leituras internas e o playbook da marca para recomendar o próximo movimento da operação."
               : "Leitura read-only com contexto de margem, mídia, tráfego e POD."}
           </p>
         </div>
@@ -366,30 +438,52 @@ export function AtlasAnalystPanel({
 
       {isCommandCenter ? (
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-full border border-primary/20 bg-primary-container px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-on-primary-container">
+          <span className="atlas-soft-pill" data-emphasis="primary">
             {activeBrand?.name ?? "Loja ativa"}
           </span>
-          <span className="rounded-full border border-outline px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
-            {selectedPeriodLabel}
+          <span className="atlas-soft-pill">
+            {atlasPeriod.label}
           </span>
-          <span className="rounded-full border border-outline px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
+          <span className="atlas-soft-pill">
             {modelLabel}
           </span>
-          <span className="rounded-full border border-outline px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
-            {credentialLabel}
+          <span className="atlas-soft-pill">
+            {temperatureLabel}
+          </span>
+          <span className="atlas-soft-pill">
+            Base {defaultSkillLabel}
+          </span>
+          <span className="atlas-soft-pill">
+            {hasOperatorGuidance ? "Guia ativo" : credentialLabel}
           </span>
         </div>
       ) : null}
 
       {!isAgentConfigured ? (
         <div className="mt-3 rounded-2xl border border-warning/25 bg-warning/10 px-3 py-3 text-[11px] leading-5 text-on-surface-variant">
-          <p className="font-semibold text-on-surface">Gemini ainda não habilitado para esta loja.</p>
+          <p className="font-semibold text-on-surface">
+            {hasAtlasAiPlanAccess
+              ? "Gemini ainda não habilitado para esta loja."
+              : "Atlas IA bloqueado pelo plano desta marca."}
+          </p>
           <p className="mt-1">
-            Ative a integração no painel de{" "}
-            <Link href="/integrations" className="text-secondary hover:underline">
-              Integrações
-            </Link>{" "}
-            para usar o Atlas Analyst com a credencial da plataforma ou da própria loja.
+            {hasAtlasAiPlanAccess ? (
+              <>
+                Ative a integração no painel de{" "}
+                <Link href="/integrations" className="text-secondary hover:underline">
+                  Integrações
+                </Link>{" "}
+                para usar o Atlas Analyst com a chave própria desta loja.
+              </>
+            ) : (
+              <>
+                A capacidade precisa ser liberada em{" "}
+                <Link href="/admin/stores" className="text-secondary hover:underline">
+                  Acessos
+                </Link>{" "}
+                antes da configuração técnica.
+              </>
+            )}
           </p>
         </div>
       ) : null}
@@ -401,16 +495,25 @@ export function AtlasAnalystPanel({
             type="button"
             onClick={() => setSkill(option.value)}
             disabled={isDisabled || isPending}
-            className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
-              skill === option.value
-                ? "border-primary/30 bg-primary-container text-on-primary-container"
-                : "border-outline bg-surface-container-low text-on-surface-variant hover:border-secondary/30 hover:text-on-surface"
-            } disabled:cursor-not-allowed disabled:opacity-60`}
+            className="atlas-soft-pill shrink-0 disabled:cursor-not-allowed disabled:opacity-60"
+            data-emphasis={skill === option.value ? "active" : undefined}
+            data-interactive="true"
           >
             {option.label}
           </button>
         ))}
       </div>
+
+      {skill === "auto" ? (
+        <p className="text-[10px] leading-4 text-ink-muted">
+          Auto usa <span className="font-semibold text-on-surface">{defaultSkillLabel}</span> como base
+          desta marca e respeita os parâmetros salvos em{" "}
+          <Link href="/settings#atlas-ai-settings" className="text-secondary hover:underline">
+            Configurações
+          </Link>
+          .
+        </p>
+      ) : null}
 
       <div className="mt-3 space-y-2">
         <textarea
@@ -419,7 +522,7 @@ export function AtlasAnalystPanel({
           placeholder="Pergunte ao Atlas o que ele faria agora..."
           disabled={isDisabled || isPending}
           rows={isCommandCenter ? 4 : 3}
-          className={`w-full rounded-2xl border border-outline bg-background px-3 py-2.5 text-[12px] leading-5 text-on-surface outline-none transition placeholder:text-on-surface-variant/70 focus:border-secondary/40 focus:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-60 ${
+          className={`brandops-input w-full text-[12px] leading-5 disabled:cursor-not-allowed disabled:opacity-60 ${
             isCommandCenter ? "min-h-[112px]" : "min-h-[88px]"
           }`}
         />
@@ -446,7 +549,8 @@ export function AtlasAnalystPanel({
             type="button"
             onClick={() => handleAsk(prompt)}
             disabled={isDisabled || isPending}
-            className="rounded-full border border-outline bg-surface-container-low px-3 py-1.5 text-left text-[11px] font-medium text-on-surface-variant transition hover:border-secondary/30 hover:text-on-surface disabled:cursor-not-allowed disabled:opacity-60"
+            className="atlas-soft-pill text-left normal-case tracking-[0.02em] disabled:cursor-not-allowed disabled:opacity-60"
+            data-interactive="true"
           >
             {prompt}
           </button>
@@ -454,7 +558,7 @@ export function AtlasAnalystPanel({
       </div>
 
       {errorMessage ? (
-        <div className="mt-3 flex items-start gap-2 rounded-2xl border border-error/20 bg-error/10 px-3 py-2.5 text-[11px] leading-5 text-error">
+        <div className="mt-3 flex items-start gap-2 rounded-2xl border border-error/12 bg-error/8 px-3 py-2.5 text-[11px] leading-5 text-error">
           <AlertCircle size={14} className="mt-0.5 shrink-0" />
           <span>{errorMessage}</span>
         </div>
@@ -462,12 +566,12 @@ export function AtlasAnalystPanel({
 
       {result ? (
         <div className={`mt-4 space-y-3 ${isCommandCenter ? "" : "max-h-[22rem] overflow-y-auto pr-1"}`}>
-          <div className="rounded-2xl border border-outline bg-surface-container-low p-3">
+          <div className="atlas-soft-section p-3">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
                 {result.skillLabel}
               </p>
-              <span className="rounded-full border border-primary/20 bg-primary-container px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-on-primary-container">
+              <span className="atlas-soft-pill" data-emphasis="primary">
                 {result.confidence}
               </span>
             </div>
@@ -477,16 +581,16 @@ export function AtlasAnalystPanel({
             <p className="mt-2 text-[12px] leading-5 text-on-surface-variant">
               {result.answer}
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {result.usedReports.map((report) => (
-                <span
-                  key={report}
-                  className="rounded-full border border-outline px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant"
-                >
-                  {report}
-                </span>
-              ))}
-            </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {result.usedReports.map((report) => (
+                  <span
+                    key={report}
+                    className="atlas-soft-pill"
+                  >
+                    {report}
+                  </span>
+                ))}
+              </div>
             {result.runId ? (
               <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-outline/70 pt-3">
                 <button
@@ -520,13 +624,13 @@ export function AtlasAnalystPanel({
           </div>
 
           {result.actions.length ? (
-            <section className="rounded-2xl border border-outline bg-background p-3">
+            <section className="atlas-soft-section p-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
                 Próximas ações
               </p>
               <div className="mt-2 space-y-2">
                 {result.actions.map((action) => (
-                  <div key={action} className="rounded-xl bg-surface-container-low px-3 py-2 text-[11px] leading-5 text-on-surface">
+                  <div key={action} className="atlas-soft-subcard px-3 py-2 text-[11px] leading-5 text-on-surface">
                     {action}
                   </div>
                 ))}
@@ -535,13 +639,13 @@ export function AtlasAnalystPanel({
           ) : null}
 
           {result.evidence.length ? (
-            <section className="rounded-2xl border border-outline bg-background p-3">
+            <section className="atlas-soft-section p-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
                 Evidências
               </p>
               <div className="mt-2 space-y-2">
                 {result.evidence.map((item) => (
-                  <div key={item} className="rounded-xl bg-surface-container-low px-3 py-2 text-[11px] leading-5 text-on-surface-variant">
+                  <div key={item} className="atlas-soft-subcard px-3 py-2 text-[11px] leading-5 text-on-surface-variant">
                     {item}
                   </div>
                 ))}
@@ -550,13 +654,13 @@ export function AtlasAnalystPanel({
           ) : null}
 
           {result.risks.length ? (
-            <section className="rounded-2xl border border-outline bg-background p-3">
+            <section className="atlas-soft-section p-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
                 Riscos e cuidados
               </p>
               <div className="mt-2 space-y-2">
                 {result.risks.map((risk) => (
-                  <div key={risk} className="rounded-xl bg-surface-container-low px-3 py-2 text-[11px] leading-5 text-on-surface-variant">
+                  <div key={risk} className="atlas-soft-subcard px-3 py-2 text-[11px] leading-5 text-on-surface-variant">
                     {risk}
                   </div>
                 ))}
@@ -565,13 +669,13 @@ export function AtlasAnalystPanel({
           ) : null}
 
           {result.warnings.length ? (
-            <section className="rounded-2xl border border-outline bg-background p-3">
+            <section className="atlas-soft-section p-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
                 Avisos de contexto
               </p>
               <div className="mt-2 space-y-2">
                 {result.warnings.map((warning) => (
-                  <div key={warning} className="rounded-xl bg-surface-container-low px-3 py-2 text-[11px] leading-5 text-on-surface-variant">
+                  <div key={warning} className="atlas-soft-subcard px-3 py-2 text-[11px] leading-5 text-on-surface-variant">
                     {warning}
                   </div>
                 ))}
@@ -580,7 +684,7 @@ export function AtlasAnalystPanel({
           ) : null}
 
           {result.followUps.length ? (
-            <section className="rounded-2xl border border-outline bg-background p-3">
+            <section className="atlas-soft-section p-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
                 Próximos cortes
               </p>
@@ -591,7 +695,8 @@ export function AtlasAnalystPanel({
                     type="button"
                     onClick={() => handleAsk(followUp)}
                     disabled={isDisabled || isPending}
-                    className="rounded-full border border-outline bg-surface-container-low px-3 py-1.5 text-left text-[11px] font-medium text-on-surface-variant transition hover:border-secondary/30 hover:text-on-surface disabled:cursor-not-allowed disabled:opacity-60"
+                    className="atlas-soft-pill text-left normal-case tracking-[0.02em] disabled:cursor-not-allowed disabled:opacity-60"
+                    data-interactive="true"
                   >
                     {followUp}
                   </button>
@@ -602,7 +707,7 @@ export function AtlasAnalystPanel({
         </div>
       ) : null}
 
-      <section className="mt-4 rounded-2xl border border-outline bg-background p-3">
+      <section className="atlas-soft-section mt-4 p-3">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
             Memória recente
@@ -619,7 +724,7 @@ export function AtlasAnalystPanel({
                   setQuestion(entry.question);
                   setResult(entry);
                 }}
-                className="w-full rounded-xl border border-outline bg-surface-container-low px-3 py-2 text-left transition hover:border-secondary/30"
+                className="atlas-soft-memory-card w-full px-3 py-2 text-left"
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[11px] font-semibold leading-5 text-on-surface">

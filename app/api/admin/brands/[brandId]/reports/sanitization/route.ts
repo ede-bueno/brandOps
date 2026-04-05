@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireBrandAccess } from "@/lib/brandops/admin";
+import { normalizeBrandGovernance } from "@/lib/brandops/governance";
 import { buildSanitizationReport } from "@/lib/brandops/server/sanitization-report";
 import type {
   BrandDataset,
@@ -195,6 +196,7 @@ function buildBrandDatasetSkeleton(
     name: "",
     createdAt: "",
     updatedAt: "",
+    governance: normalizeBrandGovernance(),
     hydration: {
       catalogLoaded: false,
       salesLinesLoaded: false,

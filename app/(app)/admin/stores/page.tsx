@@ -18,6 +18,7 @@ import {
 } from "@/components/analytics/AnalyticsPrimitives";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { formatLongDateTime } from "@/lib/brandops/format";
+import { BRAND_PLAN_LABELS, normalizeBrandGovernance } from "@/lib/brandops/governance";
 import {
   EntityChip,
   FormField,
@@ -26,6 +27,7 @@ import {
   SectionHeading,
   SurfaceCard,
 } from "@/components/ui-shell";
+import type { BrandPlanTier } from "@/lib/brandops/types";
 
 type AdminBrand = {
   id: string;
@@ -43,6 +45,22 @@ type AdminBrand = {
   postal_code?: string | null;
   tax_id?: string | null;
   notes?: string | null;
+  plan_tier?: BrandPlanTier | null;
+  feature_flags?: {
+    atlasAi?: boolean;
+    atlasCommandCenter?: boolean;
+    brandLearning?: boolean;
+    geminiModelCatalog?: boolean;
+  } | null;
+  governance?: {
+    planTier: BrandPlanTier;
+    featureFlags: {
+      atlasAi: boolean;
+      atlasCommandCenter: boolean;
+      brandLearning: boolean;
+      geminiModelCatalog: boolean;
+    };
+  };
   created_at: string;
   updated_at: string;
   brand_members?: Array<{
@@ -70,7 +88,16 @@ type BrandFormState = {
   postalCode: string;
   taxId: string;
   notes: string;
+  planTier: BrandPlanTier;
+  atlasAi: boolean;
+  atlasCommandCenter: boolean;
+  brandLearning: boolean;
+  geminiModelCatalog: boolean;
 };
+
+type BrandTextFieldKey = {
+  [Key in keyof BrandFormState]: BrandFormState[Key] extends string ? Key : never;
+}[keyof BrandFormState];
 
 const emptyBrandForm: BrandFormState = {
   name: "",
@@ -87,9 +114,30 @@ const emptyBrandForm: BrandFormState = {
   postalCode: "",
   taxId: "",
   notes: "",
+  planTier: "starter",
+  atlasAi: false,
+  atlasCommandCenter: false,
+  brandLearning: false,
+  geminiModelCatalog: false,
 };
 
-const formSections = [
+function toBrandPayload(form: BrandFormState) {
+  return {
+    ...form,
+    planTier: form.planTier,
+    featureFlags: {
+      atlasAi: form.atlasAi,
+      atlasCommandCenter: form.atlasCommandCenter,
+      brandLearning: form.brandLearning,
+      geminiModelCatalog: form.geminiModelCatalog,
+    },
+  };
+}
+
+const formSections: ReadonlyArray<{
+  title: string;
+  fields: ReadonlyArray<readonly [BrandTextFieldKey, string, string]>;
+}> = [
   {
     title: "Identidade",
     fields: [
@@ -135,7 +183,37 @@ function toForm(brand: AdminBrand | null): BrandFormState {
     postalCode: brand?.postal_code ?? "",
     taxId: brand?.tax_id ?? "",
     notes: brand?.notes ?? "",
+    planTier: brand?.governance?.planTier ?? "starter",
+    atlasAi: brand?.governance?.featureFlags.atlasAi ?? false,
+    atlasCommandCenter:
+      brand?.governance?.featureFlags.atlasCommandCenter ?? false,
+    brandLearning: brand?.governance?.featureFlags.brandLearning ?? false,
+    geminiModelCatalog:
+      brand?.governance?.featureFlags.geminiModelCatalog ?? false,
   };
+}
+
+function countReleasedCapabilities(governance: AdminBrand["governance"] | null | undefined) {
+  if (!governance) {
+    return 0;
+  }
+
+  return Object.values(governance.featureFlags).filter(Boolean).length;
+}
+
+function describeGovernance(governance: AdminBrand["governance"] | null | undefined) {
+  if (!governance) {
+    return "Sem governanca estruturada.";
+  }
+
+  const labels: string[] = [];
+
+  if (governance.featureFlags.atlasAi) labels.push("Atlas IA");
+  if (governance.featureFlags.atlasCommandCenter) labels.push("Torre IA");
+  if (governance.featureFlags.brandLearning) labels.push("Aprender negocio");
+  if (governance.featureFlags.geminiModelCatalog) labels.push("Catalogo Gemini");
+
+  return labels.length ? labels.join(", ") : "Sem recursos inteligentes liberados.";
 }
 
 export default function AdminStoresPage() {
@@ -215,6 +293,12 @@ export default function AdminStoresPage() {
   const totalMembers = brands.reduce((count, brand) => count + (brand.brand_members?.length ?? 0), 0);
   const selectedMemberCount = selectedBrand?.brand_members?.length ?? 0;
   const selectedLocation = [selectedBrand?.city, selectedBrand?.state].filter(Boolean).join(", ");
+  const selectedGovernance =
+    selectedBrand?.governance ??
+    normalizeBrandGovernance({
+      planTier: selectedBrand?.plan_tier,
+      featureFlags: selectedBrand?.feature_flags,
+    });
 
   return (
     <div className="space-y-4">
@@ -293,6 +377,12 @@ export default function AdminStoresPage() {
               ) : visibleBrands.length ? (
                 visibleBrands.map((brand) => {
                   const isSelected = brand.id === selectedBrandId && !isCreating;
+                  const governance =
+                    brand.governance ??
+                    normalizeBrandGovernance({
+                      planTier: brand.plan_tier,
+                      featureFlags: brand.feature_flags,
+                    });
                   return (
                     <button
                       key={brand.id}
@@ -326,6 +416,12 @@ export default function AdminStoresPage() {
                           <span className="truncate">{brand.slug ?? "S/ slug"}</span>
                           {brand.website_url ? <span className="h-1 w-1 rounded-full bg-secondary/70" /> : null}
                           {brand.website_url ? <span className="truncate">site ativo</span> : null}
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          <span className="status-chip">{BRAND_PLAN_LABELS[governance.planTier]}</span>
+                          <span className="status-chip">
+                            {governance.featureFlags.atlasAi ? "IA on" : "IA off"}
+                          </span>
                         </div>
                       </div>
                     </button>
@@ -364,7 +460,7 @@ export default function AdminStoresPage() {
                           "Content-Type": "application/json",
                           Authorization: `Bearer ${session.access_token}`,
                         },
-                        body: JSON.stringify(createForm),
+                        body: JSON.stringify(toBrandPayload(createForm)),
                       });
                       const payload = await response.json();
                       if (!response.ok) throw new Error(payload.error ?? "Falha ao criar loja.");
@@ -414,6 +510,13 @@ export default function AdminStoresPage() {
                         {selectedBrand.name}
                       </h2>
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-on-surface-variant">
+                        <span className="status-chip">{BRAND_PLAN_LABELS[selectedGovernance.planTier]}</span>
+                        <span className="status-chip">
+                          {selectedGovernance.featureFlags.atlasAi ? "Atlas IA liberado" : "Atlas IA bloqueado"}
+                        </span>
+                        <span className="status-chip">
+                          {countReleasedCapabilities(selectedGovernance)} capacidade(s)
+                        </span>
                         {selectedBrand.contact_email ? (
                           <EntityChip icon={<MailPlus size={13} />} text={selectedBrand.contact_email} />
                         ) : null}
@@ -507,7 +610,7 @@ export default function AdminStoresPage() {
                               "Content-Type": "application/json",
                               Authorization: `Bearer ${session.access_token}`,
                             },
-                            body: JSON.stringify(selectedForm),
+                            body: JSON.stringify(toBrandPayload(selectedForm)),
                           });
                           const payload = await response.json();
                           if (!response.ok) throw new Error(payload.error ?? "Falha ao atualizar loja.");
@@ -547,6 +650,101 @@ export default function AdminStoresPage() {
                         title={String(selectedMemberCount)}
                         description="Quantidade de acessos ativos nesta marca."
                       />
+                      <AnalyticsCalloutCard
+                        eyebrow="Plano e governanca"
+                        title={BRAND_PLAN_LABELS[selectedGovernance.planTier]}
+                        description={describeGovernance(selectedGovernance)}
+                        tone={selectedGovernance.featureFlags.atlasAi ? "positive" : "info"}
+                      />
+                      <div className="panel-muted space-y-3 p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
+                              Governança SaaS
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-on-surface">
+                              {BRAND_PLAN_LABELS[selectedForm.planTier]}
+                            </p>
+                          </div>
+                          <span className="status-chip">Plano</span>
+                        </div>
+
+                        <FormField label="Plano da marca">
+                          <select
+                            value={selectedForm.planTier}
+                            onChange={(event) =>
+                              setSelectedForm((current) => {
+                                const governance = normalizeBrandGovernance({
+                                  planTier: event.target.value as BrandPlanTier,
+                                });
+
+                                return {
+                                  ...current,
+                                  planTier: governance.planTier,
+                                  atlasAi: governance.featureFlags.atlasAi,
+                                  atlasCommandCenter:
+                                    governance.featureFlags.atlasCommandCenter,
+                                  brandLearning:
+                                    governance.featureFlags.brandLearning,
+                                  geminiModelCatalog:
+                                    governance.featureFlags.geminiModelCatalog,
+                                };
+                              })
+                            }
+                            className="brandops-input w-full"
+                          >
+                            {Object.entries(BRAND_PLAN_LABELS).map(([value, label]) => (
+                              <option key={value} value={value}>
+                                {label}
+                              </option>
+                            ))}
+                          </select>
+                        </FormField>
+
+                        <div className="grid gap-2">
+                          <FeatureToggle
+                            label="Atlas IA"
+                            description="Libera uso do Atlas Analyst na marca."
+                            checked={selectedForm.atlasAi}
+                            onChange={(checked) =>
+                              setSelectedForm((current) => ({ ...current, atlasAi: checked }))
+                            }
+                          />
+                          <FeatureToggle
+                            label="Torre com IA"
+                            description="Permite a casa nativa do Atlas dentro da Torre de Controle."
+                            checked={selectedForm.atlasCommandCenter}
+                            onChange={(checked) =>
+                              setSelectedForm((current) => ({
+                                ...current,
+                                atlasCommandCenter: checked,
+                              }))
+                            }
+                          />
+                          <FeatureToggle
+                            label="Aprender negócio"
+                            description="Libera varredura histórica e snapshot de aprendizado da marca."
+                            checked={selectedForm.brandLearning}
+                            onChange={(checked) =>
+                              setSelectedForm((current) => ({
+                                ...current,
+                                brandLearning: checked,
+                              }))
+                            }
+                          />
+                          <FeatureToggle
+                            label="Catálogo de modelos Gemini"
+                            description="Permite listar os modelos disponíveis pela chave da própria loja."
+                            checked={selectedForm.geminiModelCatalog}
+                            onChange={(checked) =>
+                              setSelectedForm((current) => ({
+                                ...current,
+                                geminiModelCatalog: checked,
+                              }))
+                            }
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ) : activeTab === "team" ? (
@@ -759,7 +957,7 @@ function BrandForm({
               <FormInputField
                 key={key}
                 label={label}
-                value={form[key as keyof BrandFormState]}
+                value={form[key]}
                 placeholder={placeholder}
                 onChange={(value) => onChange({ ...form, [key]: value })}
               />
@@ -848,6 +1046,35 @@ function FormInputField({
         />
       )}
     </FormField>
+  );
+}
+
+function FeatureToggle({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <label className="flex items-start justify-between gap-3 rounded-xl border border-outline bg-background px-3 py-3">
+      <div>
+        <p className="text-sm font-semibold text-on-surface">{label}</p>
+        <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
+          {description}
+        </p>
+      </div>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="mt-1 h-4 w-4 accent-[var(--color-primary)]"
+      />
+    </label>
   );
 }
 

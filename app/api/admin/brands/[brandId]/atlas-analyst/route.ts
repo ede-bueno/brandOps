@@ -9,9 +9,18 @@ import {
   saveAtlasAnalystFeedback,
 } from "@/lib/brandops/ai/store";
 import type {
+  AtlasAnalystSkillId,
   AtlasAnalystFeedbackPayload,
   AtlasAnalystRequestPayload,
 } from "@/lib/brandops/ai/types";
+
+function assertAtlasAiEnabled(context: Awaited<ReturnType<typeof requireBrandAccess>>) {
+  if (!context.brandGovernance.featureFlags.atlasAi) {
+    throw new Error(
+      "O plano atual desta marca ainda nao libera o Atlas IA. Ajuste a governanca da marca em Acessos para ativar a camada analitica.",
+    );
+  }
+}
 
 export async function GET(
   request: Request,
@@ -20,6 +29,7 @@ export async function GET(
   try {
     const { brandId } = await params;
     const context = await requireBrandAccess(request, brandId);
+    assertAtlasAiEnabled(context);
     const [runs, contextItems] = await Promise.all([
       listAtlasAnalystRuns(context.supabase, brandId, context.user.id),
       listAtlasContextEntries(context.supabase, brandId),
@@ -46,6 +56,7 @@ export async function POST(
   try {
     const { brandId } = await params;
     const context = await requireBrandAccess(request, brandId);
+    assertAtlasAiEnabled(context);
 
     const body = (await request.json()) as AtlasAnalystRequestPayload;
     const question = String(body.question ?? "").trim();
@@ -62,12 +73,16 @@ export async function POST(
       listAtlasContextEntries(context.supabase, brandId, 8),
     ]);
     const gemini = await resolveAtlasAnalystGeminiAccess(brandId);
+    const requestedSkill = body.skill ?? "auto";
+    const resolvedSkill: AtlasAnalystSkillId =
+      requestedSkill === "auto" ? gemini.defaultSkill ?? "auto" : requestedSkill;
+
     const response = await runAtlasAnalyst(
       request,
       {
         brandId,
         question,
-        skill: body.skill ?? "auto",
+        skill: resolvedSkill,
         pageContext: body.pageContext ?? null,
         periodLabel: body.periodLabel ?? null,
         brandLabel: body.brandLabel ?? null,
@@ -77,8 +92,10 @@ export async function POST(
       {
         apiKey: gemini.apiKey,
         model: gemini.model,
+        temperature: gemini.temperature,
         recentRuns,
         brandContext,
+        operatorGuidance: gemini.operatorGuidance,
       },
     );
 
@@ -88,7 +105,7 @@ export async function POST(
       {
         brandId,
         question,
-        skill: body.skill ?? "auto",
+        skill: resolvedSkill,
         pageContext: body.pageContext ?? null,
         periodLabel: body.periodLabel ?? null,
         brandLabel: body.brandLabel ?? null,
@@ -98,6 +115,7 @@ export async function POST(
       response,
       {
         model: gemini.model,
+        temperature: gemini.temperature,
       },
     );
 
@@ -125,6 +143,7 @@ export async function PATCH(
   try {
     const { brandId } = await params;
     const context = await requireBrandAccess(request, brandId);
+    assertAtlasAiEnabled(context);
     const body = (await request.json()) as AtlasAnalystFeedbackPayload;
 
     if (!body.runId?.trim()) {

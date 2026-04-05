@@ -19,8 +19,6 @@ function normalizeSettings(provider: IntegrationProvider, settings: unknown) {
       credentialSource: source.credentialSource,
       hasApiKey: source.hasApiKey,
       apiKeyHint: source.apiKeyHint,
-      platformCredentialConfigured: source.platformCredentialConfigured,
-      platformCredentialHint: source.platformCredentialHint,
     };
   }
 
@@ -37,8 +35,6 @@ function normalizeSettings(provider: IntegrationProvider, settings: unknown) {
       credentialSource: source.credentialSource,
       hasApiKey: source.hasApiKey,
       apiKeyHint: source.apiKeyHint,
-      platformCredentialConfigured: source.platformCredentialConfigured,
-      platformCredentialHint: source.platformCredentialHint,
     };
   }
 
