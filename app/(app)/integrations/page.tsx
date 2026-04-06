@@ -1982,154 +1982,170 @@ export default function IntegrationsPage() {
             ) : null}
 
             {activeSection === "sync" ? (
-            <div className="brandops-toolbar-panel text-sm text-on-surface-variant">
-              {activeProvider === "gemini" ? (
-                <>
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-on-surface">Status da credencial</p>
-                      <p className="mt-1">
-                        {currentState.hasApiKey
-                          ? `Chave própria salva em ${currentState.apiKeyHint}.`
-                          : "Nenhuma chave própria salva para esta loja."}
-                      </p>
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+                <div className="brandops-toolbar-panel text-sm text-on-surface-variant">
+                  {activeProvider === "gemini" ? (
+                    <>
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-on-surface">Status da credencial</p>
+                          <p className="mt-1">
+                            {currentState.hasApiKey
+                              ? `Chave própria salva em ${currentState.apiKeyHint}.`
+                              : "Nenhuma chave própria salva para esta loja."}
+                          </p>
+                        </div>
+                        <span className="status-chip">
+                          {currentState.mode === "api" ? "agent ready" : "disabled"}
+                        </span>
+                      </div>
+                      <div className="mt-4 border-t border-outline/50 pt-4">
+                        <p className="font-medium text-on-surface">Leitura operacional</p>
+                        <p className="mt-1 leading-6">
+                          O Gemini não faz sync em lote. Ele só entra em ação quando o operador chama o Atlas, sempre sobre relatórios internos já consolidados.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-4">
+                      {activeProvider === "meta" || activeProvider === "ga4" ? (
+                        <div className="atlas-soft-subcard px-4 py-3">
+                          <p className="font-medium text-on-surface">Status da credencial</p>
+                          <p className="mt-1">
+                            {currentState.hasApiKey
+                              ? `${activeProvider === "meta" ? "Token" : "Credencial"} própria salva em ${currentState.apiKeyHint}.`
+                              : `Nenhuma ${activeProvider === "meta" ? "token" : "credencial"} própria salva para esta loja.`}
+                          </p>
+                        </div>
+                      ) : null}
+                      <div className="atlas-soft-subcard px-4 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="font-medium text-on-surface">Última sincronização</p>
+                            <p className="mt-1">{formatSyncLabel(current)}</p>
+                          </div>
+                          <span className="status-chip">{current?.lastSyncStatus ?? "idle"}</span>
+                        </div>
+                        {current?.lastSyncError ? (
+                          <div className="mt-3 rounded-xl border border-error/12 bg-error/8 px-4 py-3 text-error">
+                            {current.lastSyncError}
+                          </div>
+                        ) : null}
+                      </div>
+                      {activeProvider === "meta" ? (
+                        <div className="atlas-soft-subcard px-4 py-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="font-medium text-on-surface">Sincronização do catálogo</p>
+                              <p className="mt-1">{formatCatalogSyncLabel(current)}</p>
+                            </div>
+                            <span className="status-chip">
+                              {current?.settings.catalogSyncStatus ?? "idle"}
+                            </span>
+                          </div>
+                          {current?.settings.catalogProductCount ? (
+                            <p className="mt-2 text-xs text-on-surface-variant">
+                              {current.settings.catalogProductCount} item(ns) consolidados da fonte Meta.
+                            </p>
+                          ) : null}
+                          {current?.settings.catalogSyncError ? (
+                            <div className="mt-3 rounded-xl border border-error/12 bg-error/8 px-4 py-3 text-error">
+                              {current.settings.catalogSyncError}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
-                    <span className="status-chip">
-                      {currentState.mode === "api" ? "agent ready" : "disabled"}
-                    </span>
-                  </div>
-                  <div className="mt-4 border-t border-outline/50 pt-4">
-                    <p className="font-medium text-on-surface">Execução sob demanda</p>
-                    <p className="mt-1 leading-6">
-                      O Gemini não sincroniza dados em lote. Ele entra em ação sob demanda, sempre usando os relatórios internos já consolidados no Atlas.
-                    </p>
-                    <p className="mt-2 leading-6">
-                      Comportamento do agente, modelo e janela padrão ficam em{" "}
-                      <Link href="/settings#atlas-ai-settings" className="text-secondary hover:underline">
-                        Configurações
-                      </Link>
-                      .
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-              {activeProvider === "meta" || activeProvider === "ga4" ? (
-                <div className="atlas-soft-subcard mb-4 px-4 py-3">
-                  <p className="font-medium text-on-surface">Status da credencial</p>
-                  <p className="mt-1">
-                    {currentState.hasApiKey
-                      ? `${activeProvider === "meta" ? "Token" : "Credencial"} própria salva em ${currentState.apiKeyHint}.`
-                      : `Nenhuma ${activeProvider === "meta" ? "token" : "credencial"} própria salva para esta loja.`}
+                  )}
+                </div>
+
+                <div className="brandops-toolbar-panel text-sm text-on-surface-variant">
+                  <p className="font-medium text-on-surface">Executar agora</p>
+                  <p className="mt-1 leading-6">
+                    {activeProvider === "gemini"
+                      ? "Configuração de comportamento do agente fica em Configurações. Aqui você só garante que a chave da loja está pronta para uso."
+                      : "Rode sync sob demanda quando a fonte externa mudar ou quando precisar atualizar a leitura desta marca."}
                   </p>
-                </div>
-              ) : null}
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="font-medium text-on-surface">Última sincronização</p>
-                  <p className="mt-1">{formatSyncLabel(current)}</p>
-                </div>
-                <span className="status-chip">{current?.lastSyncStatus ?? "idle"}</span>
-              </div>
-              {current?.lastSyncError ? (
-                <div className="mt-3 rounded-xl border border-error/12 bg-error/8 px-4 py-3 text-error">
-                  {current.lastSyncError}
-                </div>
-              ) : null}
-              {activeProvider === "meta" ? (
-                <div className="mt-4 border-t border-outline/50 pt-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-on-surface">Sincronização do catálogo</p>
-                      <p className="mt-1">{formatCatalogSyncLabel(current)}</p>
-                    </div>
-                    <span className="status-chip">
-                      {current?.settings.catalogSyncStatus ?? "idle"}
-                    </span>
+                  <div className="brandops-toolbar-actions pt-4">
+                    {activeProvider === "meta" ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleMetaSync}
+                          disabled={
+                            syncingMeta ||
+                            currentState.mode !== "api" ||
+                            !currentState.adAccountId ||
+                            !metaCredentialReady
+                          }
+                          className="brandops-button brandops-button-primary"
+                        >
+                          {syncingMeta ? (
+                            <>
+                              <Loader2 size={16} className="animate-spin" />
+                              Sincronizando Meta
+                            </>
+                          ) : (
+                            "Sincronizar Meta agora"
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleMetaCatalogSync}
+                          disabled={
+                            syncingCatalog ||
+                            currentState.mode !== "api" ||
+                            !currentState.catalogId ||
+                            !metaCredentialReady
+                          }
+                          className="brandops-button brandops-button-ghost"
+                        >
+                          {syncingCatalog ? (
+                            <>
+                              <Loader2 size={16} className="animate-spin" />
+                              Sincronizando catálogo
+                            </>
+                          ) : (
+                            "Sincronizar catálogo"
+                          )}
+                        </button>
+                      </>
+                    ) : null}
+                    {activeProvider === "ga4" ? (
+                      <button
+                        type="button"
+                        onClick={handleGa4Sync}
+                        disabled={
+                          syncingGa4 ||
+                          currentState.mode !== "api" ||
+                          !currentState.propertyId ||
+                          !ga4CredentialReady
+                        }
+                        className="brandops-button brandops-button-primary"
+                      >
+                        {syncingGa4 ? (
+                          <>
+                            <Loader2 size={16} className="animate-spin" />
+                            Sincronizando GA4
+                          </>
+                        ) : (
+                          "Sincronizar GA4 agora"
+                        )}
+                      </button>
+                    ) : null}
+                    {activeProvider === "gemini" ? (
+                      <Link href="/settings#atlas-ai-settings" className="brandops-button brandops-button-primary">
+                        Abrir Configurações do Atlas
+                      </Link>
+                    ) : null}
                   </div>
-                  {current?.settings.catalogProductCount ? (
-                    <p className="mt-2 text-xs text-on-surface-variant">
-                      {current.settings.catalogProductCount} item(ns) consolidados da fonte Meta.
+                  {activeProvider === "gemini" ? (
+                    <p className="mt-4 text-[11px] leading-5 text-on-surface-variant">
+                      Modelo, temperatura, skill e janela padrão ficam na Central Estratégica.
                     </p>
                   ) : null}
-                  {current?.settings.catalogSyncError ? (
-                    <div className="mt-3 rounded-xl border border-error/12 bg-error/8 px-4 py-3 text-error">
-                      {current.settings.catalogSyncError}
-                    </div>
-                  ) : null}
                 </div>
-              ) : null}
-              <div className="brandops-toolbar-actions pt-1">
-                {activeProvider === "meta" ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleMetaSync}
-                      disabled={
-                        syncingMeta ||
-                        currentState.mode !== "api" ||
-                        !currentState.adAccountId ||
-                        !metaCredentialReady
-                      }
-                      className="brandops-button brandops-button-primary"
-                    >
-                      {syncingMeta ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin" />
-                          Sincronizando Meta
-                        </>
-                      ) : (
-                        "Sincronizar Meta agora"
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleMetaCatalogSync}
-                      disabled={
-                        syncingCatalog ||
-                        currentState.mode !== "api" ||
-                        !currentState.catalogId ||
-                        !metaCredentialReady
-                      }
-                      className="brandops-button brandops-button-ghost"
-                    >
-                      {syncingCatalog ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin" />
-                          Sincronizando catálogo
-                        </>
-                      ) : (
-                        "Sincronizar catálogo"
-                      )}
-                    </button>
-                  </>
-                ) : null}
-                {activeProvider === "ga4" ? (
-                  <button
-                    type="button"
-                    onClick={handleGa4Sync}
-                    disabled={
-                      syncingGa4 ||
-                      currentState.mode !== "api" ||
-                      !currentState.propertyId ||
-                      !ga4CredentialReady
-                    }
-                    className="brandops-button brandops-button-primary"
-                  >
-                    {syncingGa4 ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        Sincronizando GA4
-                      </>
-                    ) : (
-                      "Sincronizar GA4 agora"
-                    )}
-                  </button>
-                ) : null}
               </div>
-                </>
-              )}
-            </div>
             ) : null}
 
             {activeSection === "rules" ? (
