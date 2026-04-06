@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BrainCircuit,
   Check,
@@ -14,6 +14,7 @@ import {
 import { useBrandOps } from "./BrandOpsProvider";
 import { InlineNotice, SectionHeading } from "./ui-shell";
 import type {
+  AtlasBrandLearningFinding,
   AtlasBrandLearningFeedbackPayload,
   AtlasBrandLearningFeedbackSummary,
   AtlasBrandLearningRequestPayload,
@@ -144,6 +145,7 @@ export function AtlasBusinessLearningPanel() {
   const [selectedScope, setSelectedScope] = useState<AtlasBrandLearningScope>("all");
   const [snapshot, setSnapshot] = useState<AtlasBrandLearningSnapshot | null>(null);
   const [previousSnapshot, setPreviousSnapshot] = useState<AtlasBrandLearningSnapshot | null>(null);
+  const [findings, setFindings] = useState<AtlasBrandLearningFinding[]>([]);
   const [runs, setRuns] = useState<AtlasBrandLearningRun[]>([]);
   const [feedback, setFeedback] = useState<AtlasBrandLearningFeedbackSummary | null>(null);
   const [notice, setNotice] = useState<{ kind: "info" | "error" | "success"; text: string } | null>(null);
@@ -166,9 +168,43 @@ export function AtlasBusinessLearningPanel() {
   const isAtlasEnabled = geminiIntegration?.mode === "api";
   const isLearningEnabled = activeBrand?.governance.featureFlags.brandLearning ?? false;
   const latestRun = runs[0] ?? null;
+  const isExecutionRunning = isRunning || latestRun?.status === "running";
   const snapshotRangeLabel = useMemo(
     () => formatLearningRange(snapshot?.periodFrom, snapshot?.periodTo),
     [snapshot?.periodFrom, snapshot?.periodTo],
+  );
+  const structuredFindings = useMemo(
+    () => [
+      {
+        title: "Prioridades",
+        items: findings
+          .filter((finding) => finding.group === "priority")
+          .map((finding) => finding.label)
+          .slice(0, 4),
+      },
+      {
+        title: "Riscos",
+        items: findings
+          .filter((finding) => finding.group === "risk" || finding.group === "error")
+          .map((finding) => finding.label)
+          .slice(0, 4),
+      },
+      {
+        title: "Oportunidades",
+        items: findings
+          .filter((finding) => finding.group === "opportunity")
+          .map((finding) => finding.label)
+          .slice(0, 4),
+      },
+      {
+        title: "Gatilhos",
+        items: findings
+          .filter((finding) => finding.group === "watch" || finding.group === "trigger")
+          .map((finding) => finding.label)
+          .slice(0, 4),
+      },
+    ],
+    [findings],
   );
   const currentScopeLabel =
     learningScopeOptions.find((option) => option.value === selectedScope)?.label ?? "Todo histórico";
@@ -289,25 +325,26 @@ export function AtlasBusinessLearningPanel() {
     return null;
   }, [activeBrand?.files, activeBrand?.integrations, snapshot?.generatedAt]);
 
-  useEffect(() => {
-    const accessToken = session?.access_token;
+  const loadLearning = useCallback(
+    async (options?: { silent?: boolean }) => {
+      const accessToken = session?.access_token;
 
-    if (!activeBrandId || !accessToken) {
-      setSelectedScope("all");
-      setSnapshot(null);
-      setPreviousSnapshot(null);
-      setRuns([]);
-      setFeedback(null);
-      setNotice(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    async function loadLearning() {
-      try {
-        setIsLoading(true);
+      if (!activeBrandId || !accessToken) {
+        setSelectedScope("all");
+        setSnapshot(null);
+        setPreviousSnapshot(null);
+        setFindings([]);
+        setRuns([]);
+        setFeedback(null);
         setNotice(null);
+        return;
+      }
+
+      try {
+        if (!options?.silent) {
+          setIsLoading(true);
+          setNotice(null);
+        }
 
         const response = await fetch(`/api/admin/brands/${activeBrandId}/atlas-learning`, {
           headers: {
@@ -323,36 +360,46 @@ export function AtlasBusinessLearningPanel() {
           throw new Error(payload?.error ?? "Nao foi possivel carregar o aprendizado do negócio.");
         }
 
-        if (!cancelled) {
-          setSnapshot(payload?.snapshot ?? null);
-          setPreviousSnapshot(payload?.previousSnapshot ?? null);
-          setRuns(payload?.runs ?? []);
-          setFeedback(payload?.feedback ?? null);
-          setSelectedScope(payload?.snapshot?.scopeKey ?? "all");
-        }
+        setSnapshot(payload?.snapshot ?? null);
+        setPreviousSnapshot(payload?.previousSnapshot ?? null);
+        setFindings(payload?.findings ?? []);
+        setRuns(payload?.runs ?? []);
+        setFeedback(payload?.feedback ?? null);
+        setSelectedScope(payload?.snapshot?.scopeKey ?? "all");
       } catch (error) {
-        if (!cancelled) {
-          setNotice({
-            kind: "error",
-            text:
-              error instanceof Error
-                ? error.message
-                : "Nao foi possivel carregar o aprendizado do negócio.",
-          });
-        }
+        setNotice({
+          kind: "error",
+          text:
+            error instanceof Error
+              ? error.message
+              : "Nao foi possivel carregar o aprendizado do negócio.",
+        });
       } finally {
-        if (!cancelled) {
+        if (!options?.silent) {
           setIsLoading(false);
         }
       }
+    },
+    [activeBrandId, session?.access_token],
+  );
+
+  useEffect(() => {
+    void loadLearning();
+  }, [loadLearning]);
+
+  useEffect(() => {
+    if (latestRun?.status !== "running") {
+      return;
     }
 
-    void loadLearning();
+    const interval = window.setInterval(() => {
+      void loadLearning({ silent: true });
+    }, 4000);
 
     return () => {
-      cancelled = true;
+      window.clearInterval(interval);
     };
-  }, [activeBrandId, session?.access_token]);
+  }, [latestRun?.status, loadLearning]);
 
   async function handleLearnBusiness() {
     if (!activeBrandId || !session?.access_token) {
@@ -383,6 +430,7 @@ export function AtlasBusinessLearningPanel() {
       const payload = (await response.json().catch(() => null)) as
         | ({
             snapshot?: AtlasBrandLearningSnapshot;
+            findings?: AtlasBrandLearningFinding[];
             run?: AtlasBrandLearningRun;
             error?: string;
           })
@@ -396,6 +444,9 @@ export function AtlasBusinessLearningPanel() {
         setSnapshot(payload.snapshot);
         setSelectedScope(payload.snapshot.scopeKey ?? selectedScope);
       }
+      if (payload?.findings) {
+        setFindings(payload.findings);
+      }
       if (payload?.run) {
         setRuns((current) => [
           payload.run!,
@@ -404,8 +455,10 @@ export function AtlasBusinessLearningPanel() {
       }
 
       setNotice({
-        kind: "success",
-        text: "O Atlas atualizou o entendimento do negócio desta marca.",
+        kind: payload?.snapshot ? "success" : "info",
+        text: payload?.snapshot
+          ? "O Atlas atualizou o entendimento do negócio desta marca."
+          : "O Atlas iniciou a varredura histórica da marca. A leitura será atualizada assim que a execução terminar.",
       });
     } catch (error) {
       setNotice({
@@ -582,7 +635,7 @@ export function AtlasBusinessLearningPanel() {
                 key={option.value}
                 type="button"
                 onClick={() => setSelectedScope(option.value)}
-                disabled={isRunning}
+                disabled={isExecutionRunning}
                 className="brandops-subtab"
                 data-active={selectedScope === option.value}
               >
@@ -594,11 +647,15 @@ export function AtlasBusinessLearningPanel() {
         <button
           type="button"
           onClick={handleLearnBusiness}
-          disabled={!isAtlasEnabled || !isLearningEnabled || isRunning}
+          disabled={!isAtlasEnabled || !isLearningEnabled || isExecutionRunning}
           className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/25 bg-primary px-3 py-2 text-[11px] font-semibold text-on-primary transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isRunning ? <Loader2 size={13} className="animate-spin" /> : null}
-          {snapshot || relearnSignal ? "Reaprender negócio" : "Aprender negócio"}
+          {isExecutionRunning ? <Loader2 size={13} className="animate-spin" /> : null}
+          {isExecutionRunning
+            ? "Aprendendo negócio"
+            : snapshot || relearnSignal
+              ? "Reaprender negócio"
+              : "Aprender negócio"}
         </button>
       </div>
 
@@ -712,6 +769,34 @@ export function AtlasBusinessLearningPanel() {
                   </p>
                 )}
               </div>
+            </div>
+          </article>
+
+          <article className="atlas-soft-section px-4 py-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+              Mapa estruturado
+            </p>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              {structuredFindings.map((group) => (
+                <div key={group.title} className="atlas-soft-subcard px-3 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                    {group.title}
+                  </p>
+                  <div className="mt-2 space-y-2">
+                    {group.items.length ? (
+                      group.items.map((item) => (
+                        <div key={`${group.title}-${item}`} className="text-[11px] leading-5 text-on-surface">
+                          {item}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-[11px] leading-5 text-on-surface-variant">
+                        Nenhum item estruturado desta classe nesta rodada.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </article>
 

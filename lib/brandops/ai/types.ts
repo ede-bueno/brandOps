@@ -10,6 +10,20 @@ export type AtlasAnalystFeedbackVote = "helpful" | "not_helpful";
 export type AtlasBrandLearningStatus = "running" | "completed" | "failed";
 export type AtlasBrandLearningFeedbackVote = "aligned" | "needs_review";
 export type AtlasBrandLearningScope = "all" | "180d" | "90d" | "30d" | "analysis_window";
+export type AtlasBrandLearningFindingGroup =
+  | "signal"
+  | "priority"
+  | "opportunity"
+  | "risk"
+  | "error"
+  | "seasonality"
+  | "campaign"
+  | "catalog"
+  | "evidence"
+  | "gap"
+  | "watch"
+  | "milestone"
+  | "trigger";
 
 export type AtlasContextEntryType = "campaign" | "promotion" | "launch" | "incident" | "insight";
 export type AtlasContextEntrySource = "manual" | "imported" | "analyst" | "system";
@@ -65,6 +79,17 @@ export interface AtlasBrandLearningSnapshot {
   watchItems: string[];
   relearnTriggers: string[];
   generatedAt: string;
+}
+
+export interface AtlasBrandLearningFinding {
+  id: string;
+  brandId: string;
+  snapshotId: string;
+  runId: string | null;
+  group: AtlasBrandLearningFindingGroup;
+  label: string;
+  position: number;
+  createdAt: string;
 }
 
 export interface AtlasAnalystResponse {
@@ -143,6 +168,7 @@ export interface AtlasBrandLearningRun {
 export interface AtlasBrandLearningResponse {
   snapshot: AtlasBrandLearningSnapshot | null;
   previousSnapshot?: AtlasBrandLearningSnapshot | null;
+  findings?: AtlasBrandLearningFinding[];
   runs: AtlasBrandLearningRun[];
   feedback?: AtlasBrandLearningFeedbackSummary | null;
 }

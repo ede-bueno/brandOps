@@ -19,6 +19,7 @@ import type {
   AtlasAnalystHistoryItem,
   AtlasAnalystReportId,
   AtlasAnalystResponse,
+  AtlasBrandLearningFinding,
   AtlasBrandLearningSnapshot,
   AtlasContextEntry,
 } from "./types";
@@ -493,14 +494,46 @@ function buildCuratedContext(entries: AtlasContextEntry[] = []) {
   }));
 }
 
-function buildBrandLearningContext(snapshot?: AtlasBrandLearningSnapshot | null) {
+function buildBrandLearningContext(
+  snapshot?: AtlasBrandLearningSnapshot | null,
+  findings: AtlasBrandLearningFinding[] = [],
+) {
   if (!snapshot) {
     return null;
   }
 
+  const groupedFindings = {
+    priorities: findings
+      .filter((finding) => finding.group === "priority")
+      .map((finding) => finding.label)
+      .slice(0, 5),
+    opportunities: findings
+      .filter((finding) => finding.group === "opportunity")
+      .map((finding) => finding.label)
+      .slice(0, 4),
+    risks: findings
+      .filter((finding) => finding.group === "risk" || finding.group === "error")
+      .map((finding) => finding.label)
+      .slice(0, 5),
+    evidence: findings
+      .filter((finding) => finding.group === "evidence")
+      .map((finding) => finding.label)
+      .slice(0, 5),
+    gaps: findings
+      .filter((finding) => finding.group === "gap")
+      .map((finding) => finding.label)
+      .slice(0, 4),
+    watch: findings
+      .filter((finding) => finding.group === "watch" || finding.group === "trigger")
+      .map((finding) => finding.label)
+      .slice(0, 5),
+  };
+
   return {
     generatedAt: snapshot.generatedAt,
     scopeLabel: snapshot.scopeLabel,
+    periodFrom: snapshot.periodFrom ?? null,
+    periodTo: snapshot.periodTo ?? null,
     confidence: snapshot.confidence,
     summary: snapshot.summary,
     businessProfile: snapshot.businessProfile,
@@ -518,6 +551,7 @@ function buildBrandLearningContext(snapshot?: AtlasBrandLearningSnapshot | null)
     watchItems: snapshot.watchItems.slice(0, 4),
     nextMilestones: snapshot.nextMilestones.slice(0, 4),
     relearnTriggers: snapshot.relearnTriggers.slice(0, 4),
+    groupedFindings,
   };
 }
 
@@ -819,6 +853,7 @@ export async function runAtlasAnalyst(
     recentRuns?: AtlasAnalystHistoryItem[];
     brandContext?: AtlasContextEntry[];
     brandLearningSnapshot?: AtlasBrandLearningSnapshot | null;
+    brandLearningFindings?: AtlasBrandLearningFinding[];
     operatorGuidance?: string | null;
   },
 ): Promise<AtlasAnalystResponse> {
@@ -835,7 +870,10 @@ export async function runAtlasAnalyst(
   const { skill, reportPlan } = buildReportPlan(input);
   const memoryContext = buildMemoryContext(options?.recentRuns ?? []);
   const curatedContext = buildCuratedContext(options?.brandContext ?? []);
-  const learningContext = buildBrandLearningContext(options?.brandLearningSnapshot ?? null);
+  const learningContext = buildBrandLearningContext(
+    options?.brandLearningSnapshot ?? null,
+    options?.brandLearningFindings ?? [],
+  );
 
   const ai = new GoogleGenAI({
     apiKey,

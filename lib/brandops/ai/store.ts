@@ -10,6 +10,8 @@ import type {
   AtlasAnalystResponse,
   AtlasBrandLearningFeedbackPayload,
   AtlasBrandLearningFeedbackSummary,
+  AtlasBrandLearningFinding,
+  AtlasBrandLearningFindingGroup,
   AtlasBrandLearningFeedbackVote,
   AtlasBrandLearningRun,
   AtlasBrandLearningSnapshot,
@@ -87,6 +89,24 @@ function asLearningStatus(value: unknown): AtlasBrandLearningStatus {
 
 function asLearningFeedbackVote(value: unknown): AtlasBrandLearningFeedbackVote | null {
   return value === "aligned" || value === "needs_review" ? value : null;
+}
+
+function asLearningFindingGroup(value: unknown): AtlasBrandLearningFindingGroup {
+  return value === "signal" ||
+    value === "priority" ||
+    value === "opportunity" ||
+    value === "risk" ||
+    value === "error" ||
+    value === "seasonality" ||
+    value === "campaign" ||
+    value === "catalog" ||
+    value === "evidence" ||
+    value === "gap" ||
+    value === "watch" ||
+    value === "milestone" ||
+    value === "trigger"
+    ? value
+    : "signal";
 }
 
 function asConfidence(value: unknown): "low" | "medium" | "high" {
@@ -179,6 +199,57 @@ function mapLearningSnapshotRow(row: Record<string, unknown>): AtlasBrandLearnin
     relearnTriggers: asStringArray(payload.relearnTriggers),
     generatedAt: typeof row.generated_at === "string" ? row.generated_at : new Date().toISOString(),
   };
+}
+
+function mapLearningFindingRow(row: Record<string, unknown>): AtlasBrandLearningFinding {
+  return {
+    id: String(row.id ?? ""),
+    brandId: String(row.brand_id ?? ""),
+    snapshotId: String(row.snapshot_id ?? ""),
+    runId: typeof row.run_id === "string" ? row.run_id : null,
+    group: asLearningFindingGroup(row.finding_group),
+    label: typeof row.finding_label === "string" ? row.finding_label : "",
+    position: asNumberOrNull(row.position) ?? 0,
+    createdAt: typeof row.created_at === "string" ? row.created_at : new Date().toISOString(),
+  };
+}
+
+function buildLearningFindingRows(
+  snapshotId: string,
+  snapshot: Omit<AtlasBrandLearningSnapshot, "id" | "generatedAt">,
+) {
+  const findingGroups: Array<{
+    group: AtlasBrandLearningFindingGroup;
+    items: string[];
+  }> = [
+    { group: "signal", items: snapshot.businessSignals },
+    { group: "priority", items: snapshot.priorityStack },
+    { group: "opportunity", items: snapshot.growthOpportunities },
+    { group: "risk", items: snapshot.operationalRisks },
+    { group: "error", items: snapshot.recurringErrors },
+    { group: "seasonality", items: snapshot.seasonalityPatterns },
+    { group: "campaign", items: snapshot.campaignPatterns },
+    { group: "catalog", items: snapshot.catalogPatterns },
+    { group: "evidence", items: snapshot.evidenceSources },
+    { group: "gap", items: snapshot.dataGaps },
+    { group: "watch", items: snapshot.watchItems },
+    { group: "milestone", items: snapshot.nextMilestones },
+    { group: "trigger", items: snapshot.relearnTriggers },
+  ];
+
+  return findingGroups.flatMap(({ group, items }) =>
+    items
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map((label, index) => ({
+        brand_id: snapshot.brandId,
+        snapshot_id: snapshotId,
+        run_id: snapshot.runId ?? null,
+        finding_group: group,
+        finding_label: label,
+        position: index,
+      })),
+  );
 }
 
 export async function persistAtlasAnalystRun(
@@ -551,7 +622,38 @@ export async function saveAtlasBrandLearningSnapshot(
     throw error;
   }
 
+  const findingRows = buildLearningFindingRows(String(data.id), snapshot);
+
+  if (findingRows.length) {
+    const { error: findingsError } = await supabase
+      .from("atlas_brand_learning_findings")
+      .insert(findingRows);
+
+    if (findingsError) {
+      throw findingsError;
+    }
+  }
+
   return mapLearningSnapshotRow(data as Record<string, unknown>);
+}
+
+export async function listAtlasBrandLearningFindings(
+  supabase: SupabaseClient,
+  snapshotId: string,
+): Promise<AtlasBrandLearningFinding[]> {
+  const { data, error } = await supabase
+    .from("atlas_brand_learning_findings")
+    .select("*")
+    .eq("snapshot_id", snapshotId)
+    .order("finding_group", { ascending: true })
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((row) => mapLearningFindingRow(row as Record<string, unknown>));
 }
 
 export async function listAtlasBrandLearningRuns(

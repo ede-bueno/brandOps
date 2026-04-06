@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { requireBrandAccess } from "@/lib/brandops/admin";
 import { resolveAtlasAnalystGeminiAccess } from "@/lib/brandops/ai/config";
 import { generateAtlasBusinessLearning } from "@/lib/brandops/ai/learning";
 import {
   completeAtlasBrandLearningRun,
   failAtlasBrandLearningRun,
+  listAtlasBrandLearningFindings,
   getAtlasBrandLearningFeedbackSummary,
   getLatestAtlasBrandLearningSnapshot,
   listAtlasBrandLearningSnapshots,
@@ -97,6 +98,10 @@ export async function GET(
       listAtlasBrandLearningRuns(context.supabase, brandId),
     ]);
     const [snapshot, previousSnapshot] = snapshots;
+    const findings =
+      snapshot?.id
+        ? await listAtlasBrandLearningFindings(context.supabase, snapshot.id)
+        : [];
     const feedback =
       snapshot?.id
         ? await getAtlasBrandLearningFeedbackSummary(
@@ -110,6 +115,7 @@ export async function GET(
     return NextResponse.json({
       snapshot,
       previousSnapshot: previousSnapshot ?? null,
+      findings,
       runs,
       feedback,
     });
@@ -172,45 +178,89 @@ export async function POST(
     context = await requireBrandAccess(request, brandId);
     assertBrandLearningEnabled(context);
     const body = (await request.json().catch(() => null)) as AtlasBrandLearningRequestPayload | null;
-    const gemini = await resolveAtlasAnalystGeminiAccess(brandId);
-    const learningWindow = resolveLearningWindow(body?.scope, gemini.analysisWindowDays);
-    const [brandContext, previousSnapshot, brandResponse] = await Promise.all([
-      listAtlasContextEntries(context.supabase, brandId, 12),
-      getLatestAtlasBrandLearningSnapshot(context.supabase, brandId),
-      context.supabase.from("brands").select("name").eq("id", brandId).maybeSingle(),
-    ]);
-    const brand = brandResponse.data;
-
+    const authorization = request.headers.get("authorization");
+    if (!authorization) {
+      throw new Error("Sessão ausente para executar o aprendizado do Atlas.");
+    }
     const run = await startAtlasBrandLearningRun(context.supabase, context.user.id, brandId, {
-      model: gemini.model,
-      temperature: gemini.temperature,
-      scopeLabel: learningWindow.scopeLabel,
+      scopeLabel: "Preparando aprendizado",
     });
     runId = run.id;
 
-    const snapshotPayload = await generateAtlasBusinessLearning(request, brandId, {
-      brandLabel: brand?.name ?? brandId,
-      apiKey: gemini.apiKey,
-      model: gemini.model,
-      temperature: gemini.temperature,
-      contextEntries: brandContext,
-      previousSnapshot,
-      scope: learningWindow.scope,
-      analysisWindowDays: learningWindow.analysisWindowDays,
+    const serviceRequest = new Request(request.url, {
+      method: "GET",
+      headers: {
+        authorization,
+      },
     });
 
-    const snapshot = await saveAtlasBrandLearningSnapshot(context.supabase, run.id, {
-      ...snapshotPayload,
-      runId: run.id,
-    });
-    const completedRun = await completeAtlasBrandLearningRun(context.supabase, run.id, {
-      summary: snapshot.summary,
+    after(async () => {
+      if (!context) {
+        return;
+      }
+
+      try {
+        const gemini = await resolveAtlasAnalystGeminiAccess(brandId);
+        const learningWindow = resolveLearningWindow(body?.scope, gemini.analysisWindowDays);
+        const [brandContext, previousSnapshot, brandResponse] = await Promise.all([
+          listAtlasContextEntries(context.supabase, brandId, 12),
+          getLatestAtlasBrandLearningSnapshot(context.supabase, brandId),
+          context.supabase.from("brands").select("name").eq("id", brandId).maybeSingle(),
+        ]);
+        const brand = brandResponse.data;
+
+        await context.supabase
+          .from("atlas_brand_learning_runs")
+          .update({
+            model: gemini.model,
+            temperature: gemini.temperature,
+            scope_label: learningWindow.scopeLabel,
+          })
+          .eq("id", run.id);
+
+        const snapshotPayload = await generateAtlasBusinessLearning(serviceRequest, brandId, {
+          brandLabel: brand?.name ?? brandId,
+          apiKey: gemini.apiKey,
+          model: gemini.model,
+          temperature: gemini.temperature,
+          contextEntries: brandContext,
+          previousSnapshot,
+          scope: learningWindow.scope,
+          analysisWindowDays: learningWindow.analysisWindowDays,
+        });
+
+        const snapshot = await saveAtlasBrandLearningSnapshot(context.supabase, run.id, {
+          ...snapshotPayload,
+          runId: run.id,
+        });
+
+        await completeAtlasBrandLearningRun(context.supabase, run.id, {
+          summary: snapshot.summary,
+        });
+      } catch (error) {
+        try {
+          await failAtlasBrandLearningRun(
+            context.supabase,
+            run.id,
+            error instanceof Error
+              ? error.message
+              : "Nao foi possivel concluir o aprendizado do negócio.",
+          );
+        } catch {
+          // noop
+        }
+      }
     });
 
-    return NextResponse.json({
-      snapshot,
-      run: completedRun,
-    });
+    return NextResponse.json(
+      {
+        run: {
+          ...run,
+          scopeLabel: "Preparando aprendizado",
+        },
+      },
+      { status: 202 },
+    );
   } catch (error) {
     if (runId && context && resolvedBrandId) {
       try {

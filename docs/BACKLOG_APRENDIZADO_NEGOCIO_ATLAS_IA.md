@@ -19,14 +19,15 @@ O modo `Aprender negócio` já está ativo na base do produto com:
 - disparo manual por marca
 - execução protegida por plano e por credencial Gemini ativa
 - persistência de `runs`, `snapshots` e feedback humano
+- persistência estruturada de `findings` por snapshot
 - comparação com o snapshot anterior
 - suporte a histórico completo, recortes fixos e janela estratégica
 - consumo do snapshot aprendido pelo Atlas Analyst
+- execução assíncrona com retorno rápido e atualização posterior do estado
 
 O que ainda falta para a primeira versão robusta:
 
-- execução realmente assíncrona, sem segurar a request inteira
-- camada separada de evidências e findings consultáveis
+- camada separada mais rica de evidências consultáveis, além dos findings já persistidos
 - política de reaprendizagem automática quando a base muda muito
 - rastreabilidade ainda mais forte do período, fontes e lacunas usadas
 
@@ -78,7 +79,7 @@ O aprendizado deve gerar pelo menos estes blocos:
 ### Fase 1: Fundamento do modo de aprendizado
 
 1. `feito` criar ação explícita `Aprender negócio` na Central Estratégica
-2. `pendente` criar estado de execução assíncrona por marca
+2. `feito` criar estado de execução assíncrona por marca
 3. `feito parcial` registrar período analisado, status e autor da execução
 4. `feito` impedir execuções concorrentes da mesma marca
 
@@ -172,8 +173,8 @@ Fechar a V1 operacional do aprendizado com mais robustez de execução e rastrea
 
 Escopo recomendado:
 
-1. transformar a execução em job assíncrono com polling de status
-2. persistir evidências e findings fora do blob principal do snapshot
+1. enriquecer a execução assíncrona com fila ou worker mais durável do que o processamento pós-resposta
+2. persistir evidências consultáveis além dos findings estruturados
 3. exibir período analisado, fontes e lacunas de forma ainda mais clara
 4. usar o aprendizado de forma mais especializada por skill no Analyst
 5. acionar reaprendizagem automática quando novas importações mudarem materialmente a base

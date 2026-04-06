@@ -81,16 +81,17 @@ Data de consolidação: 2026-04-04
 - `feito` uso do snapshot anterior como memória para reaprendizagem incremental
 - `feito` exposição de próximos marcos, watch items e gatilhos de reaprendizagem na Central Estratégica
 - `feito` exposição de período analisado, evidências usadas e lacunas da leitura
-- `pendente` execução assíncrona real do aprendizado
-- `pendente` persistência estruturada de evidências e findings fora do blob do snapshot
+- `feito` execução assíncrona do aprendizado com retorno rápido e polling de status
+- `feito parcial` persistência estruturada de findings fora do blob do snapshot
+- `pendente` persistência estruturada de evidências consultáveis fora do blob principal
 
 ## 7. Próximas prioridades recomendadas
 
-1. transformar o `Aprender negócio` em execução assíncrona com polling de status
-2. persistir evidências/findings estruturados para explicar melhor o que o Atlas aprendeu
-3. elevar a consistência dos insights do Atlas com playbooks mais específicos
-4. revisar manualmente a experiência logada de Torre, Configurações e Integrações
-5. aprofundar o papel do Orb como radar/atalho, sem duplicar a Torre
+1. persistir evidências consultáveis para explicar melhor o que o Atlas aprendeu
+2. elevar a consistência dos insights do Atlas com playbooks mais específicos
+3. revisar manualmente a experiência logada de Torre, Configurações e Integrações
+4. aprofundar o papel do Orb como radar/atalho, sem duplicar a Torre
+5. substituir o pós-resposta atual por fila/worker mais durável para o aprendizado assíncrono
 
 ## 8. Navegação e arquitetura do produto
 
