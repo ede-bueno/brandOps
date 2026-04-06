@@ -731,7 +731,7 @@ input.brandops-input[type="date"] {
   z-index: 1;
   isolation: isolate;
   pointer-events: auto;
-  min-height: 2.95rem;
+  min-height: 2.72rem;
 }
 
 .atlas-navlink-active {
@@ -1707,6 +1707,58 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
   z-index: 1;
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
+}
+
+.atlas-sidebar-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.atlas-sidebar-group-trigger {
+  display: inline-flex;
+  min-height: 2.7rem;
+  width: 100%;
+  align-items: center;
+  gap: 0.7rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--color-outline) 10%, transparent 90%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 44%, transparent 56%);
+  padding: 0.55rem 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-on-surface);
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.atlas-sidebar-group-trigger:hover {
+  border-color: color-mix(in srgb, var(--color-outline) 22%, transparent 78%);
+  background: color-mix(in srgb, var(--color-surface-container) 68%, transparent 32%);
+}
+
+.atlas-sidebar-group-trigger[data-active="true"] {
+  color: var(--color-primary);
+}
+
+.atlas-sidebar-group-trigger[data-open="true"] {
+  border-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-outline));
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface-container));
+}
+
+.atlas-sidebar-group-trigger-icon {
+  display: inline-flex;
+  height: 1.85rem;
+  width: 1.85rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-outline) 16%, transparent 84%);
+  background: color-mix(in srgb, var(--color-surface-container) 62%, transparent 38%);
+  color: currentColor;
 }
 
 html.dark .atlas-sidebar {

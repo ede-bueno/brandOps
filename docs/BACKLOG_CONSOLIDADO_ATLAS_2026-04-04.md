@@ -62,7 +62,7 @@ Data de consolidação: 2026-04-04
 - `feito` cron global horário em `/api/cron/brand-syncs`, com vencimento por marca e por conector
 - `em andamento` revisão fina da UX da aba de Integrações
 - `feito parcial` Integrações reorganizada como workspace curto com trilho lateral, subtabs e radar compacto
-- `em andamento` padronizar Integrações como console único por conector, sem jogar o trabalho real para baixo da dobra
+- `feito parcial` Integrações agora usa componentes dedicados para rail, header de workspace e radar, abrindo espaço para fatiar Conectar/Operar/Regras
 - `feito parcial` Configurações reorganizada como central de ação rápida, foco atual e governança sem blocos longos de explicação
 - `feito` quadro de saúde dos conectores para leitura rápida de status e bloqueios
 - `feito` autofoco do workspace no conector que realmente pede ação, erro ou configuração
@@ -105,7 +105,7 @@ Data de consolidação: 2026-04-04
 ## 7. Próximas prioridades recomendadas
 
 1. elevar a consistência dos insights do Atlas com playbooks mais específicos
-2. refatorar `database.ts` e `BrandOpsProvider.tsx` em módulos menores
+2. continuar refatorando `database.ts` e `BrandOpsProvider.tsx` em módulos menores; a hidratação de workspace já saiu para `provider-workspace.ts`
 3. refatorar a aba de Integrações em subcomponentes menores por conector e seção
 4. fatiar o núcleo do Atlas IA em planner, tool-runner, learning-context e síntese
 5. desacoplar fallback de governança hardcoded e deixar plano/feature flags 100% orientados a banco

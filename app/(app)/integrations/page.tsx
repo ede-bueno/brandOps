@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
-  ArrowUpRight,
   BrainCircuit,
   CheckCircle2,
   Database,
@@ -12,20 +11,14 @@ import {
   Loader2,
   PlugZap,
   Radar,
-  RefreshCcw,
   ShieldCheck,
 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
-import { AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import {
-  FormField,
-  InlineNotice,
-  PageHeader,
-  SectionHeading,
-  StackItem,
-  SurfaceCard,
-} from "@/components/ui-shell";
+import { IntegrationRadar } from "@/components/integrations/IntegrationRadar";
+import { IntegrationRail } from "@/components/integrations/IntegrationRail";
+import { IntegrationWorkspaceHeader } from "@/components/integrations/IntegrationWorkspaceHeader";
+import { FormField, InlineNotice, PageHeader, SurfaceCard } from "@/components/ui-shell";
 import Link from "next/link";
 import type {
   BrandIntegrationConfig,
@@ -35,6 +28,7 @@ import type {
 } from "@/lib/brandops/types";
 import { ATLAS_GEMINI_DEFAULT_MODEL } from "@/lib/brandops/ai/model-policy";
 import { getIntegrationTutorial } from "@/lib/brandops/integration-tutorials";
+import { setAtlasOrbSyncLoading } from "@/lib/brandops/orb-sync-loading";
 import { APP_ROUTES } from "@/lib/brandops/routes";
 
 type IntegrationFormState = Record<
@@ -693,6 +687,146 @@ export default function IntegrationsPage() {
     (isEncryptionKeyNotice || isPlatformPreparationNotice)
       ? "A plataforma ainda não está pronta para salvar ou operar esta credencial nesta loja. Acione o gestor da plataforma e tente novamente depois."
       : notice?.text ?? null;
+  const operationalNotice: {
+    tone: "warning" | "info" | "error" | "success";
+    icon: ReactNode;
+    content: ReactNode;
+  } | null = (() => {
+    if (notice) {
+      if (isEncryptionKeyNotice) {
+        return {
+          tone: "warning" as const,
+          icon: <ShieldCheck size={18} />,
+          content: isInternalPlatformViewer ? (
+            <div className="space-y-1">
+              <p>Falta preparar o ambiente seguro da plataforma antes de operar segredos por loja.</p>
+              <p className="text-on-surface-variant">
+                Cadastre a variável necessária na Vercel, faça um novo deploy e tente novamente.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <p>Esta operação depende de uma preparação técnica que ainda não foi concluída.</p>
+              <p className="text-on-surface-variant">
+                Acione o gestor da plataforma e tente novamente depois da regularização do ambiente.
+              </p>
+            </div>
+          ),
+        };
+      }
+
+      if (isPlatformPreparationNotice) {
+        return {
+          tone: "warning" as const,
+          icon: <ShieldCheck size={18} />,
+          content: (
+            <div className="space-y-1">
+              <p>Esta integração depende de uma preparação técnica da plataforma que ainda não foi concluída.</p>
+              <p className="text-on-surface-variant">
+                Se você é operador da loja, acione o gestor da plataforma. Se você é gestor técnico, revise o preparo do banco e das secrets.
+              </p>
+            </div>
+          ),
+        };
+      }
+
+      if (isMetaPermissionNotice) {
+        return {
+          tone: "warning" as const,
+          icon: <AlertCircle size={18} />,
+          content: (
+            <div className="space-y-1">
+              <p>O token da Meta existe, mas o app ou o usuário não têm permissão suficiente para a API do catálogo.</p>
+              <p className="text-on-surface-variant">
+                Revise capacidades do app, acesso ao catálogo no Business Manager e permissões do token usado por esta loja.
+              </p>
+            </div>
+          ),
+        };
+      }
+
+      if (isMetaMissingCredentialNotice) {
+        return {
+          tone: "warning" as const,
+          icon: <Link2 size={18} />,
+          content: (
+            <div className="space-y-1">
+              <p>A Meta desta loja ainda não pode operar por API.</p>
+              <p className="text-on-surface-variant">
+                Salve o token próprio da marca e depois execute a sincronização novamente.
+              </p>
+            </div>
+          ),
+        };
+      }
+
+      if (isGa4MissingCredentialNotice || isGeminiMissingCredentialNotice) {
+        return {
+          tone: "info" as const,
+          icon: <Radar size={18} />,
+          content: (
+            <div className="space-y-1">
+              <p>Esta integração só fica operacional quando a credencial própria da marca é salva com sucesso.</p>
+              <p className="text-on-surface-variant">
+                Se precisar do passo a passo, abra o{" "}
+                <Link href={tutorialHref} className="font-semibold text-primary underline underline-offset-4">
+                  tutorial detalhado desta integração
+                </Link>
+                .
+              </p>
+            </div>
+          ),
+        };
+      }
+
+      return {
+        tone: notice.kind === "success" ? "success" : "error",
+        icon: notice.kind === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />,
+        content: <span>{displayNoticeText}</span>,
+      };
+    }
+
+    if (activeProvider === "gemini" && !geminiFeatureEnabled) {
+      return {
+        tone: "warning" as const,
+        icon: <AlertCircle size={18} />,
+        content: (
+          <div className="space-y-1">
+            <p className="font-semibold">O plano atual desta marca ainda não libera o Atlas IA.</p>
+            <p className="text-on-surface-variant">
+              Primeiro ajuste a governança em{" "}
+              <Link
+                href={APP_ROUTES.adminStores}
+                prefetch={false}
+                className="font-semibold text-primary underline underline-offset-4"
+              >
+                Acessos
+              </Link>
+              . Depois disso, a configuração técnica do Gemini volta a ficar operacional.
+            </p>
+          </div>
+        ),
+      };
+    }
+
+    if (!canManageIntegrations) {
+      return {
+        tone: "info" as const,
+        icon: <ShieldCheck size={18} />,
+        content: (
+          <span>
+            {activeProvider === "gemini"
+              ? geminiFeatureEnabled
+                ? "Você pode configurar a credencial Gemini da sua própria loja sem expor a chave na interface."
+                : "A credencial Gemini continua isolada por loja, mas esta marca ainda não tem a camada Atlas IA liberada."
+              : "Você pode acompanhar o status e executar as sincronizações da sua loja. Alterações de configuração seguem restritas ao superadmin."}
+          </span>
+        ),
+      };
+    }
+
+    return null;
+  })();
   const activeHealth = resolveProviderHealth(activeProvider, current, activeBrand.governance);
   const ActiveProviderIcon = providerIcons[activeProvider];
   const workspaceSectionMeta =
@@ -1355,6 +1489,7 @@ export default function IntegrationsPage() {
 
     try {
       setSyncingGa4(true);
+      setAtlasOrbSyncLoading({ active: true, label: "Sincronizando GA4" });
       setNotice(null);
 
       const response = await fetch(`/api/admin/brands/${activeBrand.id}/integrations/ga4/sync`, {
@@ -1381,6 +1516,7 @@ export default function IntegrationsPage() {
       });
     } finally {
       setSyncingGa4(false);
+      setAtlasOrbSyncLoading({ active: false });
     }
   };
 
@@ -1392,6 +1528,7 @@ export default function IntegrationsPage() {
 
     try {
       setSyncingMeta(true);
+      setAtlasOrbSyncLoading({ active: true, label: "Sincronizando Meta Ads" });
       setNotice(null);
 
       const response = await fetch(`/api/admin/brands/${activeBrand.id}/integrations/meta/sync`, {
@@ -1418,6 +1555,7 @@ export default function IntegrationsPage() {
       });
     } finally {
       setSyncingMeta(false);
+      setAtlasOrbSyncLoading({ active: false });
     }
   };
 
@@ -1429,6 +1567,7 @@ export default function IntegrationsPage() {
 
     try {
       setSyncingCatalog(true);
+      setAtlasOrbSyncLoading({ active: true, label: "Sincronizando catálogo Meta" });
       setNotice(null);
 
       const response = await fetch(`/api/admin/brands/${activeBrand.id}/integrations/meta/catalog-sync`, {
@@ -1455,11 +1594,12 @@ export default function IntegrationsPage() {
       });
     } finally {
       setSyncingCatalog(false);
+      setAtlasOrbSyncLoading({ active: false });
     }
   };
 
   return (
-    <div className="atlas-integration-room space-y-6">
+    <div className="atlas-integration-room space-y-4 xl:flex xl:h-[calc(100dvh-8.75rem)] xl:flex-col xl:overflow-hidden">
       <PageHeader
         eyebrow="Configuração por loja"
         title="Integrações"
@@ -1472,293 +1612,47 @@ export default function IntegrationsPage() {
         }
       />
 
-      {notice ? (
-        <InlineNotice
-          tone={notice.kind === "success" ? "success" : "error"}
-          icon={notice.kind === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-          className="text-sm"
-        >
-          <span>{displayNoticeText}</span>
+      {operationalNotice ? (
+        <InlineNotice tone={operationalNotice.tone} icon={operationalNotice.icon} className="text-sm">
+          {operationalNotice.content}
         </InlineNotice>
       ) : null}
 
-      {isEncryptionKeyNotice ? (
-        <InlineNotice tone="warning" icon={<ShieldCheck size={18} />} className="text-sm">
-          {isInternalPlatformViewer ? (
-            <div className="space-y-1">
-              <p>
-                O Atlas precisa da <span className="font-semibold">BRANDOPS_SECRET_ENCRYPTION_KEY</span> no ambiente da
-                Vercel para criptografar segredos por marca.
-              </p>
-              <p className="text-on-surface-variant">
-                Em <span className="font-semibold">Project Settings &gt; Environment Variables</span>, cadastre essa env em
-                <span className="font-semibold"> Production</span>, <span className="font-semibold">Preview</span> e
-                <span className="font-semibold"> Development</span>, depois faça um novo deploy.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <p>Falta uma preparação da plataforma antes que esta credencial possa ser usada na loja.</p>
-              <p className="text-on-surface-variant">
-                Acione o gestor da plataforma e tente novamente depois da regularização do ambiente.
-              </p>
-            </div>
-          )}
-        </InlineNotice>
-      ) : null}
+      <section className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[14.5rem_minmax(0,1fr)_16.5rem]">
+        <IntegrationRail
+          providerHealthSummary={providerHealthSummary}
+          activeProvider={activeProvider}
+          activeSection={activeSection}
+          activateWorkspace={activateWorkspace}
+          tutorialHref={tutorialHref}
+          tutorialCtaLabel={tutorialCtaLabel}
+          providerIcons={providerIcons}
+          providerLabels={providerLabels}
+          providerEyebrows={providerEyebrows}
+          formatSyncLabel={formatSyncLabel}
+          className="xl:h-full xl:min-h-0"
+        />
 
-      {isPlatformPreparationNotice && !isEncryptionKeyNotice ? (
-        <InlineNotice tone="warning" icon={<ShieldCheck size={18} />} className="text-sm">
-          <div className="space-y-1">
-            <p>Esta integração depende de uma preparação técnica da plataforma que ainda não foi concluída.</p>
-            <p className="text-on-surface-variant">
-              Se você é operador da loja, acione o gestor da plataforma. Se você é o gestor técnico, revise migrations e
-              preparo do banco.
-            </p>
-          </div>
-        </InlineNotice>
-      ) : null}
-
-      {isMetaMissingCredentialNotice ? (
-        <InlineNotice tone="warning" icon={<Link2 size={18} />} className="text-sm">
-          <div className="space-y-1">
-            <p>A sincronização da Meta agora depende do token próprio salvo na loja atual.</p>
-            <p className="text-on-surface-variant">
-              Salve a credencial desta marca e depois tente sincronizar de novo. O Atlas não usa mais a env global da
-              plataforma como caminho principal.
-            </p>
-          </div>
-        </InlineNotice>
-      ) : null}
-
-      {isMetaPermissionNotice ? (
-        <InlineNotice tone="warning" icon={<AlertCircle size={18} />} className="text-sm">
-          <div className="space-y-1">
-            <p>O token da Meta existe, mas o app ou o usuário não têm permissão suficiente para a API do catálogo.</p>
-            <p className="text-on-surface-variant">
-              Revise as capacidades do app no Meta for Developers, o acesso ao catálogo no Business Manager e as
-              permissões do token usado por esta loja.
-            </p>
-          </div>
-        </InlineNotice>
-      ) : null}
-
-      {isGa4MissingCredentialNotice || isGeminiMissingCredentialNotice ? (
-        <InlineNotice tone="info" icon={<Radar size={18} />} className="text-sm">
-          <div className="space-y-1">
-            <p>Esta integração só fica operacional quando a credencial própria da marca é salva com sucesso.</p>
-            <p className="text-on-surface-variant">
-              Se precisar de um passo a passo completo, abra o{" "}
-              <Link href={tutorialHref} className="font-semibold text-primary underline underline-offset-4">
-                tutorial detalhado desta integração
-              </Link>.
-            </p>
-          </div>
-        </InlineNotice>
-      ) : null}
-
-      {activeProvider === "gemini" && !geminiFeatureEnabled ? (
-        <InlineNotice tone="warning" icon={<AlertCircle size={18} />} className="text-sm">
-          <div className="space-y-1">
-            <p className="font-semibold">O plano atual desta marca ainda não libera o Atlas IA.</p>
-                <p className="text-on-surface-variant">
-                  Primeiro ajuste a governança em <Link href={APP_ROUTES.adminStores} prefetch={false} className="font-semibold text-primary underline underline-offset-4">Acessos</Link>. Depois disso, a configuração técnica do Gemini volta a ficar operacional.
-                </p>
-          </div>
-        </InlineNotice>
-      ) : null}
-
-      {!canManageIntegrations ? (
-        <InlineNotice tone="info" icon={<ShieldCheck size={18} />} className="text-sm text-on-surface">
-          <span>
-            {activeProvider === "gemini"
-              ? geminiFeatureEnabled
-                ? "Você pode configurar a credencial Gemini da sua própria loja sem expor a chave na interface."
-                : "A credencial Gemini continua isolada por loja, mas esta marca ainda não tem a camada Atlas IA liberada."
-              : "Você pode acompanhar o status e executar as sincronizações da sua loja. Alterações de configuração seguem restritas ao superadmin."}
-          </span>
-        </InlineNotice>
-      ) : null}
-
-      <section className="grid gap-4 xl:grid-cols-[15.5rem_minmax(0,1fr)_18rem]">
-        <SurfaceCard className="atlas-integration-nav self-start p-3.5 xl:sticky xl:top-4">
-          <SectionHeading
-            title="Conexões da loja"
-            description="Escolha a frente e vá direto ao ponto."
+        <SurfaceCard className="atlas-integration-shell atlas-integration-workspace min-w-0 p-4 lg:p-5 xl:flex xl:h-full xl:min-h-0 xl:flex-col">
+          <IntegrationWorkspaceHeader
+            activeProvider={activeProvider}
+            current={current}
+            currentState={currentState}
+            activeHealth={activeHealth}
+            activeIcon={ActiveProviderIcon}
+            providerLabels={providerLabels}
+            providerDescriptions={providerDescriptions}
+            providerEyebrows={providerEyebrows}
+            workspaceSectionMeta={workspaceSectionMeta}
+            activeSection={activeSection}
+            activateWorkspace={activateWorkspace}
+            headerActions={renderHeaderActions()}
+            formatSyncLabel={formatSyncLabel}
           />
-          <div className="mt-4 space-y-2">
-            {providerHealthSummary.map(({ provider, integration, health }) => {
-              const ProviderIcon = providerIcons[provider];
-              return (
-                <button
-                  key={provider}
-                  type="button"
-                  data-active={activeProvider === provider}
-                  onClick={() => activateWorkspace(provider, activeSection)}
-                  className="atlas-integration-provider-button"
-                >
-                  <div className="atlas-integration-provider-head">
-                    <span className="atlas-integration-provider-icon">
-                      <ProviderIcon size={15} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-on-surface">{providerLabels[provider]}</p>
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-ink-muted">
-                        {providerEyebrows[provider]}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between gap-3">
-                    <span className="atlas-soft-pill">{health.label}</span>
-                    <span className="text-[11px] text-on-surface-variant">{formatSyncLabel(integration)}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
 
-          <div className="mt-4 border-t border-outline/50 pt-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-              Atalhos úteis
-            </p>
-            <div className="mt-3 space-y-2">
-              <Link href={tutorialHref} className="brandops-button brandops-button-ghost w-full justify-between">
-                {tutorialCtaLabel}
-                <ArrowUpRight size={14} />
-              </Link>
-            </div>
-          </div>
-        </SurfaceCard>
-
-        <SurfaceCard className="atlas-integration-shell atlas-integration-workspace min-w-0 p-4 lg:p-5">
-          <div className="flex flex-col gap-4 border-b border-outline/50 pb-4">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-              <div className="min-w-0">
-                <p className="eyebrow mb-2">{providerEyebrows[activeProvider]}</p>
-                <div className="flex items-center gap-3">
-                  <span className="atlas-integration-hero-icon">
-                    <ActiveProviderIcon size={18} />
-                  </span>
-                  <div className="min-w-0">
-                    <h2 className="text-xl font-semibold tracking-tight text-on-surface">
-                      {providerLabels[activeProvider]}
-                    </h2>
-                    <p className="mt-1 max-w-2xl text-sm leading-6 text-on-surface-variant">
-                      {providerDescriptions[activeProvider]}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <span className="atlas-soft-pill">
-                  {currentState.mode === "api"
-                    ? "API"
-                    : currentState.mode === "disabled"
-                      ? "Desligado"
-                      : "Manual"}
-                </span>
-                <span className="atlas-soft-pill">{activeHealth.label}</span>
-              </div>
-            </div>
-
-            <div className="grid gap-3 lg:grid-cols-3">
-              <AnalyticsKpiCard
-                label="Modo"
-                value={
-                  currentState.mode === "api"
-                    ? "API ativa"
-                    : currentState.mode === "disabled"
-                      ? "Integração desligada"
-                      : "Fluxo manual"
-                }
-                description="Como este conector está operando agora."
-                tone={
-                  currentState.mode === "api"
-                    ? "positive"
-                    : currentState.mode === "disabled"
-                      ? "warning"
-                      : "default"
-                }
-              />
-              <AnalyticsKpiCard
-                label="Credencial"
-                value={
-                  activeProvider === "ink"
-                    ? "N/A"
-                    : currentState.hasApiKey
-                      ? "Loja pronta"
-                      : "Pendente"
-                }
-                description={
-                  activeProvider === "ink"
-                    ? "A origem comercial segue por CSV."
-                    : currentState.hasApiKey
-                      ? `Segredo salvo em ${currentState.apiKeyHint || "ambiente seguro"}.`
-                      : "Falta salvar a credencial da loja."
-                }
-                tone={activeProvider === "ink" ? "info" : currentState.hasApiKey ? "positive" : "warning"}
-              />
-              <AnalyticsKpiCard
-                label="Última referência"
-                value={formatSyncLabel(current)}
-                description="Último sinal útil deste conector."
-                tone={
-                  current?.lastSyncStatus === "error"
-                    ? "warning"
-                    : current?.lastSyncStatus === "success"
-                      ? "positive"
-                      : "default"
-                }
-              />
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-col gap-4">
-            <div className="flex flex-col gap-4 border-b border-outline/50 pb-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="min-w-0">
-                <p className="eyebrow mb-2">{workspaceSectionMeta.eyebrow}</p>
-                <h3 className="text-xl font-semibold text-on-surface">{workspaceSectionMeta.title}</h3>
-                <p className="mt-1 max-w-2xl text-sm leading-6 text-on-surface-variant">
-                  {workspaceSectionMeta.description}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="atlas-soft-pill">{current?.lastSyncStatus ?? activeHealth.label}</span>
-                {renderHeaderActions()}
-              </div>
-            </div>
-
-            <div className="brandops-subtabs overflow-x-auto">
-            <button
-              type="button"
-              className="brandops-subtab"
-              data-active={activeSection === "config"}
-              onClick={() => activateWorkspace(activeProvider, "config")}
-            >
-              Conectar
-            </button>
-            <button
-              type="button"
-              className="brandops-subtab"
-              data-active={activeSection === "sync"}
-              onClick={() => activateWorkspace(activeProvider, "sync")}
-            >
-              Operar
-            </button>
-            <button
-              type="button"
-              className="brandops-subtab"
-              data-active={activeSection === "rules"}
-              onClick={() => activateWorkspace(activeProvider, "rules")}
-            >
-              Regras
-            </button>
-            </div>
-
-            <div className="space-y-5">
+            <div className="mt-5 xl:min-h-0 xl:flex-1">
             {activeSection === "config" ? (
-            <div className="brandops-command-slab p-4 sm:p-5">
+            <div className="brandops-command-slab p-4 sm:p-5 xl:h-full xl:min-h-0 xl:overflow-y-auto">
               <div className="brandops-toolbar-grid" data-columns="2">
                 <FormField label="Origem principal" className="text-sm lg:col-span-2">
                   <select
@@ -2009,8 +1903,8 @@ export default function IntegrationsPage() {
             ) : null}
 
             {activeSection === "sync" ? (
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
-                <div className="brandops-toolbar-panel text-sm text-on-surface-variant">
+              <div className="grid gap-4 xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_16rem]">
+                <div className="brandops-toolbar-panel text-sm text-on-surface-variant xl:min-h-0 xl:overflow-y-auto">
                   {activeProvider === "gemini" ? (
                     <>
                       <div className="flex items-center justify-between gap-3">
@@ -2086,7 +1980,7 @@ export default function IntegrationsPage() {
                   )}
                 </div>
 
-                <div className="brandops-toolbar-panel text-sm text-on-surface-variant">
+                <div className="brandops-toolbar-panel text-sm text-on-surface-variant xl:min-h-0 xl:overflow-y-auto">
                   <p className="font-medium text-on-surface">Executar agora</p>
                   <p className="mt-1 leading-6">
                     {activeProvider === "gemini"
@@ -2176,7 +2070,7 @@ export default function IntegrationsPage() {
             ) : null}
 
             {activeSection === "rules" ? (
-              <div className="brandops-toolbar-panel text-sm text-on-surface-variant">
+              <div className="brandops-toolbar-panel text-sm text-on-surface-variant xl:h-full xl:min-h-0 xl:overflow-y-auto">
                 <p className="font-medium text-on-surface">{providerContextCard.title}</p>
                 <p className="leading-6">{providerContextCard.body}</p>
                 {providerTutorial ? (
@@ -2191,58 +2085,18 @@ export default function IntegrationsPage() {
               </div>
             ) : null}
             </div>
-          </div>
         </SurfaceCard>
 
-        <SurfaceCard className="self-start p-4 xl:sticky xl:top-4">
-          <SectionHeading
-            title="Radar lateral"
-            description="Só o que ajuda a decidir o próximo passo."
-          />
-          <div className="mt-5 grid gap-3">
-            <StackItem
-              title={providerNextAction.title}
-              description={providerNextAction.description}
-              aside={<Radar size={16} className="text-secondary" />}
-              tone={providerNextAction.tone}
-            />
-            <StackItem
-              title="Credencial da loja"
-              description={
-                activeProvider === "ink"
-                  ? "A origem comercial da INK continua manual e não depende de segredo por API."
-                  : currentState.hasApiKey
-                    ? `Segredo salvo em ${currentState.apiKeyHint || "ambiente seguro"}.`
-                    : "Ainda falta salvar a credencial própria desta loja."
-              }
-              aside={<ShieldCheck size={16} className="text-secondary" />}
-              tone={activeProvider === "ink" ? "default" : currentState.hasApiKey ? "positive" : "warning"}
-            />
-            <StackItem
-              title="Última referência"
-              description={formatSyncLabel(current)}
-              aside={<RefreshCcw size={16} className="text-secondary" />}
-              tone="default"
-            />
-            {activeProvider === "meta" ? (
-              <StackItem
-                title="Fallback manual"
-                description="A Meta pode operar com API e manter contingência manual sem perder o histórico do CSV."
-                aside={<Link2 size={16} className="text-secondary" />}
-                tone="default"
-              />
-            ) : null}
-            {providerTutorial ? (
-              <div className="flex flex-wrap gap-2 pt-1">
-                {providerTutorial ? (
-                  <Link href={providerTutorial.route} className="brandops-button brandops-button-ghost">
-                    {tutorialCtaLabel}
-                  </Link>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        </SurfaceCard>
+        <IntegrationRadar
+          activeProvider={activeProvider}
+          current={current}
+          currentState={currentState}
+          providerNextAction={providerNextAction}
+          tutorialHref={tutorialHref}
+          tutorialCtaLabel={tutorialCtaLabel}
+          formatSyncLabel={formatSyncLabel}
+          className="xl:h-full xl:min-h-0"
+        />
       </section>
     </div>
   );

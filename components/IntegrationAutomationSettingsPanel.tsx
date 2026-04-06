@@ -263,7 +263,7 @@ export function IntegrationAutomationSettingsPanel() {
       ) : (
         <div className="flex items-center justify-between gap-3 border-t border-outline/60 pt-3">
           <p className="text-[11px] leading-5 text-on-surface-variant">
-            A Vercel verifica esta fila por hora e cada marca roda só quando a própria cadência vence.
+            A produção atual verifica esta fila uma vez por dia. Se a infraestrutura for ampliada, a cadência pode ficar mais curta sem mudar esta tela.
           </p>
           <button
             type="button"

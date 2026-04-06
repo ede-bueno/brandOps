@@ -148,6 +148,10 @@ export function AtlasBusinessLearningPanel() {
   const latestRun = runs[0] ?? null;
   const latestStatus = getRunStatusLabel(latestRun);
   const isExecutionRunning = isRunning || latestRun?.status === "running";
+  const latestRunFailureMessage =
+    latestRun?.status === "failed" && latestRun.errorMessage?.trim()
+      ? latestRun.errorMessage.trim()
+      : null;
 
   const summaryCards = useMemo(() => {
     return [
@@ -428,6 +432,17 @@ export function AtlasBusinessLearningPanel() {
           }
         >
           <p className="text-xs leading-5">{notice.text}</p>
+        </InlineNotice>
+      ) : null}
+
+      {!notice && latestRunFailureMessage ? (
+        <InlineNotice tone="error" icon={<TriangleAlert size={14} />}>
+          <div className="space-y-1">
+            <p className="text-xs font-semibold leading-5 text-on-surface">
+              A última rodada do aprendizado falhou.
+            </p>
+            <p className="text-xs leading-5">{latestRunFailureMessage}</p>
+          </div>
         </InlineNotice>
       ) : null}
 

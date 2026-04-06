@@ -221,6 +221,11 @@ export function AtlasAnalystSettingsPanel() {
     );
   }, [availableModels, formState.model]);
 
+  const manualModelSuggestions = useMemo(
+    () => Array.from(new Set(ATLAS_GEMINI_MODEL_SUGGESTIONS)),
+    [],
+  );
+
   const selectedModel = useMemo(
     () =>
       modelOptions.find((model) => model.id === effectiveModel) ??
@@ -431,7 +436,7 @@ export function AtlasAnalystSettingsPanel() {
                   disabled={!hasGeminiModelCatalogAccess}
                 />
                 <datalist id="atlas-gemini-model-suggestions">
-                  {ATLAS_GEMINI_MODEL_SUGGESTIONS.map((model) => (
+                  {manualModelSuggestions.map((model) => (
                     <option key={model} value={model} />
                   ))}
                 </datalist>

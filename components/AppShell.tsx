@@ -14,6 +14,7 @@ import {
   Images,
   LayoutDashboard,
   Landmark,
+  Loader2,
   LogOut,
   Menu,
   MoonStar,
@@ -33,6 +34,10 @@ import { useBrandOps } from "./BrandOpsProvider";
 import type { PeriodFilter } from "@/lib/brandops/types";
 import { APP_ROUTES, type AppRoute } from "@/lib/brandops/routes";
 import { BRANDING } from "@/lib/branding";
+import {
+  ATLAS_ORB_SYNC_LOADING_EVENT,
+  type AtlasOrbSyncLoadingDetail,
+} from "@/lib/brandops/orb-sync-loading";
 import { useSanitizationPendingCount } from "@/hooks/use-sanitization-summary";
 import { ThemeToggle } from "./ThemeToggle";
 import { AtlasOrb } from "./AtlasOrb";
@@ -50,16 +55,19 @@ interface NavItem {
 
 interface NavGroup {
   label: string;
+  icon: React.ElementType;
   items: NavItem[];
 }
 
 const navigationGroups: NavGroup[] = [
   {
     label: "Controle",
+    icon: LayoutDashboard,
     items: [{ href: APP_ROUTES.dashboard, label: "Torre de Controle", icon: LayoutDashboard }],
   },
   {
     label: "Negócio",
+    icon: Receipt,
     items: [
       { href: APP_ROUTES.dre, label: "DRE Consolidado", icon: Receipt },
       { href: APP_ROUTES.sales, label: "Receita e Vendas", icon: BarChart3 },
@@ -68,6 +76,7 @@ const navigationGroups: NavGroup[] = [
   },
   {
     label: "Aquisição",
+    icon: TrendingUp,
     items: [
       { href: APP_ROUTES.media, label: "Mídia e Performance", icon: TrendingUp },
       { href: APP_ROUTES.traffic, label: "Tráfego Digital", icon: Activity },
@@ -75,6 +84,7 @@ const navigationGroups: NavGroup[] = [
   },
   {
     label: "Operação",
+    icon: FileUp,
     items: [
       { href: APP_ROUTES.costCenter, label: "Despesas e Lançamentos", icon: Landmark },
       { href: APP_ROUTES.cmv, label: "Custos e CMV", icon: Tags },
@@ -85,6 +95,7 @@ const navigationGroups: NavGroup[] = [
   },
   {
     label: "Plataforma",
+    icon: Settings2,
     items: [
       { href: APP_ROUTES.settings, label: "Central Estratégica", icon: Settings2 },
       { href: APP_ROUTES.integrations, label: "Integrações", icon: PlugZap },
@@ -449,12 +460,69 @@ function NavSection({
   );
 }
 
-function NavGroupLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
-  if (collapsed) return <div className="mx-3 my-2 h-px bg-outline/70" />;
+function findActiveGroupLabel(pathname: string) {
+  const matchedGroup = navigationGroups.find((group) =>
+    group.items.some((item) => pathname === item.href || pathname.startsWith(item.href + "/")),
+  );
+
+  return matchedGroup?.label ?? navigationGroups[0]?.label ?? "Controle";
+}
+
+function NavAccordionGroup({
+  group,
+  pathname,
+  collapsed,
+  open,
+  onToggle,
+  onNavigate,
+}: {
+  group: NavGroup;
+  pathname: string;
+  collapsed: boolean;
+  open: boolean;
+  onToggle: () => void;
+  onNavigate?: (href: AppRoute) => void;
+}) {
+  const Icon = group.icon;
+  const hasActiveItem = group.items.some(
+    (item) => pathname === item.href || pathname.startsWith(item.href + "/"),
+  );
+
   return (
-    <p className="mb-2 mt-5 px-3 text-[9px] font-medium uppercase tracking-[0.18em] text-ink-muted/80 first:mt-0">
-      {label}
-    </p>
+    <div className="atlas-sidebar-group">
+      <button
+        type="button"
+        onClick={onToggle}
+        title={collapsed ? group.label : undefined}
+        data-open={open ? "true" : "false"}
+        data-active={hasActiveItem ? "true" : "false"}
+        className={`atlas-sidebar-group-trigger ${collapsed ? "justify-center px-0" : "justify-between"}`}
+      >
+        <span className="atlas-sidebar-group-trigger-icon">
+          <Icon size={collapsed ? 17 : 15} />
+        </span>
+        {!collapsed ? (
+          <>
+            <span className="truncate">{group.label}</span>
+            <ChevronDown
+              size={14}
+              className={`shrink-0 text-on-surface-variant transition ${open ? "rotate-180" : ""}`}
+            />
+          </>
+        ) : null}
+      </button>
+
+      {open ? (
+        <div className={collapsed ? "mt-2 space-y-1" : "mt-2 space-y-1.5"}>
+          <NavSection
+            items={group.items}
+            pathname={pathname}
+            collapsed={collapsed}
+            onNavigate={onNavigate}
+          />
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -592,6 +660,7 @@ function ShellAccountMenu({
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname() ?? "/";
+  const [openNavGroup, setOpenNavGroup] = useState(() => findActiveGroupLabel(pathname));
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("brandops.sidebar.collapsed") === "1";
@@ -601,6 +670,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [isMobileViewport, setIsMobileViewport] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.innerWidth < 1024;
+  });
+  const [orbSyncLoading, setOrbSyncLoading] = useState<AtlasOrbSyncLoadingDetail>({
+    active: false,
   });
   const {
     activeBrand,
@@ -655,6 +727,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   function handleShellNavigate(href: AppRoute) {
     setIsUserMenuOpen(false);
     setIsMobileMenuOpen(false);
+    setOpenNavGroup(findActiveGroupLabel(href));
     router.push(href);
   }
 
@@ -678,8 +751,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    setOpenNavGroup(findActiveGroupLabel(pathname));
+  }, [pathname]);
+
+  useEffect(() => {
     window.localStorage.setItem("brandops.sidebar.collapsed", isSidebarCollapsed ? "1" : "0");
   }, [isSidebarCollapsed]);
+
+  useEffect(() => {
+    function handleOrbSyncLoading(event: Event) {
+      const customEvent = event as CustomEvent<AtlasOrbSyncLoadingDetail>;
+      setOrbSyncLoading(customEvent.detail ?? { active: false });
+    }
+
+    window.addEventListener(
+      ATLAS_ORB_SYNC_LOADING_EVENT,
+      handleOrbSyncLoading as EventListener,
+    );
+
+    return () => {
+      window.removeEventListener(
+        ATLAS_ORB_SYNC_LOADING_EVENT,
+        handleOrbSyncLoading as EventListener,
+      );
+    };
+  }, []);
 
   const shouldBlockShell = isLoading && !session;
 
@@ -805,30 +901,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Nav */} 
-          <div className="atlas-sidebar-nav relative z-10 min-h-0 flex-1 overflow-y-auto px-3 py-3">
+          <div className="atlas-sidebar-nav relative z-10 min-h-0 flex-1 overflow-hidden px-3 py-3">
             {isLoading ? (
               <SidebarSkeleton />
             ) : (
-              <>
+              <div className="space-y-2">
                 {navigationGroups.map((group) => (
-                  <div key={group.label}>
-                    <NavGroupLabel label={group.label} collapsed={isSidebarCollapsed} />
-                    <NavSection
-                      items={group.items}
-                      pathname={pathname}
-                      collapsed={isSidebarCollapsed}
-                      onNavigate={handleShellNavigate}
-                    />
-                  </div>
+                  <NavAccordionGroup
+                    key={group.label}
+                    group={group}
+                    pathname={pathname}
+                    collapsed={isSidebarCollapsed}
+                    open={openNavGroup === group.label}
+                    onToggle={() =>
+                      setOpenNavGroup((current) =>
+                        current === group.label ? "" : group.label,
+                      )
+                    }
+                    onNavigate={handleShellNavigate}
+                  />
                 ))}
-              </>
+              </div>
             )}
           </div>
 
-          <div className="atlas-sidebar-footer relative z-10 shrink-0 border-t border-outline/50 px-3 py-3.5">
+          <div className="atlas-sidebar-footer relative z-10 shrink-0 border-t border-outline/50 px-3 py-2.5">
             {!isSidebarCollapsed ? (
               <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-ink-muted/90">
-                Navegação de operação
+                Menus agrupados
               </p>
             ) : (
               <div className="mx-auto h-1.5 w-1.5 rounded-full bg-primary/35" />
@@ -1055,6 +1155,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         }
       />
 
+      {orbSyncLoading.active ? (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-background/76 backdrop-blur-md">
+          <div className="atlas-tech-grid relative w-[min(92vw,28rem)] rounded-[2rem] border border-outline/70 bg-surface/92 px-8 py-10 text-center shadow-[0_30px_100px_rgba(0,0,0,0.28)]">
+            <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+            <div className="mx-auto flex w-full max-w-[14rem] flex-col items-center gap-5">
+              <AtlasOrb
+                size="lg"
+                interactive={false}
+                title="Atlas"
+                status="sincronizando"
+                description="Coordenando a leitura da fonte antes de devolver o workspace."
+                attentionLevel="notice"
+                className="animate-[pulse_2.2s_ease-in-out_infinite]"
+              />
+              <div className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
+                  Orb em sincronização
+                </p>
+                <h3 className="font-headline text-xl font-semibold tracking-tight text-on-surface">
+                  {orbSyncLoading.label ?? "Sincronizando dados"}
+                </h3>
+                <p className="text-sm leading-6 text-on-surface-variant">
+                  O Atlas centralizou a leitura para acompanhar progresso e devolver a tela já atualizada.
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-outline/70 bg-surface-container-low px-3 py-1.5 text-[11px] font-medium text-on-surface-variant">
+                <Loader2 size={14} className="animate-spin text-primary" />
+                Processando fonte e reconciliando sinais
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {isMobileMenuOpen ? (
         <div className="fixed inset-0 z-[70] bg-background/70 backdrop-blur-sm lg:hidden">
           <button
@@ -1110,15 +1244,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <div className="atlas-sidebar-nav relative z-10 min-h-0 flex-1 overflow-y-auto px-2 py-1">
               {navigationGroups.map((group) => (
-                <div key={group.label}>
-                  <NavGroupLabel label={group.label} collapsed={false} />
-                    <NavSection
-                      items={group.items}
-                      pathname={pathname}
-                      collapsed={false}
-                      onNavigate={handleShellNavigate}
-                    />
-                </div>
+                <NavAccordionGroup
+                  key={group.label}
+                  group={group}
+                  pathname={pathname}
+                  collapsed={false}
+                  open={openNavGroup === group.label}
+                  onToggle={() =>
+                    setOpenNavGroup((current) => (current === group.label ? "" : group.label))
+                  }
+                  onNavigate={handleShellNavigate}
+                />
               ))}
             </div>
 

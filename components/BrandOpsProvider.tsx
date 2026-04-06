@@ -26,7 +26,12 @@ import {
   updateExpenseCategory as updateExpenseCategoryRecord,
   updateBrandExpense,
 } from "@/lib/brandops/database";
-import { fetchAccessibleBrands, fetchUserProfile } from "@/lib/brandops/workspace";
+import {
+  clearStoredActiveBrandId,
+  hydrateWorkspace,
+  persistStoredActiveBrandId,
+  type BrandWorkspaceOption,
+} from "@/lib/brandops/provider-workspace";
 import {
   buildPeriodRange,
   filterBrandDatasetByRange,
@@ -38,25 +43,16 @@ import type { AnnualDreReport } from "@/lib/brandops/types";
 import { supabase } from "@/lib/supabase";
 import type {
   BrandDataset,
-  BrandGovernance,
   CmvMatchType,
   CustomDateRange,
   PeriodFilter,
   UserProfile,
 } from "@/lib/brandops/types";
 
-type BrandOption = {
-  id: string;
-  name: string;
-  created_at: string;
-  updated_at: string;
-  governance: BrandGovernance;
-};
-
 interface BrandOpsContextValue {
   session: Session | null;
   profile: UserProfile | null;
-  brands: BrandOption[];
+  brands: BrandWorkspaceOption[];
   activeBrandId: string | null;
   activeBrand: BrandDataset | null;
   filteredBrand: BrandDataset | null;
@@ -123,10 +119,6 @@ interface BrandOpsContextValue {
 
 const BrandOpsContext = createContext<BrandOpsContextValue | null>(null);
 
-function getBrandContextStorageKey(userId: string) {
-  return `brandops.active-brand.${userId}`;
-}
-
 function isSessionStateError(error: unknown) {
   return (
     error instanceof Error &&
@@ -143,7 +135,7 @@ export function BrandOpsProvider({
 }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [brands, setBrands] = useState<BrandOption[]>([]);
+  const [brands, setBrands] = useState<BrandWorkspaceOption[]>([]);
   const [activeBrandId, setActiveBrandId] = useState<string | null>(null);
   const [activeBrand, setActiveBrand] = useState<BrandDataset | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -561,28 +553,11 @@ export function BrandOpsProvider({
 
       setIsLoading(true);
       try {
-        const [nextProfile, nextBrands] = await Promise.all([
-          fetchUserProfile(userId),
-          fetchAccessibleBrands(),
-        ]);
+        const workspace = await hydrateWorkspace(userId, activeBrandIdRef.current);
 
-        setProfile(nextProfile);
-        setBrands(nextBrands);
-        setActiveBrandId((current) => {
-          const storedBrandId =
-            typeof window !== "undefined" && userId
-              ? window.localStorage.getItem(getBrandContextStorageKey(userId))
-              : null;
-
-          if (current && nextBrands.some((brand) => brand.id === current)) {
-            return current;
-          }
-          if (storedBrandId && nextBrands.some((brand) => brand.id === storedBrandId)) {
-            return storedBrandId;
-          }
-          return nextBrands[0]?.id ?? null;
-        });
-
+        setProfile(workspace.profile);
+        setBrands(workspace.brands);
+        setActiveBrandId(workspace.activeBrandId);
         setErrorMessage(null);
       } catch (error) {
         console.warn("Failed to load workspace:", error);
@@ -611,7 +586,7 @@ export function BrandOpsProvider({
     }
 
     if (activeBrandId) {
-      window.localStorage.setItem(getBrandContextStorageKey(userId), activeBrandId);
+      persistStoredActiveBrandId(userId, activeBrandId);
     }
   }, [activeBrandId, userId]);
 
@@ -624,7 +599,7 @@ export function BrandOpsProvider({
       setFinancialReportHistorical(null);
       setActiveBrandId(brandId);
       if (typeof window !== "undefined" && userId) {
-        window.localStorage.setItem(getBrandContextStorageKey(userId), brandId);
+        persistStoredActiveBrandId(userId, brandId);
       }
     },
     [userId],
@@ -764,7 +739,7 @@ export function BrandOpsProvider({
       },
       signOut: async () => {
         if (typeof window !== "undefined" && userId) {
-          window.localStorage.removeItem(getBrandContextStorageKey(userId));
+          clearStoredActiveBrandId(userId);
         }
         const { error } = await supabase.auth.signOut();
         if (error) {
@@ -778,8 +753,8 @@ export function BrandOpsProvider({
 
         const brandId = await createBrandIfNeeded(brandName, brands);
         await importFilesToBrand(brandId, files, userId);
-        const refreshedBrands = await fetchAccessibleBrands();
-        setBrands(refreshedBrands);
+        const refreshedWorkspace = await hydrateWorkspace(userId, brandId);
+        setBrands(refreshedWorkspace.brands);
         setActiveBrandId(brandId);
         await refreshBrandResources(brandId, "full");
         await refreshSummaryResources(brandId, { includeHistorical: true });
@@ -954,3 +929,4 @@ export function useBrandOps() {
   }
   return context;
 }
+

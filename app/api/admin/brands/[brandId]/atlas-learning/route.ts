@@ -22,6 +22,51 @@ import type {
   AtlasBrandLearningScope,
 } from "@/lib/brandops/ai/types";
 
+type PostgrestLikeError = {
+  code?: string;
+  message?: string;
+  details?: string | null;
+  hint?: string | null;
+};
+
+function asPostgrestLikeError(value: unknown): PostgrestLikeError | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  return {
+    code: typeof candidate.code === "string" ? candidate.code : undefined,
+    message: typeof candidate.message === "string" ? candidate.message : undefined,
+    details: typeof candidate.details === "string" ? candidate.details : null,
+    hint: typeof candidate.hint === "string" ? candidate.hint : null,
+  };
+}
+
+function getLearningErrorMessage(
+  error: unknown,
+  fallback: string,
+) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  const postgrestError = asPostgrestLikeError(error);
+  if (postgrestError?.message) {
+    if (postgrestError.details) {
+      return `${postgrestError.message} ${postgrestError.details}`;
+    }
+
+    return postgrestError.message;
+  }
+
+  if (typeof error === "string" && error.trim()) {
+    return error;
+  }
+
+  return fallback;
+}
+
 function resolveLearningWindow(
   scope: AtlasBrandLearningScope | undefined,
   analysisWindowDays: number | null,
@@ -86,6 +131,71 @@ function assertBrandLearningEnabled(
   }
 }
 
+async function executeAtlasBrandLearningRun(options: {
+  context: Awaited<ReturnType<typeof requireBrandAccess>>;
+  brandId: string;
+  runId: string;
+  request: Request;
+  scope?: AtlasBrandLearningScope;
+}) {
+  const { context, brandId, runId, request, scope } = options;
+  const authorization = request.headers.get("authorization");
+
+  if (!authorization) {
+    throw new Error("Sessão ausente para executar o aprendizado do Atlas.");
+  }
+
+  const serviceRequest = new Request(request.url, {
+    method: "GET",
+    headers: {
+      authorization,
+    },
+  });
+
+  const gemini = await resolveAtlasAnalystGeminiAccess(brandId);
+  const learningWindow = resolveLearningWindow(scope, gemini.analysisWindowDays);
+  const [brandContext, previousSnapshot, brandResponse] = await Promise.all([
+    listAtlasContextEntries(context.supabase, brandId, 12),
+    getLatestAtlasBrandLearningSnapshot(context.supabase, brandId),
+    context.supabase.from("brands").select("name").eq("id", brandId).maybeSingle(),
+  ]);
+  const brand = brandResponse.data;
+
+  await context.supabase
+    .from("atlas_brand_learning_runs")
+    .update({
+      model: gemini.model,
+      temperature: gemini.temperature,
+      scope_label: learningWindow.scopeLabel,
+    })
+    .eq("id", runId);
+
+  const learningResult = await generateAtlasBusinessLearning(serviceRequest, brandId, {
+    brandLabel: brand?.name ?? brandId,
+    apiKey: gemini.apiKey,
+    model: gemini.model,
+    temperature: gemini.temperature,
+    contextEntries: brandContext,
+    previousSnapshot,
+    scope: learningWindow.scope,
+    analysisWindowDays: learningWindow.analysisWindowDays,
+  });
+
+  const snapshot = await saveAtlasBrandLearningSnapshot(
+    context.supabase,
+    runId,
+    {
+      ...learningResult.snapshot,
+      runId,
+    },
+    learningResult.evidences,
+  );
+
+  await completeAtlasBrandLearningRun(context.supabase, runId, {
+    summary: snapshot.summary,
+  });
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ brandId: string }> },
@@ -128,10 +238,10 @@ export async function GET(
   } catch (error) {
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Nao foi possivel carregar o aprendizado do negócio no Atlas.",
+        error: getLearningErrorMessage(
+          error,
+          "Nao foi possivel carregar o aprendizado do negócio no Atlas.",
+        ),
       },
       { status: 400 },
     );
@@ -158,10 +268,10 @@ export async function PATCH(
   } catch (error) {
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Nao foi possivel salvar o feedback do aprendizado do Atlas.",
+        error: getLearningErrorMessage(
+          error,
+          "Nao foi possivel salvar o feedback do aprendizado do Atlas.",
+        ),
       },
       { status: 400 },
     );
@@ -184,84 +294,47 @@ export async function POST(
     context = await requireBrandAccess(request, brandId);
     assertBrandLearningEnabled(context);
     const body = (await request.json().catch(() => null)) as AtlasBrandLearningRequestPayload | null;
-    const authorization = request.headers.get("authorization");
-    if (!authorization) {
-      throw new Error("Sessão ausente para executar o aprendizado do Atlas.");
-    }
     const run = await startAtlasBrandLearningRun(context.supabase, context.user.id, brandId, {
       scopeLabel: "Preparando aprendizado",
     });
     runId = run.id;
 
-    const serviceRequest = new Request(request.url, {
-      method: "GET",
-      headers: {
-        authorization,
-      },
-    });
-
-    after(async () => {
+    const runLearning = async () => {
       if (!context) {
         return;
       }
 
       try {
-        const gemini = await resolveAtlasAnalystGeminiAccess(brandId);
-        const learningWindow = resolveLearningWindow(body?.scope, gemini.analysisWindowDays);
-        const [brandContext, previousSnapshot, brandResponse] = await Promise.all([
-          listAtlasContextEntries(context.supabase, brandId, 12),
-          getLatestAtlasBrandLearningSnapshot(context.supabase, brandId),
-          context.supabase.from("brands").select("name").eq("id", brandId).maybeSingle(),
-        ]);
-        const brand = brandResponse.data;
-
-        await context.supabase
-          .from("atlas_brand_learning_runs")
-          .update({
-            model: gemini.model,
-            temperature: gemini.temperature,
-            scope_label: learningWindow.scopeLabel,
-          })
-          .eq("id", run.id);
-
-        const learningResult = await generateAtlasBusinessLearning(serviceRequest, brandId, {
-          brandLabel: brand?.name ?? brandId,
-          apiKey: gemini.apiKey,
-          model: gemini.model,
-          temperature: gemini.temperature,
-          contextEntries: brandContext,
-          previousSnapshot,
-          scope: learningWindow.scope,
-          analysisWindowDays: learningWindow.analysisWindowDays,
-        });
-
-        const snapshot = await saveAtlasBrandLearningSnapshot(
-          context.supabase,
-          run.id,
-          {
-            ...learningResult.snapshot,
-            runId: run.id,
-          },
-          learningResult.evidences,
-        );
-
-        await completeAtlasBrandLearningRun(context.supabase, run.id, {
-          summary: snapshot.summary,
+        await executeAtlasBrandLearningRun({
+          context,
+          brandId,
+          runId: run.id,
+          request,
+          scope: body?.scope,
         });
       } catch (error) {
         try {
           await failAtlasBrandLearningRun(
             context.supabase,
             run.id,
-            error instanceof Error
-              ? error.message
-              : "Nao foi possivel concluir o aprendizado do negócio.",
+            getLearningErrorMessage(
+              error,
+              "Nao foi possivel concluir o aprendizado do negócio.",
+            ),
           );
         } catch {
           // noop
         }
       }
-    });
+    };
+
+    try {
+      after(async () => {
+        await runLearning();
+      });
+    } catch {
+      void runLearning();
+    }
 
     return NextResponse.json(
       {
@@ -289,10 +362,10 @@ export async function POST(
 
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Nao foi possivel executar o aprendizado do negócio no Atlas.",
+        error: getLearningErrorMessage(
+          error,
+          "Nao foi possivel executar o aprendizado do negócio no Atlas.",
+        ),
       },
       { status: 400 },
     );
