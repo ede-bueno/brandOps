@@ -18,7 +18,11 @@ import {
 } from "@/components/analytics/AnalyticsPrimitives";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { formatLongDateTime } from "@/lib/brandops/format";
-import { BRAND_PLAN_LABELS, normalizeBrandGovernance } from "@/lib/brandops/governance";
+import {
+  BRAND_PLAN_LABELS,
+  normalizeBrandGovernance,
+  resolveBrandGovernance,
+} from "@/lib/brandops/governance";
 import {
   EntityChip,
   FormField,
@@ -295,7 +299,9 @@ export default function AdminStoresPage() {
   const selectedLocation = [selectedBrand?.city, selectedBrand?.state].filter(Boolean).join(", ");
   const selectedGovernance =
     selectedBrand?.governance ??
-    normalizeBrandGovernance({
+    resolveBrandGovernance({
+      brandId: selectedBrand?.id,
+      brandName: selectedBrand?.name,
       planTier: selectedBrand?.plan_tier,
       featureFlags: selectedBrand?.feature_flags,
     });
@@ -379,7 +385,9 @@ export default function AdminStoresPage() {
                   const isSelected = brand.id === selectedBrandId && !isCreating;
                   const governance =
                     brand.governance ??
-                    normalizeBrandGovernance({
+                    resolveBrandGovernance({
+                      brandId: brand.id,
+                      brandName: brand.name,
                       planTier: brand.plan_tier,
                       featureFlags: brand.feature_flags,
                     });

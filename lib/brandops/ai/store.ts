@@ -148,6 +148,16 @@ function mapLearningSnapshotRow(row: Record<string, unknown>): AtlasBrandLearnin
     brandId: String(row.brand_id ?? ""),
     runId: typeof row.run_id === "string" ? row.run_id : null,
     scopeLabel: typeof row.scope_label === "string" ? row.scope_label : "Todo histórico disponível",
+    scopeKey:
+      payload.scopeKey === "all" ||
+      payload.scopeKey === "180d" ||
+      payload.scopeKey === "90d" ||
+      payload.scopeKey === "30d" ||
+      payload.scopeKey === "analysis_window"
+        ? payload.scopeKey
+        : null,
+    periodFrom: typeof payload.periodFrom === "string" ? payload.periodFrom : null,
+    periodTo: typeof payload.periodTo === "string" ? payload.periodTo : null,
     summary: typeof row.summary === "string" ? row.summary : "",
     confidence: asConfidence(row.confidence),
     businessProfile: typeof row.business_profile === "string" ? row.business_profile : "",
@@ -164,6 +174,9 @@ function mapLearningSnapshotRow(row: Record<string, unknown>): AtlasBrandLearnin
     campaignPatterns: asStringArray(payload.campaignPatterns),
     catalogPatterns: asStringArray(payload.catalogPatterns),
     priorityStack: asStringArray(payload.priorityStack),
+    nextMilestones: asStringArray(payload.nextMilestones),
+    watchItems: asStringArray(payload.watchItems),
+    relearnTriggers: asStringArray(payload.relearnTriggers),
     generatedAt: typeof row.generated_at === "string" ? row.generated_at : new Date().toISOString(),
   };
 }
@@ -509,6 +522,9 @@ export async function saveAtlasBrandLearningSnapshot(
       evidence_sources: snapshot.evidenceSources,
       data_gaps: snapshot.dataGaps,
       learning_payload: {
+        scopeKey: snapshot.scopeKey ?? null,
+        periodFrom: snapshot.periodFrom ?? null,
+        periodTo: snapshot.periodTo ?? null,
         summary: snapshot.summary,
         businessProfile: snapshot.businessProfile,
         nicheProfile: snapshot.nicheProfile,
@@ -523,6 +539,9 @@ export async function saveAtlasBrandLearningSnapshot(
       campaignPatterns: snapshot.campaignPatterns,
       catalogPatterns: snapshot.catalogPatterns,
       priorityStack: snapshot.priorityStack,
+      nextMilestones: snapshot.nextMilestones,
+      watchItems: snapshot.watchItems,
+      relearnTriggers: snapshot.relearnTriggers,
       },
     })
     .select("*")

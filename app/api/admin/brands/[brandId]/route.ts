@@ -4,6 +4,7 @@ import {
   isMissingBrandGovernanceSchemaError,
   normalizeBrandGovernance,
   normalizeBrandPlanTier,
+  resolveBrandGovernance,
 } from "@/lib/brandops/governance";
 
 function stripGovernanceColumns<T extends Record<string, unknown>>(payload: T) {
@@ -89,7 +90,9 @@ export async function PATCH(
     return NextResponse.json({
       brand: {
         ...data,
-        governance: normalizeBrandGovernance({
+        governance: resolveBrandGovernance({
+          brandId: data.id,
+          brandName: data.name,
           planTier: data.plan_tier,
           featureFlags: data.feature_flags,
         }),

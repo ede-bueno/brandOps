@@ -4,6 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 import { loadReportSnapshots } from "./runtime-tools";
 import type {
   AtlasBrandLearningSnapshot,
+  AtlasBrandLearningScope,
   AtlasContextEntry,
   AtlasAnalystExecutionInput,
 } from "./types";
@@ -90,6 +91,24 @@ const LEARNING_RESPONSE_SCHEMA = {
       minItems: 1,
       maxItems: 5,
     },
+    nextMilestones: {
+      type: "array",
+      items: { type: "string" },
+      minItems: 1,
+      maxItems: 4,
+    },
+    watchItems: {
+      type: "array",
+      items: { type: "string" },
+      minItems: 0,
+      maxItems: 4,
+    },
+    relearnTriggers: {
+      type: "array",
+      items: { type: "string" },
+      minItems: 1,
+      maxItems: 4,
+    },
   },
   required: [
     "confidence",
@@ -107,6 +126,9 @@ const LEARNING_RESPONSE_SCHEMA = {
     "campaignPatterns",
     "catalogPatterns",
     "priorityStack",
+    "nextMilestones",
+    "watchItems",
+    "relearnTriggers",
   ],
 } as const;
 
@@ -136,6 +158,77 @@ function buildCuratedContext(entries: AtlasContextEntry[]) {
     eventDate: entry.eventDate,
     tags: entry.tags,
   }));
+}
+
+function formatIsoDate(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
+function shiftDays(base: Date, days: number) {
+  const next = new Date(base);
+  next.setUTCDate(next.getUTCDate() - days);
+  return next;
+}
+
+function resolveLearningScope(
+  scope: AtlasBrandLearningScope | null | undefined,
+  analysisWindowDays?: number | null,
+) {
+  const safeScope = scope ?? "all";
+  const today = new Date();
+  const todayLabel = formatIsoDate(today);
+  const normalizedWindow =
+    typeof analysisWindowDays === "number" && Number.isFinite(analysisWindowDays)
+      ? Math.max(7, Math.min(120, Math.round(analysisWindowDays)))
+      : 30;
+
+  if (safeScope === "analysis_window") {
+    return {
+      scopeKey: safeScope,
+      scopeLabel: `Janela estratégica (${normalizedWindow} dias)`,
+      periodLabel: `Últimos ${normalizedWindow} dias`,
+      from: formatIsoDate(shiftDays(today, normalizedWindow - 1)),
+      to: todayLabel,
+    };
+  }
+
+  if (safeScope === "30d") {
+    return {
+      scopeKey: safeScope,
+      scopeLabel: "Últimos 30 dias",
+      periodLabel: "Últimos 30 dias",
+      from: formatIsoDate(shiftDays(today, 29)),
+      to: todayLabel,
+    };
+  }
+
+  if (safeScope === "90d") {
+    return {
+      scopeKey: safeScope,
+      scopeLabel: "Últimos 90 dias",
+      periodLabel: "Últimos 90 dias",
+      from: formatIsoDate(shiftDays(today, 89)),
+      to: todayLabel,
+    };
+  }
+
+  if (safeScope === "180d") {
+    return {
+      scopeKey: safeScope,
+      scopeLabel: "Últimos 180 dias",
+      periodLabel: "Últimos 180 dias",
+      from: formatIsoDate(shiftDays(today, 179)),
+      to: todayLabel,
+    };
+  }
+
+  return {
+    scopeKey: "all" as const,
+    scopeLabel: "Todo histórico disponível",
+    periodLabel: `Do início da base até ${todayLabel}`,
+    from: null,
+    to: null,
+  };
 }
 
 function asRecord(value: unknown) {
@@ -272,27 +365,46 @@ function buildLearningFrame(
 
 function buildLearningPrompt({
   brandLabel,
+  scopeLabel,
   snapshots,
   warnings,
   curatedContext,
   learningFrame,
+  previousSnapshot,
 }: {
   brandLabel: string;
+  scopeLabel: string;
   snapshots: Record<string, unknown>;
   warnings: string[];
   curatedContext: Array<Record<string, unknown>>;
   learningFrame: Record<string, unknown>;
+  previousSnapshot?: AtlasBrandLearningSnapshot | null;
 }) {
   return [
     "Você está executando o modo de aprendizagem do negócio no Atlas IA.",
     `Marca: ${brandLabel}`,
-    "Escopo: todo o histórico disponível da operação.",
+    `Escopo: ${scopeLabel}.`,
     warnings.length
       ? `Avisos de dados: ${warnings.join(" ")}`
       : "Avisos de dados: nenhum aviso relevante.",
     curatedContext.length
       ? `Memória operacional registrada: ${JSON.stringify(curatedContext, null, 2)}`
       : "Memória operacional registrada: sem entradas relevantes ainda.",
+    previousSnapshot
+      ? `Snapshot aprendido anterior da marca: ${JSON.stringify(
+          {
+            generatedAt: previousSnapshot.generatedAt,
+            summary: previousSnapshot.summary,
+            priorityStack: previousSnapshot.priorityStack,
+            growthOpportunities: previousSnapshot.growthOpportunities,
+            operationalRisks: previousSnapshot.operationalRisks,
+            watchItems: previousSnapshot.watchItems,
+            nextMilestones: previousSnapshot.nextMilestones,
+          },
+          null,
+          2,
+        )}`
+      : "Snapshot aprendido anterior da marca: esta é a primeira leitura consolidada.",
     `Frame executivo consolidado pelo backend: ${JSON.stringify(learningFrame, null, 2)}`,
     "Relatórios históricos consolidados em JSON:",
     JSON.stringify(snapshots, null, 2),
@@ -304,6 +416,7 @@ function buildLearningPrompt({
     "- apontar sazonalidade e padrões recorrentes",
     "- detectar erros operacionais recorrentes",
     "- mapear oportunidades com aderência ao histórico da marca",
+    "- sugerir próximos marcos para a operação e gatilhos claros de reaprendizagem",
     "",
     "Regras:",
     "- responda em português pt-BR",
@@ -311,6 +424,7 @@ function buildLearningPrompt({
     "- não invente tese estrutural quando a base estiver fraca",
     "- diferencie gargalo operacional, gargalo comercial e gargalo de aquisição",
     "- se houver contradição entre crescimento e rentabilidade, explicite isso",
+    "- use o snapshot anterior apenas como memória; corrija-o sem hesitar se a base factual atual mostrar mudança real",
   ].join("\n");
 }
 
@@ -323,8 +437,15 @@ export async function generateAtlasBusinessLearning(
     model?: string | null;
     temperature?: number | null;
     contextEntries?: AtlasContextEntry[];
+    previousSnapshot?: AtlasBrandLearningSnapshot | null;
+    scope?: AtlasBrandLearningScope;
+    analysisWindowDays?: number | null;
   },
 ): Promise<Omit<AtlasBrandLearningSnapshot, "id" | "runId" | "generatedAt">> {
+  const learningScope = resolveLearningScope(
+    options.scope,
+    options.analysisWindowDays ?? null,
+  );
   const ai = new GoogleGenAI({
     apiKey: options.apiKey,
   });
@@ -334,10 +455,10 @@ export async function generateAtlasBusinessLearning(
     question: "Mapeie o nicho, a performance, os riscos e as oportunidades estruturais desta marca.",
     skill: "executive_operator",
     pageContext: "/settings",
-    periodLabel: "Todo histórico disponível",
+    periodLabel: learningScope.periodLabel,
     brandLabel: options.brandLabel,
-    from: null,
-    to: null,
+    from: learningScope.from,
+    to: learningScope.to,
   };
 
   const reportPlan = [
@@ -366,10 +487,12 @@ export async function generateAtlasBusinessLearning(
           {
             text: buildLearningPrompt({
               brandLabel: options.brandLabel,
+              scopeLabel: learningScope.scopeLabel,
               snapshots: reportContext.snapshots,
               warnings: reportContext.warnings,
               curatedContext,
               learningFrame,
+              previousSnapshot: options.previousSnapshot ?? null,
             }),
           },
         ],
@@ -395,7 +518,10 @@ export async function generateAtlasBusinessLearning(
 
   return {
     brandId,
-    scopeLabel: "Todo histórico disponível",
+    scopeLabel: learningScope.scopeLabel,
+    scopeKey: learningScope.scopeKey,
+    periodFrom: learningScope.from,
+    periodTo: learningScope.to,
     confidence:
       payload.confidence === "low" || payload.confidence === "medium" || payload.confidence === "high"
         ? payload.confidence
@@ -426,5 +552,8 @@ export async function generateAtlasBusinessLearning(
     campaignPatterns: asStringArray(payload.campaignPatterns, 5),
     catalogPatterns: asStringArray(payload.catalogPatterns, 5),
     priorityStack: asStringArray(payload.priorityStack, 5),
+    nextMilestones: asStringArray(payload.nextMilestones, 4),
+    watchItems: asStringArray(payload.watchItems, 4),
+    relearnTriggers: asStringArray(payload.relearnTriggers, 4),
   };
 }

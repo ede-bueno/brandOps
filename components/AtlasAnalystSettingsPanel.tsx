@@ -385,16 +385,15 @@ export function AtlasAnalystSettingsPanel() {
 
       <InlineNotice tone="info" icon={<BrainCircuit size={14} />}>
         <p className="font-semibold text-on-surface">
-          Próxima frente: aprendizado do negócio
+          Configuração estratégica + aprendizado contínuo
         </p>
         <p className="mt-1 text-[11px] leading-5">
-          O Atlas vai ganhar um modo de aprendizagem da marca para varrer
-          histórico, consolidar nicho, baseline de performance, oportunidades e
-          erros operacionais. O backlog dessa frente já está mapeado em{" "}
-          <span className="font-semibold text-on-surface">
-            docs/BACKLOG_APRENDIZADO_NEGOCIO_ATLAS_IA.md
-          </span>
-          .
+          Defina aqui o modelo, a janela e a postura do Atlas. A leitura
+          histórica da marca fica no módulo{" "}
+          <Link href="#atlas-business-learning" className="text-secondary hover:underline">
+            Aprender negócio
+          </Link>
+          , logo abaixo na Central Estratégica.
         </p>
       </InlineNotice>
 

@@ -19,6 +19,7 @@ import type {
   AtlasAnalystHistoryItem,
   AtlasAnalystReportId,
   AtlasAnalystResponse,
+  AtlasBrandLearningSnapshot,
   AtlasContextEntry,
 } from "./types";
 
@@ -492,11 +493,40 @@ function buildCuratedContext(entries: AtlasContextEntry[] = []) {
   }));
 }
 
+function buildBrandLearningContext(snapshot?: AtlasBrandLearningSnapshot | null) {
+  if (!snapshot) {
+    return null;
+  }
+
+  return {
+    generatedAt: snapshot.generatedAt,
+    scopeLabel: snapshot.scopeLabel,
+    confidence: snapshot.confidence,
+    summary: snapshot.summary,
+    businessProfile: snapshot.businessProfile,
+    nicheProfile: snapshot.nicheProfile,
+    performanceBaseline: snapshot.performanceBaseline,
+    priorityStack: snapshot.priorityStack.slice(0, 5),
+    operationalRisks: snapshot.operationalRisks.slice(0, 4),
+    recurringErrors: snapshot.recurringErrors.slice(0, 4),
+    growthOpportunities: snapshot.growthOpportunities.slice(0, 4),
+    businessSignals: snapshot.businessSignals.slice(0, 5),
+    seasonalityPatterns: snapshot.seasonalityPatterns.slice(0, 4),
+    campaignPatterns: snapshot.campaignPatterns.slice(0, 4),
+    catalogPatterns: snapshot.catalogPatterns.slice(0, 4),
+    dataGaps: snapshot.dataGaps.slice(0, 3),
+    watchItems: snapshot.watchItems.slice(0, 4),
+    nextMilestones: snapshot.nextMilestones.slice(0, 4),
+    relearnTriggers: snapshot.relearnTriggers.slice(0, 4),
+  };
+}
+
 function buildToolPlanningPrompt(
   input: AtlasAnalystExecutionInput,
   preferredToolNames: AtlasAnalystToolName[],
   memoryContext: Array<Record<string, unknown>>,
   curatedContext: Array<Record<string, unknown>>,
+  learningContext: Record<string, unknown> | null,
   operatorGuidance?: string | null,
 ) {
   const periodText =
@@ -517,6 +547,9 @@ function buildToolPlanningPrompt(
     curatedContext.length
       ? `- Contexto curado da marca: ${JSON.stringify(curatedContext, null, 2)}`
       : "- Contexto curado da marca: sem entradas recentes registradas.",
+    learningContext
+      ? `- Aprendizado consolidado da marca: ${JSON.stringify(learningContext, null, 2)}`
+      : "- Aprendizado consolidado da marca: sem snapshot aprendido ainda.",
     operatorGuidance?.trim()
       ? `- Guia operacional da marca para o Atlas: ${operatorGuidance.trim()}`
       : "- Guia operacional da marca para o Atlas: sem orientação estruturada registrada.",
@@ -547,6 +580,7 @@ function buildFinalSynthesisPrompt(
   warnings: string[],
   memoryContext: Array<Record<string, unknown>>,
   curatedContext: Array<Record<string, unknown>>,
+  learningContext: Record<string, unknown> | null,
   usedReports: AtlasAnalystReportId[],
   decisionFrame: Record<string, unknown>,
   operatorGuidance?: string | null,
@@ -573,6 +607,9 @@ function buildFinalSynthesisPrompt(
     curatedContext.length
       ? `- Contexto curado da marca: ${JSON.stringify(curatedContext, null, 2)}`
       : "- Contexto curado da marca: sem entradas recentes registradas.",
+    learningContext
+      ? `- Aprendizado consolidado da marca: ${JSON.stringify(learningContext, null, 2)}`
+      : "- Aprendizado consolidado da marca: sem snapshot aprendido ainda.",
     operatorGuidance?.trim()
       ? `- Guia operacional da marca: ${operatorGuidance.trim()}`
       : "- Guia operacional da marca: sem orientação estruturada registrada.",
@@ -638,6 +675,7 @@ async function collectToolDrivenContext(
   reportPlan: AtlasAnalystReportId[],
   memoryContext: Array<Record<string, unknown>>,
   curatedContext: Array<Record<string, unknown>>,
+  learningContext: Record<string, unknown> | null,
   operatorGuidance?: string | null,
 ) {
   const preferredToolNames = reportPlan.map(reportIdToToolName);
@@ -651,6 +689,7 @@ async function collectToolDrivenContext(
             preferredToolNames,
             memoryContext,
             curatedContext,
+            learningContext,
             operatorGuidance,
           ),
         },
@@ -779,6 +818,7 @@ export async function runAtlasAnalyst(
     temperature?: number;
     recentRuns?: AtlasAnalystHistoryItem[];
     brandContext?: AtlasContextEntry[];
+    brandLearningSnapshot?: AtlasBrandLearningSnapshot | null;
     operatorGuidance?: string | null;
   },
 ): Promise<AtlasAnalystResponse> {
@@ -795,6 +835,7 @@ export async function runAtlasAnalyst(
   const { skill, reportPlan } = buildReportPlan(input);
   const memoryContext = buildMemoryContext(options?.recentRuns ?? []);
   const curatedContext = buildCuratedContext(options?.brandContext ?? []);
+  const learningContext = buildBrandLearningContext(options?.brandLearningSnapshot ?? null);
 
   const ai = new GoogleGenAI({
     apiKey,
@@ -809,6 +850,7 @@ export async function runAtlasAnalyst(
     reportPlan,
     memoryContext,
     curatedContext,
+    learningContext,
     options?.operatorGuidance ?? null,
   );
 
@@ -850,6 +892,7 @@ export async function runAtlasAnalyst(
               warnings,
               memoryContext,
               curatedContext,
+              learningContext,
               usedReports,
               decisionFrame,
               options?.operatorGuidance ?? null,

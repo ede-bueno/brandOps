@@ -4,6 +4,7 @@ import {
   isMissingBrandGovernanceSchemaError,
   normalizeBrandGovernance,
   normalizeBrandPlanTier,
+  resolveBrandGovernance,
 } from "@/lib/brandops/governance";
 
 function stripGovernanceColumns<T extends Record<string, unknown>>(payload: T) {
@@ -148,7 +149,9 @@ export async function GET(request: Request) {
       brands: safeBrandsData.map((brand) => ({
         ...brand,
         brand_members: membershipsByBrand[brand.id] ?? [],
-        governance: normalizeBrandGovernance({
+        governance: resolveBrandGovernance({
+          brandId: brand.id,
+          brandName: brand.name,
           planTier: brand.plan_tier,
           featureFlags: brand.feature_flags,
         }),

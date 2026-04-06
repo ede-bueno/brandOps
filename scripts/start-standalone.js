@@ -78,7 +78,7 @@ function syncDirectory(source, target) {
 }
 
 function resolveStartMode() {
-  if (existsSync(serverEntrypoint)) {
+  if (existsSync(serverEntrypoint) && existsSync(sourceStatic)) {
     return "standalone";
   }
 

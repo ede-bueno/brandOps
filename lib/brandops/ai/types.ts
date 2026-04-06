@@ -9,6 +9,7 @@ export type AtlasAnalystResolvedSkillId = Exclude<AtlasAnalystSkillId, "auto">;
 export type AtlasAnalystFeedbackVote = "helpful" | "not_helpful";
 export type AtlasBrandLearningStatus = "running" | "completed" | "failed";
 export type AtlasBrandLearningFeedbackVote = "aligned" | "needs_review";
+export type AtlasBrandLearningScope = "all" | "180d" | "90d" | "30d" | "analysis_window";
 
 export type AtlasContextEntryType = "campaign" | "promotion" | "launch" | "incident" | "insight";
 export type AtlasContextEntrySource = "manual" | "imported" | "analyst" | "system";
@@ -35,6 +36,35 @@ export interface AtlasAnalystRequestPayload {
 
 export interface AtlasAnalystExecutionInput extends AtlasAnalystRequestPayload {
   brandId: string;
+}
+
+export interface AtlasBrandLearningSnapshot {
+  id: string;
+  brandId: string;
+  runId: string | null;
+  scopeLabel: string;
+  scopeKey?: AtlasBrandLearningScope | null;
+  periodFrom?: string | null;
+  periodTo?: string | null;
+  summary: string;
+  confidence: "low" | "medium" | "high";
+  businessProfile: string;
+  nicheProfile: string;
+  performanceBaseline: string;
+  operationalRisks: string[];
+  recurringErrors: string[];
+  growthOpportunities: string[];
+  evidenceSources: string[];
+  dataGaps: string[];
+  businessSignals: string[];
+  seasonalityPatterns: string[];
+  campaignPatterns: string[];
+  catalogPatterns: string[];
+  priorityStack: string[];
+  nextMilestones: string[];
+  watchItems: string[];
+  relearnTriggers: string[];
+  generatedAt: string;
 }
 
 export interface AtlasAnalystResponse {
@@ -97,29 +127,6 @@ export interface AtlasAnalystFeedbackPayload {
   note?: string | null;
 }
 
-export interface AtlasBrandLearningSnapshot {
-  id: string;
-  brandId: string;
-  runId: string | null;
-  scopeLabel: string;
-  summary: string;
-  confidence: "low" | "medium" | "high";
-  businessProfile: string;
-  nicheProfile: string;
-  performanceBaseline: string;
-  operationalRisks: string[];
-  recurringErrors: string[];
-  growthOpportunities: string[];
-  evidenceSources: string[];
-  dataGaps: string[];
-  businessSignals: string[];
-  seasonalityPatterns: string[];
-  campaignPatterns: string[];
-  catalogPatterns: string[];
-  priorityStack: string[];
-  generatedAt: string;
-}
-
 export interface AtlasBrandLearningRun {
   id: string;
   brandId: string;
@@ -144,6 +151,10 @@ export interface AtlasBrandLearningFeedbackPayload {
   snapshotId: string;
   vote: AtlasBrandLearningFeedbackVote;
   note?: string | null;
+}
+
+export interface AtlasBrandLearningRequestPayload {
+  scope?: AtlasBrandLearningScope;
 }
 
 export interface AtlasBrandLearningFeedbackSummary {

@@ -11,6 +11,25 @@ Esse modo não deve "ler tudo na hora da pergunta". O desenho correto é:
 3. o sistema consolida perfis, padrões, riscos e oportunidades em memória estruturada
 4. o Analyst passa a usar esse material como contexto curado
 
+## Estado atual
+
+O modo `Aprender negócio` já está ativo na base do produto com:
+
+- painel dedicado na Central Estratégica
+- disparo manual por marca
+- execução protegida por plano e por credencial Gemini ativa
+- persistência de `runs`, `snapshots` e feedback humano
+- comparação com o snapshot anterior
+- suporte a histórico completo, recortes fixos e janela estratégica
+- consumo do snapshot aprendido pelo Atlas Analyst
+
+O que ainda falta para a primeira versão robusta:
+
+- execução realmente assíncrona, sem segurar a request inteira
+- camada separada de evidências e findings consultáveis
+- política de reaprendizagem automática quando a base muda muito
+- rastreabilidade ainda mais forte do período, fontes e lacunas usadas
+
 ## Resultado esperado
 
 Ao final do processo, o Atlas deve conseguir responder melhor perguntas como:
@@ -58,10 +77,10 @@ O aprendizado deve gerar pelo menos estes blocos:
 
 ### Fase 1: Fundamento do modo de aprendizado
 
-1. criar ação explícita `Aprender negócio` na Central Estratégica
-2. criar estado de execução assíncrona por marca
-3. registrar período analisado, status, duração e autor da execução
-4. impedir execuções concorrentes da mesma marca
+1. `feito` criar ação explícita `Aprender negócio` na Central Estratégica
+2. `pendente` criar estado de execução assíncrona por marca
+3. `feito parcial` registrar período analisado, status e autor da execução
+4. `feito` impedir execuções concorrentes da mesma marca
 
 ### Fase 2: Pipeline de varredura histórica
 
@@ -86,10 +105,11 @@ O aprendizado deve gerar pelo menos estes blocos:
 
 ### Fase 5: Memória estruturada para o Analyst
 
-1. salvar snapshot curado de aprendizado por marca
-2. plugar esse snapshot no prompt do Atlas Analyst
-3. exibir data da última aprendizagem e nível de confiança
-4. permitir nova aprendizagem manual após grandes mudanças
+1. `feito` salvar snapshot curado de aprendizado por marca
+2. `feito` plugar esse snapshot no prompt do Atlas Analyst
+3. `feito` exibir data da última aprendizagem e nível de confiança
+4. `feito` permitir nova aprendizagem manual após grandes mudanças
+5. `feito` permitir aprendizagem por janela de análise além do histórico completo
 
 ### Fase 6: Interface de leitura
 
@@ -100,17 +120,18 @@ O aprendizado deve gerar pelo menos estes blocos:
 
 ### Fase 7: Reaprendizagem e manutenção
 
-1. disparar sugestão de reaprender após novas importações relevantes
-2. permitir reaprender por período específico
-3. versionar snapshots de aprendizado
-4. comparar aprendizado anterior vs atual
+1. `feito` disparar sugestão de reaprender após novas importações relevantes
+2. `feito` permitir reaprender por período específico
+3. `feito parcial` versionar snapshots de aprendizado
+4. `feito` comparar aprendizado anterior vs atual
+5. `feito` expor watch items, próximos marcos e gatilhos claros de reaprendizagem
 
 ### Fase 8: Feedback e melhoria contínua
 
-1. permitir ao usuário confirmar ou corrigir entendimentos do Atlas
-2. registrar feedback sobre oportunidades e erros detectados
-3. ajustar priorização futura a partir desse feedback
-4. medir se o aprendizado melhorou respostas do Analyst
+1. `feito` permitir ao usuário confirmar ou corrigir entendimentos do Atlas
+2. `em andamento` registrar feedback sobre oportunidades e erros detectados
+3. `pendente` ajustar priorização futura a partir desse feedback
+4. `pendente` medir se o aprendizado melhorou respostas do Analyst
 
 ## Backlog Técnico
 
@@ -147,12 +168,12 @@ Tabelas sugeridas:
 
 ## Próxima entrega recomendada
 
-Implementar a Fase 1 + Fase 2 + primeiro snapshot simples da Fase 3.
+Fechar a V1 operacional do aprendizado com mais robustez de execução e rastreabilidade.
 
-Escopo mínimo:
+Escopo recomendado:
 
-1. botão `Aprender negócio`
-2. execução assíncrona por marca
-3. consolidação histórica inicial
-4. geração de snapshot com `business_profile`, `performance_baseline`, `operational_risks` e `growth_opportunities`
-5. exibição compacta na Central Estratégica
+1. transformar a execução em job assíncrono com polling de status
+2. persistir evidências e findings fora do blob principal do snapshot
+3. exibir período analisado, fontes e lacunas de forma ainda mais clara
+4. usar o aprendizado de forma mais especializada por skill no Analyst
+5. acionar reaprendizagem automática quando novas importações mudarem materialmente a base

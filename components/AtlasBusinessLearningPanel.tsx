@@ -16,10 +16,28 @@ import { InlineNotice, SectionHeading } from "./ui-shell";
 import type {
   AtlasBrandLearningFeedbackPayload,
   AtlasBrandLearningFeedbackSummary,
+  AtlasBrandLearningRequestPayload,
   AtlasBrandLearningResponse,
   AtlasBrandLearningRun,
+  AtlasBrandLearningScope,
   AtlasBrandLearningSnapshot,
 } from "@/lib/brandops/ai/types";
+
+const FILE_SOURCE_LABELS = {
+  meta: "importação Meta CSV",
+  feed: "importação de catálogo",
+  cmv_produtos: "importação de CMV",
+  pedidos_pagos: "importação de pedidos pagos",
+  lista_pedidos: "importação da lista de pedidos",
+  lista_itens: "importação da lista de itens",
+} as const;
+
+const INTEGRATION_SOURCE_LABELS = {
+  meta: "sincronização da Meta",
+  ga4: "sincronização do GA4",
+  gemini: "ajuste do Gemini",
+  ink: "atualização da origem comercial",
+} as const;
 
 function formatDateTime(value: string | null) {
   if (!value) {
@@ -30,6 +48,38 @@ function formatDateTime(value: string | null) {
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function formatDateOnly(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+  }).format(new Date(`${value}T00:00:00Z`));
+}
+
+function formatLearningRange(
+  periodFrom: string | null | undefined,
+  periodTo: string | null | undefined,
+) {
+  const fromLabel = formatDateOnly(periodFrom);
+  const toLabel = formatDateOnly(periodTo);
+
+  if (fromLabel && toLabel) {
+    return `${fromLabel} a ${toLabel}`;
+  }
+
+  if (fromLabel) {
+    return `Desde ${fromLabel}`;
+  }
+
+  if (toLabel) {
+    return `Até ${toLabel}`;
+  }
+
+  return "Todo histórico disponível";
 }
 
 function getRunStatusLabel(run: AtlasBrandLearningRun | null) {
@@ -57,8 +107,41 @@ function toTimestamp(value: string | null | undefined) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+type TimedSource = {
+  label: string;
+  timestamp: number;
+};
+
+function normalizeTimedSource(label: string, timestamp: number | null): TimedSource | null {
+  if (timestamp === null) {
+    return null;
+  }
+
+  return {
+    label,
+    timestamp,
+  };
+}
+
+function buildLearningScopeOptions(analysisWindowDays: number) {
+  return [
+    {
+      value: "analysis_window" as const,
+      label: `Janela estratégica (${analysisWindowDays} dias)`,
+    },
+    { value: "all" as const, label: "Todo histórico" },
+    { value: "180d" as const, label: "180 dias" },
+    { value: "90d" as const, label: "90 dias" },
+    { value: "30d" as const, label: "30 dias" },
+  ] satisfies Array<{
+    value: AtlasBrandLearningScope;
+    label: string;
+  }>;
+}
+
 export function AtlasBusinessLearningPanel() {
   const { activeBrand, activeBrandId, session } = useBrandOps();
+  const [selectedScope, setSelectedScope] = useState<AtlasBrandLearningScope>("all");
   const [snapshot, setSnapshot] = useState<AtlasBrandLearningSnapshot | null>(null);
   const [previousSnapshot, setPreviousSnapshot] = useState<AtlasBrandLearningSnapshot | null>(null);
   const [runs, setRuns] = useState<AtlasBrandLearningRun[]>([]);
@@ -72,9 +155,23 @@ export function AtlasBusinessLearningPanel() {
     () => activeBrand?.integrations.find((integration) => integration.provider === "gemini") ?? null,
     [activeBrand?.integrations],
   );
+  const analysisWindowDays =
+    geminiIntegration?.settings.analysisWindowDays && geminiIntegration.settings.analysisWindowDays > 0
+      ? geminiIntegration.settings.analysisWindowDays
+      : 30;
+  const learningScopeOptions = useMemo(
+    () => buildLearningScopeOptions(analysisWindowDays),
+    [analysisWindowDays],
+  );
   const isAtlasEnabled = geminiIntegration?.mode === "api";
   const isLearningEnabled = activeBrand?.governance.featureFlags.brandLearning ?? false;
   const latestRun = runs[0] ?? null;
+  const snapshotRangeLabel = useMemo(
+    () => formatLearningRange(snapshot?.periodFrom, snapshot?.periodTo),
+    [snapshot?.periodFrom, snapshot?.periodTo],
+  );
+  const currentScopeLabel =
+    learningScopeOptions.find((option) => option.value === selectedScope)?.label ?? "Todo histórico";
   const whatsNew = useMemo(() => {
     if (!snapshot) {
       return [];
@@ -138,15 +235,36 @@ export function AtlasBusinessLearningPanel() {
   const relearnSignal = useMemo(() => {
     const snapshotTimestamp = toTimestamp(snapshot?.generatedAt);
 
-    const fileImports = Object.values(activeBrand?.files ?? {})
-      .map((file) => toTimestamp(file?.lastImportedAt))
-      .filter((value): value is number => value !== null);
+    const fileImports = Object.entries(activeBrand?.files ?? {})
+      .map(([kind, file]) =>
+        normalizeTimedSource(
+          FILE_SOURCE_LABELS[kind as keyof typeof FILE_SOURCE_LABELS] ?? `importação ${kind}`,
+          toTimestamp(file?.lastImportedAt),
+        ),
+      )
+      .filter((item): item is TimedSource => item !== null);
 
     const integrationSyncs = (activeBrand?.integrations ?? [])
-      .map((integration) => toTimestamp(integration.lastSyncAt))
-      .filter((value): value is number => value !== null);
+      .map((integration) =>
+        normalizeTimedSource(
+          INTEGRATION_SOURCE_LABELS[
+            integration.provider as keyof typeof INTEGRATION_SOURCE_LABELS
+          ] ?? `sincronização ${integration.provider}`,
+          toTimestamp(integration.lastSyncAt),
+        ),
+      )
+      .filter((item): item is TimedSource => item !== null);
 
-    const latestSourceUpdate = [...fileImports, ...integrationSyncs].sort((left, right) => right - left)[0] ?? null;
+    const allUpdates = [...fileImports, ...integrationSyncs].sort(
+      (left, right) => right.timestamp - left.timestamp,
+    );
+    const latestSourceUpdate = allUpdates[0]?.timestamp ?? null;
+    const changedSources =
+      snapshotTimestamp === null
+        ? allUpdates.slice(0, 4)
+        : allUpdates
+            .filter((item) => item.timestamp > snapshotTimestamp + 60_000)
+            .slice(0, 4);
 
     if (!latestSourceUpdate) {
       return null;
@@ -156,6 +274,7 @@ export function AtlasBusinessLearningPanel() {
       return {
         kind: "initial" as const,
         timestamp: latestSourceUpdate,
+        changedSources,
       };
     }
 
@@ -163,6 +282,7 @@ export function AtlasBusinessLearningPanel() {
       return {
         kind: "refresh" as const,
         timestamp: latestSourceUpdate,
+        changedSources,
       };
     }
 
@@ -173,6 +293,7 @@ export function AtlasBusinessLearningPanel() {
     const accessToken = session?.access_token;
 
     if (!activeBrandId || !accessToken) {
+      setSelectedScope("all");
       setSnapshot(null);
       setPreviousSnapshot(null);
       setRuns([]);
@@ -207,6 +328,7 @@ export function AtlasBusinessLearningPanel() {
           setPreviousSnapshot(payload?.previousSnapshot ?? null);
           setRuns(payload?.runs ?? []);
           setFeedback(payload?.feedback ?? null);
+          setSelectedScope(payload?.snapshot?.scopeKey ?? "all");
         }
       } catch (error) {
         if (!cancelled) {
@@ -251,8 +373,12 @@ export function AtlasBusinessLearningPanel() {
       const response = await fetch(`/api/admin/brands/${activeBrandId}/atlas-learning`, {
         method: "POST",
         headers: {
+          "content-type": "application/json",
           authorization: `Bearer ${session.access_token}`,
         },
+        body: JSON.stringify({
+          scope: selectedScope,
+        } satisfies AtlasBrandLearningRequestPayload),
       });
       const payload = (await response.json().catch(() => null)) as
         | ({
@@ -268,6 +394,7 @@ export function AtlasBusinessLearningPanel() {
 
       if (payload?.snapshot) {
         setSnapshot(payload.snapshot);
+        setSelectedScope(payload.snapshot.scopeKey ?? selectedScope);
       }
       if (payload?.run) {
         setRuns((current) => [
@@ -370,6 +497,12 @@ export function AtlasBusinessLearningPanel() {
         <span className="rounded-full border border-outline px-2.5 py-1">
           {snapshot ? formatDateTime(snapshot.generatedAt) : "Sem snapshot"}
         </span>
+        <span className="rounded-full border border-outline px-2.5 py-1">
+          {snapshot?.scopeLabel ?? currentScopeLabel}
+        </span>
+        <span className="rounded-full border border-outline px-2.5 py-1">
+          {snapshotRangeLabel}
+        </span>
       </div>
 
       {!isLearningEnabled ? (
@@ -420,6 +553,18 @@ export function AtlasBusinessLearningPanel() {
               ? " Vale reaprender para alinhar o entendimento do Atlas ao estado atual da operação."
               : " O Atlas já pode consolidar o primeiro entendimento estrutural da marca."}
           </p>
+          {relearnSignal.changedSources.length ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {relearnSignal.changedSources.map((source) => (
+                <span
+                  key={`${source.label}-${source.timestamp}`}
+                  className="atlas-soft-pill text-[10px] normal-case tracking-[0.02em]"
+                >
+                  {source.label}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </InlineNotice>
       ) : null}
 
@@ -429,8 +574,22 @@ export function AtlasBusinessLearningPanel() {
             O Atlas vai mapear nicho, baseline, oportunidades e erros recorrentes.
           </p>
           <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
-            Esta primeira versão usa o histórico consolidado de finanças, vendas, mídia, tráfego, catálogo e saneamento.
+            Use a janela estratégica para leituras recorrentes e o histórico total quando precisar reentender a marca do zero.
           </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {learningScopeOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setSelectedScope(option.value)}
+                disabled={isRunning}
+                className="brandops-subtab"
+                data-active={selectedScope === option.value}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
         <button
           type="button"
@@ -439,7 +598,7 @@ export function AtlasBusinessLearningPanel() {
           className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/25 bg-primary px-3 py-2 text-[11px] font-semibold text-on-primary transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isRunning ? <Loader2 size={13} className="animate-spin" /> : null}
-          Aprender negócio
+          {snapshot || relearnSignal ? "Reaprender negócio" : "Aprender negócio"}
         </button>
       </div>
 
@@ -493,6 +652,71 @@ export function AtlasBusinessLearningPanel() {
 
           <article className="atlas-soft-section px-4 py-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+              Base usada
+            </p>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div className="atlas-soft-subcard px-3 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                  Período analisado
+                </p>
+                <p className="mt-2 text-[11px] leading-5 text-on-surface">{snapshotRangeLabel}</p>
+              </div>
+              <div className="atlas-soft-subcard px-3 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                  Confiança
+                </p>
+                <p className="mt-2 text-[11px] leading-5 text-on-surface">
+                  {snapshot.confidence === "high"
+                    ? "Alta"
+                    : snapshot.confidence === "medium"
+                      ? "Média"
+                      : "Baixa"}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                Evidências usadas
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {snapshot.evidenceSources.length ? (
+                  snapshot.evidenceSources.map((item) => (
+                    <span
+                      key={item}
+                      className="atlas-soft-pill text-[11px] normal-case tracking-[0.02em]"
+                    >
+                      {item}
+                    </span>
+                  ))
+                ) : (
+                  <p className="text-[11px] leading-5 text-on-surface-variant">
+                    O Atlas ainda não registrou evidências explícitas nesta rodada.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="mt-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                Lacunas da leitura
+              </p>
+              <div className="mt-2 space-y-2">
+                {snapshot.dataGaps.length ? (
+                  snapshot.dataGaps.map((item) => (
+                    <div key={item} className="atlas-soft-subcard px-3 py-2 text-[11px] leading-5 text-on-surface-variant">
+                      {item}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-[11px] leading-5 text-on-surface-variant">
+                    Nenhuma lacuna crítica foi registrada nesta consolidação.
+                  </p>
+                )}
+              </div>
+            </div>
+          </article>
+
+          <article className="atlas-soft-section px-4 py-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
               Pilha de prioridade
             </p>
             <div className="mt-3 space-y-2">
@@ -534,6 +758,25 @@ export function AtlasBusinessLearningPanel() {
 
           <article className="atlas-soft-section px-4 py-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+              Itens para observar
+            </p>
+            <div className="mt-3 space-y-2">
+              {snapshot.watchItems.length ? (
+                snapshot.watchItems.map((item) => (
+                  <div key={item} className="atlas-soft-subcard px-3 py-2 text-[11px] leading-5 text-on-surface">
+                    {item}
+                  </div>
+                ))
+              ) : (
+                <p className="text-[11px] leading-5 text-on-surface-variant">
+                  O Atlas não sinalizou itens de observação contínua nesta rodada.
+                </p>
+              )}
+            </div>
+          </article>
+
+          <article className="atlas-soft-section px-4 py-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
               Oportunidades
             </p>
             <div className="mt-3 space-y-2">
@@ -542,6 +785,25 @@ export function AtlasBusinessLearningPanel() {
                   {item}
                 </div>
               ))}
+            </div>
+          </article>
+
+          <article className="atlas-soft-section px-4 py-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+              Próximos marcos
+            </p>
+            <div className="mt-3 space-y-2">
+              {snapshot.nextMilestones.length ? (
+                snapshot.nextMilestones.map((item) => (
+                  <div key={item} className="atlas-soft-subcard px-3 py-2 text-[11px] leading-5 text-on-surface">
+                    {item}
+                  </div>
+                ))
+              ) : (
+                <p className="text-[11px] leading-5 text-on-surface-variant">
+                  O Atlas ainda não consolidou próximos marcos claros para esta marca.
+                </p>
+              )}
             </div>
           </article>
 
@@ -600,6 +862,69 @@ export function AtlasBusinessLearningPanel() {
 
           <article className="atlas-soft-section px-4 py-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+              Próximos marcos
+            </p>
+            <div className="mt-3 space-y-2">
+              {snapshot.nextMilestones.length ? (
+                snapshot.nextMilestones.map((item) => (
+                  <div key={item} className="atlas-soft-subcard px-3 py-2 text-[11px] leading-5 text-on-surface">
+                    {item}
+                  </div>
+                ))
+              ) : (
+                <p className="text-[11px] leading-5 text-on-surface-variant">
+                  O Atlas ainda não sugeriu marcos práticos para acompanhar a evolução da marca.
+                </p>
+              )}
+            </div>
+          </article>
+
+          <article className="atlas-soft-section px-4 py-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+              Watch items e gatilhos
+            </p>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div className="atlas-soft-subcard px-3 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                  Vigiar agora
+                </p>
+                <div className="mt-2 space-y-2">
+                  {snapshot.watchItems.length ? (
+                    snapshot.watchItems.map((item) => (
+                      <div key={item} className="text-[11px] leading-5 text-on-surface">
+                        {item}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-[11px] leading-5 text-on-surface-variant">
+                      Sem watch item crítico consolidado nesta rodada.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="atlas-soft-subcard px-3 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                  Reaprender quando
+                </p>
+                <div className="mt-2 space-y-2">
+                  {snapshot.relearnTriggers.length ? (
+                    snapshot.relearnTriggers.map((item) => (
+                      <div key={item} className="text-[11px] leading-5 text-on-surface">
+                        {item}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-[11px] leading-5 text-on-surface-variant">
+                      O Atlas ainda não sugeriu gatilhos claros de reaprendizagem.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article className="atlas-soft-section px-4 py-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
               O que mudou
             </p>
             <div className="mt-3 space-y-2">
@@ -618,6 +943,25 @@ export function AtlasBusinessLearningPanel() {
               ) : (
                 <p className="text-[11px] leading-5 text-on-surface-variant">
                   Esta é a primeira aprendizagem registrada para a marca.
+                </p>
+              )}
+            </div>
+          </article>
+
+          <article className="atlas-soft-section px-4 py-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+              Quando reaprender
+            </p>
+            <div className="mt-3 space-y-2">
+              {snapshot.relearnTriggers.length ? (
+                snapshot.relearnTriggers.map((item) => (
+                  <div key={item} className="atlas-soft-subcard px-3 py-2 text-[11px] leading-5 text-on-surface">
+                    {item}
+                  </div>
+                ))
+              ) : (
+                <p className="text-[11px] leading-5 text-on-surface-variant">
+                  O Atlas ainda não consolidou gatilhos claros de reaprendizagem.
                 </p>
               )}
             </div>

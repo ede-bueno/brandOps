@@ -51,6 +51,9 @@ Data de consolidação: 2026-04-04
 - `feito` Integrações separadas da estratégia do Atlas IA
 - `em andamento` revisão fina da UX da aba de Integrações
 - `feito` quadro de saúde dos conectores para leitura rápida de status e bloqueios
+- `feito` autofoco do workspace no conector que realmente pede ação, erro ou configuração
+- `feito` redução de redundância entre contexto, radar lateral e estado resumido do conector
+- `feito` Gemini reduzido ao papel correto em Integrações: conexão e saúde, não estratégia do agente
 - `pendente` resolver operacionalmente os erros externos da Meta `(#100)` por permissão/app
 
 ## 5. Ambiente e operação
@@ -63,24 +66,31 @@ Data de consolidação: 2026-04-04
 ## 6. Aprendizado do negócio
 
 - `feito` backlog da frente de aprendizado documentado
-- `em andamento` fundação do modo `Aprender negócio`
-- `em andamento` painel na Central Estratégica para disparar a aprendizagem
-- `em andamento` persistência de runs e snapshots de aprendizado
+- `feito` fundação do modo `Aprender negócio`
+- `feito` painel na Central Estratégica para disparar a aprendizagem
+- `feito` persistência de runs e snapshots de aprendizado
 - `feito` bloqueio de execuções concorrentes por marca
 - `feito` snapshot enriquecido com sinais do negócio, padrões e pilha de prioridades
 - `feito` sugestão de reaprendizagem quando a base muda após o último snapshot
 - `feito` comparação básica com o snapshot anterior na Central Estratégica
 - `feito` feedback humano do snapshot de aprendizado para validar se o Atlas entendeu bem o negócio
 - `feito` comparação entre snapshot atual e anterior com novos focos, focos persistentes e sinais que perderam força
-- `pendente` reexecução inteligente após importações relevantes
+- `feito` reaprendizagem sugerida quando há importações ou sincronizações mais novas que o snapshot
+- `feito` aprendizagem por janela de análise (`30d`, `90d`, `180d` ou histórico completo)
+- `feito` aprendizagem por janela estratégica baseada na configuração da marca
+- `feito` uso do snapshot anterior como memória para reaprendizagem incremental
+- `feito` exposição de próximos marcos, watch items e gatilhos de reaprendizagem na Central Estratégica
+- `feito` exposição de período analisado, evidências usadas e lacunas da leitura
+- `pendente` execução assíncrona real do aprendizado
+- `pendente` persistência estruturada de evidências e findings fora do blob do snapshot
 
 ## 7. Próximas prioridades recomendadas
 
-1. fechar a primeira versão utilizável do `Aprender negócio`
-2. elevar a consistência dos insights do Atlas com playbooks mais específicos
-3. revisar manualmente a experiência logada de Torre, Configurações e Integrações
-4. aprofundar o papel do Orb como radar/atalho, sem duplicar a Torre
-5. atacar a dívida técnica do `next dev` no Windows
+1. transformar o `Aprender negócio` em execução assíncrona com polling de status
+2. persistir evidências/findings estruturados para explicar melhor o que o Atlas aprendeu
+3. elevar a consistência dos insights do Atlas com playbooks mais específicos
+4. revisar manualmente a experiência logada de Torre, Configurações e Integrações
+5. aprofundar o papel do Orb como radar/atalho, sem duplicar a Torre
 
 ## 8. Navegação e arquitetura do produto
 

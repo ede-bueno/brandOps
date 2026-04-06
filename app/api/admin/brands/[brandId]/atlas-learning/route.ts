@@ -6,6 +6,7 @@ import {
   completeAtlasBrandLearningRun,
   failAtlasBrandLearningRun,
   getAtlasBrandLearningFeedbackSummary,
+  getLatestAtlasBrandLearningSnapshot,
   listAtlasBrandLearningSnapshots,
   listAtlasBrandLearningRuns,
   listAtlasContextEntries,
@@ -13,7 +14,59 @@ import {
   saveAtlasBrandLearningSnapshot,
   startAtlasBrandLearningRun,
 } from "@/lib/brandops/ai/store";
-import type { AtlasBrandLearningFeedbackPayload } from "@/lib/brandops/ai/types";
+import type {
+  AtlasBrandLearningFeedbackPayload,
+  AtlasBrandLearningRequestPayload,
+  AtlasBrandLearningScope,
+} from "@/lib/brandops/ai/types";
+
+function resolveLearningWindow(
+  scope: AtlasBrandLearningScope | undefined,
+  analysisWindowDays: number | null,
+) {
+  const strategicWindow =
+    typeof analysisWindowDays === "number" && Number.isFinite(analysisWindowDays)
+      ? Math.max(7, Math.min(120, Math.round(analysisWindowDays)))
+      : 30;
+
+  if (scope === "analysis_window") {
+    return {
+      scope: "analysis_window" as const,
+      scopeLabel: `Janela estratégica (${strategicWindow} dias)`,
+      analysisWindowDays: strategicWindow,
+    };
+  }
+
+  if (scope === "30d") {
+    return {
+      scope: "30d" as const,
+      scopeLabel: "Últimos 30 dias",
+      analysisWindowDays: 30,
+    };
+  }
+
+  if (scope === "90d") {
+    return {
+      scope: "90d" as const,
+      scopeLabel: "Últimos 90 dias",
+      analysisWindowDays: 90,
+    };
+  }
+
+  if (scope === "180d") {
+    return {
+      scope: "180d" as const,
+      scopeLabel: "Últimos 180 dias",
+      analysisWindowDays: 180,
+    };
+  }
+
+  return {
+    scope: "all" as const,
+    scopeLabel: "Todo histórico disponível",
+    analysisWindowDays: null,
+  };
+}
 
 function assertBrandLearningEnabled(
   context: Awaited<ReturnType<typeof requireBrandAccess>>,
@@ -118,17 +171,20 @@ export async function POST(
     resolvedBrandId = brandId;
     context = await requireBrandAccess(request, brandId);
     assertBrandLearningEnabled(context);
+    const body = (await request.json().catch(() => null)) as AtlasBrandLearningRequestPayload | null;
     const gemini = await resolveAtlasAnalystGeminiAccess(brandId);
-    const brandContext = await listAtlasContextEntries(context.supabase, brandId, 12);
-    const { data: brand } = await context.supabase
-      .from("brands")
-      .select("name")
-      .eq("id", brandId)
-      .maybeSingle();
+    const learningWindow = resolveLearningWindow(body?.scope, gemini.analysisWindowDays);
+    const [brandContext, previousSnapshot, brandResponse] = await Promise.all([
+      listAtlasContextEntries(context.supabase, brandId, 12),
+      getLatestAtlasBrandLearningSnapshot(context.supabase, brandId),
+      context.supabase.from("brands").select("name").eq("id", brandId).maybeSingle(),
+    ]);
+    const brand = brandResponse.data;
 
     const run = await startAtlasBrandLearningRun(context.supabase, context.user.id, brandId, {
       model: gemini.model,
       temperature: gemini.temperature,
+      scopeLabel: learningWindow.scopeLabel,
     });
     runId = run.id;
 
@@ -138,6 +194,9 @@ export async function POST(
       model: gemini.model,
       temperature: gemini.temperature,
       contextEntries: brandContext,
+      previousSnapshot,
+      scope: learningWindow.scope,
+      analysisWindowDays: learningWindow.analysisWindowDays,
     });
 
     const snapshot = await saveAtlasBrandLearningSnapshot(context.supabase, run.id, {

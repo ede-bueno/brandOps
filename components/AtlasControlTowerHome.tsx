@@ -6,6 +6,7 @@ import { ArrowUpRight, BrainCircuit, Radar, SlidersHorizontal } from "lucide-rea
 import { useBrandOps } from "./BrandOpsProvider";
 import { AtlasAnalystPanel } from "./AtlasAnalystPanel";
 import { InfoHint, SectionHeading, StackItem, SurfaceCard } from "./ui-shell";
+import { useSanitizationPendingCount } from "@/hooks/use-sanitization-summary";
 import { currencyFormatter, percentFormatter } from "@/lib/brandops/format";
 
 type TowerSignal = {
@@ -117,7 +118,7 @@ function buildTowerSignals({
 }
 
 export function AtlasControlTowerHome() {
-  const { activeBrand, filteredBrand, financialReportFiltered, selectedPeriodLabel } = useBrandOps();
+  const { activeBrand, activeBrandId, financialReportFiltered, selectedPeriodLabel, session } = useBrandOps();
 
   const geminiIntegration =
     activeBrand?.integrations.find((integration) => integration.provider === "gemini") ?? null;
@@ -128,10 +129,10 @@ export function AtlasControlTowerHome() {
   const isAtlasAiEnabled = geminiIntegration?.mode === "api";
   const canUseAtlasCommandCenter =
     activeBrand?.governance.featureFlags.atlasCommandCenter ?? false;
-
-  const pendingSanitizationCount =
-    (filteredBrand?.media.filter((row) => row.sanitizationStatus === "PENDING").length ?? 0) +
-    (filteredBrand?.paidOrders.filter((order) => order.sanitizationStatus === "PENDING").length ?? 0);
+  const pendingSanitizationCount = useSanitizationPendingCount(
+    activeBrandId,
+    session?.access_token,
+  );
 
   const signals = useMemo(
     () =>

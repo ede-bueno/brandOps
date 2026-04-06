@@ -11,6 +11,17 @@ type GovernanceSchemaError = {
   hint?: string | null;
 };
 
+const PLATFORM_ENTERPRISE_BRAND_IDS = new Set([
+  "5e04ebfe-8443-4c11-940a-9bacb7f4af15", // Oh My Dog
+  "a166d816-660e-40d2-bb09-8b73fe8de7a8", // Bateu o Pace
+]);
+
+const PLATFORM_ENTERPRISE_BRAND_NAME_KEYS = new Set([
+  "oh my dog",
+  "bateu o pace",
+  "bateu pace",
+]);
+
 export const BRAND_PLAN_LABELS: Record<BrandPlanTier, string> = {
   starter: "Starter",
   growth: "Growth",
@@ -51,6 +62,29 @@ function asObject(value: unknown) {
     : {};
 }
 
+function normalizeBrandNameKey(value: unknown) {
+  return typeof value === "string"
+    ? value
+        .normalize("NFD")
+        .replace(/\p{Diacritic}+/gu, "")
+        .trim()
+        .toLowerCase()
+    : "";
+}
+
+function isPlatformEnterpriseBrand(input?: {
+  brandId?: unknown;
+  brandName?: unknown;
+}) {
+  const brandId = typeof input?.brandId === "string" ? input.brandId : "";
+  const brandNameKey = normalizeBrandNameKey(input?.brandName);
+
+  return (
+    PLATFORM_ENTERPRISE_BRAND_IDS.has(brandId) ||
+    PLATFORM_ENTERPRISE_BRAND_NAME_KEYS.has(brandNameKey)
+  );
+}
+
 function asGovernanceSchemaError(value: unknown): GovernanceSchemaError | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -79,13 +113,17 @@ export function isMissingBrandGovernanceSchemaError(error: unknown) {
 
 export function withNormalizedBrandGovernance<
   T extends {
+    id?: unknown;
+    name?: unknown;
     plan_tier?: unknown;
     feature_flags?: unknown;
   },
 >(brand: T) {
   return {
     ...brand,
-    governance: normalizeBrandGovernance({
+    governance: resolveBrandGovernance({
+      brandId: brand.id,
+      brandName: brand.name,
       planTier: brand.plan_tier,
       featureFlags: brand.feature_flags,
     }),
@@ -130,6 +168,24 @@ export function normalizeBrandGovernance(input?: {
           : defaults.geminiModelCatalog,
     },
   };
+}
+
+export function resolveBrandGovernance(input?: {
+  brandId?: unknown;
+  brandName?: unknown;
+  planTier?: unknown;
+  featureFlags?: unknown;
+}): BrandGovernance {
+  if (isPlatformEnterpriseBrand(input)) {
+    return normalizeBrandGovernance({
+      planTier: "enterprise",
+    });
+  }
+
+  return normalizeBrandGovernance({
+    planTier: input?.planTier,
+    featureFlags: input?.featureFlags,
+  });
 }
 
 export function hasBrandFeature(

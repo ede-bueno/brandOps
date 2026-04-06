@@ -31,6 +31,7 @@ import {
 import { useBrandOps } from "./BrandOpsProvider";
 import type { PeriodFilter } from "@/lib/brandops/types";
 import { BRANDING } from "@/lib/branding";
+import { useSanitizationPendingCount } from "@/hooks/use-sanitization-summary";
 import { ThemeToggle } from "./ThemeToggle";
 import { AtlasOrb } from "./AtlasOrb";
 import { AtlasOrbRadarPanel, type AtlasOrbRadarTelemetry } from "./AtlasOrbRadarPanel";
@@ -101,6 +102,36 @@ const periodOptions: Array<{ value: PeriodFilter; label: string }> = [
   { value: "lastMonth", label: "Mês passado" },
   { value: "all", label: "Todo período" },
   { value: "custom", label: "Período livre" },
+];
+
+const mobilePrimaryNav: Array<NavItem & { match?: (pathname: string) => boolean }> = [
+  { href: "/dashboard", label: "Controle", icon: LayoutDashboard },
+  {
+    href: "/dre",
+    label: "Negócio",
+    icon: Receipt,
+    match: (value) =>
+      value.startsWith("/dre") ||
+      value.startsWith("/sales") ||
+      value.startsWith("/product-insights"),
+  },
+  {
+    href: "/media",
+    label: "Aquisição",
+    icon: TrendingUp,
+    match: (value) => value.startsWith("/media") || value.startsWith("/traffic"),
+  },
+  {
+    href: "/feed",
+    label: "Operação",
+    icon: FileUp,
+    match: (value) =>
+      value.startsWith("/feed") ||
+      value.startsWith("/import") ||
+      value.startsWith("/cmv") ||
+      value.startsWith("/cost-center") ||
+      value.startsWith("/sanitization"),
+  },
 ];
 
 interface AtlasOrbContextTelemetry extends AtlasOrbRadarTelemetry {
@@ -439,6 +470,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < 1024;
+  });
   const {
     activeBrand,
     activeBrandId,
@@ -461,13 +496,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     activeBrand?.name ??
     brands.find((brand) => brand.id === activeBrandId)?.name ??
     "Nenhuma marca";
+  const pendingSanitizationCount = useSanitizationPendingCount(
+    activeBrandId,
+    session?.access_token,
+  );
   const atlasOrbTelemetry = useMemo<AtlasOrbContextTelemetry>(() => {
     const mediaIntegration = activeBrand?.integrations.find((integration) => integration.provider === "meta");
     const ga4Integration = activeBrand?.integrations.find((integration) => integration.provider === "ga4");
     const geminiIntegration = activeBrand?.integrations.find((integration) => integration.provider === "gemini");
-    const pendingSanitizationCount =
-      (filteredBrand?.media.filter((row) => row.sanitizationStatus === "PENDING").length ?? 0) +
-      (filteredBrand?.paidOrders.filter((order) => order.sanitizationStatus === "PENDING").length ?? 0);
 
     return {
       pendingSanitizationCount,
@@ -482,7 +518,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       variableCostShare: financialReportFiltered?.analysis.shares.variableCostShare ?? null,
       grossRoas: financialReportFiltered?.total.grossRoas ?? null,
     };
-  }, [activeBrand?.catalog.length, activeBrand?.integrations, filteredBrand?.ga4DailyPerformance, filteredBrand?.media, filteredBrand?.paidOrders, financialReportFiltered]);
+  }, [activeBrand, filteredBrand, financialReportFiltered, pendingSanitizationCount]);
   const atlasOrbContext = useMemo(
     () => getAtlasOrbContext(pathname, selectedBrandName, selectedPeriodLabel, atlasOrbTelemetry),
     [atlasOrbTelemetry, pathname, selectedBrandName, selectedPeriodLabel],
@@ -493,6 +529,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       router.replace("/login");
     }
   }, [isLoading, router, session]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const mediaQuery = window.matchMedia("(max-width: 1023px)");
+    const syncViewport = (event?: MediaQueryListEvent) => {
+      setIsMobileViewport(event ? event.matches : mediaQuery.matches);
+    };
+
+    syncViewport();
+    mediaQuery.addEventListener("change", syncViewport);
+    return () => mediaQuery.removeEventListener("change", syncViewport);
+  }, []);
 
   useEffect(() => {
     window.localStorage.setItem("brandops.sidebar.collapsed", isSidebarCollapsed ? "1" : "0");
@@ -531,6 +580,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (!session) return null;
 
   const isSuperAdmin = profile?.role === "SUPER_ADMIN";
+  const mobileShellDescription = activeBrandId
+    ? "Navegação, período e marca organizados para operação rápida no celular."
+    : "Escolha uma marca para abrir o workspace operacional no Atlas.";
 
   if (isSuperAdmin && !activeBrandId) {
     return (
@@ -582,8 +634,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="brandops-shell brandops-selection h-[100dvh] overflow-hidden bg-background text-on-surface">
-      <div className="flex h-full gap-0 p-0 sm:gap-4 sm:p-0 lg:gap-5 lg:p-0 xl:gap-6">
+    <div className="brandops-shell brandops-selection min-h-[100svh] bg-background text-on-surface lg:h-[100dvh] lg:overflow-hidden">
+      <div className="flex min-h-[100svh] flex-col gap-0 p-0 lg:h-full lg:flex-row lg:gap-5 xl:gap-6">
 
         {/* ---- Desktop Sidebar ---- */}
           <aside
@@ -709,63 +761,75 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* ---- Main Content ---- */}
-        <div className="atlas-main-stage">
+        <div className="atlas-main-stage pb-[calc(4.8rem+env(safe-area-inset-bottom))] lg:pb-0">
           {/* Header */}
-          <header className="atlas-command-strip z-30 shrink-0 border-b border-outline/50 px-3 py-3 sm:mt-3 sm:rounded-2xl sm:border sm:border-outline/50 sm:px-4 lg:mt-4 lg:px-5">
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div className="flex min-w-0 items-center gap-2">
-                <button
-                  onClick={() => {
-                    setIsUserMenuOpen(false);
-                    setIsMobileMenuOpen((c) => !c);
-                  }}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-outline bg-surface-container text-on-surface lg:hidden"
-                >
-                  {isMobileMenuOpen ? <X size={15} /> : <Menu size={15} />}
-                </button>
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="truncate font-headline text-[1.05rem] font-semibold tracking-tight text-on-surface sm:text-lg">
-                      {selectedBrandName}
-                    </h2>
-                    <span className="status-chip">{selectedPeriodLabel}</span>
+          <header className="atlas-command-strip sticky top-0 z-30 shrink-0 border-b border-outline/50 px-3 py-3 sm:mt-3 sm:rounded-2xl sm:border sm:border-outline/50 sm:px-4 lg:mt-4 lg:px-5">
+            <div className="flex flex-col gap-3 lg:gap-4">
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(240px,320px)] lg:items-center lg:gap-4">
+                <div className="min-w-0 space-y-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        setIsMobileMenuOpen((c) => !c);
+                      }}
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-outline bg-surface-container text-on-surface lg:hidden"
+                      aria-label={isMobileMenuOpen ? "Fechar navegação" : "Abrir navegação"}
+                    >
+                      {isMobileMenuOpen ? <X size={17} /> : <Menu size={17} />}
+                    </button>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <h2 className="truncate font-headline text-[1.02rem] font-semibold tracking-tight text-on-surface sm:text-lg">
+                          {selectedBrandName}
+                        </h2>
+                        <span className="status-chip hidden sm:inline-flex">{selectedPeriodLabel}</span>
+                      </div>
+                      <p className="mt-1 hidden text-[11px] font-medium uppercase tracking-[0.16em] text-ink-muted sm:block">
+                        Operação, aquisição, catálogo e margem em um único workspace
+                      </p>
+                      <p className="mt-1 text-[12px] text-on-surface-variant sm:hidden">
+                        {mobileShellDescription}
+                      </p>
+                    </div>
                   </div>
-                  <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted sm:text-[11px] sm:tracking-[0.16em]">
-                    Operação, aquisição, catálogo e margem em um único workspace
-                  </p>
-                </div>
                 </div>
 
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <select
-                  value={activeBrandId ?? ""}
-                  onChange={(e) => {
-                    const newId = e.target.value;
-                    if (!newId) return;
-                    if (activeBrandId && newId !== activeBrandId) {
-                      if (window.confirm("Deseja trocar de marca? Os dados da tela atual serão atualizados.")) {
+                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-1">
+                  <select
+                    value={activeBrandId ?? ""}
+                    onChange={(e) => {
+                      const newId = e.target.value;
+                      if (!newId) return;
+                      if (activeBrandId && newId !== activeBrandId) {
+                        if (window.confirm("Deseja trocar de marca? Os dados da tela atual serão atualizados.")) {
+                          setActiveBrandId(newId);
+                        }
+                      } else {
                         setActiveBrandId(newId);
                       }
-                    } else {
-                      setActiveBrandId(newId);
-                    }
-                  }}
-                  className="brandops-input min-w-[172px] font-semibold"
-                  disabled={!brands.length}
-                >
-                  {!brands.length && <option value="">Nenhuma marca...</option>}
-                  {brands.map((brand) => (
-                    <option key={brand.id} value={brand.id} className="bg-surface text-on-surface">
-                      {brand.name}
-                    </option>
-                  ))}
-                </select>
+                    }}
+                    className="brandops-input w-full min-w-0 font-semibold"
+                    disabled={!brands.length}
+                  >
+                    {!brands.length && <option value="">Nenhuma marca...</option>}
+                    {brands.map((brand) => (
+                      <option key={brand.id} value={brand.id} className="bg-surface text-on-surface">
+                        {brand.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex items-center justify-between gap-2 sm:justify-end lg:hidden">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                      Período ativo
+                    </span>
+                    <span className="status-chip">{selectedPeriodLabel}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex flex-col gap-3 border-t border-outline/50 pt-3">
+              <div className="flex flex-col gap-3 border-t border-outline/50 pt-3">
               <div className="brandops-filterbar">
                 {periodOptions.map((opt) => (
                   <button
@@ -781,7 +845,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
 
               {selectedPeriod === "custom" && (
-                <div className="brandops-toolbar-panel xl:max-w-[460px]">
+                <div className="brandops-toolbar-panel lg:max-w-[460px]">
                   <div className="grid gap-2 sm:grid-cols-2">
                   <label className="brandops-field-stack">
                     <span className="brandops-field-label">De</span>
@@ -815,6 +879,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
               )}
             </div>
+            </div>
 
             {errorMessage && (
               <div className="mt-2 rounded-md border border-error/20 bg-error/10 px-3 py-2 text-xs text-error">
@@ -830,15 +895,63 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
+      <nav className="atlas-mobile-tabbar fixed inset-x-0 bottom-0 z-40 border-t border-outline/60 bg-surface/96 px-2 pb-[calc(0.55rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:hidden">
+        <div className="mx-auto grid max-w-xl grid-cols-5 gap-1">
+          {mobilePrimaryNav.map((item) => {
+            const Icon = item.icon;
+            const isActive = item.match ? item.match(pathname) : pathname === item.href || pathname.startsWith(item.href + "/");
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsUserMenuOpen(false);
+                }}
+                className={`flex min-h-[3.5rem] flex-col items-center justify-center gap-1 rounded-2xl px-1.5 py-2 text-[10px] font-semibold transition ${
+                  isActive
+                    ? "bg-primary-container/80 text-on-primary-container"
+                    : "text-on-surface-variant hover:bg-surface-container"
+                }`}
+              >
+                <Icon size={18} />
+                <span className="truncate">{item.label}</span>
+              </Link>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => {
+              setIsUserMenuOpen(false);
+              setIsMobileMenuOpen(true);
+            }}
+            className={`flex min-h-[3.5rem] flex-col items-center justify-center gap-1 rounded-2xl px-1.5 py-2 text-[10px] font-semibold transition ${
+              isMobileMenuOpen ||
+              pathname.startsWith("/settings") ||
+              pathname.startsWith("/integrations") ||
+              pathname.startsWith("/help") ||
+              pathname.startsWith("/admin/stores")
+                ? "bg-primary-container/80 text-on-primary-container"
+                : "text-on-surface-variant hover:bg-surface-container"
+            }`}
+            aria-label="Abrir menu completo"
+          >
+            <Settings2 size={18} />
+            <span className="truncate">Mais</span>
+          </button>
+        </div>
+      </nav>
+
       <AtlasOrb
         key={`atlas-orb-${pathname}`}
         floating
-        size="md"
+        size={isMobileViewport ? "sm" : "md"}
         title="Atlas"
         status={atlasOrbContext.status}
         description={atlasOrbContext.description}
         panelAlign="left"
         hints={atlasOrbContext.hints}
+        storageKey={isMobileViewport ? "atlas.orb.position.mobile" : "atlas.orb.position"}
         attentionLevel={atlasOrbContext.attentionLevel}
         hoverAlert={atlasOrbContext.hoverAlert}
         hoverActions={atlasOrbContext.hoverActions}
@@ -863,7 +976,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               setIsMobileMenuOpen(false);
             }}
           />
-          <aside className="atlas-sidebar atlas-tech-grid absolute inset-y-2 left-2 flex w-[min(86vw,320px)] flex-col overflow-hidden rounded-2xl">
+          <aside className="atlas-sidebar atlas-tech-grid absolute inset-y-2 left-2 flex w-[min(88vw,340px)] flex-col overflow-hidden rounded-[1.35rem]">
             <div className="atlas-sidebar-header flex items-center justify-between gap-2 border-b border-outline/50 px-3 py-3">
               <div className="flex min-w-0 items-center gap-2">
                 <div className="atlas-sidebar-brandmark flex h-10 w-10 items-center justify-center rounded-2xl border border-primary/20 bg-primary-container/70 text-primary">
@@ -879,6 +992,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               >
                 <X size={16} />
               </button>
+            </div>
+
+            <div className="border-b border-outline/50 px-3 py-3">
+              <label className="brandops-field-stack">
+                <span className="brandops-field-label">Marca em foco</span>
+                <select
+                  value={activeBrandId ?? ""}
+                  onChange={(event) => {
+                    const newId = event.target.value;
+                    if (!newId) return;
+                    setActiveBrandId(newId);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="brandops-input w-full min-w-0 font-semibold"
+                  disabled={!brands.length}
+                >
+                  {!brands.length && <option value="">Nenhuma marca...</option>}
+                  {brands.map((brand) => (
+                    <option key={brand.id} value={brand.id} className="bg-surface text-on-surface">
+                      {brand.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
 
             <div className="atlas-sidebar-nav min-h-0 flex-1 overflow-y-auto px-2 py-1">

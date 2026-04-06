@@ -3,6 +3,7 @@ import { requireBrandAccess } from "@/lib/brandops/admin";
 import { runAtlasAnalyst } from "@/lib/brandops/ai/agent";
 import { resolveAtlasAnalystGeminiAccess } from "@/lib/brandops/ai/config";
 import {
+  getLatestAtlasBrandLearningSnapshot,
   listAtlasContextEntries,
   listAtlasAnalystRuns,
   persistAtlasAnalystRun,
@@ -68,9 +69,10 @@ export async function POST(
       );
     }
 
-    const [recentRuns, brandContext] = await Promise.all([
+    const [recentRuns, brandContext, brandLearningSnapshot] = await Promise.all([
       listAtlasAnalystRuns(context.supabase, brandId, context.user.id, 4),
       listAtlasContextEntries(context.supabase, brandId, 8),
+      getLatestAtlasBrandLearningSnapshot(context.supabase, brandId),
     ]);
     const gemini = await resolveAtlasAnalystGeminiAccess(brandId);
     const requestedSkill = body.skill ?? "auto";
@@ -95,6 +97,7 @@ export async function POST(
         temperature: gemini.temperature,
         recentRuns,
         brandContext,
+        brandLearningSnapshot,
         operatorGuidance: gemini.operatorGuidance,
       },
     );

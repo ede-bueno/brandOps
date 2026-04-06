@@ -65,6 +65,10 @@ export function AtlasOrb({
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
+  const [isCompactViewport, setIsCompactViewport] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < 1024;
+  });
   const [viewportSize, setViewportSize] = useState(() => ({
     width: typeof window !== "undefined" ? window.innerWidth : 0,
     height: typeof window !== "undefined" ? window.innerHeight : 0,
@@ -81,8 +85,8 @@ export function AtlasOrb({
     }
 
     return {
-      x: window.innerWidth - 104,
-      y: Math.max(96, window.innerHeight - 164),
+      x: window.innerWidth - (window.innerWidth < 1024 ? 76 : 104),
+      y: Math.max(window.innerWidth < 1024 ? 84 : 96, window.innerHeight - (window.innerWidth < 1024 ? 184 : 164)),
     };
   });
   const [isDragging, setIsDragging] = useState(false);
@@ -170,6 +174,7 @@ export function AtlasOrb({
     if (!floating) return;
 
     function handleResize() {
+      setIsCompactViewport(window.innerWidth < 1024);
       setViewportSize({
         width: window.innerWidth,
         height: window.innerHeight,
@@ -258,7 +263,7 @@ export function AtlasOrb({
   }
 
   function handleFloatingPointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
-    if (!floating || !interactive || !position) return;
+    if (!floating || !interactive || !position || isCompactViewport) return;
     dragStateRef.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
@@ -272,7 +277,7 @@ export function AtlasOrb({
 
   function handleFloatingPointerMove(event: ReactPointerEvent<HTMLButtonElement>) {
     handlePointerMove(event);
-    if (!floating || !dragStateRef.current) return;
+    if (!floating || !dragStateRef.current || isCompactViewport) return;
     const drag = dragStateRef.current;
     const deltaX = event.clientX - drag.startX;
     const deltaY = event.clientY - drag.startY;
@@ -287,7 +292,11 @@ export function AtlasOrb({
   }
 
   function handleFloatingPointerUp(event: ReactPointerEvent<HTMLButtonElement>) {
-    if (!floating || !dragStateRef.current) return;
+    if (!floating || isCompactViewport) {
+      handleToggle();
+      return;
+    }
+    if (!dragStateRef.current) return;
     const drag = dragStateRef.current;
     event.currentTarget.releasePointerCapture(event.pointerId);
     dragStateRef.current = null;
@@ -311,6 +320,7 @@ export function AtlasOrb({
     <span
       className={cn("atlas-orb-anchor", floating && "atlas-orb-floating", className)}
       style={floating && position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
+      data-draggable={floating && !isCompactViewport ? "true" : "false"}
       onPointerLeave={handlePointerLeave}
     >
       <button

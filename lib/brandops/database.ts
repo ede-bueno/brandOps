@@ -36,7 +36,7 @@ import type {
 } from "./types";
 import {
   isMissingBrandGovernanceSchemaError,
-  normalizeBrandGovernance,
+  resolveBrandGovernance,
 } from "./governance";
 
 const PAGE_SIZE = 1000;
@@ -614,7 +614,10 @@ export async function fetchAccessibleBrands() {
 
       return (fallback.data ?? []).map((brand) => ({
         ...brand,
-        governance: normalizeBrandGovernance(),
+        governance: resolveBrandGovernance({
+          brandId: brand.id,
+          brandName: brand.name,
+        }),
       }));
     }
 
@@ -624,7 +627,9 @@ export async function fetchAccessibleBrands() {
   }
   return (data ?? []).map((brand) => ({
     ...brand,
-    governance: normalizeBrandGovernance({
+    governance: resolveBrandGovernance({
+      brandId: brand.id,
+      brandName: brand.name,
       planTier: brand.plan_tier,
       featureFlags: brand.feature_flags,
     }),
@@ -1134,7 +1139,9 @@ export async function fetchBrandDataset(
     name: brandResult.data.name,
     createdAt: brandResult.data.created_at,
     updatedAt: brandResult.data.updated_at,
-    governance: normalizeBrandGovernance({
+    governance: resolveBrandGovernance({
+      brandId: brandResult.data.id,
+      brandName: brandResult.data.name,
       planTier: brandResult.data.plan_tier,
       featureFlags: brandResult.data.feature_flags,
     }),
