@@ -695,6 +695,24 @@ export default function IntegrationsPage() {
       : notice?.text ?? null;
   const activeHealth = resolveProviderHealth(activeProvider, current, activeBrand.governance);
   const ActiveProviderIcon = providerIcons[activeProvider];
+  const workspaceSectionMeta =
+    activeSection === "config"
+      ? {
+          eyebrow: "Conectar",
+          title: "Ajuste da integração",
+          description: "Defina origem, identificadores e credenciais sem sair do mesmo workspace.",
+        }
+      : activeSection === "sync"
+        ? {
+            eyebrow: "Operar",
+            title: "Sincronização e estado",
+            description: "Veja o estado da fonte e rode sincronizações quando realmente fizer sentido.",
+          }
+        : {
+            eyebrow: "Regras",
+            title: "Como esta frente entra no Atlas",
+            description: "Leia o papel do conector e abra ajuda só quando houver dúvida real.",
+          };
 
   function renderHeaderActions() {
     if (activeProvider === "gemini") {
@@ -1452,29 +1470,7 @@ export default function IntegrationsPage() {
             <span className="text-on-surface-variant">workspace ativo</span>
           </span>
         }
-        actions={renderHeaderActions()}
       />
-
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsKpiCard
-          label="Conector em foco"
-          value={providerLabels[activeProvider]}
-          description={providerDescriptions[activeProvider]}
-          tone="info"
-        />
-        <AnalyticsKpiCard
-          label="Saúde"
-          value={activeHealth.label}
-          description={activeHealth.description}
-          tone={activeHealth.tone}
-        />
-        <AnalyticsKpiCard
-          label="Próximo movimento"
-          value={providerNextAction.title}
-          description={providerNextAction.description}
-          tone={providerNextAction.tone}
-        />
-      </section>
 
       {notice ? (
         <InlineNotice
@@ -1584,7 +1580,7 @@ export default function IntegrationsPage() {
         </InlineNotice>
       ) : null}
 
-      <section className="grid gap-4 xl:grid-cols-[16rem_minmax(0,1fr)]">
+      <section className="grid gap-4 xl:grid-cols-[15.5rem_minmax(0,1fr)_18rem]">
         <SurfaceCard className="atlas-integration-nav self-start p-3.5 xl:sticky xl:top-4">
           <SectionHeading
             title="Conexões da loja"
@@ -1634,89 +1630,106 @@ export default function IntegrationsPage() {
           </div>
         </SurfaceCard>
 
-        <SurfaceCard className="atlas-integration-shell min-w-0 p-4">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-            <div className="min-w-0">
-              <p className="eyebrow mb-2">{providerEyebrows[activeProvider]}</p>
-              <div className="flex items-center gap-3">
-                <span className="atlas-integration-hero-icon">
-                  <ActiveProviderIcon size={18} />
-                </span>
-                <div className="min-w-0">
-                  <h2 className="text-xl font-semibold tracking-tight text-on-surface">
-                    {providerLabels[activeProvider]}
-                  </h2>
-                  <p className="mt-1 max-w-2xl text-sm leading-6 text-on-surface-variant">
-                    {providerDescriptions[activeProvider]}
-                  </p>
+        <SurfaceCard className="atlas-integration-shell atlas-integration-workspace min-w-0 p-4 lg:p-5">
+          <div className="flex flex-col gap-4 border-b border-outline/50 pb-4">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+              <div className="min-w-0">
+                <p className="eyebrow mb-2">{providerEyebrows[activeProvider]}</p>
+                <div className="flex items-center gap-3">
+                  <span className="atlas-integration-hero-icon">
+                    <ActiveProviderIcon size={18} />
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="text-xl font-semibold tracking-tight text-on-surface">
+                      {providerLabels[activeProvider]}
+                    </h2>
+                    <p className="mt-1 max-w-2xl text-sm leading-6 text-on-surface-variant">
+                      {providerDescriptions[activeProvider]}
+                    </p>
+                  </div>
                 </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <span className="atlas-soft-pill">
+                  {currentState.mode === "api"
+                    ? "API"
+                    : currentState.mode === "disabled"
+                      ? "Desligado"
+                      : "Manual"}
+                </span>
+                <span className="atlas-soft-pill">{activeHealth.label}</span>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <span className="atlas-soft-pill">
-                {currentState.mode === "api"
-                  ? "API"
-                  : currentState.mode === "disabled"
-                    ? "Desligado"
-                    : "Manual"}
-              </span>
-              <span className="atlas-soft-pill">{activeHealth.label}</span>
+            <div className="grid gap-3 lg:grid-cols-3">
+              <AnalyticsKpiCard
+                label="Modo"
+                value={
+                  currentState.mode === "api"
+                    ? "API ativa"
+                    : currentState.mode === "disabled"
+                      ? "Integração desligada"
+                      : "Fluxo manual"
+                }
+                description="Como este conector está operando agora."
+                tone={
+                  currentState.mode === "api"
+                    ? "positive"
+                    : currentState.mode === "disabled"
+                      ? "warning"
+                      : "default"
+                }
+              />
+              <AnalyticsKpiCard
+                label="Credencial"
+                value={
+                  activeProvider === "ink"
+                    ? "N/A"
+                    : currentState.hasApiKey
+                      ? "Loja pronta"
+                      : "Pendente"
+                }
+                description={
+                  activeProvider === "ink"
+                    ? "A origem comercial segue por CSV."
+                    : currentState.hasApiKey
+                      ? `Segredo salvo em ${currentState.apiKeyHint || "ambiente seguro"}.`
+                      : "Falta salvar a credencial da loja."
+                }
+                tone={activeProvider === "ink" ? "info" : currentState.hasApiKey ? "positive" : "warning"}
+              />
+              <AnalyticsKpiCard
+                label="Última referência"
+                value={formatSyncLabel(current)}
+                description="Último sinal útil deste conector."
+                tone={
+                  current?.lastSyncStatus === "error"
+                    ? "warning"
+                    : current?.lastSyncStatus === "success"
+                      ? "positive"
+                      : "default"
+                }
+              />
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 lg:grid-cols-3">
-            <AnalyticsKpiCard
-              label="Modo"
-              value={
-                currentState.mode === "api"
-                  ? "API ativa"
-                  : currentState.mode === "disabled"
-                    ? "Integração desligada"
-                    : "Fluxo manual"
-              }
-              description="Como este conector está operando agora."
-              tone={
-                currentState.mode === "api"
-                  ? "positive"
-                  : currentState.mode === "disabled"
-                    ? "warning"
-                    : "default"
-              }
-            />
-            <AnalyticsKpiCard
-              label="Credencial"
-              value={
-                activeProvider === "ink"
-                  ? "N/A"
-                  : currentState.hasApiKey
-                    ? "Loja pronta"
-                    : "Pendente"
-              }
-              description={
-                activeProvider === "ink"
-                  ? "A origem comercial segue por CSV."
-                  : currentState.hasApiKey
-                    ? `Segredo salvo em ${currentState.apiKeyHint || "ambiente seguro"}.`
-                    : "Falta salvar a credencial da loja."
-              }
-              tone={activeProvider === "ink" ? "info" : currentState.hasApiKey ? "positive" : "warning"}
-            />
-            <AnalyticsKpiCard
-              label="Última referência"
-              value={formatSyncLabel(current)}
-              description="Último sinal útil deste conector."
-              tone={
-                current?.lastSyncStatus === "error"
-                  ? "warning"
-                  : current?.lastSyncStatus === "success"
-                    ? "positive"
-                    : "default"
-              }
-            />
-          </div>
+          <div className="mt-4 flex flex-col gap-4">
+            <div className="flex flex-col gap-4 border-b border-outline/50 pb-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="min-w-0">
+                <p className="eyebrow mb-2">{workspaceSectionMeta.eyebrow}</p>
+                <h3 className="text-xl font-semibold text-on-surface">{workspaceSectionMeta.title}</h3>
+                <p className="mt-1 max-w-2xl text-sm leading-6 text-on-surface-variant">
+                  {workspaceSectionMeta.description}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="atlas-soft-pill">{current?.lastSyncStatus ?? activeHealth.label}</span>
+                {renderHeaderActions()}
+              </div>
+            </div>
 
-          <div className="mt-4 brandops-subtabs overflow-x-auto">
+            <div className="brandops-subtabs overflow-x-auto">
             <button
               type="button"
               className="brandops-subtab"
@@ -1741,40 +1754,9 @@ export default function IntegrationsPage() {
             >
               Regras
             </button>
-          </div>
-        </SurfaceCard>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <SurfaceCard className="atlas-integration-workspace min-w-0 p-4">
-          <div className="flex flex-col gap-4 border-b border-outline/50 pb-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <p className="eyebrow mb-2">
-                {activeSection === "config"
-                  ? "Conectar"
-                  : activeSection === "sync"
-                    ? "Operar"
-                    : "Regras"}
-              </p>
-              <h2 className="text-xl font-semibold text-on-surface">
-                {activeSection === "config"
-                  ? "Ajuste da integração"
-                  : activeSection === "sync"
-                    ? "Sincronização e estado"
-                    : "Como esta frente entra no Atlas"}
-              </h2>
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-on-surface-variant">
-                {activeSection === "config"
-                  ? "Defina origem, identificadores e credenciais."
-                  : activeSection === "sync"
-                    ? "Veja o estado da fonte e rode sincronizações quando fizer sentido."
-                    : "Revise o papel desta integração e abra ajuda só se precisar."}
-              </p>
             </div>
-            <span className="atlas-soft-pill">{current?.lastSyncStatus ?? activeHealth.label}</span>
-          </div>
 
-          <div className="mt-5 space-y-5">
+            <div className="space-y-5">
             {activeSection === "config" ? (
             <div className="brandops-command-slab p-4 sm:p-5">
               <div className="brandops-toolbar-grid" data-columns="2">
@@ -2027,7 +2009,7 @@ export default function IntegrationsPage() {
             ) : null}
 
             {activeSection === "sync" ? (
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
                 <div className="brandops-toolbar-panel text-sm text-on-surface-variant">
                   {activeProvider === "gemini" ? (
                     <>
@@ -2208,6 +2190,7 @@ export default function IntegrationsPage() {
                 ) : null}
               </div>
             ) : null}
+            </div>
           </div>
         </SurfaceCard>
 

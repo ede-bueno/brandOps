@@ -731,6 +731,7 @@ input.brandops-input[type="date"] {
   z-index: 1;
   isolation: isolate;
   pointer-events: auto;
+  min-height: 2.95rem;
 }
 
 .atlas-navlink-active {
@@ -1536,6 +1537,14 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
   min-width: 0;
 }
 
+.atlas-integration-nav {
+  box-shadow: var(--atlas-shell-shadow-soft);
+}
+
+.atlas-integration-shell {
+  box-shadow: var(--atlas-shell-shadow-soft);
+}
+
 .atlas-integration-shell::before,
 .atlas-integration-workspace::before {
   content: "";
@@ -1578,6 +1587,15 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
     );
   box-shadow: 0 10px 22px rgba(15, 23, 42, 0.03);
   transform: translateY(-1px);
+}
+
+.atlas-integration-shell .brandops-subtabs {
+  align-self: flex-start;
+}
+
+.atlas-integration-shell .brandops-command-slab,
+.atlas-integration-shell .brandops-toolbar-panel {
+  border-color: color-mix(in srgb, var(--atlas-border-soft) 80%, transparent 20%);
 }
 
 .atlas-integration-provider-head {
@@ -1749,22 +1767,42 @@ html.dark .atlas-sidebar {
   border-color: color-mix(in srgb, var(--color-primary) 10%, transparent 90%);
 }
 
+.atlas-theme-toggle {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-surface) 12%, transparent 88%),
+    0 0 0 0 color-mix(in srgb, var(--color-primary) 12%, transparent 88%);
+}
+
+.atlas-theme-toggle:hover {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-surface) 18%, transparent 82%),
+    0 0 18px color-mix(in srgb, var(--color-primary) 10%, transparent 90%);
+}
+
 .atlas-command-strip {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 84%, transparent 16%), color-mix(in srgb, var(--color-surface-container-low) 90%, transparent 10%));
   box-shadow: var(--atlas-shell-shadow-soft);
   backdrop-filter: blur(20px) saturate(120%);
   border-color: color-mix(in srgb, var(--atlas-border-muted) 74%, transparent 26%);
+  overflow: visible;
 }
 
 .atlas-user-trigger {
-  box-shadow: none;
+  border-color: color-mix(in srgb, var(--color-outline) 18%, transparent 82%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 74%, transparent 26%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-surface) 14%, transparent 86%);
+}
+
+.atlas-user-trigger:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 16%, transparent 84%);
+  background: color-mix(in srgb, var(--color-surface-container) 78%, transparent 22%);
 }
 
 .atlas-user-menu {
-  position: relative;
-  z-index: 2;
+  transform-origin: top right;
   box-shadow: var(--atlas-shell-shadow-soft);
+  backdrop-filter: blur(20px) saturate(125%);
 }
 
 .atlas-sidebar .brandops-navlink {
@@ -1773,6 +1811,7 @@ html.dark .atlas-sidebar {
 
 .atlas-sidebar .brandops-navlink:hover {
   border-color: color-mix(in srgb, var(--color-outline) 16%, transparent 84%);
+  transform: translateX(1px);
 }
 
 .atlas-sidebar .brandops-navlink[data-active="true"] {

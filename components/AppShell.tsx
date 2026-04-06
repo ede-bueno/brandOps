@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
@@ -16,6 +16,7 @@ import {
   Landmark,
   LogOut,
   Menu,
+  MoonStar,
   PanelLeftClose,
   PanelLeftOpen,
   PlugZap,
@@ -405,7 +406,7 @@ function NavSection({
   onNavigate?: (href: AppRoute) => void;
 }) {
   return (
-    <nav className="space-y-0.5">
+    <nav className="space-y-1">
       {items.map((item) => {
         const Icon = item.icon;
         const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -424,7 +425,9 @@ function NavSection({
             title={collapsed ? item.label : undefined}
             data-active={isActive ? "true" : "false"}
             className={`brandops-navlink relative z-10 isolate flex items-center border text-[13px] transition-all ${
-              collapsed ? "justify-center rounded-xl px-0 py-0 h-11 w-11 mx-auto" : "gap-3 rounded-xl px-2.5 py-2"
+              collapsed
+                ? "mx-auto h-11 w-11 justify-center rounded-2xl px-0 py-0"
+                : "gap-3.5 rounded-2xl px-3 py-[0.72rem]"
             } ${
               isActive
                 ? "atlas-navlink-active bg-surface-container-highest text-primary font-medium"
@@ -449,7 +452,7 @@ function NavSection({
 function NavGroupLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
   if (collapsed) return <div className="mx-3 my-2 h-px bg-outline/70" />;
   return (
-    <p className="mb-1.5 mt-4 px-2.5 text-[9.5px] font-semibold uppercase tracking-[0.12em] text-ink-muted/90 first:mt-0">
+    <p className="mb-2 mt-5 px-3 text-[9px] font-medium uppercase tracking-[0.18em] text-ink-muted/80 first:mt-0">
       {label}
     </p>
   );
@@ -471,6 +474,7 @@ function ShellAccountMenu({
   fullName,
   email,
   onToggle,
+  onClose,
   onSignOut,
 }: {
   open: boolean;
@@ -478,35 +482,65 @@ function ShellAccountMenu({
   fullName?: string | null;
   email?: string | null;
   onToggle: () => void;
+  onClose: () => void;
   onSignOut: () => void;
 }) {
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        onClose();
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose, open]);
+
   return (
-    <div className="relative z-40">
+    <div ref={menuRef} className="relative z-40">
       <button
         type="button"
         onClick={onToggle}
-        className={`atlas-user-trigger inline-flex items-center rounded-2xl border border-outline/60 bg-surface-container-low/75 text-left transition hover:border-primary/20 hover:bg-surface-container ${
-          compact ? "h-10 w-10 justify-center px-0" : "gap-2.5 px-3 py-2"
+        className={`atlas-user-trigger inline-flex items-center border text-left transition ${
+          compact
+            ? "h-10 w-10 justify-center rounded-full px-0"
+            : "gap-2 rounded-full px-2.5 py-1.5"
         }`}
         aria-expanded={open}
         aria-label="Abrir menu da conta"
       >
-        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-outline/60 bg-surface text-on-surface-variant">
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-outline/45 bg-surface-container-low/75 text-on-surface-variant">
           <UserRound size={14} />
         </span>
         {!compact ? (
           <>
-            <span className="min-w-0">
-              <span className="block truncate text-[12px] font-medium text-on-surface">
+            <span className="min-w-0 max-w-[9rem]">
+              <span className="block truncate text-[12px] font-medium leading-4 text-on-surface">
                 {fullName ?? "Conta Atlas"}
               </span>
-              <span className="block truncate text-[11px] text-on-surface-variant">
-                {email ?? "Sessão ativa"}
+              <span className="block truncate text-[10px] leading-4 text-on-surface-variant">
+                Sessão ativa
               </span>
             </span>
             <ChevronDown
               size={14}
-              className={`shrink-0 text-on-surface-variant transition ${open ? "rotate-180" : ""}`}
+              className={`shrink-0 text-on-surface-variant/80 transition ${open ? "rotate-180" : ""}`}
             />
           </>
         ) : null}
@@ -514,31 +548,32 @@ function ShellAccountMenu({
 
       {open ? (
         <div
-          className={`atlas-user-menu brandops-panel-soft absolute right-0 top-[calc(100%+0.55rem)] z-40 p-2 ${
-            compact ? "w-[min(88vw,19rem)]" : "w-[18.5rem]"
+          className={`atlas-user-menu brandops-panel-soft absolute right-0 top-[calc(100%+0.7rem)] z-50 p-2 ${
+            compact ? "w-[min(88vw,18rem)]" : "w-[17.25rem]"
           }`}
         >
-          <div className="rounded-xl bg-surface-container-low px-3 py-2.5">
-            <p className="truncate text-[12px] font-medium text-on-surface">
+          <div className="rounded-2xl border border-outline/40 bg-surface-container-low/88 px-3 py-2.5">
+            <p className="truncate text-[12px] font-medium leading-5 text-on-surface">
               {fullName ?? "Conta Atlas"}
             </p>
-            <p className="truncate text-[11px] text-on-surface-variant">
+            <p className="truncate text-[11px] leading-5 text-on-surface-variant">
               {email ?? "Sessão ativa"}
             </p>
           </div>
           <div className="mt-2 grid gap-2">
-            <div className="flex items-center justify-between rounded-xl border border-outline/50 bg-surface px-3 py-2">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-on-surface-variant">
+            <div className="flex items-center justify-between rounded-2xl border border-outline/40 bg-surface-container-low/78 px-3 py-2.5">
+              <div className="min-w-0">
+                <p className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-on-surface-variant/80">
+                  <MoonStar size={11} />
                   Aparência
                 </p>
-                <p className="text-[12px] text-on-surface">Modo claro / escuro</p>
+                <p className="truncate text-[12px] text-on-surface">Alternar tema do console</p>
               </div>
-              <ThemeToggle />
+              <ThemeToggle variant="panel" size="sm" />
             </div>
             <button
               onClick={onSignOut}
-              className="brandops-button brandops-button-ghost w-full justify-center"
+              className="brandops-button brandops-button-ghost w-full justify-center rounded-2xl"
             >
               <LogOut size={14} />
               Sair
@@ -738,7 +773,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* ---- Desktop Sidebar ---- */}
           <aside
           className={`atlas-tech-grid atlas-sidebar relative z-[60] hidden my-3 shrink-0 self-stretch flex-col overflow-hidden lg:flex transition-[width] duration-300 ease-in-out ${
-            isSidebarCollapsed ? "w-[86px]" : "w-[264px]"
+            isSidebarCollapsed ? "w-[92px]" : "w-[282px]"
           }`}
         >
           {/* Header */}
@@ -770,7 +805,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Nav */} 
-          <div className="atlas-sidebar-nav relative z-10 min-h-0 flex-1 overflow-y-auto px-2 py-2">
+          <div className="atlas-sidebar-nav relative z-10 min-h-0 flex-1 overflow-y-auto px-3 py-3">
             {isLoading ? (
               <SidebarSkeleton />
             ) : (
@@ -790,7 +825,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
-          <div className="atlas-sidebar-footer relative z-10 shrink-0 border-t border-outline/50 px-3 py-3">
+          <div className="atlas-sidebar-footer relative z-10 shrink-0 border-t border-outline/50 px-3 py-3.5">
             {!isSidebarCollapsed ? (
               <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-ink-muted/90">
                 Navegação de operação
@@ -869,14 +904,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2">
-                  <ThemeToggle />
+                <div className="flex items-center justify-end gap-1.5">
+                  <ThemeToggle variant="subtle" size="sm" />
                   <ShellAccountMenu
                     open={isUserMenuOpen}
                     compact={isMobileViewport}
                     fullName={profile?.fullName}
                     email={profile?.email}
                     onToggle={() => setIsUserMenuOpen((open) => !open)}
+                    onClose={() => setIsUserMenuOpen(false)}
                     onSignOut={() => void signOut()}
                   />
                 </div>

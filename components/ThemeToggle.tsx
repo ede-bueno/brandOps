@@ -16,7 +16,13 @@ function applyTheme(dark: boolean) {
   }
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({
+  variant = "subtle",
+  size = "md",
+}: {
+  variant?: "subtle" | "panel";
+  size?: "sm" | "md";
+}) {
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("atlas.theme");
@@ -37,14 +43,20 @@ export function ThemeToggle() {
     localStorage.setItem("atlas.theme", next ? "dark" : "light");
   }
 
+  const sizeClass = size === "sm" ? "h-8 w-8" : "h-9 w-9";
+  const variantClass =
+    variant === "panel"
+      ? "border border-outline/55 bg-surface-container-low/80 text-on-surface-variant hover:border-primary/18 hover:bg-surface-container hover:text-on-surface"
+      : "border border-transparent bg-transparent text-on-surface-variant/90 hover:border-primary/10 hover:bg-primary/10 hover:text-primary";
+
   return (
     <button
       onClick={toggle}
       aria-label={isDark ? "Mudar para modo claro" : "Mudar para modo escuro"}
       title={isDark ? "Modo claro" : "Modo escuro"}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-outline bg-surface-container text-on-surface-variant transition-all duration-150 hover:border-primary/40 hover:bg-brand-shell hover:text-primary"
+      className={`atlas-theme-toggle inline-flex items-center justify-center rounded-full transition-all duration-150 ${sizeClass} ${variantClass}`}
     >
-      {isDark ? <Sun size={15} /> : <Moon size={15} />}
+      {isDark ? <Sun size={size === "sm" ? 14 : 15} /> : <Moon size={size === "sm" ? 14 : 15} />}
     </button>
   );
 }

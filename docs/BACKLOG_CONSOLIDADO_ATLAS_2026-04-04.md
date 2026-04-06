@@ -62,6 +62,7 @@ Data de consolidação: 2026-04-04
 - `feito` cron global horário em `/api/cron/brand-syncs`, com vencimento por marca e por conector
 - `em andamento` revisão fina da UX da aba de Integrações
 - `feito parcial` Integrações reorganizada como workspace curto com trilho lateral, subtabs e radar compacto
+- `em andamento` padronizar Integrações como console único por conector, sem jogar o trabalho real para baixo da dobra
 - `feito parcial` Configurações reorganizada como central de ação rápida, foco atual e governança sem blocos longos de explicação
 - `feito` quadro de saúde dos conectores para leitura rápida de status e bloqueios
 - `feito` autofoco do workspace no conector que realmente pede ação, erro ou configuração
@@ -112,6 +113,7 @@ Data de consolidação: 2026-04-04
 7. aprofundar o papel do Orb como radar/atalho, sem duplicar a Torre
 8. substituir o pós-resposta atual por fila/worker mais durável para o aprendizado assíncrono
 9. consolidar a régua ADHD-friendly nas telas restantes de apoio, admin e fluxos menos recorrentes
+10. separar `Produtos e Insights` e `Mídia e Performance` em home estável + páginas próprias de leitura, evitando trocar contexto e conteúdo no mesmo scroll
 
 ## 8. Navegação e arquitetura do produto
 
