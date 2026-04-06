@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowUpRight, CheckCircle2, CircleAlert } from "lucide-react
 import { notFound } from "next/navigation";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { getIntegrationTutorial } from "@/lib/brandops/integration-tutorials";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 
 export default async function IntegrationTutorialProviderPage({
   params,
@@ -24,11 +25,11 @@ export default async function IntegrationTutorialProviderPage({
         description={tutorial.summary}
         actions={
           <div className="flex flex-wrap gap-2">
-            <Link href="/integrations/tutorials" className="brandops-button brandops-button-ghost">
+            <Link href={APP_ROUTES.integrationsTutorials} prefetch={false} className="brandops-button brandops-button-ghost">
               <ArrowLeft size={14} />
               Voltar aos tutoriais
             </Link>
-            <Link href="/integrations" className="brandops-button brandops-button-ghost">
+            <Link href={APP_ROUTES.integrations} prefetch={false} className="brandops-button brandops-button-ghost">
               Voltar para Integrações
             </Link>
           </div>

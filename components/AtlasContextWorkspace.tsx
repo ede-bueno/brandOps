@@ -17,6 +17,7 @@ import type {
   AtlasContextEntryListResponse,
   AtlasContextEntryType,
 } from "@/lib/brandops/ai/types";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 
 type AtlasContextRouteResponse = AtlasContextEntryListResponse & {
   summary?: string | null;
@@ -264,7 +265,7 @@ export function AtlasContextWorkspace({
           <p className="font-semibold text-on-surface">Atlas IA ainda não está ativo para esta loja.</p>
           <p className="mt-1 text-[11px] leading-5">
             Ative o Gemini em{" "}
-            <Link href="/integrations" className="text-secondary hover:underline">
+            <Link href={APP_ROUTES.integrations} prefetch={false} className="text-secondary hover:underline">
               Integrações
             </Link>{" "}
             para começar a alimentar a memória operacional.
@@ -389,7 +390,8 @@ export function AtlasContextWorkspace({
 
           {!isSettingsMode ? (
             <Link
-              href="/settings#atlas-context"
+              href={APP_ROUTES.settingsAtlasContext}
+              prefetch={false}
               className="inline-flex items-center gap-2 rounded-full border border-outline bg-background px-3 py-1.5 text-[11px] font-semibold text-on-surface transition hover:border-secondary/30 hover:text-secondary"
             >
               Ajustar memória do Atlas

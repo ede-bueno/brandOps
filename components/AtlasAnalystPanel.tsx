@@ -14,6 +14,7 @@ import type {
   AtlasAnalystSkillId,
 } from "@/lib/brandops/ai/types";
 import { getLatestDatasetDate } from "@/lib/brandops/metrics";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 
 const SKILL_OPTIONS: Array<{ value: AtlasAnalystSkillId; label: string }> = [
   { value: "auto", label: "Auto" },
@@ -331,7 +332,7 @@ export function AtlasAnalystPanel({
                 {hasAtlasAiPlanAccess ? (
                   <>
                     O Atlas IA continua opcional. Se a marca quiser ativar depois, a configuração fica em{" "}
-                    <Link href="/integrations" className="text-secondary hover:underline">
+                    <Link href={APP_ROUTES.integrations} prefetch={false} className="text-secondary hover:underline">
                       Integrações
                     </Link>
                     .
@@ -339,11 +340,11 @@ export function AtlasAnalystPanel({
                 ) : (
                   <>
                     Primeiro libere a capacidade da marca em{" "}
-                    <Link href="/admin/stores" className="text-secondary hover:underline">
+                    <Link href={APP_ROUTES.adminStores} prefetch={false} className="text-secondary hover:underline">
                       Acessos
                     </Link>{" "}
                     e depois conecte o Gemini em{" "}
-                    <Link href="/integrations" className="text-secondary hover:underline">
+                    <Link href={APP_ROUTES.integrations} prefetch={false} className="text-secondary hover:underline">
                       Integrações
                     </Link>
                     .
@@ -407,7 +408,8 @@ export function AtlasAnalystPanel({
                   Abra a base fixa do Atlas IA abaixo para conversar com o agente.
                 </p>
                 <Link
-                  href="/dashboard#atlas-ai-home"
+                  href={`${APP_ROUTES.dashboard}#atlas-ai-home`}
+                  prefetch={false}
                   className="inline-flex shrink-0 items-center gap-2 rounded-full border border-primary/25 bg-primary px-3 py-1.5 text-[11px] font-semibold text-on-primary transition hover:brightness-105"
                 >
                   Abrir base do Atlas
@@ -470,7 +472,7 @@ export function AtlasAnalystPanel({
             {hasAtlasAiPlanAccess ? (
               <>
                 Ative a integração no painel de{" "}
-                <Link href="/integrations" className="text-secondary hover:underline">
+                <Link href={APP_ROUTES.integrations} prefetch={false} className="text-secondary hover:underline">
                   Integrações
                 </Link>{" "}
                 para usar o Atlas Analyst com a chave própria desta loja.
@@ -478,7 +480,7 @@ export function AtlasAnalystPanel({
             ) : (
               <>
                 A capacidade precisa ser liberada em{" "}
-                <Link href="/admin/stores" className="text-secondary hover:underline">
+                <Link href={APP_ROUTES.adminStores} prefetch={false} className="text-secondary hover:underline">
                   Acessos
                 </Link>{" "}
                 antes da configuração técnica.
@@ -508,7 +510,7 @@ export function AtlasAnalystPanel({
         <p className="text-[10px] leading-4 text-ink-muted">
           Auto usa <span className="font-semibold text-on-surface">{defaultSkillLabel}</span> como base
           desta marca e respeita os parâmetros salvos em{" "}
-          <Link href="/settings#atlas-ai-settings" className="text-secondary hover:underline">
+          <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="text-secondary hover:underline">
             Configurações
           </Link>
           .

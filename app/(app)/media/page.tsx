@@ -21,6 +21,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { fetchMediaReport } from "@/lib/brandops/database";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 import {
   currencyFormatter,
   formatCompactDate,
@@ -303,7 +304,7 @@ export default function MediaPage() {
                 Campanhas
               </button>
             </div>
-            <Link href="/integrations" className="brandops-button brandops-button-ghost">
+            <Link href={APP_ROUTES.integrations} prefetch={false} className="brandops-button brandops-button-ghost">
               Ir para integrações
             </Link>
           </div>

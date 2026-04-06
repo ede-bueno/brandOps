@@ -9,6 +9,7 @@ import {
   AnalyticsKpiCard,
 } from "@/components/analytics/AnalyticsPrimitives";
 import { PageHeader, SurfaceCard } from "@/components/ui-shell";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 
 type HelpTab = "operation" | "integrations" | "configurations" | "security";
 
@@ -398,13 +399,13 @@ export default function HelpPage() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Link href="/integrations/tutorials/meta" className="brandops-button brandops-button-ghost">
+                  <Link href={APP_ROUTES.integrationsTutorialMeta} prefetch={false} className="brandops-button brandops-button-ghost">
                     Tutorial Meta
                   </Link>
-                  <Link href="/integrations/tutorials/ga4" className="brandops-button brandops-button-ghost">
+                  <Link href={APP_ROUTES.integrationsTutorialGa4} prefetch={false} className="brandops-button brandops-button-ghost">
                     Tutorial GA4
                   </Link>
-                  <Link href="/integrations/tutorials/gemini" className="brandops-button brandops-button-ghost">
+                  <Link href={APP_ROUTES.integrationsTutorialGemini} prefetch={false} className="brandops-button brandops-button-ghost">
                     Tutorial Gemini
                   </Link>
                 </div>

@@ -34,6 +34,7 @@ import type {
   IntegrationProvider,
 } from "@/lib/brandops/types";
 import { getIntegrationTutorial } from "@/lib/brandops/integration-tutorials";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 
 type IntegrationFormState = Record<
   IntegrationProvider,
@@ -1509,7 +1510,7 @@ export default function IntegrationsPage() {
           <div className="space-y-1">
             <p className="font-semibold">O plano atual desta marca ainda não libera o Atlas IA.</p>
                 <p className="text-on-surface-variant">
-                  Primeiro ajuste a governança em <Link href="/admin/stores" className="font-semibold text-primary underline underline-offset-4">Acessos</Link>. Depois disso, a configuração técnica do Gemini volta a ficar operacional.
+                  Primeiro ajuste a governança em <Link href={APP_ROUTES.adminStores} prefetch={false} className="font-semibold text-primary underline underline-offset-4">Acessos</Link>. Depois disso, a configuração técnica do Gemini volta a ficar operacional.
                 </p>
           </div>
         </InlineNotice>
@@ -1938,7 +1939,7 @@ export default function IntegrationsPage() {
                     <FormField label="Central estratégica do Atlas" className="text-sm">
                       <div className="atlas-soft-subcard px-4 py-3 text-sm leading-6 text-on-surface">
                         Modelo, temperatura, skill padrão, janela de análise e guia da marca agora ficam na{" "}
-                        <Link href="/settings#atlas-ai-settings" className="text-secondary hover:underline">
+                        <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="text-secondary hover:underline">
                           Central de Configurações
                         </Link>
                         .
@@ -2134,7 +2135,7 @@ export default function IntegrationsPage() {
                       </button>
                     ) : null}
                     {activeProvider === "gemini" ? (
-                      <Link href="/settings#atlas-ai-settings" className="brandops-button brandops-button-primary">
+                      <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="brandops-button brandops-button-primary">
                         Abrir Configurações do Atlas
                       </Link>
                     ) : null}

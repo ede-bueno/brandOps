@@ -20,6 +20,7 @@ import type {
   AtlasAnalystBehaviorSkill,
   GeminiAvailableModel,
 } from "@/lib/brandops/types";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 
 const ANALYSIS_WINDOW_OPTIONS = [7, 14, 30, 60, 90] as const;
 const MODEL_SUGGESTIONS = [
@@ -360,7 +361,7 @@ export function AtlasAnalystSettingsPanel() {
           </p>
           <p className="mt-1 text-[11px] leading-5">
             A ativação da IA e a chave da loja continuam em{" "}
-            <Link href="/integrations" className="text-secondary hover:underline">
+            <Link href={APP_ROUTES.integrations} prefetch={false} className="text-secondary hover:underline">
               Integrações
             </Link>
             . Estes parâmetros ficam salvos para a marca mesmo antes da ativação.
@@ -390,7 +391,7 @@ export function AtlasAnalystSettingsPanel() {
         <p className="mt-1 text-[11px] leading-5">
           Defina aqui o modelo, a janela e a postura do Atlas. A leitura
           histórica da marca fica no módulo{" "}
-          <Link href="/settings#atlas-learning" className="relative z-10 text-secondary hover:underline">
+          <Link href={APP_ROUTES.settingsAtlasLearning} prefetch={false} className="relative z-10 text-secondary hover:underline">
             Aprender negócio
           </Link>
           , logo abaixo na Central Estratégica.
@@ -611,7 +612,7 @@ export function AtlasAnalystSettingsPanel() {
         <p className="text-[11px] leading-5 text-on-surface-variant">
           A memória operacional da marca fica logo ao lado. Integrações, chave e
           ativação continuam em{" "}
-          <Link href="/integrations" className="text-secondary hover:underline">
+          <Link href={APP_ROUTES.integrations} prefetch={false} className="text-secondary hover:underline">
             Integrações
           </Link>
           .

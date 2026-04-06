@@ -389,6 +389,7 @@ export function AtlasOrb({
                     <Link
                       key={action.label}
                       href={action.href}
+                      prefetch={false}
                       className="pointer-events-auto rounded-full border border-outline bg-surface-container-low px-3 py-1.5 text-[11px] font-semibold text-on-surface-variant transition hover:border-secondary/30 hover:text-on-surface"
                     >
                       {action.label}
