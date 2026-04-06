@@ -23,6 +23,7 @@ import {
   SurfaceCard,
 } from "@/components/ui-shell";
 import { BRAND_PLAN_LABELS } from "@/lib/brandops/governance";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 
 type SettingsModule = {
   href: string;
@@ -105,7 +106,7 @@ export default function SettingsPage() {
 
   const modules: SettingsModule[] = [
     {
-      href: "/integrations",
+      href: APP_ROUTES.integrations,
       label: "Integrações",
       description: "Conectar Meta, GA4 e Gemini por loja.",
       icon: PlugZap,
@@ -116,35 +117,35 @@ export default function SettingsPage() {
       aside: "Fontes",
     },
     {
-      href: "/admin/stores",
+      href: APP_ROUTES.adminStores,
       label: "Acessos",
       description: "Convidar usuários e revisar permissões da marca.",
       icon: UserRound,
       aside: "Equipe",
     },
     {
-      href: "#platform-governance",
+      href: APP_ROUTES.settingsGovernance,
       label: "Governança",
       description: "Papéis, planos, limites e liberação de recursos por grupo.",
       icon: ShieldCheck,
       aside: "SaaS",
     },
     {
-      href: "/help",
+      href: APP_ROUTES.help,
       label: "Ajuda",
       description: "Guias de operação, integração e segurança da plataforma.",
       icon: CircleHelp,
       aside: "Guias",
     },
     {
-      href: "/integrations/tutorials",
+      href: APP_ROUTES.integrationsTutorials,
       label: "Tutoriais",
       description: "Passo a passo detalhado de Meta, GA4 e Gemini com links para os painéis corretos.",
       icon: BookOpen,
       aside: "Passo a passo",
     },
     {
-      href: "#atlas-ai-settings",
+      href: APP_ROUTES.settingsAtlasAi,
       label: "Atlas IA",
       description:
         geminiIntegration?.mode === "api"
@@ -182,7 +183,7 @@ export default function SettingsPage() {
             {modules.map((module) => {
               const Icon = module.icon;
               return (
-                <Link key={module.href} href={module.href} className="block">
+                <Link key={module.href} href={module.href} prefetch={false} className="relative z-10 block">
                   <StackItem
                     title={
                       <span className="flex items-center gap-2">
@@ -274,7 +275,7 @@ export default function SettingsPage() {
               title="Ajuda operacional"
               description="Guias práticos de integração, operação e segurança."
               aside={
-                <Link href="/help" className="text-secondary hover:underline">
+                <Link href={APP_ROUTES.help} prefetch={false} className="relative z-10 text-secondary hover:underline">
                   Abrir
                 </Link>
               }

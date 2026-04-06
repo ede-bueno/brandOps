@@ -1,0 +1,28 @@
+export const APP_ROUTES = {
+  dashboard: "/dashboard",
+  dashboardContributionMargin: "/dashboard/contribution-margin",
+  dre: "/dre",
+  sales: "/sales",
+  productInsights: "/product-insights",
+  media: "/media",
+  traffic: "/traffic",
+  costCenter: "/cost-center",
+  cmv: "/cmv",
+  feed: "/feed",
+  import: "/import",
+  sanitization: "/sanitization",
+  settings: "/settings",
+  settingsGovernance: "/settings#platform-governance",
+  settingsAtlasAi: "/settings#atlas-ai-settings",
+  settingsAtlasLearning: "/settings#atlas-learning",
+  settingsAtlasContext: "/settings#atlas-context",
+  integrations: "/integrations",
+  integrationsTutorials: "/integrations/tutorials",
+  integrationsTutorialMeta: "/integrations/tutorials/meta",
+  integrationsTutorialGa4: "/integrations/tutorials/ga4",
+  integrationsTutorialGemini: "/integrations/tutorials/gemini",
+  adminStores: "/admin/stores",
+  help: "/help",
+} as const;
+
+export type AppRoute = (typeof APP_ROUTES)[keyof typeof APP_ROUTES];

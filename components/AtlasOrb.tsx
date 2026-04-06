@@ -318,7 +318,7 @@ export function AtlasOrb({
 
   return (
     <span
-      className={cn("atlas-orb-anchor", floating && "atlas-orb-floating", className)}
+      className={cn("atlas-orb-anchor pointer-events-none", floating && "atlas-orb-floating", className)}
       style={floating && position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
       data-draggable={floating && !isCompactViewport ? "true" : "false"}
       onPointerLeave={handlePointerLeave}
@@ -335,7 +335,7 @@ export function AtlasOrb({
         onPointerMove={floating ? handleFloatingPointerMove : handlePointerMove}
         onPointerDown={floating ? handleFloatingPointerDown : undefined}
         onPointerUp={floating ? handleFloatingPointerUp : undefined}
-        className={cn("atlas-orb", sizeClass, interactive && "atlas-orb-interactive")}
+        className={cn("atlas-orb pointer-events-auto", sizeClass, interactive && "atlas-orb-interactive")}
       >
         {orbAttentionClass ? (
           <span className="pointer-events-none absolute -right-0.5 -top-0.5 z-[1] flex h-3.5 w-3.5 items-center justify-center">
@@ -389,7 +389,7 @@ export function AtlasOrb({
                     <Link
                       key={action.label}
                       href={action.href}
-                      className="rounded-full border border-outline bg-surface-container-low px-3 py-1.5 text-[11px] font-semibold text-on-surface-variant transition hover:border-secondary/30 hover:text-on-surface"
+                      className="pointer-events-auto rounded-full border border-outline bg-surface-container-low px-3 py-1.5 text-[11px] font-semibold text-on-surface-variant transition hover:border-secondary/30 hover:text-on-surface"
                     >
                       {action.label}
                     </Link>

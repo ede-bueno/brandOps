@@ -390,7 +390,7 @@ export function AtlasAnalystSettingsPanel() {
         <p className="mt-1 text-[11px] leading-5">
           Defina aqui o modelo, a janela e a postura do Atlas. A leitura
           histórica da marca fica no módulo{" "}
-          <Link href="#atlas-business-learning" className="text-secondary hover:underline">
+          <Link href="/settings#atlas-learning" className="relative z-10 text-secondary hover:underline">
             Aprender negócio
           </Link>
           , logo abaixo na Central Estratégica.

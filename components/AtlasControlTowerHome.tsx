@@ -8,6 +8,7 @@ import { AtlasAnalystPanel } from "./AtlasAnalystPanel";
 import { InfoHint, SectionHeading, StackItem, SurfaceCard } from "./ui-shell";
 import { useSanitizationPendingCount } from "@/hooks/use-sanitization-summary";
 import { currencyFormatter, percentFormatter } from "@/lib/brandops/format";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 
 type TowerSignal = {
   id: string;
@@ -42,7 +43,7 @@ function buildTowerSignals({
       id: "contribution",
       title: "Margem depois de mídia negativa",
       description: "A mídia já está consumindo mais do que a operação consegue sustentar no recorte atual.",
-      href: "/dashboard/contribution-margin",
+      href: APP_ROUTES.dashboardContributionMargin,
       aside: currencyFormatter.format(contributionAfterMedia),
       tone: "negative",
     });
@@ -53,7 +54,7 @@ function buildTowerSignals({
       id: "net-result",
       title: "Resultado operacional no vermelho",
       description: "O período fechou negativo. A leitura financeira precisa virar prioridade agora.",
-      href: "/dre",
+      href: APP_ROUTES.dre,
       aside: currencyFormatter.format(netResult),
       tone: "negative",
     });
@@ -64,7 +65,7 @@ function buildTowerSignals({
       id: "sanitization",
       title: "Base ainda pede saneamento",
       description: "Existem pendências que podem distorcer a leitura até serem revisadas.",
-      href: "/sanitization",
+      href: APP_ROUTES.sanitization,
       aside: `${pendingSanitizationCount} pendência(s)`,
       tone: "warning",
     });
@@ -75,7 +76,7 @@ function buildTowerSignals({
       id: "integrations",
       title: "Fonte com erro recente",
       description: "Meta ou GA4 reportou falha. O ideal é validar a saúde da fonte antes de decidir em cima do dado.",
-      href: "/integrations",
+      href: APP_ROUTES.integrations,
       aside: "Revisar",
       tone: "warning",
     });
@@ -86,7 +87,7 @@ function buildTowerSignals({
       id: "variable-cost",
       title: "Custo variável em pressão alta",
       description: "CMV somado à mídia está comprimindo a receita líquida disponível.",
-      href: "/dre",
+      href: APP_ROUTES.dre,
       aside: percentFormatter.format(variableCostShare),
       tone: "warning",
     });
@@ -97,7 +98,7 @@ function buildTowerSignals({
       id: "roas",
       title: "Retorno de mídia curto para escalar",
       description: "Vale revisar campanha e criativo antes de aumentar orçamento.",
-      href: "/media",
+      href: APP_ROUTES.media,
       aside: `${grossRoas.toFixed(2)}x`,
       tone: "info",
     });
@@ -108,7 +109,7 @@ function buildTowerSignals({
       id: "stable",
       title: "Sem alertas críticos no corte atual",
       description: "A operação segue estável o suficiente para aprofundar diagnóstico sem pressão imediata.",
-      href: "/dashboard",
+      href: APP_ROUTES.dashboard,
       aside: "Estável",
       tone: "positive",
     });
@@ -213,7 +214,7 @@ export function AtlasControlTowerHome() {
 
           <div className="mt-4 space-y-2">
             {signals.map((signal) => (
-              <Link key={signal.id} href={signal.href} className="block">
+              <Link key={signal.id} href={signal.href} prefetch={false} className="relative z-10 block">
                 <StackItem
                   title={signal.title}
                   description={signal.description}
@@ -261,7 +262,7 @@ export function AtlasControlTowerHome() {
           />
 
           <div className="mt-4 space-y-2">
-            <Link href="/settings#atlas-ai-settings" className="block">
+            <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="relative z-10 block">
               <StackItem
                 title="Parâmetros do Atlas"
                 description="Janela padrão, skill base e guia operacional da marca."
@@ -276,7 +277,7 @@ export function AtlasControlTowerHome() {
               />
             </Link>
 
-            <Link href="/settings#atlas-context" className="block">
+            <Link href={APP_ROUTES.settingsAtlasContext} prefetch={false} className="relative z-10 block">
               <StackItem
                 title="Memória e aprendizado"
                 description="Campanhas, promoções, lançamentos e fatos curados que o Atlas deve lembrar."
@@ -291,7 +292,7 @@ export function AtlasControlTowerHome() {
               />
             </Link>
 
-            <Link href="/integrations" className="block">
+            <Link href={APP_ROUTES.integrations} prefetch={false} className="relative z-10 block">
               <StackItem
                 title="Integrações da marca"
                 description="Meta, GA4 e Gemini com a credencial própria desta loja."

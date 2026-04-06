@@ -529,7 +529,7 @@ export function AtlasBusinessLearningPanel() {
   }
 
   return (
-    <div id="atlas-business-learning" className="space-y-4">
+    <div id="atlas-learning" className="space-y-4">
       <SectionHeading
         title="Aprender negócio"
         description="Faça o Atlas varrer o histórico da marca para montar um entendimento estrutural do negócio."

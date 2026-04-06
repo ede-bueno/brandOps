@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useBrandOps } from "./BrandOpsProvider";
 import type { PeriodFilter } from "@/lib/brandops/types";
+import { APP_ROUTES, type AppRoute } from "@/lib/brandops/routes";
 import { BRANDING } from "@/lib/branding";
 import { useSanitizationPendingCount } from "@/hooks/use-sanitization-summary";
 import { ThemeToggle } from "./ThemeToggle";
@@ -41,7 +42,7 @@ import { AtlasOrbRadarPanel, type AtlasOrbRadarTelemetry } from "./AtlasOrbRadar
    ------------------------------------------------------- */
 
 interface NavItem {
-  href: string;
+  href: AppRoute;
   label: string;
   icon: React.ElementType;
 }
@@ -54,41 +55,41 @@ interface NavGroup {
 const navigationGroups: NavGroup[] = [
   {
     label: "Controle",
-    items: [{ href: "/dashboard", label: "Torre de Controle", icon: LayoutDashboard }],
+    items: [{ href: APP_ROUTES.dashboard, label: "Torre de Controle", icon: LayoutDashboard }],
   },
   {
     label: "Negócio",
     items: [
-      { href: "/dre", label: "DRE Consolidado", icon: Receipt },
-      { href: "/sales", label: "Receita e Vendas", icon: BarChart3 },
-      { href: "/product-insights", label: "Produtos e Insights", icon: Sparkles },
+      { href: APP_ROUTES.dre, label: "DRE Consolidado", icon: Receipt },
+      { href: APP_ROUTES.sales, label: "Receita e Vendas", icon: BarChart3 },
+      { href: APP_ROUTES.productInsights, label: "Produtos e Insights", icon: Sparkles },
     ],
   },
   {
     label: "Aquisição",
     items: [
-      { href: "/media", label: "Mídia e Performance", icon: TrendingUp },
-      { href: "/traffic", label: "Tráfego Digital", icon: Activity },
+      { href: APP_ROUTES.media, label: "Mídia e Performance", icon: TrendingUp },
+      { href: APP_ROUTES.traffic, label: "Tráfego Digital", icon: Activity },
     ],
   },
   {
     label: "Operação",
     items: [
-      { href: "/cost-center", label: "Despesas e Lançamentos", icon: Landmark },
-      { href: "/cmv", label: "Custos e CMV", icon: Tags },
-      { href: "/feed", label: "Catálogo", icon: Images },
-      { href: "/import", label: "ETL e Importação", icon: FileUp },
-      { href: "/sanitization", label: "Saneamento", icon: ShieldAlert },
+      { href: APP_ROUTES.costCenter, label: "Despesas e Lançamentos", icon: Landmark },
+      { href: APP_ROUTES.cmv, label: "Custos e CMV", icon: Tags },
+      { href: APP_ROUTES.feed, label: "Catálogo", icon: Images },
+      { href: APP_ROUTES.import, label: "ETL e Importação", icon: FileUp },
+      { href: APP_ROUTES.sanitization, label: "Saneamento", icon: ShieldAlert },
     ],
   },
   {
     label: "Plataforma",
     items: [
-      { href: "/settings", label: "Central Estratégica", icon: Settings2 },
-      { href: "/integrations", label: "Integrações", icon: PlugZap },
-      { href: "/integrations/tutorials", label: "Tutoriais", icon: BookOpen },
-      { href: "/admin/stores", label: "Acessos", icon: UserRound },
-      { href: "/help", label: "Ajuda", icon: CircleHelp },
+      { href: APP_ROUTES.settings, label: "Central Estratégica", icon: Settings2 },
+      { href: APP_ROUTES.integrations, label: "Integrações", icon: PlugZap },
+      { href: APP_ROUTES.integrationsTutorials, label: "Tutoriais", icon: BookOpen },
+      { href: APP_ROUTES.adminStores, label: "Acessos", icon: UserRound },
+      { href: APP_ROUTES.help, label: "Ajuda", icon: CircleHelp },
     ],
   },
 ];
@@ -105,9 +106,9 @@ const periodOptions: Array<{ value: PeriodFilter; label: string }> = [
 ];
 
 const mobilePrimaryNav: Array<NavItem & { match?: (pathname: string) => boolean }> = [
-  { href: "/dashboard", label: "Controle", icon: LayoutDashboard },
+  { href: APP_ROUTES.dashboard, label: "Controle", icon: LayoutDashboard },
   {
-    href: "/dre",
+    href: APP_ROUTES.dre,
     label: "Negócio",
     icon: Receipt,
     match: (value) =>
@@ -116,13 +117,13 @@ const mobilePrimaryNav: Array<NavItem & { match?: (pathname: string) => boolean 
       value.startsWith("/product-insights"),
   },
   {
-    href: "/media",
+    href: APP_ROUTES.media,
     label: "Aquisição",
     icon: TrendingUp,
     match: (value) => value.startsWith("/media") || value.startsWith("/traffic"),
   },
   {
-    href: "/feed",
+    href: APP_ROUTES.feed,
     label: "Operação",
     icon: FileUp,
     match: (value) =>
@@ -354,7 +355,7 @@ function getAtlasOrbContext(
     } else {
       hoverActions.push(
         { label: "Ver alertas", action: "open-panel" as const },
-        { label: "Abrir Configurações", href: "/settings" },
+        { label: "Abrir Configurações", href: APP_ROUTES.settings },
       );
     }
 
@@ -369,13 +370,13 @@ function getAtlasOrbContext(
     }
 
     if ((telemetry.mediaIntegrationError || telemetry.ga4IntegrationError) && !isIntegrations) {
-      hoverActions.push({ label: "Ver integrações", href: "/integrations" });
+      hoverActions.push({ label: "Ver integrações", href: APP_ROUTES.integrations });
     }
 
     hoverActions.push(
       { label: "Ver alertas", action: "open-panel" as const },
       isSettings
-        ? { label: "Ir para integrações", href: "/integrations" }
+        ? { label: "Ir para integrações", href: APP_ROUTES.integrations }
         : { label: "Abrir busca global", action: "open-panel" as const },
     );
   }
@@ -401,7 +402,7 @@ function NavSection({
   items: NavItem[];
   pathname: string;
   collapsed: boolean;
-  onNavigate?: () => void;
+  onNavigate?: (href: AppRoute) => void;
 }) {
   return (
     <nav className="space-y-0.5">
@@ -412,10 +413,17 @@ function NavSection({
           <Link
             key={item.href}
             href={item.href}
-            onClick={onNavigate}
+            prefetch={false}
+            onClick={(event) => {
+              if (!onNavigate) {
+                return;
+              }
+              event.preventDefault();
+              onNavigate(item.href);
+            }}
             title={collapsed ? item.label : undefined}
             data-active={isActive ? "true" : "false"}
-            className={`brandops-navlink flex items-center border text-[13px] transition-all ${
+            className={`brandops-navlink relative z-10 isolate flex items-center border text-[13px] transition-all ${
               collapsed ? "justify-center rounded-xl px-0 py-0 h-11 w-11 mx-auto" : "gap-3 rounded-xl px-2.5 py-2"
             } ${
               isActive
@@ -523,6 +531,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     () => getAtlasOrbContext(pathname, selectedBrandName, selectedPeriodLabel, atlasOrbTelemetry),
     [atlasOrbTelemetry, pathname, selectedBrandName, selectedPeriodLabel],
   );
+
+  function handleShellNavigate(href: AppRoute) {
+    setIsUserMenuOpen(false);
+    setIsMobileMenuOpen(false);
+    router.push(href);
+  }
 
   useEffect(() => {
     if (!isLoading && !session) {
@@ -639,7 +653,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* ---- Desktop Sidebar ---- */}
           <aside
-          className={`atlas-tech-grid atlas-sidebar hidden my-3 shrink-0 self-stretch flex-col overflow-hidden lg:flex transition-[width] duration-300 ease-in-out ${
+          className={`atlas-tech-grid atlas-sidebar relative z-[60] hidden my-3 shrink-0 self-stretch flex-col overflow-hidden lg:flex transition-[width] duration-300 ease-in-out ${
             isSidebarCollapsed ? "w-[86px]" : "w-[264px]"
           }`}
         >
@@ -672,7 +686,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Nav */} 
-          <div className="atlas-sidebar-nav min-h-0 flex-1 overflow-y-auto px-2 py-2">
+          <div className="atlas-sidebar-nav relative z-10 min-h-0 flex-1 overflow-y-auto px-2 py-2">
             {isLoading ? (
               <SidebarSkeleton />
             ) : (
@@ -684,6 +698,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       items={group.items}
                       pathname={pathname}
                       collapsed={isSidebarCollapsed}
+                      onNavigate={handleShellNavigate}
                     />
                   </div>
                 ))}
@@ -692,7 +707,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Footer */}
-          <div className="atlas-sidebar-footer relative shrink-0 border-t border-outline/50 p-2">
+          <div className="atlas-sidebar-footer relative z-10 shrink-0 border-t border-outline/50 p-2">
             <button
               type="button"
               onClick={() => setIsUserMenuOpen((open) => !open)}
@@ -761,7 +776,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* ---- Main Content ---- */}
-        <div className="atlas-main-stage pb-[calc(4.8rem+env(safe-area-inset-bottom))] lg:pb-0">
+        <div className="atlas-main-stage relative z-0 pb-[calc(4.8rem+env(safe-area-inset-bottom))] lg:pb-0">
           {/* Header */}
           <header className="atlas-command-strip sticky top-0 z-30 shrink-0 border-b border-outline/50 px-3 py-3 sm:mt-3 sm:rounded-2xl sm:border sm:border-outline/50 sm:px-4 lg:mt-4 lg:px-5">
             <div className="flex flex-col gap-3 lg:gap-4">
@@ -904,9 +919,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  setIsUserMenuOpen(false);
+                prefetch={false}
+                onClick={(event) => {
+                  event.preventDefault();
+                  handleShellNavigate(item.href);
                 }}
                 className={`flex min-h-[3.5rem] flex-col items-center justify-center gap-1 rounded-2xl px-1.5 py-2 text-[10px] font-semibold transition ${
                   isActive
@@ -966,7 +982,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       />
 
       {isMobileMenuOpen ? (
-        <div className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm lg:hidden">
+        <div className="fixed inset-0 z-[70] bg-background/70 backdrop-blur-sm lg:hidden">
           <button
             type="button"
             className="absolute inset-0 h-full w-full cursor-default"
@@ -976,7 +992,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               setIsMobileMenuOpen(false);
             }}
           />
-          <aside className="atlas-sidebar atlas-tech-grid absolute inset-y-2 left-2 flex w-[min(88vw,340px)] flex-col overflow-hidden rounded-[1.35rem]">
+          <aside className="atlas-sidebar atlas-tech-grid absolute inset-y-2 left-2 z-10 flex w-[min(88vw,340px)] flex-col overflow-hidden rounded-[1.35rem]">
             <div className="atlas-sidebar-header flex items-center justify-between gap-2 border-b border-outline/50 px-3 py-3">
               <div className="flex min-w-0 items-center gap-2">
                 <div className="atlas-sidebar-brandmark flex h-10 w-10 items-center justify-center rounded-2xl border border-primary/20 bg-primary-container/70 text-primary">
@@ -1018,19 +1034,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </label>
             </div>
 
-            <div className="atlas-sidebar-nav min-h-0 flex-1 overflow-y-auto px-2 py-1">
+            <div className="atlas-sidebar-nav relative z-10 min-h-0 flex-1 overflow-y-auto px-2 py-1">
               {navigationGroups.map((group) => (
                 <div key={group.label}>
                   <NavGroupLabel label={group.label} collapsed={false} />
-                  <NavSection
-                    items={group.items}
-                    pathname={pathname}
-                    collapsed={false}
-                    onNavigate={() => {
-                      setIsUserMenuOpen(false);
-                      setIsMobileMenuOpen(false);
-                    }}
-                  />
+                    <NavSection
+                      items={group.items}
+                      pathname={pathname}
+                      collapsed={false}
+                      onNavigate={handleShellNavigate}
+                    />
                 </div>
               ))}
             </div>

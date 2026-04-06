@@ -728,6 +728,9 @@ input.brandops-input[type="date"] {
 
 .brandops-navlink {
   position: relative;
+  z-index: 1;
+  isolation: isolate;
+  pointer-events: auto;
 }
 
 .atlas-navlink-active {
@@ -1533,9 +1536,12 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
     inset 0 1px 0 color-mix(in srgb, var(--color-surface) 8%, transparent 92%),
     0 8px 18px color-mix(in srgb, var(--color-background) 6%, transparent 94%);
   backdrop-filter: blur(22px) saturate(120%);
+  pointer-events: auto;
 }
 
 .atlas-sidebar-nav {
+  position: relative;
+  z-index: 1;
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
 }
@@ -1547,6 +1553,8 @@ html.dark .atlas-sidebar {
 }
 
 .atlas-sidebar-footer {
+  position: relative;
+  z-index: 1;
   background: color-mix(in srgb, var(--color-surface-container-low) 90%, transparent 10%);
   border-color: color-mix(in srgb, var(--atlas-border-muted) 72%, transparent 28%);
 }
@@ -1609,6 +1617,8 @@ html.dark .atlas-sidebar {
 }
 
 .atlas-user-menu {
+  position: relative;
+  z-index: 2;
   box-shadow: var(--atlas-shell-shadow-soft);
 }
 
@@ -1700,7 +1710,7 @@ html.dark .atlas-sidebar {
 .atlas-orb-floating {
   position: fixed;
   z-index: 55;
-  pointer-events: auto;
+  pointer-events: none;
   touch-action: manipulation;
 }
 
@@ -1750,6 +1760,11 @@ html.dark .atlas-sidebar {
     inset 0 1px 0 color-mix(in srgb, var(--color-surface) 24%, transparent 76%);
   padding: 1rem;
   backdrop-filter: blur(18px) saturate(120%);
+}
+
+.atlas-orb-floating > .atlas-orb,
+.atlas-orb-floating > .atlas-orb-panel {
+  pointer-events: auto;
 }
 
 html.dark .atlas-orb-panel-inner {

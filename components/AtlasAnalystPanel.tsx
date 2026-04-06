@@ -407,7 +407,7 @@ export function AtlasAnalystPanel({
                   Abra a base fixa do Atlas IA abaixo para conversar com o agente.
                 </p>
                 <Link
-                  href="#atlas-ai-home"
+                  href="/dashboard#atlas-ai-home"
                   className="inline-flex shrink-0 items-center gap-2 rounded-full border border-primary/25 bg-primary px-3 py-1.5 text-[11px] font-semibold text-on-primary transition hover:brightness-105"
                 >
                   Abrir base do Atlas
