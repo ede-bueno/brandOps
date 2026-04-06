@@ -12,6 +12,7 @@ import type {
   IntegrationProvider,
 } from "@/lib/brandops/types";
 import { parseGa4ServiceAccount } from "@/lib/integrations/ga4";
+import { normalizeAutoSyncIntervalHours } from "@/lib/brandops/integration-automation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 
 export type IntegrationCredentialSource = "brand_key";
@@ -58,6 +59,12 @@ export function normalizeIntegrationSettings(
         Number.isFinite(source.syncWindowDays)
           ? Math.max(1, Math.min(365, Math.round(source.syncWindowDays)))
           : 30,
+      autoSyncEnabled: typeof source.autoSyncEnabled === "boolean" ? source.autoSyncEnabled : false,
+      autoSyncIntervalHours: normalizeAutoSyncIntervalHours(source.autoSyncIntervalHours),
+      autoSyncLastRunAt:
+        typeof source.autoSyncLastRunAt === "string" ? source.autoSyncLastRunAt : null,
+      autoSyncNextRunAt:
+        typeof source.autoSyncNextRunAt === "string" ? source.autoSyncNextRunAt : null,
       catalogSyncAt:
         typeof source.catalogSyncAt === "string" ? source.catalogSyncAt : null,
       catalogSyncStatus:
@@ -92,6 +99,12 @@ export function normalizeIntegrationSettings(
         typeof source.timezone === "string" && source.timezone.trim()
           ? source.timezone.trim()
           : "America/Sao_Paulo",
+      autoSyncEnabled: typeof source.autoSyncEnabled === "boolean" ? source.autoSyncEnabled : false,
+      autoSyncIntervalHours: normalizeAutoSyncIntervalHours(source.autoSyncIntervalHours),
+      autoSyncLastRunAt:
+        typeof source.autoSyncLastRunAt === "string" ? source.autoSyncLastRunAt : null,
+      autoSyncNextRunAt:
+        typeof source.autoSyncNextRunAt === "string" ? source.autoSyncNextRunAt : null,
       credentialSource: normalizeCredentialSource(),
       hasApiKey: Boolean(source.hasApiKey),
       apiKeyHint:

@@ -10,10 +10,12 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
+import { AnalyticsCalloutCard } from "@/components/analytics/AnalyticsPrimitives";
 import { AtlasBusinessLearningPanel } from "@/components/AtlasBusinessLearningPanel";
 import { AtlasAnalystSettingsPanel } from "@/components/AtlasAnalystSettingsPanel";
 import { AtlasContextWorkspace } from "@/components/AtlasContextWorkspace";
 import { EmptyState } from "@/components/EmptyState";
+import { IntegrationAutomationSettingsPanel } from "@/components/IntegrationAutomationSettingsPanel";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import {
   InfoHint,
@@ -103,12 +105,54 @@ export default function SettingsPage() {
     (integration) => integration?.lastSyncStatus === "success" || integration?.mode === "api",
   ).length;
   const governance = activeBrand.governance;
+  const atlasEnabled = governance.featureFlags.atlasAi;
+  const atlasReady = atlasEnabled && geminiIntegration?.mode === "api";
+  const strategicFocus =
+    metaIntegration?.lastSyncStatus === "error"
+      ? {
+          title: "Corrigir mídia primeiro",
+          description: metaIntegration.lastSyncError ?? "A leitura da Meta travou nesta marca.",
+          href: `${APP_ROUTES.integrations}?provider=meta&section=sync`,
+          cta: "Abrir Meta",
+          tone: "warning" as const,
+        }
+      : ga4Integration?.lastSyncStatus === "error"
+        ? {
+            title: "Tráfego pede revisão",
+            description: ga4Integration.lastSyncError ?? "A leitura do GA4 precisa de ajuste.",
+            href: `${APP_ROUTES.integrations}?provider=ga4&section=sync`,
+            cta: "Abrir GA4",
+            tone: "warning" as const,
+          }
+        : !atlasEnabled
+          ? {
+              title: "Atlas IA bloqueado",
+              description: "O plano atual ainda não libera a camada inteligente da marca.",
+              href: APP_ROUTES.settingsGovernance,
+              cta: "Rever governança",
+              tone: "default" as const,
+            }
+          : !atlasReady
+            ? {
+                title: "Atlas pronto para ativação",
+                description: "A governança já libera IA. Falta concluir a conexão Gemini desta loja.",
+                href: `${APP_ROUTES.integrations}?provider=gemini&section=config`,
+                cta: "Ativar Gemini",
+                tone: "info" as const,
+              }
+            : {
+                title: "Base pronta para evoluir",
+                description: "As frentes principais estão conectadas. Agora vale refinar comportamento e aprendizado.",
+                href: APP_ROUTES.settingsAtlasAi,
+                cta: "Ajustar Atlas",
+                tone: "positive" as const,
+              };
 
   const modules: SettingsModule[] = [
     {
       href: APP_ROUTES.integrations,
       label: "Integrações",
-      description: "Conectar Meta, GA4 e Gemini por loja.",
+      description: "Conectar fontes por loja.",
       icon: PlugZap,
       tone:
         metaIntegration?.lastSyncStatus === "error" || ga4Integration?.lastSyncStatus === "error"
@@ -117,30 +161,37 @@ export default function SettingsPage() {
       aside: "Fontes",
     },
     {
+      href: APP_ROUTES.settingsAutomation,
+      label: "Automação",
+      description: "Cadência de Meta e GA4.",
+      icon: PlugZap,
+      aside: "Agenda",
+    },
+    {
       href: APP_ROUTES.adminStores,
       label: "Acessos",
-      description: "Convidar usuários e revisar permissões da marca.",
+      description: "Equipe e permissões.",
       icon: UserRound,
       aside: "Equipe",
     },
     {
       href: APP_ROUTES.settingsGovernance,
       label: "Governança",
-      description: "Papéis, planos, limites e liberação de recursos por grupo.",
+      description: "Plano, limites e recursos.",
       icon: ShieldCheck,
       aside: "SaaS",
     },
     {
       href: APP_ROUTES.help,
       label: "Ajuda",
-      description: "Guias de operação, integração e segurança da plataforma.",
+      description: "Guias curtos de operação.",
       icon: CircleHelp,
       aside: "Guias",
     },
     {
       href: APP_ROUTES.integrationsTutorials,
       label: "Tutoriais",
-      description: "Passo a passo detalhado de Meta, GA4 e Gemini com links para os painéis corretos.",
+      description: "Passo a passo por conector.",
       icon: BookOpen,
       aside: "Passo a passo",
     },
@@ -149,8 +200,8 @@ export default function SettingsPage() {
       label: "Atlas IA",
       description:
         geminiIntegration?.mode === "api"
-          ? "Modelo, temperatura, skill padrão e aprendizado da marca."
-          : "Deixar a camada analítica pronta antes da ativação.",
+          ? "Modelo, skill e aprendizado."
+          : "Preparar a camada analítica.",
       icon: BrainCircuit,
       tone: geminiIntegration?.mode === "api" ? "info" : "default",
       aside: geminiIntegration?.mode === "api" ? "Estratégia" : "Opcional",
@@ -158,28 +209,45 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="atlas-settings-room space-y-6">
       <PageHeader
         eyebrow="Configurações"
         title={selectedBrandName}
-        description="Central estratégica da plataforma: integre fontes, controle acessos, organize governança SaaS e defina como o Atlas deve pensar, ler e aprender com a marca."
+        description="Ajustes estratégicos da marca, sem poluir a Torre."
       />
 
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow="Próximo clique"
+          title={strategicFocus.title}
+          description={strategicFocus.description}
+          href={strategicFocus.href}
+          tone={strategicFocus.tone}
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Plano"
+          title={BRAND_PLAN_LABELS[governance.planTier]}
+          description={atlasEnabled ? "Atlas IA liberado nesta marca." : "IA ainda bloqueada para esta marca."}
+          href={APP_ROUTES.settingsGovernance}
+          tone={atlasEnabled ? "positive" : "default"}
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Aprendizado"
+          title={governance.featureFlags.brandLearning ? "Aprender negócio liberado" : "Aprender negócio bloqueado"}
+          description="Memória, contexto curado e comportamento do Atlas ficam aqui."
+          href={APP_ROUTES.settingsAtlasAi}
+          tone={governance.featureFlags.brandLearning ? "info" : "default"}
+        />
+      </section>
+
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
-        <SurfaceCard className="p-4">
+        <SurfaceCard className="atlas-settings-hub p-4">
           <SectionHeading
-            title={
-              <span className="flex items-center gap-2">
-                Central da plataforma
-                <InfoHint label="Como usar esta central">
-                  Tudo que configura, orienta ou controla acesso sai da Torre e fica concentrado aqui.
-                </InfoHint>
-              </span>
-            }
-            description="Use esta central para separar operação, estratégia do Atlas e infraestrutura da plataforma."
+            title="Abrir agora"
+            description="Escolha o bloco certo e siga."
           />
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 grid gap-2 md:grid-cols-2">
             {modules.map((module) => {
               const Icon = module.icon;
               return (
@@ -201,7 +269,7 @@ export default function SettingsPage() {
                       </span>
                     }
                     tone={module.tone ?? "default"}
-                    className="transition hover:border-secondary/30"
+                    className="h-full transition hover:border-secondary/30"
                   />
                 </Link>
               );
@@ -209,10 +277,10 @@ export default function SettingsPage() {
           </div>
         </SurfaceCard>
 
-        <SurfaceCard className="p-4">
+        <SurfaceCard className="atlas-settings-focus p-4">
           <SectionHeading
-            title="Leitura rápida"
-            description="Saúde atual das fontes e da camada Atlas."
+            title="O que pede ajuste"
+            description="Um relance para decidir o próximo clique."
             aside={<ShieldCheck size={14} className="text-primary" />}
           />
 
@@ -230,76 +298,52 @@ export default function SettingsPage() {
 
           <div className="mt-4 space-y-2">
             <StackItem
-              title="Plano da marca"
-              description="Camada de governança que define o teto de recursos liberados nesta operação."
-              aside={BRAND_PLAN_LABELS[governance.planTier]}
-              tone="info"
+              title={strategicFocus.title}
+              description={strategicFocus.description}
+              aside={
+                <Link
+                  href={strategicFocus.href}
+                  prefetch={false}
+                  className="relative z-10 text-secondary hover:underline"
+                >
+                  {strategicFocus.cta}
+                </Link>
+              }
+              tone={strategicFocus.tone}
             />
             <StackItem
               title="Meta"
-              description={metaIntegration?.lastSyncError || "Credencial, sync e leitura de mídia por loja."}
+              description={metaIntegration?.lastSyncError || "Mídia e catálogo da loja."}
               aside={getIntegrationStateLabel(metaIntegration?.lastSyncStatus)}
               tone={getIntegrationTone(metaIntegration?.lastSyncStatus)}
             />
             <StackItem
               title="GA4"
-              description={ga4Integration?.lastSyncError || "Propriedade, service account e leitura de tráfego."}
+              description={ga4Integration?.lastSyncError || "Tráfego e propriedade da marca."}
               aside={getIntegrationStateLabel(ga4Integration?.lastSyncStatus)}
               tone={getIntegrationTone(ga4Integration?.lastSyncStatus)}
             />
             <StackItem
-              title="Gemini"
+              title="Atlas"
               description={
-                !governance.featureFlags.atlasAi
-                  ? "O plano atual ainda nao libera a camada Atlas IA."
-                  : geminiIntegration?.mode === "api"
-                  ? "Pronto para diagnósticos e memória da marca."
-                  : "Mantém a marca em modo sem IA até ativação."
+                !atlasEnabled
+                  ? "IA ainda bloqueada pelo plano."
+                  : atlasReady
+                    ? "Pronto para leitura e aprendizado."
+                    : "Ligação Gemini ainda pendente."
               }
-              aside={
-                !governance.featureFlags.atlasAi
-                  ? "Bloqueado"
-                  : geminiIntegration?.mode === "api"
-                    ? "Ativo"
-                    : "Opcional"
-              }
-              tone={
-                !governance.featureFlags.atlasAi
-                  ? "warning"
-                  : geminiIntegration?.mode === "api"
-                    ? "positive"
-                    : "default"
-              }
-            />
-            <StackItem
-              title="Ajuda operacional"
-              description="Guias práticos de integração, operação e segurança."
-              aside={
-                <Link href={APP_ROUTES.help} prefetch={false} className="relative z-10 text-secondary hover:underline">
-                  Abrir
-                </Link>
-              }
-              tone="default"
+              aside={!atlasEnabled ? "Bloqueado" : atlasReady ? "Ativo" : "Pendente"}
+              tone={!atlasEnabled ? "warning" : atlasReady ? "positive" : "info"}
             />
           </div>
         </SurfaceCard>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)]">
-        <SurfaceCard id="platform-governance" className="p-4">
+        <SurfaceCard id="platform-governance" className="atlas-settings-focus p-4">
           <SectionHeading
-            title={
-              <span className="flex items-center gap-2">
-                Governança SaaS
-                <InfoHint label="O que centralizar aqui">
-                  Este bloco concentra a evolução de papéis, grupos, planos e
-                  liberação da camada Atlas IA para o produto ficar distribuível
-                  para outras empresas sem misturar configuração operacional com
-                  estratégia da plataforma.
-                </InfoHint>
-              </span>
-            }
-            description="A camada de plataforma está saindo do implícito e ganhando forma própria."
+            title="Governança e limites"
+            description="O que esta marca pode usar agora."
             aside={<ShieldCheck size={14} className="text-primary" />}
           />
 
@@ -317,55 +361,81 @@ export default function SettingsPage() {
 
           <div className="mt-4 space-y-2">
             <StackItem
-              title="Papéis"
-              description="Separar superadmin da plataforma, admin do grupo e gestor de marca sem perder simplicidade operacional."
-              aside="Hierarquia"
-              tone="default"
-            />
-            <StackItem
-              title="Planos e limites"
-              description="A marca já carrega plano e capacidades para liberar IA, Torre com IA e catálogo de modelos por governança."
+              title="Plano"
+              description="Camada que libera IA, aprendizado e catálogo de modelos."
               aside={BRAND_PLAN_LABELS[governance.planTier]}
               tone="info"
             />
             <StackItem
-              title="Capacidades liberadas"
-              description={`Atlas IA: ${governance.featureFlags.atlasAi ? "sim" : "não"} · Torre IA: ${governance.featureFlags.atlasCommandCenter ? "sim" : "não"} · Aprender negócio: ${governance.featureFlags.brandLearning ? "sim" : "não"}`}
-              aside={governance.featureFlags.geminiModelCatalog ? "Catálogo Gemini on" : "Catálogo Gemini off"}
+              title="Atlas IA"
+              description={governance.featureFlags.atlasAi ? "Camada inteligente liberada." : "Camada inteligente ainda bloqueada."}
+              aside={governance.featureFlags.atlasAi ? "Ligado" : "Bloqueado"}
+              tone={governance.featureFlags.atlasAi ? "positive" : "warning"}
+            />
+            <StackItem
+              title="Aprender negócio"
+              description={governance.featureFlags.brandLearning ? "Marca pode consolidar histórico e memória." : "Modo de aprendizagem ainda indisponível."}
+              aside={governance.featureFlags.brandLearning ? "Liberado" : "Off"}
+              tone={governance.featureFlags.brandLearning ? "positive" : "default"}
+            />
+            <StackItem
+              title="Catálogo Gemini"
+              description={governance.featureFlags.geminiModelCatalog ? "A marca pode escolher modelos suportados." : "Modelo fixado pela plataforma."}
+              aside={governance.featureFlags.geminiModelCatalog ? "Catálogo on" : "Catálogo off"}
               tone="default"
             />
           </div>
         </SurfaceCard>
 
-        <SurfaceCard className="p-4">
+        <SurfaceCard className="atlas-settings-focus p-4">
           <SectionHeading
-            title="Camadas do produto"
-            description="O sidebar passa a refletir como o Atlas está sendo desenhado."
-            aside={<BrainCircuit size={14} className="text-primary" />}
+            title="Apoio rápido"
+            description="Atalhos que destravam operação sem poluir a Torre."
+            aside={
+              <InfoHint label="Como usar">
+                Tutoriais e ajuda ficam fora do fluxo operacional principal, mas continuam acessíveis daqui.
+              </InfoHint>
+            }
           />
 
           <div className="mt-4 space-y-2">
             <StackItem
-              title="Controle"
-              description="A Torre de Controle permanece como casa de leitura executiva e diagnóstico."
-              aside="Dashboard"
+              title="Tutoriais"
+              description="Passos guiados para Meta, GA4 e Gemini."
+              aside={
+                <Link href={APP_ROUTES.integrationsTutorials} prefetch={false} className="relative z-10 text-secondary hover:underline">
+                  Abrir
+                </Link>
+              }
+              tone="info"
+            />
+            <StackItem
+              title="Ajuda"
+              description="Guias rápidos de operação e segurança."
+              aside={
+                <Link href={APP_ROUTES.help} prefetch={false} className="relative z-10 text-secondary hover:underline">
+                  Abrir
+                </Link>
+              }
               tone="default"
             />
             <StackItem
-              title="Negócio e aquisição"
-              description="Receita, DRE, produto, mídia e tráfego ficam agrupados por decisão e performance."
-              aside="Decisão"
-              tone="default"
-            />
-            <StackItem
-              title="Operação e plataforma"
-              description="Catálogo, ETL, saneamento, integrações, acessos e estratégia do Atlas ganham fronteiras mais claras."
-              aside="Estrutura"
+              title="Acessos"
+              description="Convidar pessoas e revisar o alcance da marca."
+              aside={
+                <Link href={APP_ROUTES.adminStores} prefetch={false} className="relative z-10 text-secondary hover:underline">
+                  Abrir
+                </Link>
+              }
               tone="default"
             />
           </div>
         </SurfaceCard>
       </section>
+
+      <SurfaceCard className="p-4">
+        <IntegrationAutomationSettingsPanel />
+      </SurfaceCard>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
         <SurfaceCard className="p-4">

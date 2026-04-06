@@ -16,7 +16,6 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
-import { useBrandOps } from "./BrandOpsProvider";
 import { cn } from "@/lib/utils";
 
 export interface AtlasOrbRadarTelemetry {
@@ -48,27 +47,12 @@ type RadarAlert = {
   tone: "alert" | "notice" | "idle";
 };
 
-type RadarMove = {
-  id: string;
-  title: string;
-  reason: string;
-  href: string;
-  tone: "critical" | "focus" | "assist";
-};
-
 type RadarShortcut = {
   id: string;
   title: string;
   description: string;
   href: string;
   tone: "fix" | "guide" | "atlas" | "screen";
-};
-
-type AtlasQuestion = {
-  id: string;
-  question: string;
-  href: string;
-  tone: "atlas" | "focus";
 };
 
 function buildRadarAlerts(pathname: string, telemetry: AtlasOrbRadarTelemetry): RadarAlert[] {
@@ -175,151 +159,6 @@ function buildRadarAlerts(pathname: string, telemetry: AtlasOrbRadarTelemetry): 
   }
 
   return alerts.slice(0, 4);
-}
-
-function buildRadarMoves(pathname: string, telemetry: AtlasOrbRadarTelemetry) {
-  const moves: RadarMove[] = [];
-
-  if (telemetry.pendingSanitizationCount > 0) {
-    moves.push({
-      id: "move-sanitization",
-      title: "Fechar pendencias de base",
-      reason: "Saneie a base antes de escalar qualquer leitura de performance.",
-      href: "/sanitization",
-      tone: "critical",
-    });
-  }
-
-  if (telemetry.contributionAfterMedia !== null && telemetry.contributionAfterMedia < 0) {
-    moves.push({
-      id: "move-contribution",
-      title: "Atacar margem depois da midia",
-      reason: "A operacao ja perdeu contribuicao apos investimento em midia neste corte.",
-      href: pathname.startsWith("/dashboard") ? "/dashboard/contribution-margin" : "/dre",
-      tone: "critical",
-    });
-  }
-
-  if (telemetry.netResult !== null && telemetry.netResult < 0) {
-    moves.push({
-      id: "move-result",
-      title: "Revisar o driver do prejuizo",
-      reason: "O resultado operacional esta negativo e pede uma restricao principal clara.",
-      href: "/dre",
-      tone: "critical",
-    });
-  }
-
-  if (telemetry.mediaIntegrationError || telemetry.ga4IntegrationError) {
-    moves.push({
-      id: "move-integration",
-      title: "Corrigir a fonte quebrada",
-      reason: "Sem fonte saudavel, o Atlas fica cego ou inconsistene no periodo.",
-      href: "/integrations",
-      tone: "focus",
-    });
-  }
-
-  if (telemetry.grossRoas !== null && telemetry.grossRoas > 0 && telemetry.grossRoas < 2) {
-    moves.push({
-      id: "move-media",
-      title: "Repriorizar verba de aquisicao",
-      reason: "O retorno de midia esta curto para sustentar expansao sem revisao.",
-      href: "/media",
-      tone: "focus",
-    });
-  }
-
-  if (!telemetry.hasGa4Data) {
-    moves.push({
-      id: "move-ga4",
-      title: "Restaurar leitura de funil",
-      reason: "Sem GA4 suficiente, o Atlas perde explicacao de atrito entre sessao e compra.",
-      href: "/integrations",
-      tone: "assist",
-    });
-  }
-
-  if (!telemetry.hasCatalogData) {
-    moves.push({
-      id: "move-catalog",
-      title: "Fortalecer a camada de catalogo",
-      reason: "Cobertura fraca de catalogo limita leitura de produto, criativo e escala.",
-      href: "/feed",
-      tone: "assist",
-    });
-  }
-
-  if (!telemetry.geminiEnabled) {
-    moves.push({
-      id: "move-learning",
-      title: "Liberar leitura inteligente da marca",
-      reason: "Ative o Atlas IA e configure os parâmetros estratégicos para começar a acumular contexto.",
-      href: "/settings#atlas-ai-settings",
-      tone: "assist",
-    });
-  }
-
-  if (telemetry.geminiEnabled) {
-    moves.push({
-      id: "move-atlas",
-      title: "Abrir a casa do Atlas",
-      reason: "Use a Torre para consolidar a leitura executiva quando o radar acender.",
-      href: "/dashboard#atlas-ai-home",
-      tone: "assist",
-    });
-  } else {
-    moves.push({
-      id: "move-settings",
-      title: "Preparar camada inteligente",
-      reason: "Ajuste parametros e governanca antes de liberar o Atlas IA para a marca.",
-      href: "/settings#atlas-ai-settings",
-      tone: "assist",
-    });
-  }
-
-  return moves.slice(0, 4);
-}
-
-function buildFocusSeeds(pathname: string, telemetry: AtlasOrbRadarTelemetry) {
-  const seeds = new Set<string>();
-
-  if (pathname.startsWith("/dashboard")) {
-    seeds.add("margem");
-    seeds.add("resultado");
-  }
-
-  if (pathname.startsWith("/media") || (telemetry.grossRoas !== null && telemetry.grossRoas < 2)) {
-    seeds.add("midia");
-    seeds.add("roas");
-  }
-
-  if (pathname.startsWith("/traffic") || !telemetry.hasGa4Data) {
-    seeds.add("ga4");
-    seeds.add("funil");
-  }
-
-  if (pathname.startsWith("/feed") || !telemetry.hasCatalogData) {
-    seeds.add("catalogo");
-    seeds.add("vitrine");
-  }
-
-  if (!telemetry.geminiEnabled) {
-    seeds.add("atlas ia");
-    seeds.add("configuracao");
-  }
-
-  if (telemetry.pendingSanitizationCount > 0) {
-    seeds.add("saneamento");
-  }
-
-  if (telemetry.geminiEnabled) {
-    seeds.add("atlas ia");
-  }
-
-  seeds.add("integracoes");
-
-  return Array.from(seeds).slice(0, 6);
 }
 
 function buildRadarShortcuts(pathname: string, telemetry: AtlasOrbRadarTelemetry) {
@@ -480,80 +319,6 @@ function buildRadarShortcuts(pathname: string, telemetry: AtlasOrbRadarTelemetry
   }).slice(0, 5);
 }
 
-function buildAtlasQuestions(pathname: string, radar: AtlasOrbRadarTelemetry): AtlasQuestion[] {
-  const questions: AtlasQuestion[] = [];
-
-  if (pathname.startsWith("/dashboard")) {
-    questions.push(
-      {
-        id: "q-dashboard-result",
-        question: "O que mais está comprimindo o resultado neste período?",
-        href: "/dashboard#atlas-ai-home",
-        tone: "focus",
-      },
-      {
-        id: "q-dashboard-margin",
-        question: "Quais 3 decisões mais impactam a margem agora?",
-        href: "/dashboard#atlas-ai-home",
-        tone: "atlas",
-      },
-    );
-  }
-
-  if (pathname.startsWith("/media")) {
-    questions.push(
-      {
-        id: "q-media-budget",
-        question: "Onde eu deveria cortar ou mover verba agora?",
-        href: "/dashboard#atlas-ai-home",
-        tone: "focus",
-      },
-      {
-        id: "q-media-creative",
-        question: "Qual campanha pede revisão criativa primeiro?",
-        href: "/dashboard#atlas-ai-home",
-        tone: "atlas",
-      },
-    );
-  }
-
-  if (pathname.startsWith("/traffic") || !radar.hasGa4Data) {
-    questions.push({
-      id: "q-traffic-funnel",
-      question: "Onde o funil está perdendo mais intenção?",
-      href: "/dashboard#atlas-ai-home",
-      tone: "atlas",
-    });
-  }
-
-  if (pathname.startsWith("/feed") || pathname.startsWith("/product-insights")) {
-    questions.push({
-      id: "q-catalog-scale",
-      question: "Quais produtos merecem mais tráfego ou revisão de vitrine?",
-      href: "/dashboard#atlas-ai-home",
-      tone: "atlas",
-    });
-  }
-
-  if (radar.pendingSanitizationCount > 0) {
-    questions.push({
-      id: "q-sanitization-risk",
-      question: "O que pode estar distorcendo minha leitura hoje?",
-      href: "/dashboard#atlas-ai-home",
-      tone: "focus",
-    });
-  }
-
-  const seen = new Set<string>();
-  return questions.filter((item) => {
-    if (seen.has(item.question)) {
-      return false;
-    }
-    seen.add(item.question);
-    return true;
-  }).slice(0, 4);
-}
-
 function getItemIcon(item: RadarItem) {
   if (item.kind === "atlas") {
     return <BrainCircuit size={14} />;
@@ -612,30 +377,16 @@ export function AtlasOrbRadarPanel({
   hoverAlert: string;
 }) {
   const pathname = usePathname() ?? "/";
-  const { activeBrand, selectedPeriodLabel } = useBrandOps();
   const [query, setQuery] = useState("");
 
   const radarAlerts = useMemo(
     () => buildRadarAlerts(pathname, telemetry),
     [pathname, telemetry],
   );
-  const radarMoves = useMemo(
-    () => buildRadarMoves(pathname, telemetry),
-    [pathname, telemetry],
-  );
   const radarShortcuts = useMemo(
     () => buildRadarShortcuts(pathname, telemetry),
     [pathname, telemetry],
   );
-  const atlasQuestions = useMemo(
-    () => (telemetry.geminiEnabled ? buildAtlasQuestions(pathname, telemetry) : []),
-    [pathname, telemetry],
-  );
-  const focusSeeds = useMemo(
-    () => buildFocusSeeds(pathname, telemetry),
-    [pathname, telemetry],
-  );
-
   const radarItems = useMemo<RadarItem[]>(() => {
     const items: RadarItem[] = [
       {
@@ -774,6 +525,7 @@ export function AtlasOrbRadarPanel({
     : radarItems.slice(0, 6);
 
   const primaryAlert = radarAlerts[0] ?? null;
+  const shortcutPreview = radarShortcuts.slice(0, 2);
 
   return (
     <div className="space-y-4">
@@ -804,13 +556,6 @@ export function AtlasOrbRadarPanel({
           </span>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-          <span className="atlas-soft-pill">{activeBrand?.name ?? "Loja ativa"}</span>
-          <span className="atlas-soft-pill">{selectedPeriodLabel}</span>
-          <span className="atlas-soft-pill">
-            {telemetry.geminiEnabled ? "IA ativa" : "IA opcional"}
-          </span>
-        </div>
       </div>
 
       <label className="brandops-field-stack">
@@ -826,34 +571,13 @@ export function AtlasOrbRadarPanel({
         </span>
       </label>
 
-      {!normalizedQuery ? (
-        <div className="space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-            Focos rapidos
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {focusSeeds.map((seed) => (
-              <button
-                key={seed}
-                type="button"
-                onClick={() => setQuery(seed)}
-                className="atlas-soft-pill text-[11px] normal-case tracking-[0.02em]"
-                data-interactive="true"
-              >
-                {seed}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
       {radarAlerts.length ? (
         <div className="space-y-2">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-            Alertas e focos
+            Alerta principal
           </p>
           <div className="space-y-2">
-            {radarAlerts.slice(0, normalizedQuery ? 1 : 3).map((alert) => (
+            {radarAlerts.slice(0, 1).map((alert) => (
               <Link
                 key={alert.id}
                 href={alert.href}
@@ -877,13 +601,13 @@ export function AtlasOrbRadarPanel({
         </div>
       ) : null}
 
-      {!normalizedQuery && radarShortcuts.length ? (
+      {!normalizedQuery && shortcutPreview.length ? (
         <div className="space-y-2">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-            Atalhos contextuais
+            Próximos cliques
           </p>
           <div className="space-y-2">
-            {radarShortcuts.map((shortcut) => (
+            {shortcutPreview.map((shortcut) => (
               <Link
                 key={shortcut.id}
                 href={shortcut.href}
@@ -920,125 +644,43 @@ export function AtlasOrbRadarPanel({
         </div>
       ) : null}
 
-      {!normalizedQuery && radarMoves.length ? (
+      {normalizedQuery ? (
         <div className="space-y-2">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-            Proximos movimentos
+            Resultados da busca
           </p>
           <div className="space-y-2">
-            {radarMoves.map((move) => (
+            {filteredItems.slice(0, 6).map((item) => (
               <Link
-                key={move.id}
-                href={move.href}
-                className="atlas-soft-subcard flex items-start justify-between gap-3 px-3 py-3"
+                key={item.href}
+                href={item.href}
+                className="atlas-soft-subcard flex items-center justify-between gap-3 px-3 py-2.5"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        "inline-flex h-6 w-6 items-center justify-center rounded-full",
-                        move.tone === "critical"
-                          ? "bg-warning/12 text-warning"
-                          : move.tone === "focus"
-                            ? "bg-primary-container text-primary"
-                            : "bg-surface-container text-on-surface-variant",
-                      )}
-                    >
-                      {move.tone === "critical" ? (
-                        <ShieldAlert size={12} />
-                      ) : move.tone === "focus" ? (
-                        <TrendingUp size={12} />
-                      ) : (
-                        <BrainCircuit size={12} />
-                      )}
-                    </span>
-                    <p className="text-[11px] font-semibold text-on-surface">{move.title}</p>
+                    <span className="text-on-surface">{getItemIcon(item)}</span>
+                    <p className="text-[11px] font-semibold text-on-surface">{item.label}</p>
                   </div>
                   <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
-                    {move.reason}
+                    {item.description}
                   </p>
                 </div>
                 <ArrowUpRight size={13} className="shrink-0 text-on-surface-variant" />
               </Link>
             ))}
           </div>
+
+          {!filteredItems.length ? (
+            <div className="atlas-soft-subcard border-dashed px-3 py-3 text-[11px] leading-5 text-on-surface-variant">
+              Nada bateu com essa busca ainda. Tente nome de tela, integração, contexto ou foco operacional.
+            </div>
+          ) : null}
         </div>
-      ) : null}
-
-      {!normalizedQuery && atlasQuestions.length ? (
-        <div className="space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-            Perguntas prontas
-          </p>
-          <div className="space-y-2">
-            {atlasQuestions.map((question) => (
-              <Link
-                key={question.id}
-                href={question.href}
-                className="atlas-soft-subcard flex items-start justify-between gap-3 px-3 py-3"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        "inline-flex h-6 w-6 items-center justify-center rounded-full",
-                        question.tone === "focus"
-                          ? "bg-warning/12 text-warning"
-                          : "bg-primary-container text-primary",
-                      )}
-                    >
-                      <BrainCircuit size={12} />
-                    </span>
-                    <p className="text-[11px] font-semibold text-on-surface">{question.question}</p>
-                  </div>
-                  <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
-                    Abrir a camada do Atlas ja na Torre para investigar essa pergunta.
-                  </p>
-                </div>
-                <ArrowUpRight size={13} className="shrink-0 text-on-surface-variant" />
-              </Link>
-            ))}
-          </div>
+      ) : (
+        <div className="atlas-soft-subcard border-dashed px-3 py-3 text-[11px] leading-5 text-on-surface-variant">
+          O Orb existe para interromper com utilidade. Quando quiser navegar mais fundo, use a busca global.
         </div>
-      ) : null}
-
-      <div className="space-y-2">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-          {normalizedQuery ? "Resultados da busca" : "Mapa rapido"}
-        </p>
-        <div className="space-y-2">
-          {(normalizedQuery ? filteredItems.slice(0, 6) : filteredItems.slice(0, 3)).map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="atlas-soft-subcard flex items-center justify-between gap-3 px-3 py-2.5"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-on-surface">{getItemIcon(item)}</span>
-                  <p className="text-[11px] font-semibold text-on-surface">{item.label}</p>
-                </div>
-                <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
-                  {item.description}
-                </p>
-              </div>
-              <ArrowUpRight size={13} className="shrink-0 text-on-surface-variant" />
-            </Link>
-          ))}
-        </div>
-
-        {normalizedQuery && !filteredItems.length ? (
-          <div className="atlas-soft-subcard border-dashed px-3 py-3 text-[11px] leading-5 text-on-surface-variant">
-            Nada bateu com essa busca ainda. Tente nome de tela, integração, contexto ou foco operacional.
-          </div>
-        ) : null}
-
-        {!normalizedQuery ? (
-          <div className="atlas-soft-subcard border-dashed px-3 py-3 text-[11px] leading-5 text-on-surface-variant">
-            O Orb fica melhor quando aponta caminho curto. Use a busca global para navegar pelo mapa completo da plataforma.
-          </div>
-        ) : null}
-      </div>
+      )}
     </div>
   );
 }

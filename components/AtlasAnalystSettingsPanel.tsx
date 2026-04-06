@@ -20,15 +20,13 @@ import type {
   AtlasAnalystBehaviorSkill,
   GeminiAvailableModel,
 } from "@/lib/brandops/types";
+import {
+  ATLAS_GEMINI_DEFAULT_MODEL,
+  ATLAS_GEMINI_MODEL_SUGGESTIONS,
+} from "@/lib/brandops/ai/model-policy";
 import { APP_ROUTES } from "@/lib/brandops/routes";
 
 const ANALYSIS_WINDOW_OPTIONS = [7, 14, 30, 60, 90] as const;
-const MODEL_SUGGESTIONS = [
-  "gemini-2.5-flash",
-  "gemini-2.5-pro",
-  "gemini-3-flash-preview",
-  "gemini-3-pro-preview",
-] as const;
 
 const SKILL_OPTIONS: Array<{
   value: AtlasAnalystBehaviorSkill;
@@ -79,7 +77,7 @@ type ModelCatalogResponse = {
 };
 
 const DEFAULT_FORM: FormState = {
-  model: "gemini-2.5-flash",
+  model: ATLAS_GEMINI_DEFAULT_MODEL,
   temperature: 0.25,
   analysisWindowDays: 30,
   defaultSkill: "executive_operator",
@@ -132,7 +130,7 @@ export function AtlasAnalystSettingsPanel() {
     }
 
     setFormState({
-      model: geminiIntegration.settings.model ?? "gemini-2.5-flash",
+      model: geminiIntegration.settings.model ?? ATLAS_GEMINI_DEFAULT_MODEL,
       temperature: geminiIntegration.settings.temperature ?? 0.25,
       analysisWindowDays: geminiIntegration.settings.analysisWindowDays ?? 30,
       defaultSkill:
@@ -208,7 +206,7 @@ export function AtlasAnalystSettingsPanel() {
       items.set(model.id, model);
     });
 
-    MODEL_SUGGESTIONS.forEach((model) => {
+    ATLAS_GEMINI_MODEL_SUGGESTIONS.forEach((model) => {
       if (!items.has(model)) {
         items.set(model, buildFallbackModel(model));
       }
@@ -229,6 +227,50 @@ export function AtlasAnalystSettingsPanel() {
       buildFallbackModel(effectiveModel || DEFAULT_FORM.model),
     [effectiveModel, modelOptions],
   );
+  const statusNoticeTone: "success" | "warning" | "info" | undefined = notice
+    ? notice.kind === "success"
+      ? "success"
+      : "warning"
+    : undefined;
+  const statusNotice = useMemo(() => {
+    if (notice) {
+      return {
+        tone: statusNoticeTone ?? "warning",
+        icon: notice.kind === "success" ? <SlidersHorizontal size={14} /> : <Radar size={14} />,
+        title: null as string | null,
+        text: notice.text,
+      };
+    }
+
+    if (!hasAtlasAiPlanAccess) {
+      return {
+        tone: "info" as const,
+        icon: <Radar size={14} />,
+        title: "Atlas IA bloqueado neste plano.",
+        text: "Os parâmetros podem ficar prontos aqui, mas a liberação efetiva depende da governança da marca.",
+      };
+    }
+
+    if (!isAtlasEnabled) {
+      return {
+        tone: "info" as const,
+        icon: <Radar size={14} />,
+        title: "Atlas pronto para ativação.",
+        text: "Deixe o comportamento configurado aqui e faça a ativação técnica em Integrações.",
+      };
+    }
+
+    if (!hasGeminiModelCatalogAccess) {
+      return {
+        tone: "info" as const,
+        icon: <BrainCircuit size={14} />,
+        title: "Catálogo de modelos bloqueado pelo plano.",
+        text: "Temperatura, skill, janela e guia continuam livres; o modelo fica no padrão da plataforma.",
+      };
+    }
+
+    return null;
+  }, [hasAtlasAiPlanAccess, hasGeminiModelCatalogAccess, isAtlasEnabled, notice, statusNoticeTone]);
 
   async function handleSave() {
     if (!activeBrandId || !session?.access_token) {
@@ -306,7 +348,7 @@ export function AtlasAnalystSettingsPanel() {
             </InfoHint>
           </span>
         }
-        description="Defina como o Atlas deve pensar, ler e responder antes de analisar a marca."
+        description="Defina como o Atlas pensa antes de entrar em ação."
         aside={<BrainCircuit size={14} className="text-primary" />}
       />
 
@@ -327,76 +369,27 @@ export function AtlasAnalystSettingsPanel() {
         <span className="rounded-full border border-outline px-2.5 py-1">
           {formState.analysisWindowDays} dias
         </span>
-        <span className="rounded-full border border-outline px-2.5 py-1">
-          {SKILL_OPTIONS.find((option) => option.value === formState.defaultSkill)
-            ?.label ?? "Executivo"}
-        </span>
       </div>
 
-      {!hasAtlasAiPlanAccess ? (
-        <InlineNotice tone="info" icon={<Radar size={14} />}>
-          <p className="font-semibold text-on-surface">
-            O plano atual da marca ainda não libera a camada Atlas IA.
-          </p>
-          <p className="mt-1 text-[11px] leading-5">
-            Você pode deixar parâmetros estratégicos preparados por aqui, mas a
-            ativação efetiva depende da governança em Acessos.
-          </p>
-        </InlineNotice>
-      ) : !hasGeminiModelCatalogAccess ? (
-        <InlineNotice tone="info" icon={<Radar size={14} />}>
-          <p className="font-semibold text-on-surface">
-            O plano atual fixa o Atlas no modelo padrao da plataforma.
-          </p>
-          <p className="mt-1 text-[11px] leading-5">
-            Temperatura, skill, janela e playbook continuam configuraveis, mas a
-            troca livre de modelo Gemini so aparece nas marcas com esse recurso
-            liberado.
-          </p>
-        </InlineNotice>
-      ) : !isAtlasEnabled ? (
-        <InlineNotice tone="info" icon={<Radar size={14} />}>
-          <p className="font-semibold text-on-surface">
-            Você já pode deixar o Atlas pronto por aqui.
-          </p>
-          <p className="mt-1 text-[11px] leading-5">
-            A ativação da IA e a chave da loja continuam em{" "}
-            <Link href={APP_ROUTES.integrations} prefetch={false} className="text-secondary hover:underline">
-              Integrações
-            </Link>
-            . Estes parâmetros ficam salvos para a marca mesmo antes da ativação.
+      {statusNotice ? (
+        <InlineNotice tone={statusNotice.tone} icon={statusNotice.icon}>
+          {statusNotice.title ? (
+            <p className="font-semibold text-on-surface">{statusNotice.title}</p>
+          ) : null}
+          <p className={`${statusNotice.title ? "mt-1 " : ""}text-[11px] leading-5`}>
+            {statusNotice.text}
+            {!notice ? (
+              <>
+                {" "}A leitura histórica da marca fica em{" "}
+                <Link href={APP_ROUTES.settingsAtlasLearning} prefetch={false} className="relative z-10 text-secondary hover:underline">
+                  Aprender negócio
+                </Link>
+                .
+              </>
+            ) : null}
           </p>
         </InlineNotice>
       ) : null}
-
-      {notice ? (
-        <InlineNotice
-          tone={notice.kind === "success" ? "success" : "warning"}
-          icon={
-            notice.kind === "success" ? (
-              <SlidersHorizontal size={14} />
-            ) : (
-              <Radar size={14} />
-            )
-          }
-        >
-          <p className="text-[11px] leading-5">{notice.text}</p>
-        </InlineNotice>
-      ) : null}
-
-      <InlineNotice tone="info" icon={<BrainCircuit size={14} />}>
-        <p className="font-semibold text-on-surface">
-          Configuração estratégica + aprendizado contínuo
-        </p>
-        <p className="mt-1 text-[11px] leading-5">
-          Defina aqui o modelo, a janela e a postura do Atlas. A leitura
-          histórica da marca fica no módulo{" "}
-          <Link href={APP_ROUTES.settingsAtlasLearning} prefetch={false} className="relative z-10 text-secondary hover:underline">
-            Aprender negócio
-          </Link>
-          , logo abaixo na Central Estratégica.
-        </p>
-      </InlineNotice>
 
       <div className="grid gap-3 lg:grid-cols-2">
         <FormField
@@ -434,11 +427,11 @@ export function AtlasAnalystSettingsPanel() {
                     }))
                   }
                   className="brandops-input"
-                  placeholder="gemini-2.5-flash"
+                  placeholder={ATLAS_GEMINI_DEFAULT_MODEL}
                   disabled={!hasGeminiModelCatalogAccess}
                 />
                 <datalist id="atlas-gemini-model-suggestions">
-                  {MODEL_SUGGESTIONS.map((model) => (
+                  {ATLAS_GEMINI_MODEL_SUGGESTIONS.map((model) => (
                     <option key={model} value={model} />
                   ))}
                 </datalist>

@@ -24,6 +24,20 @@ export type AtlasBrandLearningFindingGroup =
   | "watch"
   | "milestone"
   | "trigger";
+export type AtlasBrandLearningEvidenceKind =
+  | "metric"
+  | "constraint"
+  | "pattern"
+  | "opportunity"
+  | "risk"
+  | "catalog"
+  | "traffic"
+  | "context"
+  | "quality";
+export type AtlasBrandLearningEvidenceSource =
+  | AtlasAnalystReportId
+  | "context"
+  | "learning_frame";
 
 export type AtlasContextEntryType = "campaign" | "promotion" | "launch" | "incident" | "insight";
 export type AtlasContextEntrySource = "manual" | "imported" | "analyst" | "system";
@@ -90,6 +104,32 @@ export interface AtlasBrandLearningFinding {
   label: string;
   position: number;
   createdAt: string;
+}
+
+export interface AtlasBrandLearningEvidenceDraft {
+  kind: AtlasBrandLearningEvidenceKind;
+  source: AtlasBrandLearningEvidenceSource;
+  title: string;
+  summary: string;
+  metricLabel?: string | null;
+  metricValue?: number | null;
+  metricDisplay?: string | null;
+  sourceKey?: string | null;
+  payload?: Record<string, unknown>;
+  position: number;
+}
+
+export interface AtlasBrandLearningEvidence extends AtlasBrandLearningEvidenceDraft {
+  id: string;
+  brandId: string;
+  snapshotId: string;
+  runId: string | null;
+  createdAt: string;
+}
+
+export interface AtlasBrandLearningGenerationResult {
+  snapshot: Omit<AtlasBrandLearningSnapshot, "id" | "runId" | "generatedAt">;
+  evidences: AtlasBrandLearningEvidenceDraft[];
 }
 
 export interface AtlasAnalystResponse {
@@ -169,6 +209,7 @@ export interface AtlasBrandLearningResponse {
   snapshot: AtlasBrandLearningSnapshot | null;
   previousSnapshot?: AtlasBrandLearningSnapshot | null;
   findings?: AtlasBrandLearningFinding[];
+  evidences?: AtlasBrandLearningEvidence[];
   runs: AtlasBrandLearningRun[];
   feedback?: AtlasBrandLearningFeedbackSummary | null;
 }

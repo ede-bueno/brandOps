@@ -11,7 +11,7 @@ import {
   Loader2,
   UploadCloud,
 } from "lucide-react";
-import { AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
+import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { EmptyState } from "@/components/EmptyState";
 import { InlineNotice, PageHeader, SectionHeading, StackItem, SurfaceCard } from "@/components/ui-shell";
@@ -174,6 +174,13 @@ export default function ImportPage() {
   );
 
   const progressPercent = stats ? Math.round((completedSources / sourceChecklist.length) * 100) : 0;
+  const primaryAction = files.length
+    ? "Conferir fila e iniciar importação"
+    : progressPercent >= 100
+      ? "Base pronta para novas janelas"
+      : "Completar checklist da base";
+  const metaMode =
+    activeBrand && getProviderMode(activeBrand, "meta") === "api" ? "API + fallback" : "CSV manual";
 
   const recentImports = useMemo<RecentImportRow[]>(() => {
     if (!activeBrand) {
@@ -241,7 +248,7 @@ export default function ImportPage() {
       <PageHeader
         eyebrow="Integração de dados"
         title="Importação"
-        description="Suba os CSVs da operação e o Atlas consolida por chave natural sem duplicar histórico."
+        description="Suba arquivos, confira a fila e preserve a base sem duplicidade."
       />
 
       <SurfaceCard className="p-0 overflow-hidden">
@@ -318,6 +325,27 @@ export default function ImportPage() {
         />
       </section>
 
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow="Próximo movimento"
+          title={primaryAction}
+          description="A melhor ação agora para manter a base íntegra e pronta para leitura."
+          tone="info"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Cobertura atual"
+          title={`${completedSources}/${sourceChecklist.length} fontes consolidadas`}
+          description="Quanto do checklist padrão já está coberto nesta marca."
+          tone={progressPercent >= 100 ? "positive" : "warning"}
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Modo Meta"
+          title={metaMode}
+          description="O canal Meta continua aceitando contingência por CSV quando necessário."
+          tone="default"
+        />
+      </section>
+
       {activeTab === "upload" && (
         <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
           <SurfaceCard className="p-0 overflow-hidden">
@@ -343,7 +371,7 @@ export default function ImportPage() {
               <div className="mb-4 flex items-center justify-between gap-3">
                 <SectionHeading
                   title="Fila"
-                  description="Arquivos prontos para o disparo."
+                  description="Só o que está pronto para entrar agora."
                 />
                 <button
                   onClick={handleImport}
@@ -401,22 +429,34 @@ export default function ImportPage() {
 
           <SurfaceCard className="flex flex-col gap-4">
             <SectionHeading
-              title="Regras rápidas"
-              description="Aplique os CSVs por janela e preserve o histórico já saneado."
+              title="Guia rápido"
+              description="Regras curtas para importar sem ruído."
             />
-            <div className="space-y-3 text-sm text-on-surface-variant">
-              <p>`Lista de Pedidos` mantém a linha comercial da INK.</p>
-              <p>`Lista de Itens` alimenta peças vendidas e CMV histórico.</p>
-              <p>`Meta Export` continua aceito como contingência quando a loja estiver em API.</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <AnalyticsKpiCard
+                label="Checklist pronto"
+                value={`${completedSources}/${sourceChecklist.length}`}
+                description="Fontes já consolidadas na base ativa."
+                tone={progressPercent >= 100 ? "positive" : "info"}
+              />
+              <AnalyticsKpiCard
+                label="Janela coberta"
+                value={`${formatDate(stats?.firstOrderDate)} - ${formatDate(stats?.lastOrderDate)}`}
+                description="Faixa comercial já reconhecida na marca."
+                tone="default"
+              />
             </div>
-            <div className="mt-auto rounded-2xl border border-outline bg-surface-container-low p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
-                Janela padrão
-              </p>
-              <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-                O importador consolida múltiplos blocos por chave de pedido/ocorrência e mantém saneamentos já salvos.
-              </p>
-            </div>
+            <details className="atlas-disclosure" open={!files.length}>
+              <summary>
+                <span>Abrir regras rápidas</span>
+                <span>3</span>
+              </summary>
+              <div className="mt-4 space-y-3 text-sm text-on-surface-variant">
+                <p>`Lista de Pedidos` mantém a linha comercial principal da INK.</p>
+                <p>`Lista de Itens` alimenta peças vendidas e CMV histórico.</p>
+                <p>`Meta Export` segue como contingência quando a loja opera em API.</p>
+              </div>
+            </details>
           </SurfaceCard>
         </section>
       )}
@@ -513,7 +553,7 @@ export default function ImportPage() {
             <div className="border-b border-outline p-5">
               <SectionHeading
                 title="Últimas importações"
-                description="Leitura por fonte para conferir o que entrou por último na base."
+                description="O que entrou por último na base, sem precisar abrir cada fonte."
               />
             </div>
 

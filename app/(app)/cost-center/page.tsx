@@ -187,6 +187,7 @@ export default function CostCenterPage() {
     () => expenses.reduce((accumulator, expense) => accumulator + expense.amount, 0),
     [expenses],
   );
+  const topCategory = categorySummary[0] ?? null;
 
   const currentMonthTotal = useMemo(() => {
     return expenses
@@ -208,6 +209,12 @@ export default function CostCenterPage() {
       ).size,
     [defaultMonth, expenses],
   );
+  const primaryAction =
+    !expenses.length
+      ? "Criar o primeiro lançamento da marca."
+      : activeMonthEntries === 0
+        ? `Abrir ${formatCompetencyLabel(defaultMonth)} e registrar os lançamentos do mês.`
+        : "Revisar o livro do mês e fechar a competência com menos ruído.";
 
   const resetExpenseForm = () => {
     setExpenseForm({
@@ -448,7 +455,7 @@ export default function CostCenterPage() {
       <PageHeader
         eyebrow="Fluxo financeiro"
         title="Lançamentos DRE"
-        description="Cadastre categorias, lance despesas por competência e revise o histórico mensal da operação."
+        description="Lance despesas, revise a competência e corte ruído no DRE."
         badge={`Loja ativa: ${selectedBrandName}`}
         actions={
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -475,12 +482,37 @@ export default function CostCenterPage() {
         }
       />
 
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow="Próximo movimento"
+          title={primaryAction}
+          description="O melhor corte agora para manter o DRE limpo e operacional."
+          tone="info"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Maior pressão"
+          title={topCategory ? topCategory.categoryName : "Sem categoria dominante"}
+          description={
+            topCategory
+              ? `${currencyFormatter.format(topCategory.total)} distribuídos em ${topCategory.entries} lançamento(s).`
+              : "Sem lançamentos suficientes para apontar uma categoria dominante."
+          }
+          tone={topCategory ? "warning" : "default"}
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Competência ativa"
+          title={`${activeMonthEntries} lançamento(s) em ${formatCompetencyLabel(defaultMonth)}`}
+          description={`${activeMonthCategories} categoria(s) movimentaram o mês ativo.`}
+          tone={activeMonthEntries ? "positive" : "warning"}
+        />
+      </section>
+
       <SurfaceCard>
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <SectionHeading
               title="Escolha o fluxo"
-              description="Separe a gestão das categorias da operação de lançamento. Isso deixa a rotina financeira mais objetiva."
+              description="Separe lançamentos e categorias sem alongar a rotina."
             />
           </div>
           <div className="brandops-tabs">
@@ -510,7 +542,7 @@ export default function CostCenterPage() {
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <SectionHeading
                 title="Operação de lançamentos"
-                description="Separe a leitura consolidada do livro operacional para manter a tela mais objetiva."
+                description="Resumo consolidado ou livro operacional, conforme a tarefa do momento."
               />
               <div className="brandops-subtabs">
                 <button

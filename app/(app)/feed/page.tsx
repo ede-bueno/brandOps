@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ExternalLink, Images, Search } from "lucide-react";
-import { AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
+import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
@@ -128,6 +128,7 @@ export default function FeedPage() {
   const [statusFilter, setStatusFilter] = useState<CatalogStatusFilter>("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [collectionFilter, setCollectionFilter] = useState("all");
+  const primaryAction = report.analysis.nextActions[0] ?? null;
 
   const selectedBrandName =
     activeBrand?.name ??
@@ -243,42 +244,63 @@ export default function FeedPage() {
       <PageHeader
         eyebrow="Catalogo visual"
         title="Feed de Produtos"
-        description="Leitura executiva do catálogo com base no backend e transição pronta para Meta Catalog com fallback manual."
+        description="Veja rápido o que escalar, revisar ou cobrir melhor no catálogo da marca."
         badge={`Fonte atual: ${report.meta.sourceLabel}`}
       />
 
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <SurfaceCard>
-          <p className="text-sm text-on-surface-variant">SKUs no recorte</p>
-          <p className="mt-3 text-3xl font-semibold text-on-surface">
-            {integerFormatter.format(report.summary.totalProducts)}
-          </p>
-        </SurfaceCard>
-        <SurfaceCard>
-          <p className="text-sm text-on-surface-variant">SKUs com venda</p>
-          <p className="mt-3 text-3xl font-semibold text-on-surface">
-            {integerFormatter.format(report.summary.soldProducts)}
-          </p>
-        </SurfaceCard>
-        <SurfaceCard>
-          <p className="text-sm text-on-surface-variant">Peças conciliadas</p>
-          <p className="mt-3 text-3xl font-semibold text-on-surface">
-            {integerFormatter.format(report.summary.totalUnitsSold)}
-          </p>
-        </SurfaceCard>
-        <SurfaceCard>
-          <p className="text-sm text-on-surface-variant">Produtos com galeria</p>
-          <p className="mt-3 text-3xl font-semibold text-on-surface">
-            {integerFormatter.format(report.summary.productsWithGallery)}
-          </p>
-        </SurfaceCard>
+        <AnalyticsKpiCard
+          label="SKUs no recorte"
+          value={integerFormatter.format(report.summary.totalProducts)}
+          description="Produtos ativos na leitura atual."
+          tone="info"
+        />
+        <AnalyticsKpiCard
+          label="SKUs com venda"
+          value={integerFormatter.format(report.summary.soldProducts)}
+          description="Itens que já provaram demanda no período."
+          tone="positive"
+        />
+        <AnalyticsKpiCard
+          label="Peças conciliadas"
+          value={integerFormatter.format(report.summary.totalUnitsSold)}
+          description="Volume vendido já amarrado ao catálogo."
+          tone="default"
+        />
+        <AnalyticsKpiCard
+          label="Com galeria"
+          value={integerFormatter.format(report.summary.productsWithGallery)}
+          description="Produtos com base visual suficiente para distribuição."
+          tone="default"
+        />
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow="Decisão do catálogo"
+          title={primaryAction ?? report.analysis.narrativeTitle}
+          description="O movimento mais útil agora para cobertura, distribuição ou revisão."
+          tone="info"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Maior oportunidade"
+          title={report.analysis.topOpportunity ?? "Sem destaque"}
+          description="Sinal mais promissor para empurrar exposição ou cobertura."
+          tone="positive"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Revisar primeiro"
+          title={report.analysis.topRisk ?? "Sem risco dominante"}
+          description="Gargalo que merece ajuste antes de novas expansões."
+          tone="warning"
+        />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <SurfaceCard>
           <SectionHeading
-            title="Filtro de catálogo"
-            description="Busca, tipo, coleção e status são aplicados no backend para reduzir carga local."
+            title="Filtro rápido"
+            description="Refine a leitura sem espalhar controles pela tela."
           />
           <div className="mt-5 brandops-toolbar-grid lg:grid-cols-2">
             <label className="brandops-field-stack lg:col-span-2">
@@ -324,8 +346,8 @@ export default function FeedPage() {
 
         <SurfaceCard>
           <SectionHeading
-            title={report.analysis.narrativeTitle}
-            description="Leitura executiva compacta para orientar catálogo, distribuição e sync de fonte."
+            title="Radar da fonte"
+            description="Origem ativa e cobertura visual em um bloco curto."
           />
           <div className="mt-5 grid gap-3">
             <AnalyticsKpiCard
@@ -348,27 +370,13 @@ export default function FeedPage() {
                 tone="default"
               />
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <AnalyticsKpiCard
-                label="Maior oportunidade"
-                value={report.analysis.topOpportunity ?? "Sem destaque"}
-                description="Ponto mais promissor do recorte atual."
-                tone="positive"
-              />
-              <AnalyticsKpiCard
-                label="Maior risco"
-                value={report.analysis.topRisk ?? "Sem risco dominante"}
-                description="Ponto que merece revisão primeiro."
-                tone="warning"
-              />
-            </div>
           </div>
         </SurfaceCard>
       </section>
 
       <SurfaceCard>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <SectionHeading title="Exploração do catálogo" description="Visão geral, playbook e grade dividem o módulo sem alongar demais a tela." />
+          <SectionHeading title="Exploração do catálogo" description="Visão geral, playbook e grade em um fluxo curto." />
           <div className="brandops-subtabs">
             <button type="button" className="brandops-subtab" data-active={view === "overview"} onClick={() => setView("overview")}>Visão geral</button>
             <button type="button" className="brandops-subtab" data-active={view === "playbook"} onClick={() => setView("playbook")}>Playbook</button>
@@ -380,21 +388,27 @@ export default function FeedPage() {
       {view === "overview" ? (
       <>
         <SurfaceCard>
-          <SectionHeading title="Próximos passos" description="Ações sugeridas pelo Atlas para evolução do catálogo e da distribuição." />
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
-            {report.analysis.nextActions.length ? (
-              report.analysis.nextActions.map((action) => (
-                <article key={action} className="panel-muted p-4 text-sm leading-6 text-on-surface-variant">{action}</article>
-              ))
-            ) : (
-              <article className="panel-muted p-4 text-sm leading-6 text-on-surface-variant md:col-span-3">Ainda não há ações fortes para o recorte atual.</article>
-            )}
-          </div>
+          <SectionHeading title="Próximos passos" description="Abra só o que pede ação agora." />
+          <details className="atlas-disclosure mt-5" open={!report.analysis.nextActions.length}>
+            <summary>
+              <span>Ações sugeridas pelo Atlas</span>
+              <span>{report.analysis.nextActions.length || 0}</span>
+            </summary>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {report.analysis.nextActions.length ? (
+                report.analysis.nextActions.map((action) => (
+                  <article key={action} className="panel-muted p-4 text-sm leading-6 text-on-surface-variant">{action}</article>
+                ))
+              ) : (
+                <article className="panel-muted p-4 text-sm leading-6 text-on-surface-variant md:col-span-3">Ainda não há ações fortes para o recorte atual.</article>
+              )}
+            </div>
+          </details>
         </SurfaceCard>
 
         <section className="grid gap-6 xl:grid-cols-2">
           <SurfaceCard>
-            <SectionHeading title="Mais vendidos" description="Produtos com venda conciliada no recorte atual." />
+            <SectionHeading title="Mais vendidos" description="Produtos que já merecem mais atenção." />
             <div className="mt-5 space-y-3">
               {report.highlights.topSellers.length ? report.highlights.topSellers.map((product) => (
                 <div key={product.id} className="rounded-2xl border border-outline bg-surface-container-low p-3">
@@ -405,7 +419,7 @@ export default function FeedPage() {
             </div>
           </SurfaceCard>
           <SurfaceCard>
-            <SectionHeading title="Oportunidades de cobertura" description="Itens com pouca galeria visual ou sem venda conciliada." />
+            <SectionHeading title="Oportunidades de cobertura" description="Itens que ainda pedem reforço visual ou distribuição." />
             <div className="mt-5 space-y-3">
               {report.highlights.uncovered.length ? report.highlights.uncovered.map((product) => (
                 <div key={product.id} className="rounded-2xl border border-outline bg-surface-container-low p-3">

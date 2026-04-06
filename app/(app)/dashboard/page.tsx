@@ -97,13 +97,103 @@ export default function DashboardPage() {
   const breakEvenValue =
     metrics.breakEvenDisplay !== null ? currencyFormatter.format(metrics.breakEvenDisplay) : "N/A";
   const breakEvenHelp = metrics.breakEvenReason;
+  const pendingSanitizationCount =
+    (filteredBrand?.media.filter((row) => row.sanitizationStatus === "PENDING").length ?? 0) +
+    (filteredBrand?.paidOrders.filter((order) => order.sanitizationStatus === "PENDING").length ?? 0);
+  const mediaIntegration =
+    activeBrand.integrations.find((integration) => integration.provider === "meta") ?? null;
+  const ga4Integration =
+    activeBrand.integrations.find((integration) => integration.provider === "ga4") ?? null;
+  const diagnostics: Array<{
+    eyebrow: string;
+    title: string;
+    description: string;
+    tone: "default" | "secondary" | "warning" | "info";
+    href: string;
+  }> = [];
+
+  if (metrics.contributionAfterMedia < 0) {
+    diagnostics.push({
+      eyebrow: "Margem",
+      title: "Contribuição depois de mídia virou negativa",
+      description: "Abra a margem histórica e revise campanhas antes de insistir em escala.",
+      tone: "warning",
+      href: "/dashboard/contribution-margin",
+    });
+  }
+
+  if (metrics.netResult < 0) {
+    diagnostics.push({
+      eyebrow: "Resultado",
+      title: "Operação fechando no vermelho",
+      description: "O DRE consolidado deve ser o próximo corte para localizar a principal pressão.",
+      tone: "warning",
+      href: "/dre",
+    });
+  }
+
+  if (pendingSanitizationCount > 0) {
+    diagnostics.push({
+      eyebrow: "Base",
+      title: "Há ruído pendente na leitura",
+      description: `${pendingSanitizationCount} pendência(s) ainda podem distorcer comparação e margem deste período.`,
+      tone: "warning",
+      href: "/sanitization",
+    });
+  }
+
+  if (mediaIntegration?.lastSyncStatus === "error" || ga4Integration?.lastSyncStatus === "error") {
+    diagnostics.push({
+      eyebrow: "Fonte",
+      title: "Integração com erro recente",
+      description: "Antes de decidir, vale validar se o corte atual está completo.",
+      tone: "info",
+      href: "/integrations",
+    });
+  }
+
+  if (metrics.grossRoas > 0 && metrics.grossRoas < 2) {
+    diagnostics.push({
+      eyebrow: "Mídia",
+      title: "Retorno ainda curto para escalar",
+      description: "Revise verba, campanha e criativo antes de expansão.",
+      tone: "info",
+      href: "/media",
+    });
+  }
+
+  if (!diagnostics.length) {
+    diagnostics.push(
+      {
+        eyebrow: "Operação",
+        title: "Sem alerta estrutural no corte atual",
+        description: "A operação está estável o suficiente para aprofundar ganho de eficiência.",
+        tone: "default",
+        href: "/dashboard",
+      },
+      {
+        eyebrow: "Catálogo",
+        title: "Hora de procurar oportunidade de escala",
+        description: "Cruze catálogo, mídia e tráfego para decidir onde empurrar crescimento.",
+        tone: "info",
+        href: "/product-insights",
+      },
+      {
+        eyebrow: "Atlas",
+        title: "Use a Torre para explorar o próximo corte",
+        description: "Abra a casa do Atlas IA para uma leitura mais direcionada.",
+        tone: "secondary",
+        href: "/dashboard#atlas-ai-home",
+      },
+    );
+  }
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Resumo executivo"
         title={activeBrand.name}
-        description="Leitura executiva da operação no recorte atual."
+        description="O que importa agora na operação, sem ruído."
         badge={selectedPeriodLabel}
       />
 
@@ -113,7 +203,7 @@ export default function DashboardPage() {
         <AnalyticsPanel
           eyebrow="Leitura comercial"
           title="Volume e ticket"
-          description="Os números que mostram se a loja está convertendo mais ou só movimentando mais itens."
+          description="Se a loja está convertendo melhor ou só girando mais itens."
         >
           <AnalyticsKpiCard
             label="Pedidos pagos"
@@ -141,7 +231,7 @@ export default function DashboardPage() {
         <AnalyticsPanel
           eyebrow="Resultado"
           title="Receita e margem"
-          description="A parte que diz se o comercial segurou valor ou deixou margem escapar."
+          description="Se o comercial segurou valor ou deixou margem escapar."
         >
           <AnalyticsKpiCard
             label="Faturado"
@@ -172,7 +262,7 @@ export default function DashboardPage() {
         <AnalyticsPanel
           eyebrow="Pressão"
           title="Custo e equilíbrio"
-          description="O que consome a RLD e o que falta para cobrir a operação sem surpresa."
+          description="O que consome a RLD e o que falta para cobrir a operação."
         >
           <AnalyticsKpiCard
             label="Investimento mídia"
@@ -244,7 +334,7 @@ export default function DashboardPage() {
         <SurfaceCard className="p-4">
           <SectionHeading
             title="Resumo do período"
-            description="Compacta a leitura para que o usuário veja o que mudou sem percorrer a página inteira."
+            description="Leitura curta do recorte ativo."
           />
           <div className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
             <AnalyticsKpiCard
@@ -273,11 +363,12 @@ export default function DashboardPage() {
             />
           </div>
           {expenseSummary.length ? (
-            <div className="mt-4 space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                Maiores despesas do período
-              </p>
-              <div className="space-y-2">
+            <details className="atlas-disclosure mt-4">
+              <summary>
+                <span>Abrir maiores despesas do período</span>
+                <span>{expenseSummary.length}</span>
+              </summary>
+              <div className="mt-4 space-y-2">
                 {expenseSummary.map((expense) => (
                   <StackItem
                     key={expense.categoryName}
@@ -287,7 +378,7 @@ export default function DashboardPage() {
                   />
                 ))}
               </div>
-            </div>
+            </details>
           ) : null}
         </SurfaceCard>
       ) : (
@@ -297,138 +388,47 @@ export default function DashboardPage() {
             description="Sinais que merecem ação antes do resto."
           />
           <div className="mt-4 grid gap-3 xl:grid-cols-3">
-            {(() => {
-              const pendingSanitizationCount =
-                (filteredBrand?.media.filter((row) => row.sanitizationStatus === "PENDING").length ?? 0) +
-                (filteredBrand?.paidOrders.filter((order) => order.sanitizationStatus === "PENDING").length ?? 0);
-              const mediaIntegration =
-                activeBrand.integrations.find((integration) => integration.provider === "meta") ?? null;
-              const ga4Integration =
-                activeBrand.integrations.find((integration) => integration.provider === "ga4") ?? null;
-
-              const diagnostics = [];
-
-              if (metrics.contributionAfterMedia < 0) {
-                diagnostics.push({
-                  eyebrow: "Margem",
-                  title: "Contribuição depois de mídia virou negativa",
-                  description: "A rentabilidade do período já está invertida depois do gasto de mídia. Vale abrir a margem histórica e revisar campanhas antes de insistir em escala.",
-                  tone: "warning" as const,
-                  href: "/dashboard/contribution-margin",
-                });
-              }
-
-              if (metrics.netResult < 0) {
-                diagnostics.push({
-                  eyebrow: "Resultado",
-                  title: "Operação fechando no vermelho",
-                  description: "O resultado operacional está negativo neste recorte. O DRE consolidado deve ser o próximo corte para localizar a principal pressão.",
-                  tone: "warning" as const,
-                  href: "/dre",
-                });
-              }
-
-              if (pendingSanitizationCount > 0) {
-                diagnostics.push({
-                  eyebrow: "Base",
-                  title: "Há ruído pendente na leitura",
-                  description: `${pendingSanitizationCount} pendência(s) de saneamento ainda podem distorcer comparação e margem deste período.`,
-                  tone: "warning" as const,
-                  href: "/sanitization",
-                });
-              }
-
-              if (mediaIntegration?.lastSyncStatus === "error" || ga4Integration?.lastSyncStatus === "error") {
-                diagnostics.push({
-                  eyebrow: "Fonte",
-                  title: "Integração com erro recente",
-                  description: "Uma das fontes críticas reportou falha recente. Antes de decidir, vale validar se o corte atual está completo.",
-                  tone: "info" as const,
-                  href: "/integrations",
-                });
-              }
-
-              if (metrics.grossRoas > 0 && metrics.grossRoas < 2) {
-                diagnostics.push({
-                  eyebrow: "Mídia",
-                  title: "Retorno ainda curto para escalar",
-                  description: "O ROAS bruto do período sugere revisão de verba, campanha e criativo antes de expansão.",
-                  tone: "info" as const,
-                  href: "/media",
-                });
-              }
-
-              if (!diagnostics.length) {
-                diagnostics.push(
-                  {
-                    eyebrow: "Operação",
-                    title: "Sem alerta estrutural no corte atual",
-                    description: "A operação está estável o suficiente para aprofundar ganho de eficiência sem incêndio imediato.",
-                    tone: "default" as const,
-                    href: "/dashboard",
-                  },
-                  {
-                    eyebrow: "Catálogo",
-                    title: "Hora de procurar oportunidade de escala",
-                    description: "Com a leitura mais estável, vale cruzar catálogo, mídia e tráfego para decidir onde empurrar crescimento.",
-                    tone: "info" as const,
-                    href: "/product-insights",
-                  },
-                  {
-                    eyebrow: "Atlas",
-                    title: "Use a Torre para explorar o próximo corte",
-                    description: "Abra a casa do Atlas IA para pedir uma leitura mais direcionada do período e das alavancas da marca.",
-                    tone: "secondary" as const,
-                    href: "/dashboard#atlas-ai-home",
-                  },
-                );
-              }
-
-              return diagnostics.slice(0, 3).map((diagnostic) => (
-                <AnalyticsCalloutCard
-                  key={`${diagnostic.eyebrow}-${diagnostic.title}`}
-                  eyebrow={diagnostic.eyebrow}
-                  title={diagnostic.title}
-                  description={diagnostic.description}
-                  tone={diagnostic.tone}
-                  href={diagnostic.href}
-                />
-              ));
-            })()}
+            {diagnostics.slice(0, 3).map((diagnostic) => (
+              <AnalyticsCalloutCard
+                key={`${diagnostic.eyebrow}-${diagnostic.title}`}
+                eyebrow={diagnostic.eyebrow}
+                title={diagnostic.title}
+                description={diagnostic.description}
+                tone={diagnostic.tone}
+                href={diagnostic.href}
+              />
+            ))}
           </div>
-          <div className="mt-4 grid gap-3 xl:grid-cols-3">
-            <div className="atlas-soft-subcard px-4 py-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                Recorte ativo
-              </p>
-              <p className="mt-2 text-sm font-semibold text-on-surface">{selectedPeriodLabel}</p>
-              <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
-                A Torre já está focando só o período em que a decisão precisa acontecer.
-              </p>
+          <details className="atlas-disclosure mt-4">
+            <summary>
+              <span>Abrir contexto do recorte</span>
+              <span>3</span>
+            </summary>
+            <div className="mt-4 grid gap-3 xl:grid-cols-3">
+              <div className="atlas-soft-subcard px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                  Recorte ativo
+                </p>
+                <p className="mt-2 text-sm font-semibold text-on-surface">{selectedPeriodLabel}</p>
+              </div>
+              <div className="atlas-soft-subcard px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                  Resultado operacional
+                </p>
+                <p className="mt-2 text-sm font-semibold text-on-surface">
+                  {currencyFormatter.format(metrics.netResult)}
+                </p>
+              </div>
+              <div className="atlas-soft-subcard px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                  Margem depois da mídia
+                </p>
+                <p className="mt-2 text-sm font-semibold text-on-surface">
+                  {currencyFormatter.format(metrics.contributionAfterMedia)}
+                </p>
+              </div>
             </div>
-            <div className="atlas-soft-subcard px-4 py-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                Resultado operacional
-              </p>
-              <p className="mt-2 text-sm font-semibold text-on-surface">
-                {currencyFormatter.format(metrics.netResult)}
-              </p>
-              <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
-                O Atlas prioriza primeiro onde a operação perdeu sustentação, não só volume.
-              </p>
-            </div>
-            <div className="atlas-soft-subcard px-4 py-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                Margem depois da mídia
-              </p>
-              <p className="mt-2 text-sm font-semibold text-on-surface">
-                {currencyFormatter.format(metrics.contributionAfterMedia)}
-              </p>
-              <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
-                Quando esse bloco vira, a Torre passa a puxar atenção para margem e alocação.
-              </p>
-            </div>
-          </div>
+          </details>
         </SurfaceCard>
       )}
     </div>

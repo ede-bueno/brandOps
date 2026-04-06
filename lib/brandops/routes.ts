@@ -13,6 +13,7 @@ export const APP_ROUTES = {
   sanitization: "/sanitization",
   settings: "/settings",
   settingsGovernance: "/settings#platform-governance",
+  settingsAutomation: "/settings#integration-automation",
   settingsAtlasAi: "/settings#atlas-ai-settings",
   settingsAtlasLearning: "/settings#atlas-learning",
   settingsAtlasContext: "/settings#atlas-context",

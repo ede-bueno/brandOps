@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, BookOpen, ExternalLink } from "lucide-react";
+import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { INTEGRATION_TUTORIALS } from "@/lib/brandops/integration-tutorials";
 
@@ -11,13 +12,58 @@ export default function IntegrationTutorialsPage() {
       <PageHeader
         eyebrow="Integrações"
         title="Tutoriais guiados"
-        description="Passo a passo por provedor para conectar a loja com segurança operacional e validar o resultado dentro do Atlas."
+        description="Escolha o provedor certo e siga um passo a passo curto, direto e validável."
       />
+
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsKpiCard
+          label="Provedores"
+          value={String(tutorials.length)}
+          description="Tutoriais ativos na central."
+          tone="info"
+        />
+        <AnalyticsKpiCard
+          label="Foco"
+          value="Operação"
+          description="Guias escritos para quem conecta e valida a loja."
+          tone="default"
+        />
+        <AnalyticsKpiCard
+          label="Fluxo"
+          value="Passo a passo"
+          description="Configuração, validação e erro comum no mesmo lugar."
+          tone="positive"
+        />
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow="Mais usado"
+          title="Meta Ads"
+          description="Mídia, catálogo e permissões em um único fluxo."
+          href="/integrations/tutorials/meta"
+          tone="info"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Mais sensível"
+          title="GA4"
+          description="Property ID, service account e leitura operacional correta."
+          href="/integrations/tutorials/ga4"
+          tone="default"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Atlas IA"
+          title="Gemini"
+          description="Chave da loja, modelo ativo e validação do Analyst."
+          href="/integrations/tutorials/gemini"
+          tone="default"
+        />
+      </section>
 
       <SurfaceCard>
         <SectionHeading
           title="Escolha a frente que deseja configurar"
-          description="Cada tutorial foi escrito para o operador da loja, com foco em ação, validação e links diretos para os painéis corretos."
+          description="Cada tutorial foi escrito para o operador da loja, com foco em ação e validação."
         />
 
         <div className="mt-5 grid gap-4 xl:grid-cols-3">

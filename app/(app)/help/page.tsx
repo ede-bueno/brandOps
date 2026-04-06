@@ -267,7 +267,7 @@ export default function HelpPage() {
       <PageHeader
         eyebrow="Central de ajuda"
         title="Atlas em operação"
-        description="Resumo curto para orientar cálculo, integração e segurança sem abrir o código."
+        description="Abra rápido o guia certo sem precisar vasculhar o sistema."
       />
 
       <section className="grid gap-3 md:grid-cols-3">
@@ -288,6 +288,30 @@ export default function HelpPage() {
           value="Auditável"
           description="Saneamento, histórico e credenciais ficam consistentes e rastreáveis."
           tone="positive"
+        />
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow="Abrir agora"
+          title="Tutoriais de integração"
+          description="Passo a passo por provedor, com links para os painéis corretos."
+          href={APP_ROUTES.integrationsTutorials}
+          tone="info"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Abrir agora"
+          title="Central estratégica"
+          description="Comportamento do Atlas, learning e governança da marca."
+          href={APP_ROUTES.settings}
+          tone="default"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Abrir agora"
+          title="Área de integrações"
+          description="Conexões, saúde do conector e sincronizações da loja."
+          href={APP_ROUTES.integrations}
+          tone="default"
         />
       </section>
 
@@ -342,10 +366,6 @@ export default function HelpPage() {
                   <h2 className="text-lg font-semibold text-on-surface">
                     Ordem recomendada para configurar uma loja
                   </h2>
-                  <p className="text-sm leading-6 text-on-surface-variant">
-                    O Atlas funciona melhor quando a configuração operacional vem antes da
-                    credencial. Isso evita erro falso de sincronização e facilita o diagnóstico.
-                  </p>
                 </div>
 
                 <ol className="mt-4 grid gap-3 md:grid-cols-2">
@@ -363,26 +383,32 @@ export default function HelpPage() {
                 </ol>
               </section>
 
-              <section className="grid gap-4 xl:grid-cols-3">
-                {providerTutorials.map((provider) => (
-                  <AnalyticsCalloutCard
-                    key={provider.title}
-                    eyebrow={provider.eyebrow}
-                    title={provider.title}
-                    description={
-                      <ul className="space-y-1.5 text-[13px] leading-6 text-on-surface-variant">
-                        {provider.items.map((item) => (
-                          <li key={item} className="flex gap-2">
-                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary/80" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    }
-                    tone="default"
-                  />
-                ))}
-              </section>
+              <details className="atlas-disclosure">
+                <summary>
+                  <span>Abrir passos por provedor</span>
+                  <span>{providerTutorials.length}</span>
+                </summary>
+                <section className="mt-4 grid gap-4 xl:grid-cols-3">
+                  {providerTutorials.map((provider) => (
+                    <AnalyticsCalloutCard
+                      key={provider.title}
+                      eyebrow={provider.eyebrow}
+                      title={provider.title}
+                      description={
+                        <ul className="space-y-1.5 text-[13px] leading-6 text-on-surface-variant">
+                          {provider.items.map((item) => (
+                            <li key={item} className="flex gap-2">
+                              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary/80" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      }
+                      tone="default"
+                    />
+                  ))}
+                </section>
+              </details>
 
               <section className="rounded-3xl border border-outline bg-surface-container-low px-4 py-4 sm:px-5">
                 <div className="space-y-2">

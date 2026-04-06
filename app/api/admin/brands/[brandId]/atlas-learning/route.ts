@@ -4,6 +4,7 @@ import { resolveAtlasAnalystGeminiAccess } from "@/lib/brandops/ai/config";
 import { generateAtlasBusinessLearning } from "@/lib/brandops/ai/learning";
 import {
   completeAtlasBrandLearningRun,
+  listAtlasBrandLearningEvidence,
   failAtlasBrandLearningRun,
   listAtlasBrandLearningFindings,
   getAtlasBrandLearningFeedbackSummary,
@@ -102,6 +103,10 @@ export async function GET(
       snapshot?.id
         ? await listAtlasBrandLearningFindings(context.supabase, snapshot.id)
         : [];
+    const evidences =
+      snapshot?.id
+        ? await listAtlasBrandLearningEvidence(context.supabase, snapshot.id)
+        : [];
     const feedback =
       snapshot?.id
         ? await getAtlasBrandLearningFeedbackSummary(
@@ -116,6 +121,7 @@ export async function GET(
       snapshot,
       previousSnapshot: previousSnapshot ?? null,
       findings,
+      evidences,
       runs,
       feedback,
     });
@@ -218,7 +224,7 @@ export async function POST(
           })
           .eq("id", run.id);
 
-        const snapshotPayload = await generateAtlasBusinessLearning(serviceRequest, brandId, {
+        const learningResult = await generateAtlasBusinessLearning(serviceRequest, brandId, {
           brandLabel: brand?.name ?? brandId,
           apiKey: gemini.apiKey,
           model: gemini.model,
@@ -229,10 +235,15 @@ export async function POST(
           analysisWindowDays: learningWindow.analysisWindowDays,
         });
 
-        const snapshot = await saveAtlasBrandLearningSnapshot(context.supabase, run.id, {
-          ...snapshotPayload,
-          runId: run.id,
-        });
+        const snapshot = await saveAtlasBrandLearningSnapshot(
+          context.supabase,
+          run.id,
+          {
+            ...learningResult.snapshot,
+            runId: run.id,
+          },
+          learningResult.evidences,
+        );
 
         await completeAtlasBrandLearningRun(context.supabase, run.id, {
           summary: snapshot.summary,

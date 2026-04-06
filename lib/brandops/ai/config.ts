@@ -3,10 +3,12 @@ import "server-only";
 import type { AtlasAnalystBehaviorSkill, IntegrationMode } from "@/lib/brandops/types";
 import { getBrandIntegrationSecretMetadata, getBrandIntegrationSecretValue, upsertBrandIntegrationSecret, deleteBrandIntegrationSecret } from "@/lib/brandops/integration-secrets";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { ATLAS_GEMINI_DEFAULT_MODEL as ATLAS_GEMINI_PLATFORM_DEFAULT_MODEL } from "./model-policy";
 
 export type AtlasGeminiCredentialSource = "brand_key";
 
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const DEFAULT_MODEL =
+  process.env.GEMINI_MODEL || ATLAS_GEMINI_PLATFORM_DEFAULT_MODEL;
 const DEFAULT_ANALYSIS_WINDOW_DAYS = 30;
 const DEFAULT_SKILL: AtlasAnalystBehaviorSkill = "executive_operator";
 const DEFAULT_TEMPERATURE = 0.25;

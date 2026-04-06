@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { CheckCircle2, PencilLine, X } from "lucide-react";
-import { AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
+import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { InlineNotice, PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
@@ -110,6 +110,24 @@ export default function CmvPage() {
 
   const selectedType = typeCandidates.find((item) => item.typeKey === editorTypeKey) ?? null;
   const latestCheckpoint = activeBrand?.cmvCheckpoints[0] ?? null;
+  const typesWithRuleCount = useMemo(
+    () =>
+      typeCandidates.filter((candidate) =>
+        activeBrand?.cmvEntries.some(
+          (entry) => entry.matchType === "TYPE" && entry.matchValue === candidate.typeKey,
+        ),
+      ).length,
+    [activeBrand?.cmvEntries, typeCandidates],
+  );
+  const unmatchedProductsCount = soldProducts.filter(
+    (product) => !product.productName || !product.productType,
+  ).length;
+  const primaryAction =
+    typesWithRuleCount < typeCandidates.length
+      ? "Cobrir tipos sem regra antes de revisar o restante da base."
+      : latestCheckpoint
+        ? "Base protegida: aplique novo checkpoint só depois de revisar mudanças."
+        : "Criar o primeiro checkpoint para congelar a vigência atual.";
 
   const typeHistory = useMemo(() => {
     if (!activeBrand || !selectedType) {
@@ -176,7 +194,7 @@ export default function CmvPage() {
       <PageHeader
         eyebrow="CMV histórico"
         title="Gestão de custo por tipo"
-        description="Ajuste a vigência do custo, audite pedidos e consulte a referência oficial da operação."
+        description="Veja rápido o que falta cobrir no custo e aprofunde só quando precisar."
         badge="Vigência preservada"
       />
 
@@ -203,11 +221,36 @@ export default function CmvPage() {
         />
       </section>
 
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow="Próximo ajuste"
+          title={primaryAction}
+          description="A ação mais útil agora para manter o CMV confiável sem retrabalho."
+          tone="info"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Cobertura"
+          title={`${typesWithRuleCount}/${typeCandidates.length} tipos com regra`}
+          description="Tipos já protegidos por vigência registrada."
+          tone={typesWithRuleCount === typeCandidates.length ? "positive" : "warning"}
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Revisar primeiro"
+          title={
+            unmatchedProductsCount
+              ? `${integerFormatter.format(unmatchedProductsCount)} produto(s) sem match`
+              : "Sem produto sem match"
+          }
+          description="Conferência de vínculo antes de confiar na leitura detalhada."
+          tone={unmatchedProductsCount ? "warning" : "positive"}
+        />
+      </section>
+
       <SurfaceCard className="p-0 overflow-hidden">
         <div className="flex flex-col gap-4 border-b border-outline px-5 py-4 xl:flex-row xl:items-end xl:justify-between">
           <SectionHeading
             title="Painel de gestão"
-            description="Acompanhe custo por tipo, auditoria por pedido, referência oficial e base conciliada."
+            description="Tipos, pedidos, referência oficial e base conciliada em um fluxo curto."
           />
           <div className="brandops-subtabs">
             {viewTabs.map((tab) => (
@@ -326,29 +369,17 @@ export default function CmvPage() {
                 <SurfaceCard>
                   <SectionHeading
                     title="Resumo operacional"
-                    description="Leitura rápida da base ativa antes de abrir a tabela detalhada."
+                    description="Leitura rápida antes de abrir a tabela detalhada."
                   />
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <AnalyticsKpiCard
                       label="Tipos com regra"
-                      value={integerFormatter.format(
-                        typeCandidates.filter((candidate) =>
-                          activeBrand.cmvEntries.some(
-                            (entry) =>
-                              entry.matchType === "TYPE" &&
-                              entry.matchValue === candidate.typeKey,
-                          ),
-                        ).length,
-                      )}
+                      value={integerFormatter.format(typesWithRuleCount)}
                       description="Tipos já protegidos por vigência registrada."
                     />
                     <AnalyticsKpiCard
                       label="Sem match"
-                      value={integerFormatter.format(
-                        soldProducts.filter(
-                          (product) => !product.productName || !product.productType,
-                        ).length,
-                      )}
+                      value={integerFormatter.format(unmatchedProductsCount)}
                       description="Produtos que ainda pedem conferência de vínculo."
                       tone="warning"
                     />

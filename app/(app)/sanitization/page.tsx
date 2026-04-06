@@ -162,6 +162,12 @@ export default function SanitizationPage() {
     }),
     [allKnownAnomalies, report.meta.historyCount, report.meta.pendingCount],
   );
+  const dominantTarget =
+    summary.media === 0 && summary.orders === 0
+      ? "Base limpa"
+      : summary.media >= summary.orders
+        ? "Mídia"
+        : "Pedidos";
 
   if (activeBrandId && (!activeBrand || isBrandHydrating || isReportLoading)) {
     return (
@@ -278,11 +284,11 @@ export default function SanitizationPage() {
       <PageHeader
         eyebrow="Decisão operacional"
         title="Saneamento"
-        description="Revise divergências, decida o que entra no cálculo e preserve o histórico completo da marca no banco."
+        description="Decida rápido o que entra no cálculo e preserve o histórico da marca."
         badge="Histórico completo da marca"
       />
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <AnalyticsKpiCard
           label="Pendentes"
           value={String(summary.pending)}
@@ -296,18 +302,39 @@ export default function SanitizationPage() {
           tone="info"
         />
         <AnalyticsKpiCard
-          label="Mídia"
-          value={String(summary.media)}
-          description="Linhas relacionadas a campanhas e investimento."
-          tone="default"
-        />
-        <AnalyticsKpiCard
-          label="Pedidos"
-          value={String(summary.orders)}
-          description="Ocorrências vindas da camada comercial."
-          tone="default"
+          label="Foco atual"
+          value={dominantTarget}
+          description={
+            summary.pending
+              ? "O Atlas destaca primeiro o alvo com mais pressão aberta."
+              : "Sem pendência aberta. A tela vira histórico e auditoria."
+          }
+          tone={summary.pending ? "default" : "positive"}
         />
       </section>
+
+      <details className="atlas-disclosure">
+        <summary className="atlas-disclosure-summary">
+          Distribuição por alvo
+          <span className="atlas-disclosure-chevron">abrir</span>
+        </summary>
+        <div className="atlas-disclosure-body">
+          <section className="grid gap-3 sm:grid-cols-2">
+            <AnalyticsKpiCard
+              label="Mídia"
+              value={String(summary.media)}
+              description="Ocorrências ligadas a campanhas e investimento."
+              tone="default"
+            />
+            <AnalyticsKpiCard
+              label="Pedidos"
+              value={String(summary.orders)}
+              description="Ocorrências vindas da camada comercial."
+              tone="default"
+            />
+          </section>
+        </div>
+      </details>
 
       <SurfaceCard className="p-0 overflow-hidden">
         {feedback ? (
@@ -331,7 +358,7 @@ export default function SanitizationPage() {
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <SectionHeading
               title="Fila operacional"
-              description="Revise a base pendente ou o histórico completo sem sair do contexto da loja."
+              description="Pendências abertas ou histórico completo, sem sair da marca."
             />
             <div className="brandops-subtabs">
               {[

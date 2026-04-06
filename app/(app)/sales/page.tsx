@@ -136,6 +136,7 @@ export default function SalesPage() {
   const hasSales = Boolean(metrics && metrics.paidOrderCount > 0);
   const topProduct = salesDetail.highlights.topProduct;
   const bestDay = salesDetail.highlights.bestDay;
+  const primaryAction = salesDetail.analysis.nextActions[0] ?? null;
 
   const isBrandLoading = useMemo(
     () =>
@@ -197,7 +198,7 @@ export default function SalesPage() {
       <PageHeader
         eyebrow="Leitura comercial"
         title="Vendas"
-        description="Foco na camada comercial da INK: pedidos pagos, itens vendidos, faturado, descontos e mix de produtos."
+        description="Veja rápido o ritmo comercial, o mix e o que ajustar primeiro no período."
         badge={`Período analisado: ${selectedPeriodLabel}`}
         actions={
           <Link href="/help#dashboard" className="brandops-button brandops-button-ghost">
@@ -233,11 +234,32 @@ export default function SalesPage() {
         />
       </section>
 
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow="Decisão do período"
+          title={primaryAction ?? salesDetail.analysis.narrativeTitle ?? "Rever ritmo comercial"}
+          description="O movimento com maior impacto imediato no faturado e no mix."
+          tone="info"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Maior oportunidade"
+          title={salesDetail.analysis.topOpportunity ?? "Sem oportunidade dominante"}
+          description="Produto ou frente com melhor sinal para empurrar distribuição agora."
+          tone="positive"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Revisar primeiro"
+          title={salesDetail.analysis.topRisk ?? "Sem risco principal identificado"}
+          description="Ponto do mix que pede revisão antes de acelerar novas ações."
+          tone="warning"
+        />
+      </section>
+
       <SurfaceCard>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <SectionHeading
             title="Modo comercial"
-            description="Alterne entre resumo do período, ritmo diário e ranking de produtos conforme a decisão que precisa tomar."
+            description="Escolha entre resumo, cadência e ranking sem alongar a leitura."
           />
           <div className="brandops-subtabs">
             <button type="button" className="brandops-subtab" data-active={view === "summary"} onClick={() => setView("summary")}>
@@ -285,8 +307,8 @@ export default function SalesPage() {
 
           <SurfaceCard>
             <SectionHeading
-              title="Ações sobre o mix"
-              description="Os próximos movimentos sugeridos pelo Atlas para proteger receita e abrir espaço no catálogo."
+              title="Radar do mix"
+              description="Só o que ajuda a decidir agora: pressão de desconto, receita por item e próximos cortes."
             />
             <div className="mt-5 grid gap-3 md:grid-cols-2">
               <AnalyticsKpiCard
@@ -301,33 +323,29 @@ export default function SalesPage() {
                 description="Leitura útil para comparar item avulso com mix de catálogo."
                 tone="positive"
               />
-              <AnalyticsKpiCard
-                label="Oportunidade do período"
-                value={salesDetail.analysis.topOpportunity ?? "Sem oportunidade dominante"}
-                description="Produto com melhor sinal para puxar distribuição no período."
-                tone="positive"
-              />
-              <AnalyticsKpiCard
-                label="Item sob revisão"
-                value={salesDetail.analysis.topRisk ?? "Sem risco principal identificado"}
-                description="Item que merece revisão de vitrine, exposição ou permanência no mix."
-                tone="negative"
-              />
             </div>
-            <div className="mt-4">
-              <InlineNotice tone="info">
-                <div className="space-y-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
-                    Próximas ações
-                  </p>
-                  <div className="space-y-1.5 text-sm text-on-surface-variant">
-                    {salesDetail.analysis.nextActions.map((action) => (
-                      <p key={action}>• {action}</p>
-                    ))}
+            <details className="atlas-disclosure mt-4" open={!salesDetail.analysis.nextActions.length}>
+              <summary>
+                <span>Abrir próximos movimentos</span>
+                <span>{salesDetail.analysis.nextActions.length || 0}</span>
+              </summary>
+              <div className="mt-4">
+                <InlineNotice tone="info">
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
+                      Próximas ações
+                    </p>
+                    <div className="space-y-1.5 text-sm text-on-surface-variant">
+                      {salesDetail.analysis.nextActions.length ? (
+                        salesDetail.analysis.nextActions.map((action) => <p key={action}>• {action}</p>)
+                      ) : (
+                        <p>Sem próximos movimentos fortes no recorte atual.</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </InlineNotice>
-            </div>
+                </InlineNotice>
+              </div>
+            </details>
           </SurfaceCard>
         </section>
       ) : null}

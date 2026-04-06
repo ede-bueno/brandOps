@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, CheckCircle2, CircleAlert } from "lucide-react";
+import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { notFound } from "next/navigation";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { getIntegrationTutorial } from "@/lib/brandops/integration-tutorials";
@@ -22,7 +23,7 @@ export default async function IntegrationTutorialProviderPage({
       <PageHeader
         eyebrow={tutorial.eyebrow}
         title={tutorial.title}
-        description={tutorial.summary}
+        description="Siga o caminho curto, valide o resultado e consulte erros comuns só quando precisar."
         actions={
           <div className="flex flex-wrap gap-2">
             <Link href={APP_ROUTES.integrationsTutorials} prefetch={false} className="brandops-button brandops-button-ghost">
@@ -36,10 +37,52 @@ export default async function IntegrationTutorialProviderPage({
         }
       />
 
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsKpiCard
+          label="Passos"
+          value={String(tutorial.steps.length)}
+          description="Etapas principais do guia."
+          tone="info"
+        />
+        <AnalyticsKpiCard
+          label="Validações"
+          value={String(tutorial.validation.length)}
+          description="Checks para confirmar que a integração ficou pronta."
+          tone="positive"
+        />
+        <AnalyticsKpiCard
+          label="Links oficiais"
+          value={String(tutorial.externalLinks.length)}
+          description="Atalhos para o ambiente certo do provedor."
+          tone="default"
+        />
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow="Para quem é"
+          title={tutorial.audience}
+          description="Perfil operacional esperado para executar este fluxo."
+          tone="info"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Abrir agora"
+          title={tutorial.externalLinks[0]?.label ?? "Painel oficial"}
+          description={tutorial.externalLinks[0]?.helper ?? "Abra o ambiente correto do provedor."}
+          tone="default"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Resumo"
+          title={tutorial.summary}
+          description="Visão curta do que este tutorial cobre."
+          tone="default"
+        />
+      </section>
+
       <SurfaceCard>
         <SectionHeading
           title="Visão geral"
-          description="Esse guia foi desenhado para o operador da loja, sem expor detalhes internos da plataforma."
+          description="Pré-requisitos e contexto, sem expor detalhes internos da plataforma."
         />
 
         <div className="mt-5 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
@@ -68,19 +111,19 @@ export default async function IntegrationTutorialProviderPage({
       <SurfaceCard>
         <SectionHeading
           title="Passo a passo"
-          description="Siga a ordem abaixo para reduzir erro de configuração e validar o resultado com menos retrabalho."
+          description="Siga a ordem abaixo para reduzir erro de configuração e validar o resultado."
         />
 
         <div className="mt-5 space-y-4">
           {tutorial.steps.map((step, index) => (
             <article key={step.title} className="atlas-soft-subcard p-4">
-              <div className="flex items-start gap-3">
-                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs font-semibold text-primary">
-                  {index + 1}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-base font-semibold text-on-surface">{step.title}</h2>
-                  <ul className="mt-3 space-y-2 text-sm leading-6 text-on-surface-variant">
+              <details className="atlas-disclosure" open={index === 0}>
+                <summary>
+                  <span>{`${index + 1}. ${step.title}`}</span>
+                  <span>abrir</span>
+                </summary>
+                <div className="mt-4 min-w-0">
+                  <ul className="space-y-2 text-sm leading-6 text-on-surface-variant">
                     {step.items.map((item) => (
                       <li key={item} className="flex gap-2">
                         <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary/80" />
@@ -92,7 +135,7 @@ export default async function IntegrationTutorialProviderPage({
                     <span className="font-semibold">Resultado esperado:</span> {step.outcome}
                   </div>
                 </div>
-              </div>
+              </details>
             </article>
           ))}
         </div>

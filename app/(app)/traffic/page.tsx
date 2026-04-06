@@ -344,6 +344,7 @@ export default function TrafficPage() {
   const trendData = report.dailySeries;
   const playbook = report.playbook;
   const analysis = report.analysis;
+  const primaryAction = analysis.nextActions[0] ?? null;
 
   const isBrandLoading =
     Boolean(activeBrandId) && (isLoading || isReportLoading || !activeBrand);
@@ -406,7 +407,7 @@ export default function TrafficPage() {
         <PageHeader
           eyebrow="Analytics"
           title="Tráfego Digital"
-          description="Leitura executiva do GA4 para entender qualidade de tráfego, força de landing pages e eficiência do funil no período ativo."
+          description="Veja rápido a força do tráfego, do funil e das entradas do período."
           badge={`Período analisado: ${selectedPeriodLabel}`}
           actions={
             <div className="flex flex-wrap items-center justify-end gap-2">
@@ -470,26 +471,61 @@ export default function TrafficPage() {
         />
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-3">
-        <AnalyticsKpiCard
-          label="Sessão → carrinho"
-          value={percentFormatter.format(metrics.sessionToCartRate)}
-          description={signals.sessionToCartRate.description}
-          tone={signalAccent(signals.sessionToCartRate)}
+      <section className="grid gap-3 lg:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow={analysis.narrativeTitle}
+          title="Diagnóstico principal"
+          description={analysis.narrativeBody}
+          footer={report.frictionSignal}
         />
-        <AnalyticsKpiCard
-          label="Carrinho → checkout"
-          value={percentFormatter.format(metrics.checkoutRate)}
-          description={signals.checkoutRate.description}
-          tone={signalAccent(signals.checkoutRate)}
+        <AnalyticsCalloutCard
+          eyebrow="Maior oportunidade"
+          title={analysis.topOpportunity ?? "Sem oportunidade dominante"}
+          description={
+            topSource?.summary
+              ? topSource.summary
+              : "Assim que houver amostra suficiente, o Atlas aponta a entrada mais promissora."
+          }
+          tone="positive"
+          footer={topSource?.label ?? "Sem canal em destaque"}
         />
-        <AnalyticsKpiCard
-          label="Sessão → compra"
-          value={percentFormatter.format(metrics.purchaseRate)}
-          description={signals.purchaseRate.description}
-          tone={signalAccent(signals.purchaseRate)}
+        <AnalyticsCalloutCard
+          eyebrow="Revisar primeiro"
+          title={analysis.topRisk ?? signals.purchaseRate.title}
+          description={primaryAction ?? signals.purchaseRate.description}
+          tone="warning"
+          footer={topCampaign?.label ?? "Sem campanha em alerta"}
         />
       </section>
+
+      <details className="atlas-disclosure">
+        <summary className="atlas-disclosure-summary">
+          Indicadores auxiliares do funil
+          <span className="atlas-disclosure-chevron">abrir</span>
+        </summary>
+        <div className="atlas-disclosure-body">
+          <section className="grid gap-3 sm:grid-cols-3">
+            <AnalyticsKpiCard
+              label="Sessão → carrinho"
+              value={percentFormatter.format(metrics.sessionToCartRate)}
+              description={signals.sessionToCartRate.description}
+              tone={signalAccent(signals.sessionToCartRate)}
+            />
+            <AnalyticsKpiCard
+              label="Carrinho → checkout"
+              value={percentFormatter.format(metrics.checkoutRate)}
+              description={signals.checkoutRate.description}
+              tone={signalAccent(signals.checkoutRate)}
+            />
+            <AnalyticsKpiCard
+              label="Sessão → compra"
+              value={percentFormatter.format(metrics.purchaseRate)}
+              description={signals.purchaseRate.description}
+              tone={signalAccent(signals.purchaseRate)}
+            />
+          </section>
+        </div>
+      </details>
 
       {view === "executive" ? (
         <>
@@ -497,7 +533,7 @@ export default function TrafficPage() {
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <SectionHeading
                 title="Modo executivo"
-                description="Abra a leitura do período, siga as ações sugeridas ou revise os destaques que mais afetam tráfego e intenção."
+                description="Comando, ações e destaques do período."
               />
               <div className="brandops-subtabs">
                 <button type="button" className="brandops-subtab" data-active={executiveSection === "command"} onClick={() => setExecutiveSection("command")}>Comando</button>

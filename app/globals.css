@@ -810,25 +810,6 @@ select:focus-visible {
   gap: 0.75rem;
 }
 
-.brandops-toolbar-panel {
-  border-radius: 16px;
-  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 74%, transparent 26%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-surface-container-low) 96%, transparent 4%),
-      color-mix(in srgb, var(--color-surface-container) 96%, transparent 4%)
-    );
-  padding: 1.05rem;
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-surface) 14%, transparent 86%);
-}
-
-.brandops-toolbar-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
 .brandops-toolbar-grid {
   display: grid;
   gap: 0.9rem;
@@ -1081,14 +1062,15 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
   display: grid;
   gap: 1rem;
   padding: 1rem;
-  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 30%, transparent 70%);
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 38%, transparent 62%);
   border-radius: 16px;
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--color-surface-container-low) 95%, transparent 5%),
-      color-mix(in srgb, var(--color-surface-container) 92%, transparent 8%)
+      color-mix(in srgb, var(--color-surface) 96%, transparent 4%),
+      color-mix(in srgb, var(--color-surface-container-low) 94%, transparent 6%)
     );
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-surface) 14%, transparent 86%);
 }
 
 .brandops-toolbar-panel[data-compact="true"] {
@@ -1148,7 +1130,7 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 0.7rem;
+  gap: 0.75rem;
 }
 
 .brandops-tab-panel {
@@ -1235,6 +1217,168 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
 
 .atlas-soft-memory-card:hover {
   border-color: color-mix(in srgb, var(--color-primary) 14%, transparent 86%);
+}
+
+.atlas-command-deck,
+.atlas-alert-rail,
+.atlas-command-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.atlas-command-deck::before,
+.atlas-alert-rail::before,
+.atlas-command-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 18rem),
+    radial-gradient(circle at bottom left, color-mix(in srgb, var(--color-secondary) 10%, transparent), transparent 16rem);
+}
+
+.atlas-command-hero {
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 36%, transparent 64%);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-surface) 96%, transparent 4%),
+      color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 18px 38px rgba(15, 23, 42, 0.045);
+}
+
+.atlas-command-priority-strip {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 34%, transparent 66%);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-surface) 97%, transparent 3%),
+      color-mix(in srgb, var(--color-primary) 4%, var(--color-surface-container-low))
+    );
+}
+
+.atlas-command-priority-strip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--atlas-page-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--atlas-page-grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(135deg, rgba(0, 0, 0, 0.18), transparent 78%);
+}
+
+.atlas-disclosure {
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 28%, transparent 72%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface) 96%, transparent 4%),
+      color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%)
+    );
+}
+
+.atlas-disclosure-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  cursor: pointer;
+  list-style: none;
+  padding: 0.95rem 1rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-on-surface);
+}
+
+.atlas-disclosure-summary::-webkit-details-marker {
+  display: none;
+}
+
+.atlas-disclosure-chevron {
+  transition: transform 0.16s ease;
+}
+
+.atlas-disclosure[open] .atlas-disclosure-chevron {
+  transform: rotate(180deg);
+}
+
+.atlas-disclosure-body {
+  display: grid;
+  gap: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--atlas-border-soft) 22%, transparent 78%);
+  padding: 0.95rem 1rem 1rem;
+}
+
+.atlas-decision-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 30%, transparent 70%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface) 96%, transparent 4%),
+      color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%)
+    );
+  padding: 0.95rem 1rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.028);
+}
+
+.atlas-decision-card[data-tone="primary"] {
+  border-color: color-mix(in srgb, var(--color-primary) 20%, transparent 80%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-primary-container) 64%, var(--color-surface) 36%),
+      color-mix(in srgb, var(--color-surface-container-low) 94%, transparent 6%)
+    );
+}
+
+.atlas-decision-card[data-tone="negative"] {
+  border-color: color-mix(in srgb, var(--color-error) 18%, transparent 82%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-error-container) 52%, var(--color-surface) 48%),
+      color-mix(in srgb, var(--color-surface-container-low) 94%, transparent 6%)
+    );
+}
+
+.atlas-decision-card[data-tone="positive"] {
+  border-color: color-mix(in srgb, var(--color-secondary) 18%, transparent 82%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-secondary-container) 56%, var(--color-surface) 44%),
+      color-mix(in srgb, var(--color-surface-container-low) 94%, transparent 6%)
+    );
+}
+
+.atlas-decision-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+.atlas-decision-copy {
+  margin-top: 0.45rem;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--color-on-surface);
 }
 
 .atlas-tooltip-card {
@@ -1389,6 +1533,7 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
 .atlas-integration-workspace {
   position: relative;
   overflow: hidden;
+  min-width: 0;
 }
 
 .atlas-integration-shell::before,
@@ -1534,7 +1679,7 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
   border-radius: 24px;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--color-surface) 8%, transparent 92%),
-    0 8px 18px color-mix(in srgb, var(--color-background) 6%, transparent 94%);
+    0 10px 24px color-mix(in srgb, var(--color-background) 4%, transparent 96%);
   backdrop-filter: blur(22px) saturate(120%);
   pointer-events: auto;
 }
@@ -1555,7 +1700,7 @@ html.dark .atlas-sidebar {
 .atlas-sidebar-footer {
   position: relative;
   z-index: 1;
-  background: color-mix(in srgb, var(--color-surface-container-low) 90%, transparent 10%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 84%, transparent 16%);
   border-color: color-mix(in srgb, var(--atlas-border-muted) 72%, transparent 28%);
 }
 
@@ -1566,7 +1711,7 @@ html.dark .atlas-sidebar {
   width: 4px;
   pointer-events: none;
   background: linear-gradient(90deg, color-mix(in srgb, var(--atlas-sidebar-rail) 100%, transparent 0%), transparent);
-  opacity: 0.16;
+  opacity: 0.1;
 }
 
 .atlas-sidebar::after {
@@ -1578,7 +1723,7 @@ html.dark .atlas-sidebar {
   width: 1px;
   pointer-events: none;
   background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--color-outline) 74%, transparent 26%), transparent);
-  opacity: 0.56;
+  opacity: 0.34;
 }
 
 .atlas-sidebar-header {
@@ -1620,6 +1765,18 @@ html.dark .atlas-sidebar {
   position: relative;
   z-index: 2;
   box-shadow: var(--atlas-shell-shadow-soft);
+}
+
+.atlas-sidebar .brandops-navlink {
+  border-color: color-mix(in srgb, var(--color-outline) 6%, transparent 94%);
+}
+
+.atlas-sidebar .brandops-navlink:hover {
+  border-color: color-mix(in srgb, var(--color-outline) 16%, transparent 84%);
+}
+
+.atlas-sidebar .brandops-navlink[data-active="true"] {
+  border-color: color-mix(in srgb, var(--color-primary) 20%, var(--color-outline));
 }
 
 .atlas-orb {
@@ -1827,6 +1984,49 @@ html.dark .atlas-orb-panel-inner {
     linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 5%, transparent 95%), transparent 18%),
     linear-gradient(180deg, transparent, color-mix(in srgb, var(--color-secondary) 5%, transparent 95%));
   mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 85%);
+}
+
+.atlas-settings-room,
+.atlas-integration-room {
+  position: relative;
+}
+
+.atlas-settings-room::before,
+.atlas-integration-room::before {
+  content: "";
+  position: absolute;
+  inset: -1.25rem 0 auto;
+  height: 18rem;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--color-primary) 11%, transparent), transparent 15rem),
+    radial-gradient(circle at top center, color-mix(in srgb, var(--color-secondary) 8%, transparent), transparent 14rem),
+    linear-gradient(90deg, color-mix(in srgb, var(--atlas-page-grid) 90%, transparent 10%) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--atlas-page-grid) 90%, transparent 10%) 1px, transparent 1px);
+  background-size:
+    auto,
+    auto,
+    34px 34px,
+    34px 34px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.16), transparent 88%);
+}
+
+.atlas-settings-hub,
+.atlas-settings-focus {
+  position: relative;
+  overflow: hidden;
+}
+
+.atlas-settings-hub::before,
+.atlas-settings-focus::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-primary) 8%, transparent), transparent 16rem),
+    linear-gradient(135deg, transparent 35%, color-mix(in srgb, var(--atlas-page-grid) 88%, transparent 12%));
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.15), transparent 85%);
 }
 
 .atlas-semantic-positive {

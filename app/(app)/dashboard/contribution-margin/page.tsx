@@ -105,13 +105,25 @@ export default function ContributionMarginPage() {
     viewMode === "historical"
       ? "Resultado líquido histórico após despesas operacionais em toda a série."
       : "Mesmo resultado líquido exibido no recorte atual do DRE e da Torre de Controle.";
+  const primaryAction =
+    report.total.contributionMargin < 0
+      ? "Virar a contribuição antes de expandir mídia ou catálogo."
+      : report.total.netResult < 0
+        ? "Segurar pressão operacional até o resultado voltar para o azul."
+        : momentum.title;
+  const dominantPressure =
+    Math.max(cmvShare, mediaShare, expenseShare) === cmvShare
+      ? "CMV"
+      : Math.max(cmvShare, mediaShare, expenseShare) === mediaShare
+        ? "Mídia"
+        : "Despesas operacionais";
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Torre de Controle"
         title="Margem de contribuição"
-        description="Leitura histórica da capacidade da operação de transformar receita líquida em margem antes das despesas fixas."
+        description="Veja rápido onde a margem ganha ou perde tração e aprofunde só quando precisar."
         badge={viewBadge}
         actions={
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -140,6 +152,32 @@ export default function ContributionMarginPage() {
           </div>
         }
       />
+
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow="Decisão da margem"
+          title={primaryAction}
+          description="O movimento mais útil agora para proteger contribuição e resultado."
+          tone={report.total.contributionMargin >= 0 ? "info" : "warning"}
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Pressão dominante"
+          title={dominantPressure}
+          description="Hoje é o maior peso sobre a receita líquida disponível."
+          tone="warning"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Melhor leitura seguinte"
+          title={report.total.contributionMargin < 0 ? "Abrir DRE consolidado" : "Cruzar com mídia"}
+          description={
+            report.total.contributionMargin < 0
+              ? "Valide mês, despesas e resultado junto da matriz gerencial."
+              : "Entenda se a margem ganhou ou perdeu tração por gasto ou retorno."
+          }
+          href={report.total.contributionMargin < 0 ? "/dre" : "/media"}
+          tone="info"
+        />
+      </section>
 
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         <AnalyticsKpiCard
@@ -178,7 +216,7 @@ export default function ContributionMarginPage() {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <SectionHeading
             title="Exploração da margem"
-            description="Alterne entre radar operacional e linha do tempo mensal para localizar mais rápido onde a margem ganhou ou perdeu tração."
+            description="Radar operacional ou linha do tempo, sem alongar a leitura."
           />
           <div className="brandops-subtabs">
             <button
@@ -206,7 +244,7 @@ export default function ContributionMarginPage() {
           <SurfaceCard>
             <SectionHeading
               title="Evolução mensal"
-              description="A área acompanha a contribuição antes das despesas. A linha azul mostra o resultado líquido depois da pressão operacional."
+              description="Contribuição antes das despesas e resultado final em uma única leitura."
               aside={
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   <span className="status-chip">
@@ -229,7 +267,7 @@ export default function ContributionMarginPage() {
             <SurfaceCard>
               <SectionHeading
                 title={momentum.title}
-                description={momentum.description}
+                description="Leia o momento atual e abra o próximo corte só se precisar."
               />
               <div className="mt-5 space-y-4">
                 <article
@@ -256,10 +294,11 @@ export default function ContributionMarginPage() {
                   </p>
                 </article>
 
-                <article className="atlas-soft-subcard p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                    Pressão sobre a receita líquida
-                  </p>
+                <details className="atlas-disclosure">
+                  <summary>
+                    <span>Abrir pressão sobre a receita líquida</span>
+                    <span>3</span>
+                  </summary>
                   <div className="mt-4 space-y-3 text-sm">
                     <div>
                       <div className="mb-1 flex items-center justify-between gap-3">
@@ -295,14 +334,14 @@ export default function ContributionMarginPage() {
                       </div>
                     </div>
                   </div>
-                </article>
+                </details>
               </div>
             </SurfaceCard>
 
             <SurfaceCard>
               <SectionHeading
                 title="Próximas leituras"
-                description="Abra rápido o ponto do sistema que mais ajuda a explicar ou corrigir a margem."
+                description="Abra só o ponto do sistema que mais ajuda a explicar ou corrigir a margem."
               />
               <div className="mt-5 grid gap-3">
                 <AnalyticsCalloutCard
@@ -335,7 +374,7 @@ export default function ContributionMarginPage() {
           <div className="border-b border-outline/50 p-5">
             <SectionHeading
               title="Linha do tempo mensal"
-              description="Tabela de apoio para localizar exatamente quando a margem ganhou tração ou perdeu fôlego."
+              description="Tabela de apoio para localizar quando a margem ganhou tração ou perdeu fôlego."
               aside={<span className="status-chip">{trendData.length} competências</span>}
             />
           </div>

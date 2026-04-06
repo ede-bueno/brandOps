@@ -212,6 +212,7 @@ export default function MediaPage() {
   const trendData = report.dailySeries;
   const playbook = report.playbook;
   const analysis = report.analysis;
+  const primaryAction = analysis.nextActions[0] ?? null;
 
   const isBrandLoading =
     Boolean(activeBrandId) && (isDatasetLoading || isReportLoading || !activeBrand);
@@ -274,7 +275,7 @@ export default function MediaPage() {
         <PageHeader
           eyebrow="Aquisição"
           title="Performance Mídia"
-          description="Leitura executiva da Meta para decidir onde escalar, segurar ou revisar verba e criativos no período ativo."
+          description="Veja rápido onde escalar, revisar ou segurar verba no período."
           badge={`Período analisado: ${selectedPeriodLabel}`}
           actions={
             <div className="flex flex-wrap items-center justify-end gap-2">
@@ -338,32 +339,74 @@ export default function MediaPage() {
         />
       </section>
 
-      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <AnalyticsKpiCard
-          label="CTR (todos)"
-          value={percentFormatter.format(summary.ctrAll)}
-          description={signals.ctrAll.description}
-          tone={signalAccent(signals.ctrAll)}
+      <section className="grid gap-3 lg:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow={analysis.narrativeTitle}
+          title="Decisão do período"
+          description={analysis.narrativeBody}
+          footer={report.commandRoom.narrative}
         />
-        <AnalyticsKpiCard
-          label="CTR link"
-          value={percentFormatter.format(summary.ctrLink)}
-          description={signals.ctrLink.description}
-          tone={signalAccent(signals.ctrLink)}
+        <AnalyticsCalloutCard
+          eyebrow="Escalar primeiro"
+          title={bestScale ? bestScale.campaignName : "Sem campanha elegível"}
+          description={
+            report.commandRoom.bestScaleSummary ??
+            "Ainda não há sinal forte o bastante para ampliar verba com segurança."
+          }
+          tone="positive"
+          footer={
+            bestScale
+              ? `${bestScale.roas.toFixed(2)}x ROAS · ${percentFormatter.format(bestScale.ctrAll)} CTR`
+              : "Aguardando campanha com sinal consistente."
+          }
         />
-        <AnalyticsKpiCard
-          label="CPC"
-          value={currencyFormatter.format(summary.cpc)}
-          description={signals.cpc.description}
-          tone={signalAccent(signals.cpc)}
-        />
-        <AnalyticsKpiCard
-          label="CPA meta"
-          value={summary.purchases ? currencyFormatter.format(summary.cpa) : "-"}
-          description={signals.cpa.description}
-          tone={signalAccent(signals.cpa)}
+        <AnalyticsCalloutCard
+          eyebrow="Revisar primeiro"
+          title={priorityReview ? priorityReview.campaignName : "Sem alerta crítico"}
+          description={primaryAction ?? report.commandRoom.priorityReviewSummary ?? "Nenhuma revisão dominante agora."}
+          tone="warning"
+          footer={
+            priorityReview
+              ? `${priorityReview.roas.toFixed(2)}x ROAS · ${percentFormatter.format(priorityReview.ctrAll)} CTR`
+              : "Sem campanha crítica no recorte."
+          }
         />
       </section>
+
+      <details className="atlas-disclosure">
+        <summary className="atlas-disclosure-summary">
+          Indicadores auxiliares de mídia
+          <span className="atlas-disclosure-chevron">abrir</span>
+        </summary>
+        <div className="atlas-disclosure-body">
+          <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <AnalyticsKpiCard
+              label="CTR (todos)"
+              value={percentFormatter.format(summary.ctrAll)}
+              description={signals.ctrAll.description}
+              tone={signalAccent(signals.ctrAll)}
+            />
+            <AnalyticsKpiCard
+              label="CTR link"
+              value={percentFormatter.format(summary.ctrLink)}
+              description={signals.ctrLink.description}
+              tone={signalAccent(signals.ctrLink)}
+            />
+            <AnalyticsKpiCard
+              label="CPC"
+              value={currencyFormatter.format(summary.cpc)}
+              description={signals.cpc.description}
+              tone={signalAccent(signals.cpc)}
+            />
+            <AnalyticsKpiCard
+              label="CPA meta"
+              value={summary.purchases ? currencyFormatter.format(summary.cpa) : "-"}
+              description={signals.cpa.description}
+              tone={signalAccent(signals.cpa)}
+            />
+          </section>
+        </div>
+      </details>
 
       {view === "executive" ? (
         <>
@@ -371,7 +414,7 @@ export default function MediaPage() {
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <SectionHeading
                 title="Modo executivo"
-                description="Abra a leitura do período, siga as ações sugeridas ou valide os sinais que mais impactam mídia e retorno."
+                description="Comando, playbook e sinais do período."
               />
               <div className="brandops-subtabs">
                 <button type="button" className="brandops-subtab" data-active={executiveSection === "command"} onClick={() => setExecutiveSection("command")}>Sala de comando</button>

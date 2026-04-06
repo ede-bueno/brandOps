@@ -16,10 +16,8 @@ import {
   createExpenseCategory,
   createBrandIfNeeded,
   deleteBrandExpense,
-  fetchAccessibleBrands,
   fetchBrandDataset,
   fetchFinancialReport,
-  fetchUserProfile,
   importFilesToBrand,
   saveCmvRule,
   setCurrentCmv,
@@ -28,6 +26,7 @@ import {
   updateExpenseCategory as updateExpenseCategoryRecord,
   updateBrandExpense,
 } from "@/lib/brandops/database";
+import { fetchAccessibleBrands, fetchUserProfile } from "@/lib/brandops/workspace";
 import {
   buildPeriodRange,
   filterBrandDatasetByRange,

@@ -311,7 +311,7 @@ export default function AdminStoresPage() {
       <PageHeader
         eyebrow="Superadmin"
         title="Lojas e Convites"
-        description="Gerencie marcas, time e acessos do ecossistema Atlas em uma única área operacional."
+        description="Gerencie marcas, planos e acessos sem depender de telas longas."
         actions={
           <button
             onClick={() => {
@@ -347,6 +347,27 @@ export default function AdminStoresPage() {
           label="Georeferenciadas"
           value={String(brands.filter((brand) => Boolean(brand.address_line)).length)}
           description="Lojas com endereço comercial completo."
+        />
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow="Próximo movimento"
+          title={isCreating ? "Concluir cadastro da nova loja" : selectedBrand ? `Revisar ${selectedBrand.name}` : "Selecionar uma loja"}
+          description="O corte mais útil agora para manter a governança da plataforma em ordem."
+          tone="info"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Plano em foco"
+          title={selectedBrand ? BRAND_PLAN_LABELS[selectedGovernance.planTier] : "Sem loja em foco"}
+          description={selectedBrand ? describeGovernance(selectedGovernance) : "Escolha uma marca para ver plano e capacidades."}
+          tone={selectedBrand?.governance?.featureFlags.atlasAi || selectedGovernance.featureFlags.atlasAi ? "positive" : "default"}
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Acesso"
+          title={selectedBrand ? `${selectedMemberCount} membro(s)` : `${totalMembers} membro(s) no total`}
+          description="Use convites e revisão de time sem sair da área administrativa."
+          tone="default"
         />
       </section>
 

@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { ATLAS_GEMINI_DEFAULT_MODEL } from "./model-policy";
 import type {
   AtlasAnalystExecutionInput,
   AtlasAnalystFeedbackPayload,
@@ -10,6 +11,10 @@ import type {
   AtlasAnalystResponse,
   AtlasBrandLearningFeedbackPayload,
   AtlasBrandLearningFeedbackSummary,
+  AtlasBrandLearningEvidence,
+  AtlasBrandLearningEvidenceDraft,
+  AtlasBrandLearningEvidenceKind,
+  AtlasBrandLearningEvidenceSource,
   AtlasBrandLearningFinding,
   AtlasBrandLearningFindingGroup,
   AtlasBrandLearningFeedbackVote,
@@ -23,7 +28,7 @@ import type {
   AtlasContextEntryType,
 } from "./types";
 
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || ATLAS_GEMINI_DEFAULT_MODEL;
 const CONTEXT_ENTRY_LIMIT = 12;
 
 function asStringArray(value: unknown) {
@@ -107,6 +112,34 @@ function asLearningFindingGroup(value: unknown): AtlasBrandLearningFindingGroup 
     value === "trigger"
     ? value
     : "signal";
+}
+
+function asLearningEvidenceKind(value: unknown): AtlasBrandLearningEvidenceKind {
+  return value === "metric" ||
+    value === "constraint" ||
+    value === "pattern" ||
+    value === "opportunity" ||
+    value === "risk" ||
+    value === "catalog" ||
+    value === "traffic" ||
+    value === "context" ||
+    value === "quality"
+    ? value
+    : "metric";
+}
+
+function asLearningEvidenceSource(value: unknown): AtlasBrandLearningEvidenceSource {
+  return value === "financial" ||
+    value === "media" ||
+    value === "traffic" ||
+    value === "product-insights" ||
+    value === "sales" ||
+    value === "catalog" ||
+    value === "sanitization" ||
+    value === "context" ||
+    value === "learning_frame"
+    ? value
+    : "learning_frame";
 }
 
 function asConfidence(value: unknown): "low" | "medium" | "high" {
@@ -214,6 +247,26 @@ function mapLearningFindingRow(row: Record<string, unknown>): AtlasBrandLearning
   };
 }
 
+function mapLearningEvidenceRow(row: Record<string, unknown>): AtlasBrandLearningEvidence {
+  return {
+    id: String(row.id ?? ""),
+    brandId: String(row.brand_id ?? ""),
+    snapshotId: String(row.snapshot_id ?? ""),
+    runId: typeof row.run_id === "string" ? row.run_id : null,
+    kind: asLearningEvidenceKind(row.evidence_kind),
+    source: asLearningEvidenceSource(row.source_report),
+    title: typeof row.title === "string" ? row.title : "",
+    summary: typeof row.summary === "string" ? row.summary : "",
+    metricLabel: typeof row.metric_label === "string" ? row.metric_label : null,
+    metricValue: asNumberOrNull(row.metric_value),
+    metricDisplay: typeof row.metric_display === "string" ? row.metric_display : null,
+    sourceKey: typeof row.source_key === "string" ? row.source_key : null,
+    payload: asJsonObject(row.payload),
+    position: asNumberOrNull(row.position) ?? 0,
+    createdAt: typeof row.created_at === "string" ? row.created_at : new Date().toISOString(),
+  };
+}
+
 function buildLearningFindingRows(
   snapshotId: string,
   snapshot: Omit<AtlasBrandLearningSnapshot, "id" | "generatedAt">,
@@ -250,6 +303,31 @@ function buildLearningFindingRows(
         position: index,
       })),
   );
+}
+
+function buildLearningEvidenceRows(
+  snapshotId: string,
+  snapshot: Omit<AtlasBrandLearningSnapshot, "id" | "generatedAt">,
+  evidences: AtlasBrandLearningEvidenceDraft[],
+) {
+  return evidences.map((evidence, index) => ({
+    brand_id: snapshot.brandId,
+    snapshot_id: snapshotId,
+    run_id: snapshot.runId ?? null,
+    evidence_kind: evidence.kind,
+    source_report: evidence.source,
+    title: evidence.title.trim(),
+    summary: evidence.summary.trim(),
+    metric_label: evidence.metricLabel?.trim() || null,
+    metric_value:
+      typeof evidence.metricValue === "number" && Number.isFinite(evidence.metricValue)
+        ? evidence.metricValue
+        : null,
+    metric_display: evidence.metricDisplay?.trim() || null,
+    source_key: evidence.sourceKey?.trim() || null,
+    payload: asJsonObject(evidence.payload),
+    position: Number.isFinite(evidence.position) ? evidence.position : index,
+  }));
 }
 
 export async function persistAtlasAnalystRun(
@@ -575,6 +653,7 @@ export async function saveAtlasBrandLearningSnapshot(
   supabase: SupabaseClient,
   runId: string,
   snapshot: Omit<AtlasBrandLearningSnapshot, "id" | "generatedAt">,
+  evidences: AtlasBrandLearningEvidenceDraft[] = [],
 ) {
   const { data, error } = await supabase
     .from("atlas_brand_learning_snapshots")
@@ -634,6 +713,19 @@ export async function saveAtlasBrandLearningSnapshot(
     }
   }
 
+  const evidenceRows = buildLearningEvidenceRows(String(data.id), snapshot, evidences)
+    .filter((evidence) => evidence.title && evidence.summary);
+
+  if (evidenceRows.length) {
+    const { error: evidenceError } = await supabase
+      .from("atlas_brand_learning_evidence_items")
+      .insert(evidenceRows);
+
+    if (evidenceError) {
+      throw evidenceError;
+    }
+  }
+
   return mapLearningSnapshotRow(data as Record<string, unknown>);
 }
 
@@ -654,6 +746,24 @@ export async function listAtlasBrandLearningFindings(
   }
 
   return (data ?? []).map((row) => mapLearningFindingRow(row as Record<string, unknown>));
+}
+
+export async function listAtlasBrandLearningEvidence(
+  supabase: SupabaseClient,
+  snapshotId: string,
+): Promise<AtlasBrandLearningEvidence[]> {
+  const { data, error } = await supabase
+    .from("atlas_brand_learning_evidence_items")
+    .select("*")
+    .eq("snapshot_id", snapshotId)
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((row) => mapLearningEvidenceRow(row as Record<string, unknown>));
 }
 
 export async function listAtlasBrandLearningRuns(

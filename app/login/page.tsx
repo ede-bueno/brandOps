@@ -93,10 +93,13 @@ export default function LoginPage() {
           <h1 className="mt-2 font-headline text-2xl font-semibold tracking-tight text-on-surface">
             Entrar no painel
           </h1>
-          <p className="mt-2 text-sm text-on-surface-variant">{BRANDING.tagline}</p>
-          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-ink-muted">
-            Torre de controle e inteligencia para Print on Demand
-          </p>
+          <p className="mt-2 text-sm text-on-surface-variant">Entre com senha ou link mágico e volte direto para a operação.</p>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
+          <span className="rounded-full border border-outline px-2.5 py-1">Torre</span>
+          <span className="rounded-full border border-outline px-2.5 py-1">Atlas IA</span>
+          <span className="rounded-full border border-outline px-2.5 py-1">Operação POD</span>
         </div>
 
         <div className="mt-6 flex gap-2 rounded-2xl border border-outline bg-surface-container-low p-1">
@@ -194,7 +197,7 @@ export default function LoginPage() {
         <div className="mt-5 rounded-2xl border border-outline bg-background/70 px-4 py-3 text-xs leading-5 text-on-surface-variant">
           <p className="font-semibold text-on-surface">Se a senha falhar</p>
           <p className="mt-1">
-            Tente o modo <span className="font-semibold text-on-surface">Link magico</span>. Ele costuma resolver acesso local sem depender da senha salva no navegador.
+            Tente <span className="font-semibold text-on-surface">Link magico</span>. Ele costuma destravar o acesso mais rápido.
           </p>
         </div>
       </div>

@@ -427,7 +427,7 @@ function NavSection({
               collapsed ? "justify-center rounded-xl px-0 py-0 h-11 w-11 mx-auto" : "gap-3 rounded-xl px-2.5 py-2"
             } ${
               isActive
-                ? "atlas-navlink-active bg-surface-container-highest text-primary font-semibold"
+                ? "atlas-navlink-active bg-surface-container-highest text-primary font-medium"
                 : "border-transparent text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
             }`}
           >
@@ -438,7 +438,7 @@ function NavSection({
             >
               <Icon size={collapsed ? 17 : 16} />
             </span>
-            {!collapsed && <span className="truncate text-[13.5px] font-medium">{item.label}</span>}
+            {!collapsed && <span className="truncate text-[13px] leading-5 font-normal">{item.label}</span>}
           </Link>
         );
       })}
@@ -449,7 +449,7 @@ function NavSection({
 function NavGroupLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
   if (collapsed) return <div className="mx-3 my-2 h-px bg-outline/70" />;
   return (
-    <p className="mb-1.5 mt-4 px-2.5 text-[9px] font-bold uppercase tracking-[0.2em] text-ink-muted first:mt-0">
+    <p className="mb-1.5 mt-4 px-2.5 text-[9.5px] font-semibold uppercase tracking-[0.12em] text-ink-muted/90 first:mt-0">
       {label}
     </p>
   );
@@ -461,6 +461,91 @@ function SidebarSkeleton() {
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="skeleton h-7 w-full rounded-md" />
       ))}
+    </div>
+  );
+}
+
+function ShellAccountMenu({
+  open,
+  compact = false,
+  fullName,
+  email,
+  onToggle,
+  onSignOut,
+}: {
+  open: boolean;
+  compact?: boolean;
+  fullName?: string | null;
+  email?: string | null;
+  onToggle: () => void;
+  onSignOut: () => void;
+}) {
+  return (
+    <div className="relative z-40">
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`atlas-user-trigger inline-flex items-center rounded-2xl border border-outline/60 bg-surface-container-low/75 text-left transition hover:border-primary/20 hover:bg-surface-container ${
+          compact ? "h-10 w-10 justify-center px-0" : "gap-2.5 px-3 py-2"
+        }`}
+        aria-expanded={open}
+        aria-label="Abrir menu da conta"
+      >
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-outline/60 bg-surface text-on-surface-variant">
+          <UserRound size={14} />
+        </span>
+        {!compact ? (
+          <>
+            <span className="min-w-0">
+              <span className="block truncate text-[12px] font-medium text-on-surface">
+                {fullName ?? "Conta Atlas"}
+              </span>
+              <span className="block truncate text-[11px] text-on-surface-variant">
+                {email ?? "Sessão ativa"}
+              </span>
+            </span>
+            <ChevronDown
+              size={14}
+              className={`shrink-0 text-on-surface-variant transition ${open ? "rotate-180" : ""}`}
+            />
+          </>
+        ) : null}
+      </button>
+
+      {open ? (
+        <div
+          className={`atlas-user-menu brandops-panel-soft absolute right-0 top-[calc(100%+0.55rem)] z-40 p-2 ${
+            compact ? "w-[min(88vw,19rem)]" : "w-[18.5rem]"
+          }`}
+        >
+          <div className="rounded-xl bg-surface-container-low px-3 py-2.5">
+            <p className="truncate text-[12px] font-medium text-on-surface">
+              {fullName ?? "Conta Atlas"}
+            </p>
+            <p className="truncate text-[11px] text-on-surface-variant">
+              {email ?? "Sessão ativa"}
+            </p>
+          </div>
+          <div className="mt-2 grid gap-2">
+            <div className="flex items-center justify-between rounded-xl border border-outline/50 bg-surface px-3 py-2">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-on-surface-variant">
+                  Aparência
+                </p>
+                <p className="text-[12px] text-on-surface">Modo claro / escuro</p>
+              </div>
+              <ThemeToggle />
+            </div>
+            <button
+              onClick={onSignOut}
+              className="brandops-button brandops-button-ghost w-full justify-center"
+            >
+              <LogOut size={14} />
+              Sair
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -595,8 +680,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const isSuperAdmin = profile?.role === "SUPER_ADMIN";
   const mobileShellDescription = activeBrandId
-    ? "Navegação, período e marca organizados para operação rápida no celular."
-    : "Escolha uma marca para abrir o workspace operacional no Atlas.";
+    ? "Marca, período e navegação em um fluxo curto."
+    : "Escolha uma marca para abrir o workspace.";
 
   if (isSuperAdmin && !activeBrandId) {
     return (
@@ -607,9 +692,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
              <h1 className="font-headline text-4xl font-semibold tracking-tight text-on-surface lg:text-5xl">
                 Qual operação POD deseja abrir agora?
              </h1>
-             <p className="text-on-surface-variant max-w-2xl mx-auto">
-                Como Superadmin, você tem acesso a todas as marcas do grupo. 
-                Selecione uma marca para abrir a torre de controle, catálogo, mídia e operação específicos.
+             <p className="text-on-surface-variant max-w-xl mx-auto">
+                Escolha a marca e entre direto no workspace certo.
              </p>
           </div>
 
@@ -706,72 +790,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
-          {/* Footer */}
-          <div className="atlas-sidebar-footer relative z-10 shrink-0 border-t border-outline/50 p-2">
-            <button
-              type="button"
-              onClick={() => setIsUserMenuOpen((open) => !open)}
-              className={`atlas-user-trigger flex w-full items-center rounded-xl border border-transparent bg-transparent px-2 py-2 text-left transition hover:border-outline/60 hover:bg-surface-container-low ${
-                isSidebarCollapsed ? "justify-center" : "gap-2.5"
-              }`}
-              aria-expanded={isUserMenuOpen}
-              aria-label="Abrir menu do usuário"
-            >
-              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-outline/60 bg-surface-container text-on-surface-variant">
-                <UserRound size={14} />
-              </span>
-              {!isSidebarCollapsed ? (
-                <>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[12px] font-semibold text-on-surface">
-                      {profile?.fullName ?? "Conta Atlas"}
-                    </span>
-                    <span className="block truncate text-[11px] text-on-surface-variant">
-                      {profile?.email ?? "Sessão ativa"}
-                    </span>
-                  </span>
-                  <ChevronDown
-                    size={14}
-                    className={`shrink-0 text-on-surface-variant transition ${isUserMenuOpen ? "rotate-180" : ""}`}
-                  />
-                </>
-              ) : null}
-            </button>
-
-            {isUserMenuOpen ? (
-              <div
-                className={`atlas-user-menu brandops-panel-soft absolute bottom-full z-40 mb-2 p-2 ${
-                  isSidebarCollapsed ? "left-1/2 w-56 -translate-x-1/2" : "left-2 right-2"
-                }`}
-              >
-                <div className="rounded-xl bg-surface-container-low px-3 py-2.5">
-                  <p className="truncate text-[12px] font-semibold text-on-surface">
-                    {profile?.fullName ?? "Conta Atlas"}
-                  </p>
-                  <p className="truncate text-[11px] text-on-surface-variant">
-                    {profile?.email ?? "Sessão ativa"}
-                  </p>
-                </div>
-                <div className="mt-2 grid gap-2">
-                  <div className="flex items-center justify-between rounded-xl border border-outline/50 bg-surface px-3 py-2">
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
-                        Aparência
-                      </p>
-                      <p className="text-[12px] text-on-surface">Modo claro / escuro</p>
-                    </div>
-                    <ThemeToggle />
-                  </div>
-                  <button
-                    onClick={() => void signOut()}
-                    className="brandops-button brandops-button-ghost w-full justify-center"
-                  >
-                    <LogOut size={14} />
-                    Sair
-                  </button>
-                </div>
-              </div>
-            ) : null}
+          <div className="atlas-sidebar-footer relative z-10 shrink-0 border-t border-outline/50 px-3 py-3">
+            {!isSidebarCollapsed ? (
+              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-ink-muted/90">
+                Navegação de operação
+              </p>
+            ) : (
+              <div className="mx-auto h-1.5 w-1.5 rounded-full bg-primary/35" />
+            )}
           </div>
         </aside>
 
@@ -780,7 +806,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {/* Header */}
           <header className="atlas-command-strip sticky top-0 z-30 shrink-0 border-b border-outline/50 px-3 py-3 sm:mt-3 sm:rounded-2xl sm:border sm:border-outline/50 sm:px-4 lg:mt-4 lg:px-5">
             <div className="flex flex-col gap-3 lg:gap-4">
-              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(240px,320px)] lg:items-center lg:gap-4">
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(240px,320px)_auto] lg:items-center lg:gap-4">
                 <div className="min-w-0 space-y-2">
                   <div className="flex min-w-0 items-center gap-2">
                     <button
@@ -802,7 +828,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <span className="status-chip hidden sm:inline-flex">{selectedPeriodLabel}</span>
                       </div>
                       <p className="mt-1 hidden text-[11px] font-medium uppercase tracking-[0.16em] text-ink-muted sm:block">
-                        Operação, aquisição, catálogo e margem em um único workspace
+                        Operação e leitura em um único workspace
                       </p>
                       <p className="mt-1 text-[12px] text-on-surface-variant sm:hidden">
                         {mobileShellDescription}
@@ -811,7 +837,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </div>
                 </div>
 
-                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-1">
+                <div className="min-w-0">
                   <select
                     value={activeBrandId ?? ""}
                     onChange={(e) => {
@@ -835,12 +861,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       </option>
                     ))}
                   </select>
-                  <div className="flex items-center justify-between gap-2 sm:justify-end lg:hidden">
+                  <div className="mt-2 flex items-center justify-between gap-2 sm:justify-end lg:hidden">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
                       Período ativo
                     </span>
                     <span className="status-chip">{selectedPeriodLabel}</span>
                   </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2">
+                  <ThemeToggle />
+                  <ShellAccountMenu
+                    open={isUserMenuOpen}
+                    compact={isMobileViewport}
+                    fullName={profile?.fullName}
+                    email={profile?.email}
+                    onToggle={() => setIsUserMenuOpen((open) => !open)}
+                    onSignOut={() => void signOut()}
+                  />
                 </div>
               </div>
 
@@ -1048,48 +1086,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               ))}
             </div>
 
-            <div className="atlas-sidebar-footer relative border-t border-outline/50 p-3">
-              <button
-                type="button"
-                onClick={() => setIsUserMenuOpen((open) => !open)}
-                className="atlas-user-trigger flex w-full items-center gap-2.5 rounded-xl border border-transparent bg-transparent px-2 py-2 text-left transition hover:border-outline/60 hover:bg-surface-container-low"
-                aria-expanded={isUserMenuOpen}
-                aria-label="Abrir menu do usuário"
-              >
-                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-outline/60 bg-surface-container text-on-surface-variant">
-                  <UserRound size={14} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[12px] font-semibold text-on-surface">
-                    {profile?.fullName ?? "Conta Atlas"}
-                  </span>
-                  <span className="block truncate text-[11px] text-on-surface-variant">
-                    {profile?.email ?? "Sessão ativa"}
-                  </span>
-                </span>
-                <ChevronDown size={14} className={`shrink-0 text-on-surface-variant transition ${isUserMenuOpen ? "rotate-180" : ""}`} />
-              </button>
-
-              {isUserMenuOpen ? (
-                <div className="atlas-user-menu brandops-panel-soft absolute bottom-full left-3 right-3 z-40 mb-2 p-2">
-                  <div className="flex items-center justify-between rounded-xl border border-outline/50 bg-surface px-3 py-2">
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
-                        Aparência
-                      </p>
-                      <p className="text-[12px] text-on-surface">Modo claro / escuro</p>
-                    </div>
-                    <ThemeToggle />
-                  </div>
-                  <button
-                    onClick={() => void signOut()}
-                    className="brandops-button brandops-button-ghost mt-2 w-full justify-center"
-                  >
-                    <LogOut size={14} />
-                    Sair
-                  </button>
-                </div>
-              ) : null}
+            <div className="atlas-sidebar-footer relative border-t border-outline/50 px-3 py-3">
+              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-ink-muted/90">
+                Menu de operação
+              </p>
             </div>
           </aside>
         </div>

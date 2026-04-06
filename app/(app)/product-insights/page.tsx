@@ -210,6 +210,7 @@ export default function ProductInsightsPage() {
   );
   const heroRow = report.hero.row ?? selectedRow;
   const trendSeries = selectedRow ? report.trendByKey[selectedRow.key] ?? [] : [];
+  const primaryAction = report.analysis.nextActions[0] ?? null;
 
   const isBrandLoading = Boolean(activeBrandId) && (isLoading || isReportLoading || !activeBrand);
 
@@ -247,7 +248,7 @@ export default function ProductInsightsPage() {
       <PageHeader
         eyebrow="Inteligência de produto"
         title="Insights Categorias"
-        description="Leitura decisória das estampas com base em intenção do GA4 e validação operacional da INK. O backend classifica, prioriza e entrega a leitura pronta para decisão."
+        description="Veja rápido quais estampas merecem escala, revisão ou observação."
         badge={`Período analisado: ${selectedPeriodLabel}`}
         actions={
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -287,32 +288,49 @@ export default function ProductInsightsPage() {
         />
       </section>
 
+      <section className="grid gap-3 lg:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow={report.analysis.narrativeTitle || "Leitura do portfólio"}
+          title="Decisão do recorte"
+          description={report.analysis.narrativeBody || "Sem leitura dominante para o período."}
+          footer={primaryAction ?? undefined}
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Maior oportunidade"
+          title={report.analysis.topOpportunity ?? "Sem destaque dominante"}
+          description={heroRow?.recommendedAction ?? "O Atlas ainda não consolidou um movimento dominante de escala."}
+          tone="positive"
+          footer={heroRow?.stampName ?? undefined}
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Maior risco"
+          title={report.analysis.topRisk ?? "Sem risco dominante"}
+          description={heroRow?.decisionSummary ?? "Sem risco crítico consolidado para o recorte atual."}
+          tone="warning"
+          footer={selectedRow?.stampName ?? undefined}
+        />
+      </section>
+
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <SurfaceCard>
-          <SectionHeading title="Pulse do recorte" description="O Atlas resume o estado atual em linguagem curta para acelerar a leitura operacional." />
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <SectionHeading title="Estampa em foco" description="O item que melhor resume a leitura atual do recorte." />
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
             <AnalyticsKpiCard
               label="Foco atual"
               value={heroRow?.stampName ?? "Sem foco"}
               description={heroRow?.decisionSummary ?? "Selecione uma estampa para abrir a leitura detalhada."}
             />
             <AnalyticsKpiCard
-              label="Maior oportunidade"
-              value={report.analysis.topOpportunity ?? "Sem destaque"}
-              description="O backend já trouxe o ponto com maior potencial de ganho no recorte ativo."
-              tone={report.analysis.topOpportunity ? "positive" : "default"}
-            />
-            <AnalyticsKpiCard
-              label="Maior risco"
-              value={report.analysis.topRisk ?? "Sem risco dominante"}
-              description="Sinal principal de perda de força ou de baixa conversão para acompanhar primeiro."
-              tone={report.analysis.topRisk ? "warning" : "default"}
+              label="Próxima ação"
+              value={primaryAction ?? "Sem ação dominante"}
+              description={heroRow?.recommendedAction ?? "O Atlas ainda não consolidou um próximo passo dominante."}
+              tone={primaryAction ? "info" : "default"}
             />
           </div>
         </SurfaceCard>
 
         <SurfaceCard>
-          <SectionHeading title="Filtros operacionais" description="Os filtros rodam no backend e afinam a leitura sem espalhar controles pela tela." />
+          <SectionHeading title="Filtros operacionais" description="Ajuste a leitura sem espalhar controles pela tela." />
           <div className="mt-5 brandops-toolbar-grid lg:grid-cols-2">
           <label className="brandops-field-stack">
             <span className="brandops-field-label">Ação</span>
@@ -349,7 +367,7 @@ export default function ProductInsightsPage() {
         <>
           <SurfaceCard>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <SectionHeading title="Modo executivo" description="Foco principal e momentum divididos em dois blocos curtos." />
+              <SectionHeading title="Modo executivo" description="Foco principal e momentum em dois blocos curtos." />
               <div className="brandops-subtabs">
                 <button type="button" className="brandops-subtab" data-active={executiveSection === "hero"} onClick={() => setExecutiveSection("hero")}>Estampa em foco</button>
                 <button type="button" className="brandops-subtab" data-active={executiveSection === "momentum"} onClick={() => setExecutiveSection("momentum")}>Momentum</button>

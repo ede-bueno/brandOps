@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
@@ -33,6 +33,7 @@ import type {
   IntegrationMode,
   IntegrationProvider,
 } from "@/lib/brandops/types";
+import { ATLAS_GEMINI_DEFAULT_MODEL } from "@/lib/brandops/ai/model-policy";
 import { getIntegrationTutorial } from "@/lib/brandops/integration-tutorials";
 import { APP_ROUTES } from "@/lib/brandops/routes";
 
@@ -69,10 +70,10 @@ const providerLabels: Record<IntegrationProvider, string> = {
 };
 
 const providerDescriptions: Record<IntegrationProvider, string> = {
-  ink: "Base comercial por CSV.",
-  meta: "Mídia paga com fallback manual.",
-  ga4: "Tráfego e eventos da propriedade.",
-  gemini: "Motor de IA analítica por marca.",
+  ink: "CSV comercial da operação.",
+  meta: "Mídia, catálogo e contingência.",
+  ga4: "Tráfego, funil e propriedade.",
+  gemini: "Camada Atlas da marca.",
 };
 
 const providerEyebrows: Record<IntegrationProvider, string> = {
@@ -98,7 +99,7 @@ const emptyIntegrationForm: IntegrationFormState = {
     catalogId: "",
     manualFallback: true,
     syncWindowDays: "30",
-    model: "gemini-2.5-flash",
+    model: ATLAS_GEMINI_DEFAULT_MODEL,
     credentialSource: "brand_key",
     hasApiKey: false,
     apiKeyHint: "",
@@ -111,7 +112,7 @@ const emptyIntegrationForm: IntegrationFormState = {
     catalogId: "",
     manualFallback: true,
     syncWindowDays: "30",
-    model: "gemini-2.5-flash",
+    model: ATLAS_GEMINI_DEFAULT_MODEL,
     credentialSource: "brand_key",
     hasApiKey: false,
     apiKeyHint: "",
@@ -124,7 +125,7 @@ const emptyIntegrationForm: IntegrationFormState = {
     catalogId: "",
     manualFallback: false,
     syncWindowDays: "30",
-    model: "gemini-2.5-flash",
+    model: ATLAS_GEMINI_DEFAULT_MODEL,
     credentialSource: "brand_key",
     hasApiKey: false,
     apiKeyHint: "",
@@ -137,7 +138,7 @@ const emptyIntegrationForm: IntegrationFormState = {
     catalogId: "",
     manualFallback: false,
     syncWindowDays: "30",
-    model: "gemini-2.5-flash",
+    model: ATLAS_GEMINI_DEFAULT_MODEL,
     credentialSource: "brand_key",
     hasApiKey: false,
     apiKeyHint: "",
@@ -157,7 +158,7 @@ function toFormState(integrations: BrandIntegrationConfig[]): IntegrationFormSta
       manualFallback:
         integration.settings.manualFallback ?? integration.provider !== "ga4",
       syncWindowDays: String(integration.settings.syncWindowDays ?? 30),
-      model: integration.settings.model ?? "gemini-2.5-flash",
+      model: integration.settings.model ?? ATLAS_GEMINI_DEFAULT_MODEL,
       credentialSource: "brand_key",
       hasApiKey: Boolean(integration.settings.hasApiKey),
       apiKeyHint: integration.settings.apiKeyHint ?? "",
@@ -393,37 +394,41 @@ export default function IntegrationsPage() {
   const [activeSection, setActiveSection] = useState<"config" | "sync" | "rules">("config");
   const [workspaceSeedBrandId, setWorkspaceSeedBrandId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const providerParam = safeSearchParams.get("provider");
-    const sectionParam = safeSearchParams.get("section");
+  const replaceWorkspaceUrl = useCallback(
+    (
+      nextProvider: IntegrationProvider,
+      nextSection: "config" | "sync" | "rules",
+    ) => {
+      if (!pathname) {
+        return;
+      }
 
-    if (isIntegrationProvider(providerParam) && providerParam !== activeProvider) {
-      setActiveProvider(providerParam);
-    }
+      const currentProvider = safeSearchParams.get("provider");
+      const currentSection = safeSearchParams.get("section");
 
-    if (isIntegrationSection(sectionParam) && sectionParam !== activeSection) {
-      setActiveSection(sectionParam);
-    }
-  }, [activeProvider, activeSection, safeSearchParams]);
+      if (currentProvider === nextProvider && currentSection === nextSection) {
+        return;
+      }
 
-  useEffect(() => {
-    if (!pathname) {
-      return;
-    }
+      const params = new URLSearchParams(safeSearchParams.toString());
+      params.set("provider", nextProvider);
+      params.set("section", nextSection);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, safeSearchParams],
+  );
 
-    const currentProvider = safeSearchParams.get("provider");
-    const currentSection = safeSearchParams.get("section");
-
-    if (currentProvider === activeProvider && currentSection === activeSection) {
-      return;
-    }
-
-    const params = new URLSearchParams(safeSearchParams.toString());
-    params.set("provider", activeProvider);
-    params.set("section", activeSection);
-    const nextUrl = `${pathname}?${params.toString()}`;
-    router.replace(nextUrl, { scroll: false });
-  }, [activeProvider, activeSection, pathname, router, safeSearchParams]);
+  const activateWorkspace = useCallback(
+    (
+      nextProvider: IntegrationProvider,
+      nextSection: "config" | "sync" | "rules",
+    ) => {
+      setActiveProvider(nextProvider);
+      setActiveSection(nextSection);
+      replaceWorkspaceUrl(nextProvider, nextSection);
+    },
+    [replaceWorkspaceUrl],
+  );
 
   useEffect(() => {
     const nextIntegrations = activeBrand?.integrations ?? [];
@@ -512,14 +517,44 @@ export default function IntegrationsPage() {
     const sectionParam = safeSearchParams.get("section");
 
     if (isIntegrationProvider(providerParam) || isIntegrationSection(sectionParam)) {
+      const nextProvider = isIntegrationProvider(providerParam)
+        ? providerParam
+        : suggestedWorkspace.provider;
+      const nextSection = isIntegrationSection(sectionParam)
+        ? sectionParam
+        : suggestedWorkspace.section;
+      setActiveProvider(nextProvider);
+      setActiveSection(nextSection);
       setWorkspaceSeedBrandId(activeBrand.id);
       return;
     }
 
-    setActiveProvider(suggestedWorkspace.provider);
-    setActiveSection(suggestedWorkspace.section);
+    activateWorkspace(suggestedWorkspace.provider, suggestedWorkspace.section);
     setWorkspaceSeedBrandId(activeBrand.id);
-  }, [activeBrand, safeSearchParams, suggestedWorkspace, workspaceSeedBrandId]);
+  }, [activeBrand, activateWorkspace, safeSearchParams, suggestedWorkspace, workspaceSeedBrandId]);
+
+  useEffect(() => {
+    if (!activeBrand || workspaceSeedBrandId !== activeBrand.id) {
+      return;
+    }
+
+    const providerParam = safeSearchParams.get("provider");
+    const sectionParam = safeSearchParams.get("section");
+
+    if (isIntegrationProvider(providerParam) && providerParam !== activeProvider) {
+      setActiveProvider(providerParam);
+    }
+
+    if (isIntegrationSection(sectionParam) && sectionParam !== activeSection) {
+      setActiveSection(sectionParam);
+    }
+  }, [
+    activeBrand,
+    activeProvider,
+    activeSection,
+    safeSearchParams,
+    workspaceSeedBrandId,
+  ]);
 
   if (!activeBrand) {
     return (
@@ -553,33 +588,33 @@ export default function IntegrationsPage() {
   const providerContextCard = {
     ink: {
       title: "Origem comercial manual",
-      body: `A loja ${activeBrand.name} continua usando importação manual da INK, porque a plataforma não oferece API operacional.`,
+      body: `A loja ${activeBrand.name} segue operando a origem comercial por CSV.`,
       cta: null,
     },
     meta: {
       title: "Fallback e contingência",
       body:
         currentState.mode === "api"
-          ? `A ${activeBrand.name} está preparada para operar Meta por API${currentState.manualFallback ? " com contingência manual" : ""}${currentState.catalogId ? " e já possui catálogo vinculado." : "."}`
-          : `A ${activeBrand.name} segue em fluxo manual da Meta, com possibilidade de migração futura para API.`,
+          ? `A ${activeBrand.name} opera Meta por API${currentState.manualFallback ? " com contingência manual" : ""}${currentState.catalogId ? " e catálogo vinculado." : "."}`
+          : `A ${activeBrand.name} segue em fluxo manual da Meta.`,
       cta: null,
     },
     ga4: {
       title: "Propriedade configurada",
       body:
         currentState.propertyId
-          ? `A propriedade ${currentState.propertyId} está associada à marca ${activeBrand.name}.`
-          : `A marca ${activeBrand.name} ainda não possui Property ID informado para o GA4.`,
+          ? `A propriedade ${currentState.propertyId} já está ligada à marca ${activeBrand.name}.`
+          : `A marca ${activeBrand.name} ainda não possui Property ID informado.`,
       cta: currentState.propertyId ? "/traffic" : null,
     },
     gemini: {
-      title: "Especialista analítico da marca",
+      title: "Atlas da marca",
       body:
         !geminiFeatureEnabled
-          ? `O plano atual de ${activeBrand.name} ainda não libera a camada Atlas IA. Libere a capacidade da marca em Acessos antes da configuração técnica.`
+          ? `O plano atual de ${activeBrand.name} ainda não libera a camada Atlas IA.`
           : currentState.mode === "api"
-          ? `O Atlas Analyst está habilitado para ${activeBrand.name} com credencial da própria loja.${currentState.hasApiKey ? ` Chave da loja salva em ${currentState.apiKeyHint}.` : ""} O comportamento analítico fica centralizado em Configurações.`
-          : `O Atlas Analyst da marca ${activeBrand.name} ainda está desabilitado no painel de integrações.`,
+          ? `O Atlas Analyst está habilitado para ${activeBrand.name}.${currentState.hasApiKey ? ` Chave da loja salva em ${currentState.apiKeyHint}.` : ""}`
+          : `O Atlas Analyst da marca ${activeBrand.name} ainda está desabilitado.`,
       cta: !geminiFeatureEnabled
         ? "/admin/stores"
         : currentState.mode === "api"
@@ -590,7 +625,7 @@ export default function IntegrationsPage() {
   const providerNextAction = {
     ink: {
       title: "Próximo movimento",
-      description: "Subir novos CSVs da operação e manter o calendário de importação consistente.",
+      description: "Subir novos CSVs e manter a rotina de importação consistente.",
       tone: "default" as const,
     },
     meta: {
@@ -598,9 +633,9 @@ export default function IntegrationsPage() {
       description:
         currentState.mode === "api"
           ? currentState.hasApiKey
-            ? "Confirmar conta de anúncios, catálogo e rodar sync apenas quando houver mudança operacional relevante."
-            : "Salvar o token da loja para destravar mídia, catálogo e leituras automáticas."
-          : "Decidir quando a operação deve migrar do fluxo manual para API por loja.",
+            ? "Confirmar conta, catálogo e sincronizar só quando a fonte mudar."
+            : "Salvar o token da loja para destravar mídia e catálogo."
+          : "Decidir quando a operação sai do fluxo manual e entra em API.",
       tone:
         currentState.mode === "api" && !currentState.hasApiKey ? ("warning" as const) : ("default" as const),
     },
@@ -609,9 +644,9 @@ export default function IntegrationsPage() {
       description:
         currentState.mode === "api"
           ? currentState.propertyId
-            ? "Validar a propriedade e executar sync quando houver nova leitura de tráfego."
-            : "Preencher o Property ID da loja para destravar a leitura do funil."
-          : "Ativar a conexão por API quando a loja estiver pronta para leitura contínua de tráfego.",
+            ? "Validar a propriedade e sincronizar quando a leitura precisar ser renovada."
+            : "Preencher o Property ID para destravar a leitura do funil."
+          : "Ativar a API quando a loja quiser leitura contínua de tráfego.",
       tone:
         currentState.mode === "api" && !currentState.propertyId ? ("warning" as const) : ("default" as const),
     },
@@ -619,8 +654,8 @@ export default function IntegrationsPage() {
       title: "Próximo movimento",
       description:
         currentState.hasApiKey
-          ? "Manter a chave da loja ativa e ajustar comportamento do Atlas em Configurações."
-          : "Salvar a chave Gemini da loja para habilitar Analyst, aprendizado e respostas sob demanda.",
+          ? "Manter a chave ativa e ajustar o comportamento do Atlas em Configurações."
+          : "Salvar a chave Gemini para habilitar Analyst e aprendizado.",
       tone: currentState.hasApiKey ? ("positive" as const) : ("warning" as const),
     },
   }[activeProvider];
@@ -1406,11 +1441,11 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="atlas-integration-room space-y-6">
       <PageHeader
         eyebrow="Configuração por loja"
         title="Integrações"
-        description="Conecte cada fonte sem espalhar configuração. Escolha o conector, ajuste a origem e opere tudo no mesmo workspace."
+        description="Conecte, valide e opere a fonte certa sem sair do workspace."
         badge={
           <span className="atlas-entity-chip">
             <span className="font-semibold">{activeBrand.name}</span>
@@ -1419,6 +1454,27 @@ export default function IntegrationsPage() {
         }
         actions={renderHeaderActions()}
       />
+
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsKpiCard
+          label="Conector em foco"
+          value={providerLabels[activeProvider]}
+          description={providerDescriptions[activeProvider]}
+          tone="info"
+        />
+        <AnalyticsKpiCard
+          label="Saúde"
+          value={activeHealth.label}
+          description={activeHealth.description}
+          tone={activeHealth.tone}
+        />
+        <AnalyticsKpiCard
+          label="Próximo movimento"
+          value={providerNextAction.title}
+          description={providerNextAction.description}
+          tone={providerNextAction.tone}
+        />
+      </section>
 
       {notice ? (
         <InlineNotice
@@ -1528,11 +1584,11 @@ export default function IntegrationsPage() {
         </InlineNotice>
       ) : null}
 
-      <section className="grid gap-4 xl:grid-cols-[17rem_minmax(0,1fr)]">
-        <SurfaceCard className="atlas-integration-nav p-3.5 xl:sticky xl:top-4 self-start">
+      <section className="grid gap-4 xl:grid-cols-[16rem_minmax(0,1fr)]">
+        <SurfaceCard className="atlas-integration-nav self-start p-3.5 xl:sticky xl:top-4">
           <SectionHeading
             title="Conexões da loja"
-            description="Selecione a frente operacional e entre direto no ponto que pede ação."
+            description="Escolha a frente e vá direto ao ponto."
           />
           <div className="mt-4 space-y-2">
             {providerHealthSummary.map(({ provider, integration, health }) => {
@@ -1542,7 +1598,7 @@ export default function IntegrationsPage() {
                   key={provider}
                   type="button"
                   data-active={activeProvider === provider}
-                  onClick={() => setActiveProvider(provider)}
+                  onClick={() => activateWorkspace(provider, activeSection)}
                   className="atlas-integration-provider-button"
                 >
                   <div className="atlas-integration-provider-head">
@@ -1567,27 +1623,18 @@ export default function IntegrationsPage() {
 
           <div className="mt-4 border-t border-outline/50 pt-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-              Centro rápido
+              Atalhos úteis
             </p>
             <div className="mt-3 space-y-2">
               <Link href={tutorialHref} className="brandops-button brandops-button-ghost w-full justify-between">
                 {tutorialCtaLabel}
                 <ArrowUpRight size={14} />
               </Link>
-              {providerContextCard.cta ? (
-                <Link
-                  href={providerContextCard.cta}
-                  className="brandops-button brandops-button-ghost w-full justify-between"
-                >
-                  Abrir painel relacionado
-                  <ArrowUpRight size={14} />
-                </Link>
-              ) : null}
             </div>
           </div>
         </SurfaceCard>
 
-        <SurfaceCard className="atlas-integration-shell p-4">
+        <SurfaceCard className="atlas-integration-shell min-w-0 p-4">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div className="min-w-0">
               <p className="eyebrow mb-2">{providerEyebrows[activeProvider]}</p>
@@ -1658,7 +1705,7 @@ export default function IntegrationsPage() {
             <AnalyticsKpiCard
               label="Última referência"
               value={formatSyncLabel(current)}
-              description="Último sync conhecido ou estado operacional mais recente deste conector."
+              description="Último sinal útil deste conector."
               tone={
                 current?.lastSyncStatus === "error"
                   ? "warning"
@@ -1674,54 +1721,54 @@ export default function IntegrationsPage() {
               type="button"
               className="brandops-subtab"
               data-active={activeSection === "config"}
-              onClick={() => setActiveSection("config")}
+              onClick={() => activateWorkspace(activeProvider, "config")}
             >
-              Conexão
+              Conectar
             </button>
             <button
               type="button"
               className="brandops-subtab"
               data-active={activeSection === "sync"}
-              onClick={() => setActiveSection("sync")}
+              onClick={() => activateWorkspace(activeProvider, "sync")}
             >
-              Sync
+              Operar
             </button>
             <button
               type="button"
               className="brandops-subtab"
               data-active={activeSection === "rules"}
-              onClick={() => setActiveSection("rules")}
+              onClick={() => activateWorkspace(activeProvider, "rules")}
             >
-              Diretrizes
+              Regras
             </button>
           </div>
         </SurfaceCard>
       </section>
 
-      <section className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_21rem]">
-        <SurfaceCard className="atlas-integration-workspace p-4">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <SurfaceCard className="atlas-integration-workspace min-w-0 p-4">
           <div className="flex flex-col gap-4 border-b border-outline/50 pb-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="eyebrow mb-2">
                 {activeSection === "config"
-                  ? "Conexão"
+                  ? "Conectar"
                   : activeSection === "sync"
-                    ? "Execução"
-                    : "Diretrizes"}
+                    ? "Operar"
+                    : "Regras"}
               </p>
               <h2 className="text-xl font-semibold text-on-surface">
                 {activeSection === "config"
-                  ? "Ajuste técnico da integração"
+                  ? "Ajuste da integração"
                   : activeSection === "sync"
-                    ? "Operação e sincronização"
-                    : "Modelo operacional"}
+                    ? "Sincronização e estado"
+                    : "Como esta frente entra no Atlas"}
               </h2>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-on-surface-variant">
                 {activeSection === "config"
-                  ? "Defina origem, identificadores e credenciais da loja sem sair deste workspace."
+                  ? "Defina origem, identificadores e credenciais."
                   : activeSection === "sync"
-                    ? "Acompanhe o estado da fonte e rode sincronizações sob demanda."
-                    : "Revise as regras desta integração e o encaixe dela no Atlas."}
+                    ? "Veja o estado da fonte e rode sincronizações quando fizer sentido."
+                    : "Revise o papel desta integração e abra ajuda só se precisar."}
               </p>
             </div>
             <span className="atlas-soft-pill">{current?.lastSyncStatus ?? activeHealth.label}</span>
@@ -1758,8 +1805,7 @@ export default function IntegrationsPage() {
                   <>
                     <FormField label="Credencial ativa" className="text-sm">
                       <div className="atlas-soft-subcard px-4 py-3 text-sm leading-6 text-on-surface">
-                        Token da própria loja. O Atlas salva esse segredo criptografado no backend e usa a credencial da
-                        marca atual nas sincronizações.
+                        Token da própria loja. Só esta marca usa essa credencial.
                       </div>
                     </FormField>
                     <FormField label="ID da conta de anúncios" className="text-sm">
@@ -1815,8 +1861,8 @@ export default function IntegrationsPage() {
                         <div className="atlas-soft-subcard px-4 py-3 text-xs leading-5 text-on-surface-variant">
                           <p>
                             {currentState.hasApiKey
-                              ? `Token próprio salvo em ${currentState.apiKeyHint}. Se você preencher o campo acima, o token atual será substituído.`
-                              : "Salve aqui o token próprio da loja. Ele fica criptografado no backend e não volta em texto aberto para a interface."}
+                              ? `Token salvo em ${currentState.apiKeyHint}. Preencha acima para substituir.`
+                              : "Salve aqui o token próprio da loja. O segredo não volta em texto aberto para a interface."}
                           </p>
                         </div>
                       </div>
@@ -1865,8 +1911,7 @@ export default function IntegrationsPage() {
                   <>
                     <FormField label="Credencial ativa" className="text-sm">
                       <div className="atlas-soft-subcard px-4 py-3 text-sm leading-6 text-on-surface">
-                        JSON da própria loja. O Atlas usa a service account vinculada a esta marca para consultar a
-                        propriedade GA4.
+                        JSON da própria loja. Só esta marca usa essa service account.
                       </div>
                     </FormField>
                     <FormField label="Property ID do GA4" className="text-sm">
@@ -1919,8 +1964,8 @@ export default function IntegrationsPage() {
                         <div className="atlas-soft-subcard px-4 py-3 text-xs leading-5 text-on-surface-variant">
                           <p>
                             {currentState.hasApiKey
-                              ? `Credencial própria salva em ${currentState.apiKeyHint}. Se você preencher o campo acima, o JSON atual será substituído.`
-                              : "Salve aqui o JSON da service account da loja. Ele fica criptografado no backend e não retorna em texto aberto para a interface."}
+                              ? `Credencial salva em ${currentState.apiKeyHint}. Preencha acima para substituir.`
+                              : "Salve aqui o JSON da service account da loja. O segredo não retorna em texto aberto para a interface."}
                           </p>
                         </div>
                       </div>
@@ -1932,13 +1977,12 @@ export default function IntegrationsPage() {
                   <>
                     <FormField label="Credencial ativa" className="text-sm">
                       <div className="atlas-soft-subcard px-4 py-3 text-sm leading-6 text-on-surface">
-                        Chave da própria loja. O Atlas Analyst usa a API key salva para esta marca e mantém o segredo
-                        fora da interface.
+                        Chave da própria loja. Só este Atlas usa essa credencial.
                       </div>
                     </FormField>
                     <FormField label="Central estratégica do Atlas" className="text-sm">
                       <div className="atlas-soft-subcard px-4 py-3 text-sm leading-6 text-on-surface">
-                        Modelo, temperatura, skill padrão, janela de análise e guia da marca agora ficam na{" "}
+                        Modelo, skill, janela e guia da marca ficam na{" "}
                         <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="text-secondary hover:underline">
                           Central de Configurações
                         </Link>
@@ -1962,15 +2006,15 @@ export default function IntegrationsPage() {
                         <div className="atlas-soft-subcard px-4 py-3 text-xs leading-5 text-on-surface-variant">
                           {currentState.hasApiKey ? (
                             <p>
-                              Chave própria salva para esta loja em{" "}
+                              Chave salva para esta loja em{" "}
                               <span className="font-semibold text-on-surface">
                                 {currentState.apiKeyHint}
                               </span>
-                              . Se você preencher o campo acima, a chave atual será substituída.
+                              . Preencha acima para substituir.
                             </p>
                           ) : (
                             <p>
-                              A chave digitada aqui é salva criptografada no backend e nunca volta em texto aberto para a interface.
+                              A chave digitada aqui fica protegida no backend e nunca volta em texto aberto para a interface.
                             </p>
                           )}
                         </div>
@@ -2003,7 +2047,7 @@ export default function IntegrationsPage() {
                       <div className="mt-4 border-t border-outline/50 pt-4">
                         <p className="font-medium text-on-surface">Leitura operacional</p>
                         <p className="mt-1 leading-6">
-                          O Gemini não faz sync em lote. Ele só entra em ação quando o operador chama o Atlas, sempre sobre relatórios internos já consolidados.
+                          O Gemini não faz sync em lote. Ele responde quando o operador chama o Atlas sobre dados internos já consolidados.
                         </p>
                       </div>
                     </>
@@ -2064,8 +2108,8 @@ export default function IntegrationsPage() {
                   <p className="font-medium text-on-surface">Executar agora</p>
                   <p className="mt-1 leading-6">
                     {activeProvider === "gemini"
-                      ? "Configuração de comportamento do agente fica em Configurações. Aqui você só garante que a chave da loja está pronta para uso."
-                      : "Rode sync sob demanda quando a fonte externa mudar ou quando precisar atualizar a leitura desta marca."}
+                      ? "O comportamento do agente fica em Configurações. Aqui você só garante que a chave da loja está pronta."
+                      : "Rode sync quando a fonte externa mudar ou quando a leitura da marca precisar ser atualizada."}
                   </p>
                   <div className="brandops-toolbar-actions pt-4">
                     {activeProvider === "meta" ? (
@@ -2142,7 +2186,7 @@ export default function IntegrationsPage() {
                   </div>
                   {activeProvider === "gemini" ? (
                     <p className="mt-4 text-[11px] leading-5 text-on-surface-variant">
-                      Modelo, temperatura, skill e janela padrão ficam na Central Estratégica.
+                      Modelo, skill e janela padrão ficam na Central Estratégica.
                     </p>
                   ) : null}
                 </div>
@@ -2153,13 +2197,8 @@ export default function IntegrationsPage() {
               <div className="brandops-toolbar-panel text-sm text-on-surface-variant">
                 <p className="font-medium text-on-surface">{providerContextCard.title}</p>
                 <p className="leading-6">{providerContextCard.body}</p>
-                {providerContextCard.cta || providerTutorial ? (
+                {providerTutorial ? (
                   <div className="flex flex-wrap gap-2">
-                    {providerContextCard.cta ? (
-                      <Link href={providerContextCard.cta} className="brandops-button brandops-button-ghost">
-                        Abrir painel relacionado
-                      </Link>
-                    ) : null}
                     {providerTutorial ? (
                       <Link href={providerTutorial.route} className="brandops-button brandops-button-ghost">
                         {tutorialCtaLabel}
@@ -2172,10 +2211,10 @@ export default function IntegrationsPage() {
           </div>
         </SurfaceCard>
 
-        <SurfaceCard className="p-4">
+        <SurfaceCard className="self-start p-4 xl:sticky xl:top-4">
           <SectionHeading
             title="Radar lateral"
-            description="Leitura compacta para orientar a próxima ação sem abrir mais blocos."
+            description="Só o que ajuda a decidir o próximo passo."
           />
           <div className="mt-5 grid gap-3">
             <StackItem
@@ -2210,13 +2249,8 @@ export default function IntegrationsPage() {
                 tone="default"
               />
             ) : null}
-            {providerContextCard.cta || providerTutorial ? (
+            {providerTutorial ? (
               <div className="flex flex-wrap gap-2 pt-1">
-                {providerContextCard.cta ? (
-                  <Link href={providerContextCard.cta} className="brandops-button brandops-button-ghost">
-                    Abrir painel relacionado
-                  </Link>
-                ) : null}
                 {providerTutorial ? (
                   <Link href={providerTutorial.route} className="brandops-button brandops-button-ghost">
                     {tutorialCtaLabel}

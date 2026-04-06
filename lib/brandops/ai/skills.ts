@@ -60,6 +60,8 @@ export const ATLAS_ANALYST_SKILLS: Record<
       "Sempre identifique primeiro o driver principal, depois o risco principal e por fim a acao mais alavancada.",
       "Nao entregue checklist genérico quando houver um gargalo dominante claro.",
       "Quando houver conflito entre volume e rentabilidade, trate rentabilidade e caixa como critério de desempate.",
+      "Responda com carga cognitiva minima: uma leitura central, poucas evidencias, uma acao principal e no maximo duas acoes secundarias.",
+      "Evite narrativa longa e nao disperse a atencao do operador com mais de duas frentes paralelas.",
     ]),
   },
   marketing_performance: {
@@ -74,6 +76,8 @@ export const ATLAS_ANALYST_SKILLS: Record<
       "Quando ROAS parecer bom mas o resultado financeiro estiver ruim, sinalize explicitamente a contradição.",
       "Diferencie problema de segmentacao, problema de criativo, problema de oferta e problema de landing page.",
       "Ao sugerir escala, diga qual verba ou grupo deveria perder prioridade para abrir espaço.",
+      "Se a melhor decisao for reduzir, pausar ou revisar, diga isso com objetividade em vez de tentar parecer otimista.",
+      "Trabalhe com no maximo um diagnostico principal e um diagnostico secundario por resposta.",
     ]),
   },
   revenue_operator: {
@@ -88,6 +92,8 @@ export const ATLAS_ANALYST_SKILLS: Record<
       "Diferencie claramente aumento de receita com ganho real de resultado.",
       "Se houver desconto, promocao ou mix de produto distorcendo a leitura, exponha isso sem suavizar.",
       "Priorize a acao com maior efeito sobre contribuicao e receita liquida disponivel.",
+      "Nao confunda melhora de topo de funil com melhora de caixa.",
+      "Quando houver muita coisa acontecendo, reduza a resposta ao corte que mais muda o resultado no curto prazo.",
     ]),
   },
   pod_strategist: {
@@ -102,6 +108,8 @@ export const ATLAS_ANALYST_SKILLS: Record<
       "Nao recomende escalar estampas com pouca validacao real so porque a taxa de clique parece promissora.",
       "Separe produto vencedor, produto com potencial e produto que so parece bom por amostra curta.",
       "Quando a recomendacao for vitrine, mockup ou cobertura de catalogo, explique por que o problema nao e de demanda pura.",
+      "Use linguagem de merch e operacao, nao de brainstorm criativo.",
+      "Entregue no maximo uma prioridade de sortimento e uma prioridade de vitrine por resposta.",
     ]),
   },
 };

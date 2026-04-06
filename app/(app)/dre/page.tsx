@@ -86,13 +86,30 @@ export default function DrePage() {
   const breakEvenValue =
     report.total.breakEvenDisplay !== null ? currencyFormatter.format(report.total.breakEvenDisplay) : "N/A";
   const breakEvenHelp = report.total.breakEvenReason;
+  const primaryAction =
+    report.total.netResult < 0
+      ? "Resultado no vermelho: cortar pressão em mídia, CMV ou despesas fixas."
+      : report.total.contributionMargin < 0
+        ? "Virar a contribuição antes de ampliar gasto operacional."
+        : topExpense
+          ? `Revisar ${topExpense.categoryName} para preservar margem.`
+          : "Operação equilibrada: manter disciplina de margem.";
+  const pressureCardTitle = topExpense
+    ? `${topExpense.categoryName} pressiona o resultado`
+    : "Sem grupo dominante de despesa";
+  const nextDiveTitle =
+    report.total.contributionMargin < 0 ? "Abrir detalhe da margem" : "Conferir a matriz mensal";
+  const nextDiveDescription =
+    report.total.contributionMargin < 0
+      ? "Cruze contribuição, mídia e CMV antes de expandir qualquer frente."
+      : "Use a grade mensal para validar o comportamento por competência.";
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Relatório gerencial"
         title="DRE"
-        description="Leitura mês a mês do faturado exportado pela INK, descontos, CMV histórico, mídia, despesas e resultado final da operação."
+        description="Veja rápido onde a margem abre ou fecha e mergulhe na matriz só quando precisar."
         badge={viewMode === "historical" ? "Histórico completo" : `Período: ${selectedPeriodLabel}`}
         actions={
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -124,11 +141,38 @@ export default function DrePage() {
         }
       />
 
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow="Decisão do período"
+          title={primaryAction}
+          description="O corte mais útil agora para proteger caixa e margem."
+          tone={report.total.netResult >= 0 ? "info" : "warning"}
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Pressão dominante"
+          title={pressureCardTitle}
+          description={
+            topExpense
+              ? `${currencyFormatter.format(topExpense.total)} no recorte atual.`
+              : "Nenhuma categoria isolada concentrou pressão relevante."
+          }
+          tone={topExpense ? "warning" : "default"}
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Próximo mergulho"
+          title={nextDiveTitle}
+          description={nextDiveDescription}
+          href={report.total.contributionMargin < 0 ? "/dashboard/contribution-margin" : undefined}
+          actionLabel="Abrir"
+          tone="info"
+        />
+      </section>
+
       <section className="grid gap-4 xl:grid-cols-3">
         <AnalyticsPanel
           eyebrow="Entrada comercial"
           title="Receita e base"
-          description="Os números que mostram o tamanho da operação antes da pressão de custo."
+          description="O tamanho da operação antes da pressão de custo."
         >
           <AnalyticsKpiCard
             label="Faturado"
@@ -153,7 +197,7 @@ export default function DrePage() {
         <AnalyticsPanel
           eyebrow="Pressão direta"
           title="Custos que comem margem"
-          description="O que mais consome o caixa operacional antes do fechamento do resultado."
+          description="O que mais consome o caixa antes do resultado final."
         >
           <AnalyticsKpiCard
             label="CMV"
@@ -182,7 +226,7 @@ export default function DrePage() {
         <AnalyticsPanel
           eyebrow="Controle"
           title="Margem e equilíbrio"
-          description="O que sobra depois da pressão e o que falta para a operação se pagar."
+          description="O que sobra e o que falta para a operação se pagar."
           footer={
             <Link
               href="/dashboard/contribution-margin"
@@ -219,7 +263,7 @@ export default function DrePage() {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <SectionHeading
             title="Exploração do DRE"
-            description="Use as abas para alternar entre leitura executiva e matriz mensal sem alongar a navegação."
+            description="Alterne entre resumo executivo e matriz mensal."
           />
           <div className="brandops-subtabs">
             <button
@@ -247,7 +291,7 @@ export default function DrePage() {
           <SurfaceCard>
             <SectionHeading
               title="Tendência da margem"
-              description="Margem de contribuição e resultado líquido mês a mês para localizar ganho de eficiência ou compressão da operação."
+              description="Margem de contribuição e resultado mês a mês, sem ruído."
               aside={
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   <EntityChip text={viewMode === "historical" ? "Base histórica completa" : "Base do filtro atual"} />
@@ -263,7 +307,7 @@ export default function DrePage() {
           <SurfaceCard>
             <SectionHeading
               title="Drivers do DRE"
-              description="Pressões que mais puxam o resultado para baixo no período."
+              description="Pressões que mais puxam o resultado para baixo."
             />
             <div className="mt-5 grid gap-3">
               <AnalyticsKpiCard
@@ -305,8 +349,8 @@ export default function DrePage() {
               title="DRE mensal"
               description={
                 viewMode === "historical"
-                  ? "A matriz histórica completa permanece como a leitura principal do DRE para auditar mês a mês toda a operação."
-                  : "A matriz abaixo usa faturado da INK como entrada comercial e cruza descontos, CMV, mídia e despesas por competência."
+                  ? "A matriz histórica completa continua sendo a auditoria principal do DRE."
+                  : "A matriz cruza faturado, descontos, CMV, mídia e despesas por competência."
               }
             />
           </div>
@@ -477,7 +521,7 @@ export default function DrePage() {
           <div className="border-b border-outline p-5">
             <SectionHeading
               title="Composição das despesas"
-              description="Participação das categorias lançadas que mais pressionam o resultado."
+              description="Categorias que mais pressionam o resultado."
             />
           </div>
           <div className="p-5">
@@ -540,7 +584,7 @@ export default function DrePage() {
         <SurfaceCard>
           <SectionHeading
             title="Navegação do DRE"
-            description="Atalhos para tratar rapidamente o que mais afeta o relatório."
+            description="Atalhos para tratar o que mais afeta o relatório."
           />
           <div className="mt-5 grid gap-3">
             <AnalyticsCalloutCard

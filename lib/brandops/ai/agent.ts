@@ -5,6 +5,7 @@ import {
   FunctionCallingConfigMode,
   GoogleGenAI,
 } from "@google/genai";
+import { ATLAS_GEMINI_DEFAULT_MODEL } from "./model-policy";
 import { ATLAS_ANALYST_SKILLS, resolveAtlasAnalystSkill } from "./skills";
 import {
   ATLAS_ANALYST_FUNCTION_DECLARATIONS,
@@ -24,7 +25,8 @@ import type {
   AtlasContextEntry,
 } from "./types";
 
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const DEFAULT_MODEL =
+  process.env.GEMINI_MODEL || ATLAS_GEMINI_DEFAULT_MODEL;
 const MAX_TOOL_ROUNDS = 4;
 
 export const ATLAS_ANALYST_DEFAULT_MODEL = DEFAULT_MODEL;
