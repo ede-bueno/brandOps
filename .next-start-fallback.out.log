@@ -1,0 +1,37 @@
+
+> brandops@0.1.0 start
+> node scripts/start-standalone.js --hostname 127.0.0.1 --port 3016
+
+[brandops] saída standalone indisponível. Iniciando em modo next dev.
+   ▲ Next.js 15.1.12
+   - Local:        http://127.0.0.1:3016
+   - Network:      http://127.0.0.1:3016
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1731ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 1213ms (749 modules)
+ GET /login 200 in 1550ms
+ GET /login 200 in 32ms
+ ✓ Compiled in 1176ms (366 modules)
+ ✓ Compiled in 450ms (366 modules)
+ ✓ Compiled in 393ms (366 modules)
+ ✓ Compiled in 466ms (366 modules)
+ ✓ Compiled in 403ms (366 modules)
+ ✓ Compiled in 499ms (366 modules)
+ ✓ Compiled in 388ms (366 modules)
+ ✓ Compiled in 403ms (366 modules)
+ ✓ Compiled in 388ms (366 modules)
+ ✓ Compiled in 321ms (366 modules)
+ ✓ Compiled in 900ms (366 modules)
+ ✓ Compiled in 550ms (366 modules)
+ ✓ Compiled in 571ms (366 modules)
+ ✓ Compiled in 854ms (366 modules)
+ ✓ Compiled in 537ms (366 modules)
+ ✓ Compiled in 478ms (366 modules)
+ ✓ Compiled in 415ms (366 modules)
+ ✓ Compiled in 480ms (366 modules)
+ ✓ Compiled in 455ms (366 modules)
+ ✓ Compiled in 469ms (366 modules)
+ ✓ Compiled in 419ms (366 modules)

@@ -1,0 +1,30 @@
+
+> brandops@0.1.0 dev
+> node scripts/run-next-dev.js --port 3011 --hostname 127.0.0.1
+
+   ▲ Next.js 15.1.12
+   - Local:        http://127.0.0.1:3011
+   - Network:      http://127.0.0.1:3011
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 2.2s
+ ○ Compiling /login ...
+ ✓ Compiled /login in 2.2s (763 modules)
+ GET /login 200 in 2691ms
+ GET /login 200 in 32ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 709ms (767 modules)
+ GET /_next/static/css/app/login/page.css 404 in 866ms
+ ✓ Compiled in 355ms (367 modules)
+ ✓ Compiled in 385ms (367 modules)
+ ✓ Compiled in 326ms (367 modules)
+ ✓ Compiled in 331ms (367 modules)
+ ✓ Compiled in 292ms (367 modules)
+ ✓ Compiled in 356ms (367 modules)
+ ✓ Compiled in 406ms (367 modules)
+ ✓ Compiled in 351ms (367 modules)
+ ✓ Compiled in 470ms (367 modules)
+ ✓ Compiled in 446ms (367 modules)
+ ✓ Compiled in 425ms (367 modules)
+[?25h
