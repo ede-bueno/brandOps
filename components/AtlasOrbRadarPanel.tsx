@@ -528,7 +528,7 @@ export function AtlasOrbRadarPanel({
   const shortcutPreview = radarShortcuts.slice(0, 2);
 
   return (
-    <div className="space-y-4">
+    <div className="atlas-component-stack">
       <div className="atlas-soft-section px-3 py-3">
         <div className="flex items-start justify-between gap-3">
           <div>

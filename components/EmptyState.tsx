@@ -24,14 +24,15 @@ export function EmptyState({
   const DefaultIcon = variant === "error" ? AlertTriangle : Inbox;
 
   return (
-    <div className="brandops-panel px-7 py-9 text-center">
-      <div className={`mx-auto flex h-12 w-12 items-center justify-center rounded-xl ${iconBg}`}>
+    <div className="brandops-panel atlas-empty-state px-6 py-7 text-left sm:px-7 sm:py-8">
+      <div className={`flex h-11 w-11 items-center justify-center rounded-lg ${iconBg}`}>
         {icon ?? <DefaultIcon size={22} />}
       </div>
-      <h3 className="mt-4 font-headline text-lg font-semibold tracking-[-0.02em] text-on-surface">
+      <p className="eyebrow mt-5">Sem leitura disponível</p>
+      <h3 className="mt-2 font-headline text-lg font-semibold tracking-[-0.02em] text-on-surface">
         {title}
       </h3>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-on-surface-variant">
+      <p className="mt-2 max-w-xl text-sm leading-6 text-on-surface-variant">
         {description}
       </p>
       <Link

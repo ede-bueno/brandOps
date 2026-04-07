@@ -25,11 +25,11 @@ import {
   EntityChip,
   InlineNotice,
   ModeEntryCard,
-  ModeTabs,
   PageHeader,
   SectionHeading,
   StackItem,
   SurfaceCard,
+  WorkspaceTabs,
 } from "@/components/ui-shell";
 import { fetchProductInsightsReport } from "@/lib/brandops/database";
 import { currencyFormatter, formatCompactDate, integerFormatter, percentFormatter } from "@/lib/brandops/format";
@@ -101,7 +101,7 @@ function classificationLabel(value: ProductInsightClassification) {
 
 function DetailTable({ rows }: { rows: ProductInsightRow[] }) {
   return (
-    <div className="brandops-table-container">
+    <div className="brandops-table-container atlas-table-shell">
       <table className="brandops-table-compact min-w-[1120px] w-full">
         <thead>
           <tr>
@@ -119,9 +119,9 @@ function DetailTable({ rows }: { rows: ProductInsightRow[] }) {
           {rows.map((row) => (
             <tr key={row.key}>
               <td className="max-w-[280px]">
-                <div className="space-y-1">
+                <div className="atlas-component-stack-compact">
                   <p className="truncate font-semibold text-on-surface">{row.stampName}</p>
-                  <p className="truncate text-xs text-on-surface-variant">{row.decisionSummary}</p>
+                  <p className="truncate text-[11px] leading-5 text-on-surface-variant">{row.decisionSummary}</p>
                 </div>
               </td>
               <td>{row.productType}</td>
@@ -254,14 +254,13 @@ export function ProductInsightsWorkspace({
 
   if (isBrandLoading) {
     return (
-      <div className="space-y-6">
+      <div className="atlas-page-stack">
         <PageHeader
           eyebrow="Inteligência de produto"
           title="Insights Categorias"
           description={`Carregando os sinais de produto da loja ${selectedBrandName}.`}
-          badge={`Período analisado: ${selectedPeriodLabel}`}
         />
-        <div className="space-y-6 animate-pulse">
+        <div className="atlas-page-stack animate-pulse">
           <div className="grid gap-4 md:grid-cols-4">{[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-xl bg-surface-container" />)}</div>
           <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]"><div className="h-[340px] rounded-2xl bg-surface-container" /><div className="h-[340px] rounded-2xl bg-surface-container" /></div>
         </div>
@@ -282,38 +281,53 @@ export function ProductInsightsWorkspace({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="atlas-page-stack-compact">
       <PageHeader
-        eyebrow={pageMode === "home" ? "Inteligência de produto" : "Produtos e insights"}
-        title={pageTitle}
-        description={pageDescription}
-        badge={selectedPeriodLabel}
+        eyebrow={pageMode === "home" ? "Inteligência de produto" : "Produtos"}
+        title={pageMode === "home" ? "Console de produto" : pageTitle}
+        description={
+          pageMode === "home"
+            ? "Estampas, intenção e venda real no recorte atual."
+            : pageDescription
+        }
         actions={
-          <ModeTabs
-            items={[
-              { label: "Home", href: APP_ROUTES.productInsights, active: pageMode === "home" },
-              {
-                label: "Executivo",
-                href: APP_ROUTES.productInsightsExecutive,
-                active: pageMode === "executive",
-              },
-              {
-                label: "Radar",
-                href: APP_ROUTES.productInsightsRadar,
-                active: pageMode === "radar",
-              },
-              {
-                label: "Detalhe",
-                href: APP_ROUTES.productInsightsDetail,
-                active: pageMode === "detail",
-              },
-            ]}
-          />
+          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+            <WorkspaceTabs
+              items={[
+                {
+                  key: "product-home",
+                  label: "Home",
+                  href: APP_ROUTES.productInsights,
+                  active: pageMode === "home",
+                },
+                {
+                  key: "product-executive",
+                  label: "Executivo",
+                  href: APP_ROUTES.productInsightsExecutive,
+                  active: pageMode === "executive",
+                },
+                {
+                  key: "product-radar",
+                  label: "Radar",
+                  href: APP_ROUTES.productInsightsRadar,
+                  active: pageMode === "radar",
+                },
+                {
+                  key: "product-detail",
+                  label: "Detalhe",
+                  href: APP_ROUTES.productInsightsDetail,
+                  active: pageMode === "detail",
+                },
+              ]}
+            />
+            <span className="atlas-inline-metric">{selectedBrandName}</span>
+            <span className="atlas-inline-metric">{selectedPeriodLabel}</span>
+          </div>
         }
       />
 
       {pageMode === "home" ? (
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="atlas-kpi-grid xl:grid-cols-4">
           <AnalyticsKpiCard
             label="Estampas ativas"
             value={integerFormatter.format(report.overview.totalRows)}
@@ -343,19 +357,48 @@ export function ProductInsightsWorkspace({
 
       {pageMode === "home" ? (
         <>
-          <section className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
-            <AnalyticsCalloutCard
-              eyebrow={report.analysis.narrativeTitle || "Leitura do recorte"}
-              title={report.analysis.topOpportunity ?? "O portfólio pede uma decisão comercial curta"}
-              description={report.analysis.narrativeBody || "Sem leitura dominante para o período."}
-              footer={primaryAction ?? undefined}
-            />
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.34fr)_minmax(19rem,0.66fr)]">
             <SurfaceCard>
               <SectionHeading
-                title="Escolha a leitura"
-                description="A home resume; o aprofundamento mora em páginas próprias."
+                title="Leitura prioritária"
+                description="O que o portfólio pede primeiro antes de abrir radar ou tabela."
+                aside={<span className="atlas-inline-metric">{report.rows.length} estampas</span>}
               />
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <div className="mt-5 grid gap-4">
+                <AnalyticsCalloutCard
+                  eyebrow={report.analysis.narrativeTitle || "Leitura do recorte"}
+                  title={report.analysis.topOpportunity ?? "O portfólio pede uma decisão comercial curta"}
+                  description={report.analysis.narrativeBody || "Sem leitura dominante para o período."}
+                  footer={primaryAction ?? undefined}
+                />
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <StackItem
+                    tone="positive"
+                    title={report.analysis.topOpportunity ?? "Sem destaque dominante"}
+                    description={
+                      heroRow?.recommendedAction ??
+                      "O Atlas ainda não consolidou um movimento dominante de escala."
+                    }
+                    aside={heroRow?.stampName ?? "Sem item dominante"}
+                  />
+                  <StackItem
+                    tone="warning"
+                    title={report.analysis.topRisk ?? "Sem risco dominante"}
+                    description={
+                      heroRow?.decisionSummary ??
+                      "Sem risco crítico consolidado para o recorte atual."
+                    }
+                    aside={heroRow?.stampName ?? "Sem item dominante"}
+                  />
+                </div>
+              </div>
+            </SurfaceCard>
+            <SurfaceCard>
+              <SectionHeading
+                title="Trilhas de análise"
+                description="Cada trilha aprofunda uma pergunta operacional diferente."
+              />
+              <div className="mt-5 grid gap-3">
                 <ModeEntryCard
                   eyebrow="Visão executiva"
                   title="Foco e decisão"
@@ -378,7 +421,7 @@ export function ProductInsightsWorkspace({
             </SurfaceCard>
           </section>
 
-          <section className="grid gap-4 xl:grid-cols-3">
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(18rem,0.7fr)]">
             <AnalyticsCalloutCard
               eyebrow="Estampa em foco"
               title={heroRow?.stampName ?? "Sem foco dominante"}
@@ -388,44 +431,47 @@ export function ProductInsightsWorkspace({
               }
               footer={primaryAction ?? heroRow?.recommendedAction ?? undefined}
             />
-            <AnalyticsCalloutCard
-              eyebrow="Maior oportunidade"
-              title={report.analysis.topOpportunity ?? "Sem destaque dominante"}
-              description={
-                heroRow?.recommendedAction ??
-                "O Atlas ainda não consolidou um movimento dominante de escala."
-              }
-              tone="positive"
-              footer={heroRow?.stampName ?? undefined}
-            />
-            <AnalyticsCalloutCard
-              eyebrow="Maior risco"
-              title={report.analysis.topRisk ?? "Sem risco dominante"}
-              description={
-                heroRow?.decisionSummary ??
-                "Sem risco crítico consolidado para o recorte atual."
-              }
-              tone="warning"
-              footer={heroRow?.stampName ?? undefined}
-            />
+            <SurfaceCard>
+              <SectionHeading
+                title="Risco e direção"
+                description="Uma leitura única para decidir ajuste de vitrine, mídia ou manutenção."
+              />
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                <StackItem
+                  tone="warning"
+                  title={report.analysis.topRisk ?? "Sem risco dominante"}
+                  description={
+                    heroRow?.decisionSummary ??
+                    "Sem risco crítico consolidado para o recorte atual."
+                  }
+                  aside={heroRow?.stampName ?? "Sem item dominante"}
+                />
+                <StackItem
+                  tone="info"
+                  title="Próxima ação"
+                  description={primaryAction ?? heroRow?.recommendedAction ?? "Sem ação dominante para o recorte."}
+                  aside={heroRow?.decisionTitle ?? "Observação"}
+                />
+              </div>
+            </SurfaceCard>
           </section>
         </>
       ) : null}
 
       {view === "executive" ? (
         <>
-          <section className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.34fr)_minmax(18rem,0.66fr)]">
             <SurfaceCard>
               <SectionHeading title="Estampa em foco" description="Leitura principal da estampa que resume o recorte." />
               {heroRow ? (
-                <div className="mt-5 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-                  <div className="space-y-4">
+                <div className="mt-5 grid gap-4 lg:grid-cols-[1.12fr_0.88fr]">
+                  <div className="atlas-component-stack">
                     <div className="flex flex-wrap gap-2">
                       <EntityChip text={heroRow.decisionTitle} />
                       <EntityChip text={classificationLabel(heroRow.classification)} />
                       <EntityChip text={heroRow.productType} />
                     </div>
-                    <div className="space-y-2">
+                    <div className="atlas-component-stack-tight">
                       <h2 className="font-headline text-2xl font-semibold tracking-tight text-on-surface">{heroRow.stampName}</h2>
                       <p className="text-sm leading-6 text-on-surface-variant">{report.hero.description || heroRow.decisionSummary}</p>
                     </div>
@@ -455,9 +501,9 @@ export function ProductInsightsWorkspace({
                     </InlineNotice>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="atlas-component-stack-compact">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">Motivos do backend</p>
-                    <div className="space-y-2">
+                    <div className="atlas-component-stack-tight">
                       {(report.hero.bullets.length ? report.hero.bullets : heroRow.rationale).map((item) => (
                         <StackItem key={item} title={item} />
                       ))}
@@ -486,11 +532,11 @@ export function ProductInsightsWorkspace({
             </SurfaceCard>
           </section>
 
-          <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+          <section className="grid gap-5">
             <SurfaceCard>
               <SectionHeading title={report.analysis.narrativeTitle || "Leitura do portfólio"} description={report.analysis.narrativeBody || "Síntese curta do recorte atual."} />
               {report.analysis.nextActions.length ? (
-                <div className="mt-5 space-y-3">
+                <div className="mt-5 atlas-component-stack-tight">
                   {report.analysis.nextActions.map((item) => (
                     <InlineNotice key={item} tone="info" className="text-sm text-on-surface-variant">
                       {item}
@@ -499,10 +545,12 @@ export function ProductInsightsWorkspace({
                 </div>
               ) : null}
             </SurfaceCard>
+          </section>
 
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.16fr)_minmax(18rem,0.84fr)]">
             <SurfaceCard>
               <SectionHeading title="Ganhando destaque" description="Estampas com aceleração recente em views e intenção." />
-              <div className="mt-5 space-y-3">
+              <div className="mt-5 atlas-component-stack-tight">
                 {report.momentum.gaining.length ? report.momentum.gaining.map((row) => (
                   <AnalyticsCalloutCard
                     key={row.key}
@@ -520,7 +568,7 @@ export function ProductInsightsWorkspace({
 
             <SurfaceCard>
               <SectionHeading title="Perdendo força" description="Itens com desaceleração recente e que pedem atenção." />
-              <div className="mt-5 space-y-3">
+                <div className="mt-5 atlas-component-stack-tight">
                 {report.momentum.losing.length ? report.momentum.losing.map((row) => (
                   <AnalyticsCalloutCard
                     key={row.key}
@@ -540,10 +588,10 @@ export function ProductInsightsWorkspace({
       ) : null}
 
       {view === "radar" ? (
-          <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-            <SurfaceCard>
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.56fr)_minmax(18rem,0.52fr)]">
+          <SurfaceCard>
             <SectionHeading title="Matriz views x taxa de carrinho" description="Distribuição visual das estampas para localizar escala, teste ou revisão." />
-            <div className="mt-5 h-[360px] min-w-0">
+            <div className="mt-5 h-[360px] min-w-0 xl:h-[420px]">
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={300}>
                 <ScatterChart margin={{ top: 8, right: 12, left: 0, bottom: 12 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" />
@@ -568,25 +616,25 @@ export function ProductInsightsWorkspace({
 
           <SurfaceCard>
             <SectionHeading title="Classificações" description="Resumo das classes principais para orientar merchandising, catálogo e mídia." />
-              <div className="mt-5 grid gap-3">
-                {report.classifications.map((group) => (
-                  <AnalyticsCalloutCard
-                    key={group.classification}
-                    eyebrow={group.label}
-                    title={`${group.count} estampas no recorte atual`}
-                    description={group.bullets[0] ?? "Sem leitura adicional para este grupo."}
-                    footer={group.bullets.slice(1).join(" • ") || undefined}
-                    tone={group.classification === "validated" ? "positive" : group.classification === "opportunity" ? "info" : "warning"}
-                  />
-                ))}
-              </div>
-            </SurfaceCard>
+            <div className="mt-5 grid gap-3">
+              {report.classifications.map((group) => (
+                <AnalyticsCalloutCard
+                  key={group.classification}
+                  eyebrow={group.label}
+                  title={`${group.count} estampas no recorte atual`}
+                  description={group.bullets[0] ?? "Sem leitura adicional para este grupo."}
+                  footer={group.bullets.slice(1).join(" • ") || undefined}
+                  tone={group.classification === "validated" ? "positive" : group.classification === "opportunity" ? "info" : "warning"}
+                />
+              ))}
+            </div>
+          </SurfaceCard>
         </section>
       ) : null}
 
       {view === "detail" ? (
         <>
-          <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.32fr)_minmax(18rem,0.68fr)]">
             <SurfaceCard>
               <SectionHeading title="Linha do tempo da estampa" description="Views e taxa de carrinho para ler aceleração e perda de força." />
               {selectedRow ? (
@@ -623,25 +671,25 @@ export function ProductInsightsWorkspace({
             <SurfaceCard>
               <SectionHeading title="Radar de estampas" description="Lista compacta do recorte atual para auditoria e decisão." />
               <div className="mt-5 max-h-[420px] overflow-auto">
-                <div className="space-y-2">
+                <div className="atlas-component-stack-tight">
                   {report.rows.map((row) => (
                     <button
                       key={row.key}
                       type="button"
                       onClick={() => setSelectedKey(row.key)}
-                      className={`flex w-full items-center justify-between gap-4 rounded-2xl border px-4 py-3 text-left transition ${
+                      className={`flex w-full items-center justify-between gap-4 border px-4 py-3 text-left transition ${
                         row.key === selectedRow?.key
-                          ? "border-primary/45 bg-primary/5"
-                          : "border-outline bg-surface-container-low hover:border-primary/25 hover:bg-surface"
+                          ? "atlas-list-row border-primary/45 bg-primary/5"
+                          : "atlas-list-row border-outline bg-surface-container-low hover:border-primary/25 hover:bg-surface"
                       }`}
                     >
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-on-surface">{row.stampName}</p>
-                        <p className="mt-1 truncate text-xs text-on-surface-variant">{row.decisionSummary}</p>
+                        <p className="mt-1 truncate text-[11px] leading-5 text-on-surface-variant">{row.decisionSummary}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold text-on-surface">{integerFormatter.format(row.views)}</p>
-                        <p className="text-xs text-on-surface-variant">{percentFormatter.format(row.addToCartRate)}</p>
+                        <p className="text-[11px] text-on-surface-variant">{percentFormatter.format(row.addToCartRate)}</p>
                       </div>
                     </button>
                   ))}
@@ -694,3 +742,4 @@ export function ProductInsightsWorkspace({
 export default function ProductInsightsPage() {
   return <ProductInsightsWorkspace />;
 }
+

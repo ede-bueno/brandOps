@@ -8,7 +8,7 @@ export default function IntegrationTutorialsPage() {
   const tutorials = Object.values(INTEGRATION_TUTORIALS);
 
   return (
-    <div className="space-y-6">
+    <div className="atlas-page-stack">
       <PageHeader
         eyebrow="Integrações"
         title="Tutoriais guiados"
@@ -68,7 +68,7 @@ export default function IntegrationTutorialsPage() {
 
         <div className="mt-5 grid gap-4 xl:grid-cols-3">
           {tutorials.map((tutorial) => (
-            <article key={tutorial.provider} className="atlas-soft-subcard flex h-full flex-col p-4">
+            <article key={tutorial.provider} className="atlas-soft-subcard flex h-full flex-col">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
                 {tutorial.eyebrow}
               </p>

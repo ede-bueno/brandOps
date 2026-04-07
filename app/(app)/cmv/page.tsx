@@ -149,7 +149,7 @@ export default function CmvPage() {
 
   if (isLoading || !activeBrand) {
     return (
-      <div className="space-y-6 animate-pulse">
+      <div className="atlas-page-stack animate-pulse">
         <div className="h-24 rounded-3xl bg-surface-container" />
         <div className="grid gap-4 md:grid-cols-3">
           {[...Array(3)].map((_, i) => (
@@ -163,7 +163,7 @@ export default function CmvPage() {
 
   if (isBrandHydrating && !activeBrand.cmvEntries.length && !activeBrand.cmvCheckpoints.length) {
     return (
-      <div className="space-y-6 animate-pulse">
+      <div className="atlas-page-stack animate-pulse">
         <div className="h-24 rounded-3xl bg-surface-container" />
         <div className="grid gap-4 md:grid-cols-3">
           {[...Array(3)].map((_, i) => (
@@ -190,12 +190,20 @@ export default function CmvPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="atlas-page-stack-compact">
       <PageHeader
         eyebrow="CMV histórico"
         title="Gestão de custo por tipo"
         description="Veja rápido o que falta cobrir no custo e aprofunde só quando precisar."
-        badge="Vigência preservada"
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="atlas-inline-metric">{activeBrand.name}</span>
+            <span className="atlas-inline-metric">Vigência preservada</span>
+            <span className="atlas-inline-metric">
+              {typesWithRuleCount}/{typeCandidates.length} tipos com regra
+            </span>
+          </div>
+        }
       />
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -266,13 +274,13 @@ export default function CmvPage() {
           </div>
         </div>
 
-        <div className="border-b border-outline px-5 py-3 text-xs text-on-surface-variant">
+        <div className="border-b border-outline px-5 py-3 text-[11px] leading-5 text-on-surface-variant">
           {viewTabs.find((tab) => tab.key === activeView)?.description}
         </div>
 
         <div className="p-5">
           {activeView === "types" ? (
-            <section className="grid gap-5 xl:grid-cols-[1.12fr_0.88fr]">
+            <section className="grid gap-4 xl:grid-cols-[1.18fr_0.82fr]">
               <SurfaceCard className="p-0 overflow-hidden">
                 <div className="border-b border-outline px-5 py-4">
                   <SectionHeading
@@ -280,7 +288,7 @@ export default function CmvPage() {
                     description="Atualize a vigência quando houver mudança de tabela. O histórico permanece intacto."
                   />
                 </div>
-                <div className="brandops-table-container rounded-none border-0">
+                <div className="brandops-table-container atlas-table-shell">
                   <table className="brandops-table-compact min-w-[760px] w-full">
                     <thead>
                       <tr>
@@ -321,13 +329,13 @@ export default function CmvPage() {
                 </div>
               </SurfaceCard>
 
-              <div className="space-y-5">
+              <div className="atlas-component-stack">
                 <SurfaceCard>
                   <SectionHeading
                     title="Checkpoint"
                     description="Use o checkpoint para congelar a vigência depois da revisão da tabela."
                   />
-                  <div className="mt-5 space-y-4">
+                  <div className="mt-5 atlas-component-stack">
                     <div className="brandops-toolbar-panel">
                       <label className="brandops-field-stack">
                         <span className="brandops-field-label">Data do checkpoint</span>
@@ -409,7 +417,7 @@ export default function CmvPage() {
                   description="Detalhe linha a linha para conferir pedido, itens conciliados, valor de venda e CMV aplicado."
                 />
               </div>
-              <div className="brandops-table-container rounded-none border-0">
+              <div className="brandops-table-container atlas-table-shell">
                 <table className="brandops-table-compact min-w-[1000px] w-full">
                   <thead>
                     <tr>
@@ -443,13 +451,13 @@ export default function CmvPage() {
               </div>
             </SurfaceCard>
           ) : activeView === "references" ? (
-            <section className="grid gap-5 xl:grid-cols-2">
+            <section className="grid gap-4 xl:grid-cols-2">
               <SurfaceCard>
                 <SectionHeading
                   title="Referência até 28/02/2026"
                   description="Tabela vigente antes do reajuste da INK."
                 />
-                <div className="mt-5 space-y-2">
+                <div className="mt-5 atlas-component-stack-tight">
                   {OFFICIAL_CMV_BEFORE_MARCH.map(([label, value]) => (
                     <div key={label} className="atlas-stack-item">
                       <span className="atlas-stack-item-copy font-medium text-on-surface">{label}</span>
@@ -466,7 +474,7 @@ export default function CmvPage() {
                   title="Referência a partir de 01/03/2026"
                   description="Tabela vigente após o reajuste da INK."
                 />
-                <div className="mt-5 space-y-2">
+                <div className="mt-5 atlas-component-stack-tight">
                   {OFFICIAL_CMV_FROM_MARCH.map(([label, value]) => (
                     <div key={label} className="atlas-stack-item">
                       <span className="atlas-stack-item-copy font-medium text-on-surface">{label}</span>
@@ -486,9 +494,9 @@ export default function CmvPage() {
                   description="Base consolidada para conferir quais estampas e peças entram em cada tipo."
                 />
               </div>
-              <div className="grid gap-4 p-5 xl:grid-cols-2">
+              <div className="grid gap-4 p-4 xl:grid-cols-2">
                 {productsByType.map((group) => (
-                  <article key={group.typeLabel} className="panel-muted p-4">
+                  <article key={group.typeLabel} className="panel-muted p-3.5">
                     <p className="font-semibold text-on-surface">{group.typeLabel}</p>
                     <div className="atlas-stack-list mt-3">
                       {group.products.slice(0, 5).map((product) => (
@@ -498,7 +506,7 @@ export default function CmvPage() {
                         >
                           <div className="atlas-stack-item-copy">
                             <p className="truncate text-on-surface">{product.printName}</p>
-                            <p className="text-xs text-on-surface-variant">
+                            <p className="text-[11px] leading-5 text-on-surface-variant">
                               {integerFormatter.format(product.quantity)} peças
                             </p>
                           </div>
@@ -534,8 +542,8 @@ export default function CmvPage() {
               </button>
             </div>
 
-          <div className="grid gap-6 p-6 lg:grid-cols-[0.9fr_1.1fr]">
-              <div className="space-y-4">
+          <div className="grid gap-4 p-5 lg:grid-cols-[0.94fr_1.06fr]">
+            <div className="atlas-component-stack">
                 <AnalyticsKpiCard
                   label="Peças vendidas"
                   value={integerFormatter.format(selectedType.quantity)}
@@ -596,15 +604,15 @@ export default function CmvPage() {
                 </button>
               </div>
 
-              <div className="space-y-4">
+            <div className="atlas-component-stack">
                 <SectionHeading
                   title="Histórico desse tipo"
                   description="Cada alteração cria uma nova vigência e encerra a anterior."
                 />
-                <div className="space-y-3">
+                <div className="atlas-component-stack-compact">
                   {typeHistory.length ? (
                     typeHistory.map((entry) => (
-                      <article key={entry.id} className="panel-muted p-4">
+                      <article key={entry.id} className="panel-muted p-3.5">
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <p className="font-semibold text-on-surface">{entry.matchLabel}</p>
@@ -620,7 +628,7 @@ export default function CmvPage() {
                       </article>
                     ))
                   ) : (
-                    <div className="atlas-empty-state p-4 text-sm">
+                    <div className="atlas-empty-state p-3.5 text-sm">
                       Nenhuma regra histórica cadastrada ainda para este tipo.
                     </div>
                   )}

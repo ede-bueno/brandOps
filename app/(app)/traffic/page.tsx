@@ -19,7 +19,7 @@ import {
 } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import { PageHeader, SectionHeading, SurfaceCard, WorkspaceTabs } from "@/components/ui-shell";
 import { fetchTrafficReport } from "@/lib/brandops/database";
 import { APP_ROUTES } from "@/lib/brandops/routes";
 import {
@@ -153,7 +153,7 @@ function BreakdownTable({
       <div className="border-b border-outline p-5">
         <SectionHeading title={title} description={description} />
       </div>
-      <div className="brandops-table-container rounded-none border-0">
+      <div className="brandops-table-container atlas-table-shell">
         <table className="brandops-table-compact w-full min-w-[860px]">
           <thead>
             <tr>
@@ -168,7 +168,7 @@ function BreakdownTable({
             {rows.map((row) => (
               <tr key={row.key}>
                 <td className="max-w-[380px]">
-                  <div className="space-y-2">
+                  <div className="atlas-component-stack-tight">
                     <p className="truncate font-semibold text-on-surface">{row.label}</p>
                     <div className="h-1.5 rounded-full bg-surface-container">
                       <div
@@ -179,7 +179,7 @@ function BreakdownTable({
                   </div>
                 </td>
                 <td className="text-right font-semibold text-on-surface">
-                  <div className="space-y-2">
+                  <div className="atlas-component-stack-tight">
                     <p>{integerFormatter.format(row.sessions)}</p>
                     <div className="flex justify-end">
                       <div className="h-1.5 w-20 rounded-full bg-surface-container">
@@ -194,7 +194,7 @@ function BreakdownTable({
                 <td className="text-right">{percentFormatter.format(row.purchaseRate)}</td>
                 <td className="text-right">{currencyFormatter.format(row.revenuePerSession)}</td>
                 <td className="text-right">
-                  <div className="space-y-2">
+                  <div className="atlas-component-stack-tight">
                     <p className="font-semibold text-on-surface">
                       {currencyFormatter.format(row.purchaseRevenue)}
                     </p>
@@ -234,10 +234,10 @@ function PlaybookColumn({
         title={title}
         description={`${description} ${count ? `${count} entrada(s) classificadas.` : "Sem entradas classificadas por enquanto."}`}
       />
-      <div className="mt-5 space-y-3">
+      <div className="mt-5 atlas-component-stack-tight">
         {items.length ? (
           items.map((item) => (
-            <article key={`${title}-${item.key}`} className="panel-muted p-4">
+            <article key={`${title}-${item.key}`} className="panel-muted p-3.5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-on-surface">{item.label}</p>
@@ -249,7 +249,7 @@ function PlaybookColumn({
                   <p className="font-semibold text-on-surface">
                     {currencyFormatter.format(item.purchaseRevenue)}
                   </p>
-                  <p className="mt-1 text-xs text-on-surface-variant">
+                  <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
                     {percentFormatter.format(item.purchaseRate)}
                   </p>
                 </div>
@@ -257,7 +257,7 @@ function PlaybookColumn({
             </article>
           ))
         ) : (
-          <div className="panel-muted p-4 text-sm text-on-surface-variant">
+          <div className="panel-muted p-3.5 text-sm text-on-surface-variant">
             O Atlas ainda não encontrou entradas suficientes nesta zona do playbook.
           </div>
         )}
@@ -351,14 +351,13 @@ export default function TrafficPage() {
 
   if (isBrandLoading) {
     return (
-      <div className="space-y-6">
+      <div className="atlas-page-stack">
         <PageHeader
           eyebrow="Analytics"
           title="Tráfego Digital"
           description={`Carregando os dados de tráfego da loja ${selectedBrandName}.`}
-          badge={`Período analisado: ${selectedPeriodLabel}`}
         />
-        <div className="space-y-6 animate-pulse">
+        <div className="atlas-page-stack animate-pulse">
           <div className="grid gap-4 md:grid-cols-4">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="h-24 rounded-xl bg-surface-container" />
@@ -403,48 +402,45 @@ export default function TrafficPage() {
   }
 
   return (
-    <div className="space-y-6">
-        <PageHeader
-          eyebrow="Analytics"
-          title="Tráfego Digital"
-          description="Veja rápido a força do tráfego, do funil e das entradas do período."
-          badge={`Período analisado: ${selectedPeriodLabel}`}
-          actions={
-            <div className="flex flex-wrap items-center justify-end gap-2">
-            <div className="brandops-tabs">
-              <button
-                type="button"
-                data-active={view === "executive"}
-                onClick={() => setView("executive")}
-                className="brandops-tab"
-              >
-                Visão executiva
-              </button>
-              <button
-                type="button"
-                data-active={view === "channels"}
-                onClick={() => setView("channels")}
-                className="brandops-tab"
-              >
-                Canais
-              </button>
-              <button
-                type="button"
-                data-active={view === "detail"}
-                onClick={() => setView("detail")}
-                className="brandops-tab"
-              >
-                Detalhamento
-              </button>
-            </div>
+    <div className="atlas-page-stack-compact">
+      <PageHeader
+        eyebrow="Analytics"
+        title="Console de tráfego"
+        description="Aquisição, funil e entradas do recorte atual."
+        actions={
+          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+            <WorkspaceTabs
+              items={[
+                {
+                  key: "traffic-executive",
+                  label: "Visão executiva",
+                  active: view === "executive",
+                  onClick: () => setView("executive"),
+                },
+                {
+                  key: "traffic-channels",
+                  label: "Canais",
+                  active: view === "channels",
+                  onClick: () => setView("channels"),
+                },
+                {
+                  key: "traffic-detail",
+                  label: "Detalhamento",
+                  active: view === "detail",
+                  onClick: () => setView("detail"),
+                },
+              ]}
+            />
             <Link href={APP_ROUTES.integrations} prefetch={false} className="brandops-button brandops-button-ghost">
               Ir para integrações
             </Link>
+            <span className="atlas-inline-metric">{selectedBrandName}</span>
+            <span className="atlas-inline-metric">{selectedPeriodLabel}</span>
           </div>
         }
       />
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="atlas-kpi-grid xl:grid-cols-4">
         <AnalyticsKpiCard
           label="Sessões"
           value={integerFormatter.format(metrics.sessions)}
@@ -471,7 +467,7 @@ export default function TrafficPage() {
         />
       </section>
 
-      <section className="grid gap-3 lg:grid-cols-3">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.32fr)_minmax(0,0.84fr)_minmax(0,0.84fr)]">
         <AnalyticsCalloutCard
           eyebrow={analysis.narrativeTitle}
           title="Diagnóstico principal"
@@ -535,22 +531,39 @@ export default function TrafficPage() {
                 title="Modo executivo"
                 description="Comando, ações e destaques do período."
               />
-              <div className="brandops-subtabs">
-                <button type="button" className="brandops-subtab" data-active={executiveSection === "command"} onClick={() => setExecutiveSection("command")}>Comando</button>
-                <button type="button" className="brandops-subtab" data-active={executiveSection === "playbook"} onClick={() => setExecutiveSection("playbook")}>Ações</button>
-                <button type="button" className="brandops-subtab" data-active={executiveSection === "highlights"} onClick={() => setExecutiveSection("highlights")}>Destaques</button>
-              </div>
+              <WorkspaceTabs
+                items={[
+                  {
+                    key: "traffic-command",
+                    label: "Comando",
+                    active: executiveSection === "command",
+                    onClick: () => setExecutiveSection("command"),
+                  },
+                  {
+                    key: "traffic-actions",
+                    label: "Ações",
+                    active: executiveSection === "playbook",
+                    onClick: () => setExecutiveSection("playbook"),
+                  },
+                  {
+                    key: "traffic-highlights",
+                    label: "Destaques",
+                    active: executiveSection === "highlights",
+                    onClick: () => setExecutiveSection("highlights"),
+                  },
+                ]}
+              />
             </div>
           </SurfaceCard>
 
           {executiveSection === "command" ? (
-          <section className="grid gap-6 xl:grid-cols-[1.42fr_0.58fr]">
+          <section className="grid gap-5">
             <SurfaceCard>
               <SectionHeading
                 title="Tráfego x receita por dia"
-                description="Curva diária para detectar quando a sessão sobe sem receita ou quando a receita começa a concentrar em poucos dias."
+                description="Curva diária ampla para detectar quando a sessão sobe sem receita ou quando a monetização passa a se concentrar em poucos dias."
               />
-              <div className="mt-5 h-[360px] min-w-0 xl:h-[400px]">
+              <div className="mt-5 h-[360px] min-w-0 xl:h-[420px]">
                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
                   <AreaChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" vertical={false} />
@@ -618,60 +631,123 @@ export default function TrafficPage() {
 
             <SurfaceCard>
               <SectionHeading
-                title="Leitura executiva"
-                description="Resumo curto para decidir onde o Atlas deve agir no funil sem abrir as tabelas completas."
+                title="Sinais prioritários"
+                description="Leitura curta e horizontal do que importa antes de qualquer aprofundamento."
+              />
+              <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.28fr)_minmax(0,0.86fr)_minmax(0,0.86fr)]">
+                <article className="atlas-soft-subcard p-3.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
+                    Diagnóstico principal
+                  </p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-on-surface">
+                    {analysis.narrativeTitle}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                    {analysis.narrativeBody}
+                  </p>
+                </article>
+                <article className="atlas-soft-subcard p-3.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
+                    Maior oportunidade
+                  </p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-on-surface">
+                    {topSource?.label ?? analysis.topOpportunity ?? "Sem oportunidade dominante"}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                    {topSource?.summary
+                      ? topSource.summary
+                      : "Assim que houver amostra suficiente, o Atlas aponta a entrada mais promissora."}
+                  </p>
+                </article>
+                <article className="atlas-soft-subcard p-3.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
+                    Revisar primeiro
+                  </p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-on-surface">
+                    {topCampaign?.label ?? analysis.topRisk ?? signals.purchaseRate.title}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                    {signals.purchaseRate.description}
+                  </p>
+                </article>
+              </div>
+            </SurfaceCard>
+
+            <SurfaceCard>
+              <SectionHeading
+                title="Próximos passos"
+                description="Sequência operacional em largura total, sem esmagar o texto em colunas estreitas."
               />
               <div className="mt-5 grid gap-3">
-                <AnalyticsCalloutCard
-                  eyebrow={analysis.narrativeTitle}
-                  title="Diagnóstico principal"
-                  description={analysis.narrativeBody}
-                  footer={report.frictionSignal}
-                />
-                <div className="grid gap-3 md:grid-cols-2">
-                  <AnalyticsCalloutCard
-                    eyebrow="Maior oportunidade"
-                    title={analysis.topOpportunity ?? "Sem oportunidade dominante"}
-                    description={
-                      topSource?.summary
-                        ? topSource.summary
-                        : "Assim que houver amostra suficiente, o Atlas aponta a entrada mais promissora."
-                    }
-                    tone="positive"
-                    footer={topSource?.label ?? "Sem canal em destaque"}
-                  />
-                  <AnalyticsCalloutCard
-                    eyebrow="Maior risco"
-                    title={analysis.topRisk ?? signals.purchaseRate.title}
-                    description={signals.purchaseRate.description}
-                    tone="warning"
-                    footer={topCampaign?.label ?? "Sem campanha em alerta"}
-                  />
-                </div>
                 {analysis.nextActions.length ? (
-                  <article className="rounded-2xl border border-outline/70 bg-surface-container-low/80 p-4 shadow-sm">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
-                      Próximos passos
-                    </p>
-                    <div className="mt-3 space-y-2">
-                      {analysis.nextActions.map((action) => (
-                        <div
-                          key={action}
-                          className="rounded-xl border border-outline bg-surface px-3 py-2 text-sm leading-6 text-on-surface-variant"
-                        >
-                          {action}
-                        </div>
-                      ))}
-                    </div>
+                  analysis.nextActions.map((action) => (
+                    <article
+                      key={action}
+                      className="rounded-xl border border-outline/78 bg-surface-container-low/72 px-4 py-3 text-sm leading-6 text-on-surface-variant"
+                    >
+                      {action}
+                    </article>
+                  ))
+                ) : (
+                  <article className="rounded-xl border border-outline/78 bg-surface-container-low/72 px-4 py-3 text-sm leading-6 text-on-surface-variant">
+                    Ainda não há um próximo passo dominante para o recorte atual.
                   </article>
-                ) : null}
+                )}
+              </div>
+            </SurfaceCard>
+
+            <SurfaceCard>
+              <SectionHeading
+                title="Entradas em foco"
+                description="Os pontos de entrada que mais merecem o próximo clique."
+              />
+              <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.16fr)_minmax(0,0.92fr)_minmax(0,0.92fr)]">
+                <article className="atlas-soft-subcard p-3.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
+                    Source / Medium em foco
+                  </p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-on-surface">
+                    {topSource?.label ?? "Sem canal em foco"}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                    {topSource?.summary
+                      ? topSource.summary
+                      : "Sem leitura suficiente para destacar um canal."}
+                  </p>
+                </article>
+                <article className="atlas-soft-subcard p-3.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
+                    Campanha em foco
+                  </p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-on-surface">
+                    {topCampaign?.label ?? "Sem campanha em foco"}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                    {topCampaign?.summary
+                      ? topCampaign.summary
+                      : "Sem leitura suficiente para destacar uma campanha."}
+                  </p>
+                </article>
+                <article className="atlas-soft-subcard p-3.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
+                    Landing page em foco
+                  </p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-on-surface">
+                    {topLanding?.label ?? "Sem landing em foco"}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                    {topLanding?.summary
+                      ? topLanding.summary
+                      : "Sem leitura suficiente para destacar uma landing page."}
+                  </p>
+                </article>
               </div>
             </SurfaceCard>
           </section>
           ) : null}
 
           {executiveSection === "playbook" ? (
-          <section className="grid gap-6 xl:grid-cols-3">
+          <section className="grid gap-4 xl:grid-cols-3">
             <PlaybookColumn {...playbook.scale} />
             <PlaybookColumn {...playbook.review} />
             <PlaybookColumn {...playbook.monitor} />
@@ -687,12 +763,12 @@ export default function TrafficPage() {
             <div className="mt-5 grid gap-3 md:grid-cols-3">
               {analysis.nextActions.length ? (
                 analysis.nextActions.map((action) => (
-                  <article key={action} className="panel-muted p-4 text-sm leading-6 text-on-surface-variant">
+                  <article key={action} className="panel-muted p-3.5 text-sm leading-6 text-on-surface-variant">
                     {action}
                   </article>
                 ))
               ) : (
-                <article className="panel-muted p-4 text-sm leading-6 text-on-surface-variant md:col-span-3">
+                <article className="panel-muted p-3.5 text-sm leading-6 text-on-surface-variant md:col-span-3">
                   Ainda não há um próximo passo dominante para o recorte atual.
                 </article>
               )}
@@ -701,13 +777,13 @@ export default function TrafficPage() {
           ) : null}
 
           {executiveSection === "highlights" ? (
-          <section className="grid gap-6 xl:grid-cols-3">
+          <section className="grid gap-4 xl:grid-cols-3">
             <SurfaceCard>
               <SectionHeading
                 title="Source / Medium"
                 description="Canal com melhor entrega de receita e sessões."
               />
-              <div className="mt-5 space-y-3">
+              <div className="mt-5 atlas-component-stack-tight">
                 <p className="font-semibold text-on-surface">{topSource?.label ?? "Sem canal"}</p>
                 <p className="text-sm leading-6 text-on-surface-variant">
                   {topSource?.summary
@@ -722,7 +798,7 @@ export default function TrafficPage() {
                 title="Campanha em foco"
                 description="Campanha com melhor contribuição no recorte."
               />
-              <div className="mt-5 space-y-3">
+      <div className="mt-5 atlas-component-stack-tight">
                 <p className="font-semibold text-on-surface">{topCampaign?.label ?? "Sem campanha"}</p>
                 <p className="text-sm leading-6 text-on-surface-variant">
                   {topCampaign?.summary
@@ -737,7 +813,7 @@ export default function TrafficPage() {
                 title="Landing page líder"
                 description="Página de entrada que mais converteu receita."
               />
-              <div className="mt-5 space-y-3">
+              <div className="mt-5 atlas-component-stack-tight">
                 <p className="font-semibold text-on-surface">{topLanding?.label ?? "Sem landing page"}</p>
                 <p className="text-sm leading-6 text-on-surface-variant">
                   {topLanding?.summary
@@ -752,7 +828,7 @@ export default function TrafficPage() {
       ) : null}
 
       {view === "channels" ? (
-        <section className="grid gap-6">
+        <section className="grid gap-4">
           <BreakdownTable
             title="Source / Medium"
             description="Canais empilhados verticalmente para evitar rolagem lateral e facilitar leitura operacional."
@@ -775,7 +851,7 @@ export default function TrafficPage() {
       ) : null}
 
       {view === "detail" ? (
-        <section className="grid gap-6">
+        <section className="grid gap-4">
           <SurfaceCard>
             <SectionHeading
               title="Conversão diária"
@@ -843,7 +919,7 @@ export default function TrafficPage() {
             </div>
           </SurfaceCard>
 
-          <section className="grid gap-4 xl:grid-cols-[0.4fr_0.6fr]">
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,0.66fr)_minmax(0,0.34fr)]">
             <SurfaceCard>
               <SectionHeading
                 title="Receita por sessão"
@@ -861,7 +937,7 @@ export default function TrafficPage() {
                 title="Página mais valiosa"
                 description="Landing page que mais converteu receita no período."
               />
-              <div className="mt-5 space-y-2">
+              <div className="mt-5 atlas-component-stack-tight">
                 <p className="break-words font-semibold text-on-surface">
                   {topRevenueLanding?.label ?? "Sem página líder"}
                 </p>

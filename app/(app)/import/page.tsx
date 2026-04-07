@@ -216,14 +216,13 @@ export default function ImportPage() {
 
   if (activeBrand && isBrandHydrating && !Object.keys(activeBrand.files).length) {
     return (
-      <div className="space-y-5">
+      <div className="atlas-page-stack-compact">
         <PageHeader
           eyebrow="Integração de dados"
           title="Importação"
           description={`Carregando o histórico de importações da loja ${activeBrand.name}.`}
-          badge="Hidratando dados"
         />
-        <div className="space-y-5 animate-pulse">
+        <div className="atlas-page-stack animate-pulse">
           <div className="h-40 rounded-3xl bg-surface-container" />
           <div className="grid gap-4 xl:grid-cols-2">
             <div className="h-[420px] rounded-3xl bg-surface-container" />
@@ -244,11 +243,17 @@ export default function ImportPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="atlas-page-stack-compact">
       <PageHeader
         eyebrow="Integração de dados"
-        title="Importação"
-        description="Suba arquivos, confira a fila e preserve a base sem duplicidade."
+        title="Console de importação"
+        description="Envie arquivos, confira a fila e mantenha a base íntegra sem espalhar decisões pela operação."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <span className="atlas-inline-metric">{activeBrand.name}</span>
+            <span className="atlas-inline-metric">{progressPercent}% consolidado</span>
+          </div>
+        }
       />
 
       <SurfaceCard className="p-0 overflow-hidden">
@@ -298,7 +303,7 @@ export default function ImportPage() {
         </div>
       </SurfaceCard>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="atlas-kpi-grid xl:grid-cols-4">
         <AnalyticsKpiCard
           label="Rodadas"
           value={String(stats?.totalRuns ?? 0)}
@@ -367,12 +372,13 @@ export default function ImportPage() {
               </p>
             </div>
 
-            <div className="p-5">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <SectionHeading
-                  title="Fila"
-                  description="Só o que está pronto para entrar agora."
-                />
+            <div className="p-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <SectionHeading
+                title="Fila"
+                description="Só o que está pronto para entrar agora."
+                aside={<span className="atlas-inline-metric">{files.length} arquivo(s)</span>}
+              />
                 <button
                   onClick={handleImport}
                   disabled={status === "running" || !files.length}
@@ -451,7 +457,7 @@ export default function ImportPage() {
                 <span>Abrir regras rápidas</span>
                 <span>3</span>
               </summary>
-              <div className="mt-4 space-y-3 text-sm text-on-surface-variant">
+            <div className="mt-4 atlas-component-stack-compact text-sm text-on-surface-variant">
                 <p>`Lista de Pedidos` mantém a linha comercial principal da INK.</p>
                 <p>`Lista de Itens` alimenta peças vendidas e CMV histórico.</p>
                 <p>`Meta Export` segue como contingência quando a loja opera em API.</p>
@@ -491,14 +497,14 @@ export default function ImportPage() {
           </SurfaceCard>
 
           <SurfaceCard className="p-0 overflow-hidden">
-            <div className="border-b border-outline p-5">
+            <div className="border-b border-outline p-4">
               <SectionHeading
                 title="Checklist consolidado"
                 description="Resumo por arquivo, já obedecendo o modo de cada integração."
               />
             </div>
 
-            <div className="space-y-3 p-5">
+              <div className="atlas-component-stack-compact p-4">
               {sourceChecklist.map((source) => {
                 const info = activeBrand.files[source.kind];
                 const providerMode = getProviderMode(activeBrand, source.provider);
@@ -517,7 +523,7 @@ export default function ImportPage() {
                     title={source.label}
                     description={
                       info ? (
-                        <div className="space-y-1">
+                        <div className="atlas-component-stack-tight">
                           <p>{source.description}</p>
                           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-secondary">
                             {modeHint}
@@ -529,7 +535,7 @@ export default function ImportPage() {
                           </div>
                         </div>
                       ) : (
-                        <div className="space-y-1">
+                        <div className="atlas-component-stack-tight">
                           <p>{source.description}</p>
                           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
                             {modeHint}
@@ -537,7 +543,7 @@ export default function ImportPage() {
                         </div>
                       )
                     }
-                    aside={<span className="status-chip">{info ? `${info.totalRuns} rodada(s)` : "Pendente"}</span>}
+                    aside={<span className="atlas-inline-metric">{info ? `${info.totalRuns} rodada(s)` : "Pendente"}</span>}
                     tone={info ? "positive" : "warning"}
                   />
                 );
@@ -550,21 +556,21 @@ export default function ImportPage() {
       {activeTab === "history" && (
         <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
           <SurfaceCard className="p-0 overflow-hidden">
-            <div className="border-b border-outline p-5">
+            <div className="border-b border-outline p-4">
               <SectionHeading
                 title="Últimas importações"
                 description="O que entrou por último na base, sem precisar abrir cada fonte."
               />
             </div>
 
-            <div className="space-y-3 p-5">
+              <div className="atlas-component-stack-compact p-4">
               {recentImports.length ? (
                 recentImports.map((row) => (
                   <StackItem
                     key={`${row.kind}-${row.lastImportedAt}`}
                     title={row.label}
                     description={
-                      <div className="space-y-1">
+                      <div className="atlas-component-stack-tight">
                         <p>{row.description}</p>
                         <div className="grid gap-1 pt-1 sm:grid-cols-3">
                           <span>{row.totalRuns} rodada(s)</span>
@@ -573,7 +579,7 @@ export default function ImportPage() {
                         </div>
                       </div>
                     }
-                    aside={<span className="status-chip">{row.modeLabel}</span>}
+                    aside={<span className="atlas-inline-metric">{row.modeLabel}</span>}
                     tone="info"
                   />
                 ))
@@ -598,7 +604,7 @@ export default function ImportPage() {
                     key={`${source.kind}-summary`}
                     title={source.label}
                     description={source.description}
-                    aside={<span className="status-chip">{info ? "Ativo" : "Pendente"}</span>}
+                    aside={<span className="atlas-inline-metric">{info ? "Ativo" : "Pendente"}</span>}
                     tone={info ? "positive" : "warning"}
                   />
                 );

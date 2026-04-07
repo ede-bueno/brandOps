@@ -9,11 +9,11 @@ import {
   ChevronDown,
   Loader2,
   Radar,
-  Sparkles,
   ThumbsDown,
   ThumbsUp,
 } from "lucide-react";
 import { useBrandOps } from "./BrandOpsProvider";
+import { AtlasMark } from "./AtlasMark";
 import type {
   AtlasAnalystFeedbackPayload,
   AtlasAnalystHistoryItem,
@@ -121,7 +121,7 @@ function DisabledNotice({
   hasPlanAccess: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-warning/25 bg-warning/10 px-3 py-3 text-[11px] leading-5 text-on-surface-variant">
+    <div className="atlas-soft-subcard border-warning/25 bg-warning/10 px-3 py-3 text-[11px] leading-5 text-on-surface-variant">
       <p className="font-semibold text-on-surface">
         {hasPlanAccess
           ? "Gemini ainda não habilitado para esta loja."
@@ -328,7 +328,7 @@ export function AtlasAnalystPanel({
                 A Torre abriga a base nativa do Atlas IA. O Orb fica com atalhos e contexto rápido.
               </p>
             </div>
-            <Sparkles size={16} className="text-primary" />
+            <AtlasMark size="md" className="text-primary" />
           </div>
           {!isAgentConfigured ? (
             <div className="mt-3">
@@ -393,17 +393,17 @@ export function AtlasAnalystPanel({
 
   if (isCommandCenter) {
     return (
-      <div className="space-y-4">
+      <div className="atlas-component-stack">
         {!isAgentConfigured ? (
           <DisabledNotice hasPlanAccess={hasAtlasAiPlanAccess} />
         ) : (
           <>
-            <section className="atlas-command-hero rounded-[24px] px-4 py-4 sm:px-5 sm:py-5">
+            <section className="atlas-command-hero">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div className="max-w-3xl space-y-3">
+                <div className="max-w-3xl atlas-component-stack-tight">
                   <span className="atlas-ai-badge">
                     <span className="atlas-ai-badge-orb">
-                      <Sparkles size={12} />
+                      <AtlasMark size="sm" />
                     </span>
                     Atlas IA
                   </span>
@@ -414,10 +414,8 @@ export function AtlasAnalystPanel({
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <span className="atlas-soft-pill" data-emphasis="primary">
-                    {atlasPeriod.label}
-                  </span>
-                  {latestEntry ? <span className="atlas-soft-pill">{latestEntry.confidence}</span> : null}
+                  <span className="atlas-inline-metric">{atlasPeriod.label}</span>
+                  {latestEntry ? <span className="atlas-inline-metric">{latestEntry.confidence}</span> : null}
                 </div>
               </div>
 
@@ -437,7 +435,7 @@ export function AtlasAnalystPanel({
               </div>
 
               <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1fr)_18rem]">
-                <div className="space-y-3">
+                <div className="atlas-component-stack-tight">
                   <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
                     <div className="space-y-2">
                       <textarea
@@ -470,8 +468,7 @@ export function AtlasAnalystPanel({
                         type="button"
                         onClick={() => handleAsk(prompt)}
                         disabled={isDisabled || isPending}
-                        className="atlas-soft-pill text-left normal-case tracking-[0.02em] disabled:cursor-not-allowed disabled:opacity-60"
-                        data-interactive="true"
+                        className="brandops-button brandops-button-ghost min-h-[2rem] rounded-full px-3 py-1.5 text-left text-[11px] disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {prompt}
                       </button>
@@ -491,9 +488,11 @@ export function AtlasAnalystPanel({
                             type="button"
                             onClick={() => setSkill(option.value)}
                             disabled={isDisabled || isPending}
-                            className="atlas-soft-pill shrink-0 disabled:cursor-not-allowed disabled:opacity-60"
-                            data-emphasis={skill === option.value ? "active" : undefined}
-                            data-interactive="true"
+                            className={`brandops-button min-h-[2rem] rounded-full px-3 py-1.5 text-[11px] disabled:cursor-not-allowed disabled:opacity-60 ${
+                              skill === option.value
+                                ? "brandops-button-secondary border-primary/25 bg-primary-container/55 text-primary"
+                                : "brandops-button-ghost"
+                            }`}
                           >
                             {option.label}
                           </button>
@@ -520,8 +519,7 @@ export function AtlasAnalystPanel({
                               type="button"
                               onClick={() => handleAsk(prompt)}
                               disabled={isDisabled || isPending}
-                              className="atlas-soft-pill text-left normal-case tracking-[0.02em] disabled:cursor-not-allowed disabled:opacity-60"
-                              data-interactive="true"
+                              className="brandops-button brandops-button-ghost min-h-[2rem] rounded-full px-3 py-1.5 text-left text-[11px] disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               {prompt}
                             </button>
@@ -532,7 +530,7 @@ export function AtlasAnalystPanel({
                   </details>
                 </div>
 
-                <div className="space-y-3">
+                <div className="atlas-component-stack-tight">
                   <details className="atlas-disclosure">
                     <summary className="atlas-disclosure-summary">
                       <span>Fontes da leitura</span>
@@ -646,7 +644,7 @@ export function AtlasAnalystPanel({
               </summary>
               <div className="atlas-disclosure-body">
                 {latestEntry ? (
-                  <div className="space-y-3">
+                  <div className="atlas-component-stack-tight">
                     <div className="atlas-soft-subcard px-3 py-2 text-[11px] leading-5 text-on-surface-variant">
                       {latestEntry.summary}
                     </div>

@@ -64,7 +64,7 @@ export function ContributionTrendPanel({
 
   return (
     <div className="min-w-0">
-      <div className="flex flex-wrap items-center gap-3 text-xs text-on-surface-variant">
+      <div className="flex flex-wrap items-center gap-3 text-[11px] leading-5 text-on-surface-variant">
         <span className="inline-flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-primary" />
           Margem de contribuição

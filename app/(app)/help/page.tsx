@@ -244,7 +244,7 @@ function HelpCallout({
           <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-secondary-container/70 text-secondary">
             <Icon size={16} />
           </span>
-          <ul className="space-y-1.5 text-[13px] leading-6 text-on-surface-variant">
+          <ul className="atlas-component-stack-tight text-[13px] leading-6 text-on-surface-variant">
             {items.map((item) => (
               <li key={item} className="flex gap-2">
                 <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary/80" />
@@ -263,7 +263,7 @@ export default function HelpPage() {
   const [activeTab, setActiveTab] = useState<HelpTab>("operation");
 
   return (
-    <div className="space-y-4">
+    <div className="atlas-page-stack-compact">
       <PageHeader
         eyebrow="Central de ajuda"
         title="Atlas em operação"
@@ -331,7 +331,7 @@ export default function HelpPage() {
           </div>
         </div>
 
-        <div className="p-4 sm:p-5">
+        <div className="px-4 py-4">
           {activeTab === "operation" && (
             <section className="grid gap-4 xl:grid-cols-2">
               {operationCards.map((card) => (
@@ -346,7 +346,7 @@ export default function HelpPage() {
           )}
 
           {activeTab === "integrations" && (
-            <div className="space-y-4">
+<div className="atlas-component-stack">
               <section className="grid gap-4 xl:grid-cols-2">
                 {integrationCards.map((card) => (
                   <HelpCallout
@@ -359,7 +359,7 @@ export default function HelpPage() {
               </section>
 
               <section className="rounded-3xl border border-outline bg-surface-container-low px-4 py-4 sm:px-5">
-                <div className="space-y-2">
+<div className="atlas-component-stack-tight">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                     Tutorial rápido
                   </p>
@@ -395,7 +395,7 @@ export default function HelpPage() {
                       eyebrow={provider.eyebrow}
                       title={provider.title}
                       description={
-                        <ul className="space-y-1.5 text-[13px] leading-6 text-on-surface-variant">
+                        <ul className="atlas-component-stack-tight text-[13px] leading-6 text-on-surface-variant">
                           {provider.items.map((item) => (
                             <li key={item} className="flex gap-2">
                               <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary/80" />
@@ -411,7 +411,7 @@ export default function HelpPage() {
               </details>
 
               <section className="rounded-3xl border border-outline bg-surface-container-low px-4 py-4 sm:px-5">
-                <div className="space-y-2">
+<div className="atlas-component-stack-tight">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                     Tutoriais detalhados
                   </p>
@@ -453,7 +453,7 @@ export default function HelpPage() {
           )}
 
           {activeTab === "configurations" && (
-            <div className="space-y-4">
+<div className="atlas-component-stack">
               <section className="grid gap-4 xl:grid-cols-2">
                 {configurationCards.map((card) => (
                   <HelpCallout
@@ -466,7 +466,7 @@ export default function HelpPage() {
               </section>
 
               <section className="rounded-3xl border border-outline bg-surface-container-low px-4 py-4 sm:px-5">
-                <div className="space-y-2">
+<div className="atlas-component-stack-tight">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                     Arquitetura recomendada
                   </p>

@@ -41,8 +41,8 @@ export function IntegrationWorkspaceHeader({
 }) {
   return (
     <>
-      <div className="flex flex-col gap-3 border-b border-outline/50 pb-3">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+      <div className="flex flex-col gap-5 border-b border-outline/50 pb-5">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between xl:gap-7">
           <div className="min-w-0">
             <p className="eyebrow mb-1.5">{providerEyebrows[activeProvider]}</p>
             <div className="flex items-center gap-3">
@@ -60,15 +60,18 @@ export function IntegrationWorkspaceHeader({
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <span className="atlas-soft-pill">
+          <div className="flex flex-wrap items-start gap-2.5">
+            <span className="atlas-inline-metric">
               {currentState.mode === "api"
                 ? "API"
                 : currentState.mode === "disabled"
                   ? "Desligado"
                   : "Manual"}
             </span>
-            <span className="atlas-soft-pill">{activeHealth.label}</span>
+            <div className="atlas-integration-health-block">
+              <span className="atlas-inline-metric">{activeHealth.label}</span>
+              <p className="atlas-integration-health-copy">{activeHealth.description}</p>
+            </div>
           </div>
         </div>
 
@@ -102,7 +105,7 @@ export function IntegrationWorkspaceHeader({
         </div>
       </div>
 
-      <div className="mt-3 flex flex-col gap-2 border-t border-outline/50 pt-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mt-5 flex flex-col gap-3 border-t border-outline/50 pt-4 lg:flex-row lg:items-center lg:justify-between">
         <WorkspaceTabs
           className="overflow-x-auto"
           items={[
@@ -132,8 +135,10 @@ export function IntegrationWorkspaceHeader({
             },
           ]}
         />
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="atlas-soft-pill">{current?.lastSyncStatus ?? activeHealth.label}</span>
+        <div className="atlas-action-cluster lg:justify-end">
+          <span className="atlas-inline-metric">
+            {current?.lastSyncStatus ?? activeHealth.label}
+          </span>
           {headerActions}
         </div>
       </div>

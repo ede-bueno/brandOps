@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowUpRight, Radar, Sparkles } from "lucide-react";
+import { ArrowUpRight, Radar } from "lucide-react";
 import { useBrandOps } from "./BrandOpsProvider";
+import { AtlasMark } from "./AtlasMark";
 import { AtlasAnalystPanel } from "./AtlasAnalystPanel";
 import { SectionHeading, StackItem, SurfaceCard, WorkspaceTabs } from "./ui-shell";
 import { useSanitizationPendingCount } from "@/hooks/use-sanitization-summary";
@@ -169,14 +170,16 @@ export function AtlasControlTowerHome() {
   }
 
   const primarySignal = signals[0] ?? null;
+  const switchToMesa = () => setActiveView("mesa");
+  const switchToRadar = () => setActiveView("radar");
   return (
-    <SurfaceCard id="atlas-ai-home" className="atlas-command-deck p-4 sm:p-5">
-      <div className="space-y-4">
+    <SurfaceCard id="atlas-ai-home" className="atlas-command-deck">
+      <div className="atlas-component-stack">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
             <span className="atlas-ai-badge">
               <span className="atlas-ai-badge-orb">
-                <Sparkles size={12} />
+                <AtlasMark size="sm" />
               </span>
               Atlas IA
             </span>
@@ -188,28 +191,27 @@ export function AtlasControlTowerHome() {
             </p>
           </div>
 
-          <div className="flex flex-col items-start gap-2 lg:items-end">
+          <div className="relative z-10 flex flex-col items-start gap-2 lg:items-end">
             <WorkspaceTabs
+              className="relative z-10"
               items={[
                 {
                   key: "atlas-mesa",
                   label: "Mesa",
                   active: activeView === "mesa",
-                  onClick: () => setActiveView("mesa"),
+                  onClick: switchToMesa,
                 },
                 {
                   key: "atlas-radar",
                   label: "Radar",
                   active: activeView === "radar",
-                  onClick: () => setActiveView("radar"),
+                  onClick: switchToRadar,
                 },
               ]}
             />
-            <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
-              <span className="rounded-full border border-primary/20 bg-primary-container px-2.5 py-1 text-on-primary-container">
-                {selectedPeriodLabel}
-              </span>
-              <span className="rounded-full border border-outline px-2.5 py-1">Atlas separado da base factual</span>
+            <div className="flex flex-wrap gap-2">
+              <span className="atlas-inline-metric">{selectedPeriodLabel}</span>
+              <span className="atlas-inline-metric">Atlas separado da base factual</span>
             </div>
           </div>
         </div>
@@ -218,8 +220,8 @@ export function AtlasControlTowerHome() {
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_17rem]">
             <AtlasAnalystPanel variant="command-center" />
 
-            <div className="space-y-3">
-              <SurfaceCard className="atlas-alert-rail p-4">
+            <div className="atlas-component-stack-tight">
+              <SurfaceCard className="atlas-alert-rail">
                 <SectionHeading
                   title="Sinal dominante"
                   description="O principal alerta do corte fica à vista."
@@ -245,19 +247,19 @@ export function AtlasControlTowerHome() {
                 </div>
               </SurfaceCard>
 
-              <SurfaceCard className="p-4">
+              <SurfaceCard>
                 <SectionHeading
                   title="Ajustes fora da mesa"
                   description="Configuração e ensino ficam fora do cockpit."
                 />
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="atlas-soft-pill" data-interactive="true">
+                  <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="brandops-button brandops-button-ghost">
                     Ajustar Atlas
                   </Link>
-                  <Link href={APP_ROUTES.settingsAtlasContext} prefetch={false} className="atlas-soft-pill" data-interactive="true">
+                  <Link href={APP_ROUTES.settingsAtlasContext} prefetch={false} className="brandops-button brandops-button-ghost">
                     Ensinar Atlas
                   </Link>
-                  <Link href={APP_ROUTES.integrations} prefetch={false} className="atlas-soft-pill" data-interactive="true">
+                  <Link href={APP_ROUTES.integrations} prefetch={false} className="brandops-button brandops-button-ghost">
                     Revisar fontes
                   </Link>
                 </div>
@@ -266,7 +268,7 @@ export function AtlasControlTowerHome() {
           </div>
         ) : (
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_17rem]">
-            <SurfaceCard className="p-4">
+            <SurfaceCard>
               <SectionHeading
                 title="Radar do corte"
                 description="Um alerta principal e fila curta de sinais relacionados."
@@ -291,24 +293,57 @@ export function AtlasControlTowerHome() {
               </div>
             </SurfaceCard>
 
-            <SurfaceCard className="p-4">
+            <SurfaceCard>
               <SectionHeading
                 title="Próximo movimento"
                 description="A IA só entra depois da leitura factual."
               />
-              <div className="mt-4 space-y-2">
-                <StackItem
-                  title="Abrir leitura financeira"
-                  description="Confirme margem, mídia e despesas antes de aceitar qualquer hipótese."
-                  aside="base"
-                  tone="info"
-                />
-                <StackItem
-                  title="Voltar à mesa"
-                  description="Depois do corte factual, use a IA para ranquear o próximo movimento."
-                  aside="atlas"
-                  tone="default"
-                />
+              <div className="mt-4 atlas-component-stack-tight">
+                <Link href={APP_ROUTES.dre} prefetch={false} className="relative z-10 block">
+                  <StackItem
+                    title="Abrir leitura financeira"
+                    description="Confirme margem, mídia e despesas antes de aceitar qualquer hipótese."
+                    aside={
+                      <span className="inline-flex items-center gap-1.5">
+                        base
+                        <ArrowUpRight size={12} />
+                      </span>
+                    }
+                    tone="info"
+                    className="transition hover:border-secondary/30"
+                  />
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={switchToMesa}
+                  className="block w-full text-left"
+                >
+                  <StackItem
+                    title="Voltar à mesa"
+                    description="Depois do corte factual, volte para a mesa do Atlas e escolha o próximo movimento."
+                    aside="atlas"
+                    tone="default"
+                    className="transition hover:border-secondary/30"
+                  />
+                </button>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={switchToMesa}
+                  className="brandops-button brandops-button-secondary"
+                >
+                  Voltar para Mesa
+                </button>
+                <Link
+                  href={primarySignal?.href ?? APP_ROUTES.dre}
+                  prefetch={false}
+                  className="brandops-button brandops-button-ghost"
+                >
+                  Abrir sinal dominante
+                </Link>
               </div>
             </SurfaceCard>
           </div>

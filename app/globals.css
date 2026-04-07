@@ -53,9 +53,14 @@ html {
   --color-ink-muted: #6f6f6f;
   --color-ink-faint: #a8a8a8;
   --color-ink-inverse: #f8fafc;
-  --atlas-ai-accent: #4f7df7;
-  --atlas-ai-accent-soft: rgba(79, 125, 247, 0.1);
-  --atlas-ai-glow: rgba(79, 125, 247, 0.16);
+  --atlas-interactive-accent: #0f62fe;
+  --atlas-interactive-accent-soft: rgba(15, 98, 254, 0.1);
+  --atlas-brand-accent: #d14b57;
+  --atlas-brand-accent-soft: rgba(209, 75, 87, 0.12);
+  --atlas-brand-glow: rgba(209, 75, 87, 0.18);
+  --atlas-ai-accent: var(--atlas-interactive-accent);
+  --atlas-ai-accent-soft: var(--atlas-interactive-accent-soft);
+  --atlas-ai-glow: var(--atlas-brand-glow);
 
   --atlas-page-grid: rgba(22, 22, 22, 0.055);
   --atlas-page-glow-a: rgba(82, 82, 82, 0.035);
@@ -127,13 +132,18 @@ html.dark {
   --color-ink-muted: #a8a8a8;
   --color-ink-faint: #6f6f6f;
   --color-ink-inverse: #161616;
-  --atlas-ai-accent: #78a9ff;
-  --atlas-ai-accent-soft: rgba(120, 169, 255, 0.1);
-  --atlas-ai-glow: rgba(120, 169, 255, 0.14);
+  --atlas-interactive-accent: #78a9ff;
+  --atlas-interactive-accent-soft: rgba(120, 169, 255, 0.12);
+  --atlas-brand-accent: #ff6b7f;
+  --atlas-brand-accent-soft: rgba(255, 107, 127, 0.12);
+  --atlas-brand-glow: rgba(255, 107, 127, 0.18);
+  --atlas-ai-accent: var(--atlas-interactive-accent);
+  --atlas-ai-accent-soft: var(--atlas-interactive-accent-soft);
+  --atlas-ai-glow: var(--atlas-brand-glow);
 
-  --atlas-page-grid: rgba(244, 244, 244, 0.028);
-  --atlas-page-glow-a: rgba(120, 169, 255, 0.02);
-  --atlas-page-glow-b: rgba(255, 255, 255, 0.012);
+  --atlas-page-grid: rgba(244, 244, 244, 0.044);
+  --atlas-page-glow-a: rgba(120, 169, 255, 0.034);
+  --atlas-page-glow-b: rgba(255, 107, 127, 0.022);
   --atlas-page-glow-c: rgba(255, 255, 255, 0.005);
   --atlas-shell-overlay: rgba(10, 11, 13, 0.9);
   --atlas-shell-shadow: 0 1px 2px rgba(0, 0, 0, 0.44), 0 24px 48px rgba(0, 0, 0, 0.24);
@@ -216,6 +226,15 @@ body::after {
     radial-gradient(circle at 1px 1px, var(--atlas-page-grid) 1px, transparent 0),
     linear-gradient(180deg, transparent, transparent);
   background-size: 24px 24px, 100% 100%;
+}
+
+html.dark .brandops-shell {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--atlas-page-grid) 88%, transparent 12%) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--atlas-page-grid) 88%, transparent 12%) 1px, transparent 1px),
+    radial-gradient(circle at 12% 0%, var(--atlas-page-glow-a), transparent 28rem),
+    radial-gradient(circle at 88% 8%, var(--atlas-page-glow-b), transparent 24rem);
+  background-size: 28px 28px, 28px 28px, 100% 100%, 100% 100%;
 }
 
 .atlas-main-stage {
@@ -397,6 +416,16 @@ html.dark .brandops-table-container {
   border-radius: 14px;
 }
 
+.atlas-empty-state {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface) 98%, transparent 2%),
+      color-mix(in srgb, var(--color-surface-container-low) 96%, transparent 4%)
+    );
+  border-color: color-mix(in srgb, var(--atlas-border-soft) 56%, transparent 44%);
+}
+
 .atlas-list-row {
   border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 42%, transparent 58%);
   border-radius: 14px;
@@ -411,15 +440,11 @@ html.dark .brandops-table-container {
 .atlas-inline-notice {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  border-radius: 14px;
+  gap: 0.82rem;
+  border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 52%, transparent 48%);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%),
-    color-mix(in srgb, var(--color-surface) 95%, transparent 5%)
-  );
-  padding: 0.72rem 0.88rem;
+  background: color-mix(in srgb, var(--color-surface-container-low) 96%, transparent 4%);
+  padding: 0.9rem 1rem;
   color: var(--color-on-surface);
 }
 
@@ -516,32 +541,19 @@ html.dark .brandops-table-container {
 .atlas-mode-entry {
   display: block;
   width: 100%;
-  border-radius: 16px;
-  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 12%, transparent 88%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-surface) 97%, transparent 3%),
-      color-mix(in srgb, var(--color-surface-container-low) 95%, transparent 5%)
-    );
+  border-radius: 0.16rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 74%, transparent 26%);
+  background: color-mix(in srgb, var(--color-surface) 98%, transparent 2%);
   padding: 1rem 1.05rem;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.014);
+  box-shadow: none;
   transition:
     border-color 0.14s ease,
-    box-shadow 0.14s ease,
-    transform 0.14s ease,
     background 0.14s ease;
 }
 
 .atlas-mode-entry:hover {
-  border-color: color-mix(in srgb, var(--atlas-ai-accent) 14%, transparent 86%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-surface) 98%, transparent 2%),
-      color-mix(in srgb, var(--color-surface-container) 95%, transparent 5%)
-    );
-  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.022);
+  border-color: color-mix(in srgb, var(--color-primary) 24%, var(--atlas-border-muted));
+  background: color-mix(in srgb, var(--color-primary) 3%, var(--color-surface));
 }
 
 .atlas-analytics-eyebrow {
@@ -716,14 +728,20 @@ input.brandops-input[type="date"] {
 }
 
 .brandops-button-primary {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 88%, white 12%), var(--color-primary));
-  color: var(--color-on-primary);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 48%, var(--color-outline));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--atlas-interactive-accent) 86%, white 14%),
+    color-mix(in srgb, var(--atlas-interactive-accent) 92%, #0a3fd1 8%)
+  );
+  color: #ffffff;
+  border: 1px solid color-mix(in srgb, var(--atlas-interactive-accent) 56%, var(--color-outline));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 8px 20px color-mix(in srgb, var(--atlas-interactive-accent) 16%, transparent 84%);
 }
 
 .brandops-button-primary:hover {
-  filter: brightness(1.03);
+  filter: brightness(1.04);
 }
 
 .brandops-button-danger {
@@ -847,7 +865,7 @@ select:focus-visible {
 
 .brandops-toolbar-grid {
   display: grid;
-  gap: 0.9rem;
+  gap: 1rem;
 }
 
 @media (min-width: 900px) {
@@ -862,9 +880,9 @@ select:focus-visible {
 
 .brandops-table-compact th,
 .brandops-table-compact td {
-  padding: 0.58rem 0.85rem;
-  font-size: 0.78rem;
-  line-height: 1.2;
+  padding: 0.5rem 0.72rem;
+  font-size: 0.74rem;
+  line-height: 1.18;
   white-space: nowrap;
 }
 
@@ -879,6 +897,22 @@ select:focus-visible {
 
 .brandops-table-compact td {
   border-bottom: 1px solid var(--atlas-border-muted);
+}
+
+.atlas-table-shell {
+  border-radius: 0;
+  border: 0;
+}
+
+.atlas-compact-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid currentColor;
+  padding: 0.18rem 0.5rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .brandops-table-compact tbody tr:hover {
@@ -934,10 +968,10 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
 .status-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 1.8rem;
-  padding: 0.16rem 0.65rem;
+  min-height: 1.65rem;
+  padding: 0.14rem 0.55rem;
   border-radius: 999px;
-  font-size: 0.69rem;
+  font-size: 0.63rem;
   font-weight: 700;
   text-transform: uppercase;
   background: color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%);
@@ -993,8 +1027,8 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
 
 .brandops-tab[data-active="true"] {
   background: color-mix(in srgb, var(--color-surface) 96%, transparent 4%);
-  border-color: color-mix(in srgb, var(--color-primary) 10%, var(--atlas-border-soft));
-  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--atlas-interactive-accent) 24%, var(--atlas-border-soft));
+  color: color-mix(in srgb, var(--atlas-interactive-accent) 82%, var(--color-on-surface) 18%);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.015), 0 6px 14px rgba(15, 23, 42, 0.025);
 }
 
@@ -1024,9 +1058,9 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
 }
 
 .brandops-subtab[data-active="true"] {
-  border-color: color-mix(in srgb, var(--color-primary) 10%, var(--atlas-border-soft));
+  border-color: color-mix(in srgb, var(--atlas-interactive-accent) 24%, var(--atlas-border-soft));
   background: color-mix(in srgb, var(--color-surface) 96%, transparent 4%);
-  color: var(--color-primary);
+  color: color-mix(in srgb, var(--atlas-interactive-accent) 82%, var(--color-on-surface) 18%);
 }
 
 .app-divider {
@@ -1096,7 +1130,7 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
 .brandops-field-stack {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.56rem;
 }
 
 .brandops-toolbar-panel {
@@ -1104,19 +1138,14 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
   gap: 1rem;
   padding: 1rem;
   border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 38%, transparent 62%);
-  border-radius: 16px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-surface) 96%, transparent 4%),
-      color-mix(in srgb, var(--color-surface-container-low) 94%, transparent 6%)
-    );
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-surface-container-low) 96%, transparent 4%);
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-surface) 14%, transparent 86%);
 }
 
 .brandops-toolbar-panel[data-compact="true"] {
-  padding: 0.8rem;
-  gap: 0.8rem;
+  padding: 0.9rem;
+  gap: 0.9rem;
 }
 
 .brandops-field-label {
@@ -1171,7 +1200,7 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 0.75rem;
+  gap: 0.9rem;
 }
 
 .brandops-tab-panel {
@@ -1191,12 +1220,12 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
 .atlas-soft-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 1.9rem;
+  min-height: 1.7rem;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 26%, transparent 74%);
   background: color-mix(in srgb, var(--color-surface-container-low) 90%, transparent 10%);
-  padding: 0.32rem 0.72rem;
-  font-size: 0.62rem;
+  padding: 0.24rem 0.62rem;
+  font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1355,26 +1384,21 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
 
 .atlas-disclosure {
   overflow: hidden;
-  border-radius: 18px;
-  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 12%, transparent 88%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-surface) 97%, transparent 3%),
-      color-mix(in srgb, var(--color-surface-container-low) 95%, transparent 5%)
-    );
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.014);
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 18%, transparent 82%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 96%, transparent 4%);
+  box-shadow: none;
 }
 
 .atlas-disclosure-summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.9rem;
   cursor: pointer;
   list-style: none;
   padding: 0.95rem 1rem;
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1395,9 +1419,9 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
 
 .atlas-disclosure-body {
   display: grid;
-  gap: 0.75rem;
-  border-top: 1px solid color-mix(in srgb, var(--atlas-border-soft) 12%, transparent 88%);
-  padding: 0.95rem 1rem 1rem;
+  gap: 0.9rem;
+  border-top: 1px solid color-mix(in srgb, var(--atlas-border-soft) 18%, transparent 82%);
+  padding: 1rem;
 }
 
 .atlas-decision-card {
@@ -1636,34 +1660,25 @@ html.dark .brandops-table-compact tbody tr:nth-child(even) {
 
 .atlas-integration-provider-button {
   width: 100%;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 24%, transparent 76%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-surface) 94%, transparent 6%),
-      color-mix(in srgb, var(--color-surface-container-low) 90%, transparent 10%)
-    );
-  padding: 0.78rem 0.85rem;
+  border-radius: 0.12rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 74%, transparent 26%);
+  border-left: 3px solid transparent;
+  background: color-mix(in srgb, var(--color-surface) 98%, transparent 2%);
+  padding: 0.95rem 1rem;
   text-align: left;
   transition:
     border-color 0.18s ease,
     background 0.18s ease,
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
+    border-left-color 0.18s ease;
 }
 
 .atlas-integration-provider-button:hover,
 .atlas-integration-provider-button[data-active="true"] {
-  border-color: color-mix(in srgb, var(--color-primary) 10%, var(--atlas-border-soft));
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-surface) 96%, transparent 4%),
-      color-mix(in srgb, var(--color-primary) 4%, var(--color-surface-container-low))
-    );
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--color-primary) 18%, var(--atlas-border-muted));
+  border-left-color: color-mix(in srgb, var(--color-primary) 88%, transparent 12%);
+  background: color-mix(in srgb, var(--color-primary) 3%, var(--color-surface));
+  box-shadow: none;
+  transform: none;
 }
 
 .atlas-integration-shell .brandops-subtabs {
@@ -2120,6 +2135,35 @@ html.dark .atlas-sidebar {
   background: color-mix(in srgb, var(--color-surface-container) 84%, transparent 16%);
 }
 
+.atlas-period-trigger-icon {
+  display: inline-flex;
+  height: 1.7rem;
+  width: 1.7rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 78%, transparent 22%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 94%, transparent 6%);
+  color: var(--color-on-surface-variant);
+}
+
+.atlas-period-trigger-label {
+  display: block;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+.atlas-period-trigger-value {
+  display: block;
+  margin-top: 0.04rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--color-on-surface);
+}
+
 .atlas-period-menu {
   transform-origin: top right;
   box-shadow: var(--atlas-shell-shadow-soft);
@@ -2200,11 +2244,11 @@ html.dark .atlas-sidebar {
   gap: 0.45rem;
   min-height: 2rem;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--atlas-ai-accent) 28%, transparent 72%);
+  border: 1px solid color-mix(in srgb, var(--atlas-brand-accent) 28%, transparent 72%);
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--atlas-ai-accent-soft) 74%, var(--color-surface) 26%),
+      color-mix(in srgb, var(--atlas-brand-accent-soft) 74%, var(--color-surface) 26%),
       color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%)
     );
   padding: 0.34rem 0.82rem;
@@ -2212,7 +2256,7 @@ html.dark .atlas-sidebar {
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--atlas-ai-accent) 62%, var(--color-on-surface) 38%);
+  color: color-mix(in srgb, var(--atlas-brand-accent) 62%, var(--color-on-surface) 38%);
   box-shadow: inset 0 1px 0 color-mix(in srgb, white 12%, transparent 88%);
 }
 
@@ -2223,8 +2267,8 @@ html.dark .atlas-sidebar {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: radial-gradient(circle, var(--atlas-ai-glow) 0%, transparent 72%);
-  color: var(--atlas-ai-accent);
+  background: radial-gradient(circle, var(--atlas-brand-glow) 0%, transparent 72%);
+  color: var(--atlas-brand-accent);
 }
 
 .atlas-orb {
@@ -2236,15 +2280,15 @@ html.dark .atlas-sidebar {
   --atlas-orb-x: 0.5;
   --atlas-orb-y: 0.5;
   background:
-    radial-gradient(circle at calc(var(--atlas-orb-x) * 100%) calc(var(--atlas-orb-y) * 100%), color-mix(in srgb, var(--atlas-ai-accent) 64%, white 36%), transparent 32%),
-    radial-gradient(circle at 36% 34%, color-mix(in srgb, var(--atlas-ai-accent) 82%, white 18%), transparent 42%),
-    radial-gradient(circle at 66% 70%, color-mix(in srgb, var(--color-secondary) 78%, white 22%), transparent 48%),
+    radial-gradient(circle at calc(var(--atlas-orb-x) * 100%) calc(var(--atlas-orb-y) * 100%), color-mix(in srgb, var(--atlas-brand-accent) 64%, white 36%), transparent 32%),
+    radial-gradient(circle at 36% 34%, color-mix(in srgb, var(--atlas-brand-accent) 82%, white 18%), transparent 42%),
+    radial-gradient(circle at 66% 70%, color-mix(in srgb, var(--atlas-interactive-accent) 78%, white 22%), transparent 48%),
     radial-gradient(circle at 52% 50%, color-mix(in srgb, var(--color-surface) 20%, transparent 80%), transparent 58%),
     linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 22%, transparent 78%), color-mix(in srgb, var(--color-surface) 8%, transparent 92%));
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--atlas-ai-accent) 18%, transparent 82%),
-    0 0 24px color-mix(in srgb, var(--atlas-ai-accent) 16%, transparent 84%),
-    0 0 42px color-mix(in srgb, var(--color-secondary) 12%, transparent 88%);
+    0 0 0 1px color-mix(in srgb, var(--atlas-brand-accent) 18%, transparent 82%),
+    0 0 24px color-mix(in srgb, var(--atlas-brand-accent) 16%, transparent 84%),
+    0 0 42px color-mix(in srgb, var(--atlas-interactive-accent) 12%, transparent 88%);
   isolation: isolate;
   overflow: visible;
   transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
@@ -2256,14 +2300,14 @@ html.dark .atlas-sidebar {
   position: absolute;
   inset: -4px;
   border-radius: inherit;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent 80%);
+  border: 1px solid color-mix(in srgb, var(--atlas-brand-accent) 22%, transparent 78%);
   animation: atlas-orb-pulse 2.8s ease-in-out infinite;
   pointer-events: none;
 }
 
 .atlas-orb::after {
   inset: -10px;
-  border-color: color-mix(in srgb, var(--color-secondary) 18%, transparent 82%);
+  border-color: color-mix(in srgb, var(--atlas-interactive-accent) 18%, transparent 82%);
   animation-delay: 0.8s;
 }
 
@@ -2301,9 +2345,9 @@ html.dark .atlas-sidebar {
 .atlas-orb-interactive[aria-expanded="true"] {
   transform: translateY(-1px) scale(1.03);
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--color-primary) 28%, transparent 72%),
-    0 0 28px color-mix(in srgb, var(--color-primary) 20%, transparent 80%),
-    0 0 52px color-mix(in srgb, var(--color-secondary) 15%, transparent 85%);
+    0 0 0 1px color-mix(in srgb, var(--atlas-brand-accent) 28%, transparent 72%),
+    0 0 28px color-mix(in srgb, var(--atlas-brand-accent) 20%, transparent 80%),
+    0 0 52px color-mix(in srgb, var(--atlas-interactive-accent) 15%, transparent 85%);
 }
 
 .atlas-orb-anchor {
@@ -2662,4 +2706,1573 @@ html.dark .atlas-orb-panel-inner {
 
 ::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, var(--color-ink-muted) 88%, transparent 12%);
+}
+
+/* ============================================================
+   Atlas Rebrand — Shell, Header, Sidebar e Control Tower
+   Camada de override para trazer a base consolidada para uma
+   linguagem mais densa e mais próxima de um console operacional.
+   ============================================================ */
+
+.brandops-panel,
+.brandops-card,
+.brandops-table-container,
+.brandops-toolbar-panel,
+.brandops-command-slab {
+  border-radius: 12px;
+}
+
+.atlas-content-scroll {
+  min-height: 0;
+  overflow: visible;
+  padding: 0.9rem 0 0;
+}
+
+.atlas-page-stack {
+  width: min(100%, 1500px);
+  gap: 1.15rem;
+  padding-inline: clamp(0.9rem, 1.5vw, 1.5rem);
+  padding-bottom: 1.5rem;
+}
+
+.atlas-header-panel {
+  margin-bottom: 0;
+  padding: 0.22rem 1rem 0.92rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.atlas-header-panel::before,
+.atlas-header-panel::after {
+  display: none;
+}
+
+.atlas-header-titleline {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.7rem 1.2rem;
+}
+
+.atlas-header-eyebrow {
+  margin-bottom: 0;
+}
+
+.atlas-header-title {
+  font-family: var(--font-headline);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-on-surface);
+}
+
+.atlas-header-description {
+  min-width: 0;
+  max-width: 56rem;
+  font-size: 0.74rem;
+  line-height: 1.62;
+  color: color-mix(in srgb, var(--color-on-surface-variant) 86%, transparent 14%);
+}
+
+.atlas-header-actions-row {
+  margin-top: 0.55rem;
+  padding-top: 0;
+  border-top: 0;
+  justify-content: flex-start;
+  gap: 0.82rem;
+  row-gap: 0.48rem;
+}
+
+.atlas-inline-metric {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.72rem;
+  padding: 0.24rem 0.72rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 78%, transparent 22%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-on-surface);
+}
+
+.atlas-status-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.atlas-status-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
+  padding: 0.24rem 0.72rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 76%, transparent 24%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-on-surface-variant) 90%, transparent 10%);
+}
+
+.atlas-status-chip[data-tone="accent"] {
+  border-color: color-mix(in srgb, var(--atlas-interactive-accent) 22%, var(--atlas-border-muted));
+  background: color-mix(in srgb, var(--color-primary-container) 52%, var(--color-surface) 48%);
+  color: color-mix(in srgb, var(--atlas-interactive-accent) 84%, var(--color-on-surface) 16%);
+}
+
+.brandops-tabs,
+.brandops-subtabs {
+  gap: 0.28rem;
+  padding: 0.28rem;
+  border-radius: 10px;
+  border-color: color-mix(in srgb, var(--atlas-border-muted) 84%, transparent 16%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 96%, transparent 4%);
+}
+
+.brandops-tab,
+.brandops-subtab {
+  min-height: 2.15rem;
+  padding: 0.38rem 0.78rem;
+  border-radius: 8px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.brandops-tab[data-active="true"],
+.brandops-subtab[data-active="true"] {
+  box-shadow: none;
+  background: color-mix(in srgb, var(--color-surface) 98%, transparent 2%);
+}
+
+.brandops-input {
+  min-height: 2.6rem;
+  border-radius: 10px;
+  font-size: 0.84rem;
+}
+
+input.brandops-input,
+select.brandops-input,
+textarea.brandops-input {
+  padding: 0.72rem 0.85rem;
+}
+
+.brandops-button {
+  min-height: 2.45rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  gap: 0.35rem;
+}
+
+.atlas-analytics-card {
+  border-radius: 12px;
+  border-color: color-mix(in srgb, var(--atlas-border-soft) 18%, transparent 82%);
+  box-shadow: none;
+  padding: 0.8rem 0.9rem;
+}
+
+.atlas-analytics-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.atlas-analytics-eyebrow {
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+}
+
+.atlas-analytics-value {
+  font-size: clamp(0.98rem, 1.8vw, 1.24rem);
+  line-height: 1;
+}
+
+.atlas-analytics-copy {
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.atlas-analytics-action {
+  min-height: 1.55rem;
+  padding: 0.08rem 0.45rem;
+  font-size: 0.56rem;
+}
+
+.atlas-compact-stack {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.atlas-kpi-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.atlas-priority-rail {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.atlas-diagnostic-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.atlas-diagnostic-row {
+  display: block;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 72%, transparent 28%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 97%, transparent 3%);
+  padding: 0.8rem 0.9rem;
+}
+
+.atlas-diagnostic-row[data-tone="warning"] {
+  border-color: color-mix(in srgb, var(--color-warning) 28%, transparent 72%);
+}
+
+.atlas-diagnostic-row[data-tone="negative"] {
+  border-color: color-mix(in srgb, var(--color-error) 28%, transparent 72%);
+}
+
+.atlas-diagnostic-row[data-tone="info"] {
+  border-color: color-mix(in srgb, var(--color-info) 22%, transparent 78%);
+}
+
+.atlas-workspace-loading,
+.atlas-brand-picker {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+}
+
+.atlas-workspace-loading-card {
+  display: grid;
+  justify-items: center;
+  gap: 1.25rem;
+  width: min(100%, 24rem);
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 30%, transparent 70%);
+  background: color-mix(in srgb, var(--color-surface) 97%, transparent 3%);
+  padding: 2rem;
+  box-shadow: var(--atlas-shell-shadow-soft);
+}
+
+.atlas-brand-picker {
+  gap: 1.5rem;
+}
+
+.atlas-brand-picker-copy {
+  width: min(100%, 44rem);
+  text-align: center;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.atlas-brand-picker-grid {
+  display: grid;
+  gap: 0.9rem;
+  width: min(100%, 68rem);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.atlas-brand-picker-card {
+  display: grid;
+  gap: 0.95rem;
+  text-align: left;
+  padding: 1rem;
+}
+
+.atlas-brand-picker-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.85rem;
+  height: 2.85rem;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--color-primary-container) 72%, transparent 28%);
+  color: var(--color-on-primary-container);
+  font-family: var(--font-headline);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.atlas-shell-layout {
+  display: flex;
+  min-height: 100svh;
+}
+
+.atlas-sidebar-shell {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  width: 16rem;
+  flex-direction: column;
+  border-right: 1px solid color-mix(in srgb, var(--atlas-border-soft) 78%, transparent 22%);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 98%, transparent 2%), color-mix(in srgb, var(--color-surface-container-low) 96%, transparent 4%));
+}
+
+.atlas-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 3.25rem;
+  padding: 0.8rem 0.95rem 0.75rem;
+}
+
+.atlas-sidebar-brandmark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent 90%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-surface-container) 95%, transparent 5%), color-mix(in srgb, var(--color-primary-container) 48%, transparent 52%));
+  color: var(--color-on-primary-container);
+}
+
+.atlas-sidebar-brandtitle {
+  font-family: var(--font-headline);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-on-surface);
+}
+
+.atlas-sidebar-brandmeta {
+  margin-top: 0.1rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-on-surface-variant);
+}
+
+.atlas-brandmark-glyph,
+.atlas-mark {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.atlas-brandmark-glyph {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.atlas-mark-sm {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+.atlas-mark-md {
+  width: 1rem;
+  height: 1rem;
+}
+
+.atlas-mark-lg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.atlas-brandmark-orbit,
+.atlas-brandmark-core,
+.atlas-mark-orbit,
+.atlas-mark-core {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+}
+
+.atlas-brandmark-orbit,
+.atlas-mark-orbit {
+  border: 1px solid currentColor;
+  opacity: 0.68;
+}
+
+.atlas-brandmark-orbit-outer,
+.atlas-mark-orbit-outer {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.atlas-brandmark-orbit-inner,
+.atlas-mark-orbit-inner {
+  width: 0.62rem;
+  height: 0.62rem;
+  opacity: 0.86;
+}
+
+.atlas-brandmark-core,
+.atlas-mark-core {
+  width: 0.2rem;
+  height: 0.2rem;
+  background: currentColor;
+  box-shadow: 0 0 0 0.18rem color-mix(in srgb, currentColor 18%, transparent 82%);
+}
+
+.atlas-mark-sm .atlas-mark-orbit-outer {
+  width: 0.76rem;
+  height: 0.76rem;
+}
+
+.atlas-mark-sm .atlas-mark-orbit-inner {
+  width: 0.44rem;
+  height: 0.44rem;
+}
+
+.atlas-mark-sm .atlas-mark-core {
+  width: 0.14rem;
+  height: 0.14rem;
+  box-shadow: 0 0 0 0.12rem color-mix(in srgb, currentColor 18%, transparent 82%);
+}
+
+.atlas-mark-lg .atlas-mark-orbit-outer {
+  width: 1.18rem;
+  height: 1.18rem;
+}
+
+.atlas-mark-lg .atlas-mark-orbit-inner {
+  width: 0.7rem;
+  height: 0.7rem;
+}
+
+.atlas-mark-lg .atlas-mark-core {
+  width: 0.22rem;
+  height: 0.22rem;
+}
+
+.atlas-orb-mark {
+  color: color-mix(in srgb, var(--atlas-brand-accent) 78%, white 22%);
+  filter:
+    drop-shadow(0 0 10px color-mix(in srgb, var(--atlas-brand-glow) 72%, transparent 28%))
+    drop-shadow(0 0 14px color-mix(in srgb, var(--atlas-interactive-accent) 26%, transparent 74%));
+}
+
+.atlas-sidebar-nav {
+  flex: 1;
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+  overflow: hidden;
+  padding: 0.35rem 0.75rem 0.45rem;
+}
+
+.atlas-mobile-drawer-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0.8rem 1rem;
+}
+
+.atlas-sidebar-block {
+  display: grid;
+  gap: 0.24rem;
+}
+
+.atlas-sidebar-heading {
+  margin-bottom: 0.12rem;
+  padding: 0 0.55rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+.atlas-sidebar-links {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.atlas-sidebar-node {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.atlas-sidebar-branch-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem;
+  align-items: stretch;
+}
+
+.atlas-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.58rem;
+  min-height: 2.1rem;
+  padding: 0.35rem 0.68rem;
+  border-left: 2px solid transparent;
+  border-radius: 0.72rem;
+  border-top: 1px solid transparent;
+  border-right: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+  color: var(--color-on-surface-variant);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.atlas-sidebar-link:hover {
+  background: color-mix(in srgb, var(--color-surface-container) 96%, transparent 4%);
+  color: var(--color-on-surface);
+}
+
+.atlas-sidebar-link[data-context="true"] {
+  color: var(--color-on-surface);
+}
+
+.atlas-sidebar-branch-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.05rem;
+  border-radius: 0.72rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 74%, transparent 26%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 95%, transparent 5%);
+  color: var(--color-on-surface-variant);
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.atlas-sidebar-branch-trigger svg {
+  transition: transform 180ms ease;
+}
+
+.atlas-sidebar-branch-trigger[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.atlas-sidebar-link[data-active="true"] {
+  border-left-color: var(--color-info);
+  background: color-mix(in srgb, var(--color-primary-container) 38%, transparent 62%);
+  color: var(--color-on-surface);
+}
+
+.atlas-sidebar-link[data-active="true"]::before,
+.atlas-sidebar-link[data-active="true"]::after {
+  display: none;
+}
+
+.atlas-sidebar-branch-children {
+  display: grid;
+  gap: 0.16rem;
+  margin-left: 0.72rem;
+  padding-left: 0.72rem;
+  border-left: 1px solid color-mix(in srgb, var(--atlas-border-muted) 74%, transparent 26%);
+}
+
+.atlas-sidebar-sublink {
+  min-height: 1.8rem;
+  font-size: 0.7rem;
+  color: color-mix(in srgb, var(--color-on-surface-variant) 92%, transparent 8%);
+}
+
+.atlas-sidebar-footer {
+  padding: 0.55rem 0.7rem 0.7rem;
+  border-top: 1px solid color-mix(in srgb, var(--atlas-border-soft) 78%, transparent 22%);
+}
+
+.atlas-sidebar-footer-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  padding: 0.58rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 74%, transparent 26%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 94%, transparent 6%);
+}
+
+.atlas-sidebar-footer-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+.atlas-sidebar-footer-value {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.atlas-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 0.8rem clamp(0.9rem, 1.5vw, 1.5rem) 0.68rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--atlas-border-soft) 78%, transparent 22%);
+  background: color-mix(in srgb, var(--color-background) 92%, transparent 8%);
+  backdrop-filter: blur(12px);
+}
+
+.atlas-topbar::before,
+.atlas-topbar::after,
+.atlas-command-strip::before,
+.atlas-command-strip::after {
+  display: none;
+}
+
+.atlas-topbar-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.atlas-topbar-context {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.atlas-topbar-menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 88%, transparent 12%);
+  border-radius: 0.22rem;
+  background: color-mix(in srgb, var(--color-surface-container-low) 82%, var(--color-surface) 18%);
+  color: var(--color-on-surface);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--atlas-border-muted) 58%, transparent 42%);
+}
+
+.atlas-topbar-menu:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 18%, var(--atlas-border-soft) 82%);
+  background: color-mix(in srgb, var(--color-surface-container) 78%, var(--color-surface) 22%);
+}
+
+.atlas-topbar-overline {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+.atlas-topbar-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.atlas-topbar-title {
+  font-family: var(--font-headline);
+  font-size: 1.06rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-on-surface);
+}
+
+.atlas-topbar-scope {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--color-on-surface-variant);
+}
+
+.atlas-topbar-description {
+  margin-top: 0.28rem;
+  max-width: 48rem;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--color-on-surface-variant);
+}
+
+.atlas-topbar-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.atlas-topbar-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0.1rem 0.3rem;
+  border-left: 2px solid color-mix(in srgb, var(--color-primary) 58%, transparent 42%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 52%, transparent 48%);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.atlas-topbar-meta-divider {
+  width: 1.4rem;
+  height: 1px;
+  background: color-mix(in srgb, var(--atlas-border-muted) 82%, transparent 18%);
+}
+
+.atlas-topbar-meta-text {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--color-on-surface-variant);
+}
+
+.atlas-topbar-tools {
+  display: flex;
+  align-items: stretch;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.atlas-topbar-commandbar {
+  display: flex;
+  align-items: stretch;
+  gap: 0.45rem;
+}
+
+.atlas-shell-select-wrap {
+  position: relative;
+  min-width: 12rem;
+}
+
+.atlas-shell-period-wrap {
+  min-width: 9.5rem;
+}
+
+.atlas-shell-select {
+  min-height: 2.5rem;
+  padding: 0.4rem 2rem 0.4rem 0.72rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 68%, transparent 32%);
+  border-radius: 0.08rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-on-surface);
+  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-surface-container-low) 6%);
+  min-width: 0;
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--atlas-border-soft) 76%, transparent 24%);
+}
+
+.atlas-shell-select:hover,
+.atlas-shell-select:focus-visible {
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--atlas-border-muted) 72%);
+  background: color-mix(in srgb, var(--color-surface) 90%, var(--color-surface-container) 10%);
+  outline: none;
+}
+
+.atlas-period-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.72rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 68%, transparent 32%);
+  border-radius: 0.08rem;
+  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-surface-container-low) 6%);
+  text-align: left;
+  transition: border-color 160ms ease, background-color 160ms ease;
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--atlas-border-soft) 76%, transparent 24%);
+}
+
+.atlas-period-trigger:hover,
+.atlas-period-trigger[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--atlas-border-muted) 72%);
+  background: color-mix(in srgb, var(--color-surface) 90%, var(--color-surface-container) 10%);
+}
+
+.atlas-topbar-alerts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--atlas-border-muted) 74%, transparent 26%);
+}
+
+.atlas-topbar-alert {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.9rem;
+  padding: 0.26rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-soft) 82%, transparent 18%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent 4%);
+  font-size: 0.7rem;
+  line-height: 1.2;
+  color: var(--color-on-surface);
+}
+
+.atlas-topbar-alert[data-tone="negative"] {
+  border-color: color-mix(in srgb, var(--color-error) 28%, transparent 72%);
+  background: color-mix(in srgb, var(--color-error-container) 54%, var(--color-surface) 46%);
+  color: var(--color-on-error-container);
+}
+
+.atlas-topbar-alert[data-tone="warning"] {
+  border-color: color-mix(in srgb, var(--color-warning) 30%, transparent 70%);
+  background: color-mix(in srgb, var(--color-warning) 12%, var(--color-surface) 88%);
+}
+
+.atlas-topbar-alert[data-tone="info"] {
+  border-color: color-mix(in srgb, var(--color-info) 28%, transparent 72%);
+  background: color-mix(in srgb, var(--color-primary-container) 60%, var(--color-surface) 40%);
+}
+
+.atlas-topbar-error {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-error) 24%, transparent 76%);
+  background: color-mix(in srgb, var(--color-error-container) 54%, var(--color-surface) 46%);
+  font-size: 0.72rem;
+  color: var(--color-on-error-container);
+}
+
+.atlas-user-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.5rem;
+  padding: 0.3rem 0.72rem 0.3rem 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 68%, transparent 32%);
+  border-radius: 0.08rem;
+  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-surface-container-low) 6%);
+  color: var(--color-on-surface);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--atlas-border-soft) 76%, transparent 24%);
+}
+
+.atlas-user-trigger:hover,
+.atlas-user-trigger[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--atlas-border-muted) 72%);
+  background: color-mix(in srgb, var(--color-surface) 90%, var(--color-surface-container) 10%);
+}
+
+.atlas-user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 0.08rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 62%, transparent 38%);
+  background: color-mix(in srgb, var(--color-surface) 96%, var(--color-surface-container-low) 4%);
+  color: var(--color-on-surface-variant);
+}
+
+.atlas-user-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.atlas-user-label {
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+.atlas-user-name {
+  max-width: 8.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.atlas-user-chevron {
+  color: var(--color-on-surface-variant);
+  transition: transform 160ms ease;
+}
+
+.atlas-user-menu {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  width: min(18rem, 88vw);
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 70%, transparent 30%);
+  border-radius: 0.12rem;
+  background: color-mix(in srgb, var(--color-surface) 99%, transparent 1%);
+  box-shadow: var(--atlas-shell-shadow-soft);
+}
+
+.atlas-user-menu-head,
+.atlas-user-menu-row {
+  padding: 0.7rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 62%, transparent 38%);
+  border-radius: 0.08rem;
+  background: color-mix(in srgb, var(--color-surface) 96%, var(--color-surface-container-low) 4%);
+}
+
+.atlas-user-menu-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.atlas-user-menu-email {
+  margin-top: 0.18rem;
+  font-size: 0.68rem;
+  color: var(--color-on-surface-variant);
+}
+
+.atlas-user-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.72rem;
+  color: var(--color-on-surface);
+}
+
+.atlas-theme-toggle {
+  border-radius: 0.08rem;
+}
+
+.atlas-theme-toggle-panel,
+.atlas-theme-toggle-subtle {
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 68%, transparent 32%);
+  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-surface-container-low) 6%);
+  color: var(--color-on-surface-variant);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--atlas-border-soft) 76%, transparent 24%);
+}
+
+.atlas-theme-toggle-panel:hover,
+.atlas-theme-toggle-subtle:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--atlas-border-muted) 72%);
+  background: color-mix(in srgb, var(--color-surface) 90%, var(--color-surface-container) 10%);
+  color: var(--color-on-surface);
+}
+
+.atlas-period-menu {
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 70%, transparent 30%);
+  border-radius: 0.12rem;
+  background: color-mix(in srgb, var(--color-surface) 99%, transparent 1%);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+.atlas-period-option {
+  min-height: 3rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 64%, transparent 36%);
+  border-radius: 0.08rem;
+  background: color-mix(in srgb, var(--color-surface) 96%, var(--color-surface-container-low) 4%);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--atlas-border-soft) 74%, transparent 26%);
+}
+
+.atlas-period-option:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 22%, var(--atlas-border-muted) 78%);
+  background: color-mix(in srgb, var(--color-surface) 92%, var(--color-surface-container) 8%);
+}
+
+.atlas-period-option[data-active="true"] {
+  border-color: color-mix(in srgb, var(--color-primary) 36%, var(--atlas-border-muted) 64%);
+  background: color-mix(in srgb, var(--color-primary-container) 22%, var(--color-surface) 78%);
+  color: var(--color-on-surface);
+}
+
+.atlas-mobile-tabbar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 45;
+  padding: 0.55rem max(0.6rem, env(safe-area-inset-right)) calc(0.55rem + env(safe-area-inset-bottom)) max(0.6rem, env(safe-area-inset-left));
+  border-top: 1px solid color-mix(in srgb, var(--atlas-border-soft) 80%, transparent 20%);
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent 4%);
+  backdrop-filter: blur(16px);
+}
+
+.atlas-mobile-tabbar-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+
+.atlas-mobile-tab {
+  display: grid;
+  justify-items: center;
+  gap: 0.18rem;
+  min-height: 3.2rem;
+  padding: 0.4rem 0.15rem;
+  border-radius: 0.7rem;
+  color: var(--color-on-surface-variant);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.atlas-mobile-tab[data-active="true"] {
+  background: color-mix(in srgb, var(--color-primary-container) 52%, transparent 48%);
+  color: var(--color-on-primary-container);
+}
+
+.atlas-mobile-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+
+.atlas-mobile-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(4px);
+}
+
+.atlas-mobile-drawer-panel {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: flex;
+  flex-direction: column;
+  width: min(20rem, 88vw);
+  background: color-mix(in srgb, var(--color-surface) 98%, transparent 2%);
+  border-right: 1px solid color-mix(in srgb, var(--atlas-border-soft) 80%, transparent 20%);
+}
+
+@media (max-width: 1023px) {
+  .atlas-topbar {
+    padding-top: 0.75rem;
+    padding-inline: 0.75rem;
+  }
+
+  .atlas-topbar-main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .atlas-topbar-title {
+    font-size: 0.98rem;
+  }
+
+  .atlas-topbar-description {
+    display: none;
+  }
+
+  .atlas-topbar-tools {
+    width: 100%;
+    justify-content: stretch;
+    flex-wrap: wrap;
+  }
+
+  .atlas-topbar-commandbar {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .atlas-shell-select-wrap {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  .atlas-shell-period-wrap {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .atlas-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .atlas-user-trigger {
+    min-width: 0;
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .atlas-page-stack {
+    padding-inline: 0.75rem;
+    padding-bottom: calc(5.3rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* Atlas Design System V2 canonical overrides */
+
+.brandops-panel,
+.brandops-card,
+.brandops-table-container,
+.brandops-toolbar-panel,
+.brandops-command-slab,
+.atlas-soft-subcard,
+.atlas-soft-memory-card,
+.atlas-command-hero,
+.atlas-decision-card,
+.atlas-command-deck,
+.atlas-alert-rail,
+.atlas-integration-summary-item,
+.atlas-integration-provider-button,
+.atlas-kpi-tile,
+.atlas-callout-card,
+.atlas-list-row {
+  box-shadow: none;
+}
+
+.brandops-panel,
+.brandops-card,
+.brandops-table-container,
+.brandops-toolbar-panel,
+.brandops-command-slab {
+  border-radius: 0.12rem;
+  border-color: color-mix(in srgb, var(--atlas-border-muted) 76%, transparent 24%);
+  background: color-mix(in srgb, var(--color-surface) 98%, transparent 2%);
+}
+
+.atlas-soft-subcard,
+.atlas-soft-memory-card,
+.atlas-integration-summary-item,
+.atlas-integration-provider-button,
+.atlas-decision-card,
+.atlas-command-hero,
+.atlas-command-deck,
+.atlas-alert-rail {
+  border-radius: 0.12rem;
+  border-color: color-mix(in srgb, var(--atlas-border-muted) 72%, transparent 28%);
+}
+
+.atlas-soft-subcard,
+.atlas-soft-memory-card,
+.atlas-integration-summary-item,
+.atlas-decision-card {
+  background: color-mix(in srgb, var(--color-surface-container-low) 96%, transparent 4%);
+}
+
+.atlas-command-hero,
+.atlas-command-deck,
+.atlas-alert-rail {
+  background: color-mix(in srgb, var(--color-surface) 97%, transparent 3%);
+}
+
+.atlas-list-row,
+.atlas-kpi-tile,
+.atlas-callout-card {
+  padding: 1.08rem 1.14rem;
+}
+
+.atlas-kpi-tile {
+  min-height: 8.35rem;
+  display: grid;
+  align-content: start;
+  gap: 0.16rem;
+}
+
+.atlas-callout-card {
+  min-height: 7.8rem;
+  display: grid;
+  align-content: start;
+}
+
+.atlas-kpi-grid {
+  margin-top: 0.45rem;
+  gap: 1.05rem;
+  grid-auto-rows: 1fr;
+}
+
+.atlas-page-stack {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.atlas-page-stack-compact {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.atlas-component-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.atlas-component-stack-compact {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.atlas-component-stack-tight {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.atlas-panel-body {
+  margin-top: 1rem;
+  display: grid;
+}
+
+.atlas-panel-body-default {
+  gap: 0.92rem;
+}
+
+.atlas-panel-body-chart {
+  gap: 1rem;
+}
+
+.atlas-panel-footer {
+  margin-top: 0.9rem;
+}
+
+.atlas-priority-rail,
+.atlas-compact-stack,
+.atlas-diagnostic-list {
+  gap: 1.05rem;
+}
+
+.atlas-command-hero {
+  padding: 1.18rem 1.24rem;
+}
+
+.atlas-decision-card {
+  padding: 1.08rem 1.14rem;
+}
+
+.atlas-integration-summary-strip {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.atlas-integration-summary-item {
+  padding: 1.08rem 1.14rem;
+  min-height: 100%;
+}
+
+.atlas-integration-provider-button {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  border-left-width: 3px;
+  border-left-color: transparent;
+  background: color-mix(in srgb, var(--color-surface-container-low) 97%, transparent 3%);
+}
+
+.atlas-integration-provider-button[data-active="true"] {
+  border-left-color: color-mix(in srgb, var(--atlas-interactive-accent) 72%, transparent 28%);
+}
+
+.atlas-integration-health-block {
+  display: grid;
+  gap: 0.28rem;
+  justify-items: start;
+}
+
+.atlas-integration-health-copy {
+  max-width: 22ch;
+  font-size: 0.68rem;
+  line-height: 1.1rem;
+  color: var(--color-on-surface-variant);
+}
+
+.atlas-analytics-section,
+.atlas-home-section {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.atlas-side-stack {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.atlas-action-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+@media (max-width: 1023px) {
+  .atlas-integration-summary-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
+.atlas-mode-entry {
+  border-radius: 0.12rem;
+  border-color: color-mix(in srgb, var(--atlas-border-muted) 76%, transparent 24%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 97%, transparent 3%);
+  box-shadow: none;
+}
+
+.atlas-mode-entry:hover {
+  border-color: color-mix(in srgb, var(--atlas-interactive-accent) 18%, var(--atlas-border-soft));
+  background: color-mix(in srgb, var(--color-surface) 98%, transparent 2%);
+  box-shadow: none;
+}
+
+.atlas-callout-card,
+.atlas-kpi-tile,
+.atlas-list-row,
+.atlas-mode-entry,
+.atlas-integration-provider-button,
+.atlas-integration-summary-item,
+.atlas-soft-subcard,
+.atlas-soft-memory-card,
+.atlas-decision-card {
+  backdrop-filter: none;
+}
+
+.atlas-panel-chart {
+  padding-bottom: 1.2rem;
+}
+
+.atlas-panel-callout,
+.atlas-panel-default {
+  padding-bottom: 0.95rem;
+}
+
+.atlas-soft-subcard,
+.atlas-soft-memory-card {
+  padding: 0.88rem 0.94rem;
+}
+
+.atlas-panel-chart .recharts-wrapper,
+.atlas-panel-chart .recharts-surface {
+  overflow: visible;
+}
+
+.atlas-analytics-copy {
+  font-size: 0.71rem;
+  line-height: 1.38rem;
+}
+
+.atlas-analytics-eyebrow {
+  margin-bottom: 0.14rem;
+}
+
+.atlas-kpi-tile .atlas-analytics-value {
+  font-weight: 650;
+}
+
+.atlas-inline-action {
+  align-self: flex-start;
+}
+
+.atlas-integration-shell .brandops-button {
+  min-height: 2.25rem;
+  padding-inline: 0.78rem;
+}
+
+.atlas-integration-shell .brandops-button-primary {
+  box-shadow: none;
+}
+
+.atlas-integration-shell .brandops-toolbar-grid,
+.atlas-integration-shell .brandops-toolbar-panel {
+  gap: 1rem;
+}
+
+.atlas-integration-shell .panel-muted {
+  border-radius: 0.12rem;
+  border: 1px solid color-mix(in srgb, var(--atlas-border-muted) 74%, transparent 26%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 97%, transparent 3%);
+}
+
+.atlas-integration-shell .atlas-inline-metric {
+  letter-spacing: 0.08em;
+}
+
+.atlas-disclosure,
+.brandops-subtabs,
+.brandops-tabs {
+  border-radius: 0.12rem;
+}
+
+.atlas-tech-grid::after {
+  opacity: 0.22;
+}
+
+html:not(.dark) .brandops-panel,
+html:not(.dark) .brandops-card,
+html:not(.dark) .brandops-table-container,
+html:not(.dark) .brandops-toolbar-panel,
+html:not(.dark) .brandops-command-slab {
+  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-surface-container-low) 6%);
+  border-color: color-mix(in srgb, var(--atlas-border-muted) 74%, transparent 26%);
+  box-shadow:
+    0 1px 0 rgba(15, 23, 42, 0.045),
+    0 14px 24px rgba(15, 23, 42, 0.024);
+}
+
+html:not(.dark) .atlas-kpi-tile,
+html:not(.dark) .atlas-callout-card,
+html:not(.dark) .atlas-list-row,
+html:not(.dark) .atlas-mode-entry,
+html:not(.dark) .atlas-soft-subcard,
+html:not(.dark) .atlas-soft-memory-card,
+html:not(.dark) .atlas-command-hero,
+html:not(.dark) .atlas-decision-card,
+html:not(.dark) .atlas-command-deck,
+html:not(.dark) .atlas-alert-rail,
+html:not(.dark) .atlas-integration-summary-item,
+html:not(.dark) .atlas-integration-provider-button {
+  background: color-mix(in srgb, var(--color-surface) 91%, var(--color-surface-container-low) 9%);
+  border-color: color-mix(in srgb, var(--atlas-border-muted) 72%, transparent 28%);
+  box-shadow:
+    0 1px 0 rgba(15, 23, 42, 0.035),
+    0 10px 18px rgba(15, 23, 42, 0.018);
+}
+
+html:not(.dark) .atlas-kpi-tile {
+  background: color-mix(in srgb, var(--color-surface) 88%, var(--color-surface-container-low) 12%);
+}
+
+html:not(.dark) .atlas-callout-card {
+  background: color-mix(in srgb, var(--color-surface) 89%, var(--color-surface-container-low) 11%);
+}
+
+html:not(.dark) .atlas-kpi-tile[data-tone="positive"],
+html:not(.dark) .atlas-callout-card[data-tone="positive"] {
+  background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface) 93%);
+}
+
+html:not(.dark) .atlas-kpi-tile[data-tone="warning"],
+html:not(.dark) .atlas-callout-card[data-tone="warning"] {
+  background: color-mix(in srgb, var(--color-tertiary) 9%, var(--color-surface) 91%);
+}
+
+html:not(.dark) .atlas-kpi-tile[data-tone="negative"],
+html:not(.dark) .atlas-callout-card[data-tone="negative"] {
+  background: color-mix(in srgb, var(--color-error) 8%, var(--color-surface) 92%);
+}
+
+html:not(.dark) .atlas-soft-subcard,
+html:not(.dark) .atlas-soft-memory-card,
+html:not(.dark) .panel-muted {
+  background: color-mix(in srgb, var(--color-surface) 93%, var(--color-surface-container-low) 7%);
+  border-color: color-mix(in srgb, var(--atlas-border-muted) 70%, transparent 30%);
+}
+
+html:not(.dark) .brandops-tabs,
+html:not(.dark) .brandops-subtabs {
+  background: color-mix(in srgb, var(--color-surface-container-low) 84%, var(--color-surface) 16%);
+  border-color: color-mix(in srgb, var(--atlas-border-muted) 68%, transparent 32%);
+}
+
+html:not(.dark) .brandops-tab[data-active="true"],
+html:not(.dark) .brandops-subtab[data-active="true"] {
+  background: color-mix(in srgb, var(--color-surface) 99%, transparent 1%);
+  border-color: color-mix(in srgb, var(--atlas-interactive-accent) 36%, var(--atlas-border-muted));
+  color: color-mix(in srgb, var(--atlas-interactive-accent) 82%, var(--color-on-surface) 18%);
+}
+
+html:not(.dark) .atlas-inline-metric,
+html:not(.dark) .atlas-status-chip {
+  background: color-mix(in srgb, var(--color-surface) 96%, var(--color-surface-container-low) 4%);
+  border-color: color-mix(in srgb, var(--atlas-border-muted) 72%, transparent 28%);
+}
+
+html:not(.dark) .atlas-status-chip[data-tone="accent"] {
+  background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface) 93%);
+  border-color: color-mix(in srgb, var(--atlas-interactive-accent) 34%, var(--atlas-border-muted));
+  color: color-mix(in srgb, var(--atlas-interactive-accent) 82%, var(--color-on-surface) 18%);
+}
+
+html:not(.dark) .atlas-diagnostic-row {
+  background: color-mix(in srgb, var(--color-surface) 90%, var(--color-surface-container-low) 10%);
+  border-color: color-mix(in srgb, var(--atlas-border-muted) 66%, transparent 34%);
+}
+
+html:not(.dark) .atlas-command-deck,
+html:not(.dark) .atlas-alert-rail {
+  background: color-mix(in srgb, var(--color-surface) 88%, var(--color-surface-container-low) 12%);
+}
+
+html:not(.dark) .brandops-table-container thead th {
+  color: color-mix(in srgb, var(--color-on-surface-variant) 88%, transparent 12%);
+  background: color-mix(in srgb, var(--color-surface-container-low) 92%, transparent 8%);
+}
+
+html:not(.dark) .brandops-table-container tbody tr:hover {
+  background: color-mix(in srgb, var(--color-surface-container-low) 72%, transparent 28%);
+}
+
+html.dark .brandops-shell {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--atlas-page-grid) 20%, transparent 80%) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--atlas-page-grid) 20%, transparent 80%) 1px, transparent 1px),
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--atlas-interactive-accent) 5%, transparent 95%), transparent 32rem),
+    radial-gradient(circle at 88% 4%, color-mix(in srgb, var(--atlas-brand-accent) 4%, transparent 96%), transparent 28rem);
+  background-size: 44px 44px, 44px 44px, 100% 100%, 100% 100%;
+}
+
+html.dark .brandops-panel,
+html.dark .brandops-card,
+html.dark .brandops-table-container,
+html.dark .brandops-toolbar-panel,
+html.dark .brandops-command-slab,
+html.dark .atlas-soft-subcard,
+html.dark .atlas-soft-memory-card,
+html.dark .atlas-command-hero,
+html.dark .atlas-decision-card,
+html.dark .atlas-command-deck,
+html.dark .atlas-alert-rail,
+html.dark .atlas-kpi-tile,
+html.dark .atlas-callout-card,
+html.dark .atlas-list-row,
+html.dark .atlas-integration-summary-item,
+html.dark .atlas-integration-provider-button {
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent 4%);
+  border-color: color-mix(in srgb, var(--atlas-border-soft) 80%, transparent 20%);
+}
+
+html.dark .atlas-inline-metric {
+  background: color-mix(in srgb, var(--color-surface-container-low) 82%, var(--color-surface) 18%);
+  border-color: color-mix(in srgb, var(--atlas-border-soft) 76%, transparent 24%);
+}
+
+html.dark .atlas-tech-grid::after {
+  opacity: 0.12;
+}
+
+html.dark .atlas-mode-entry,
+html.dark .atlas-soft-subcard,
+html.dark .atlas-soft-memory-card,
+html.dark .atlas-decision-card,
+html.dark .atlas-integration-provider-button,
+html.dark .atlas-integration-summary-item {
+  background: color-mix(in srgb, var(--color-surface-container-low) 82%, var(--color-surface) 18%);
+}
+
+html.dark .atlas-status-chip {
+  background: color-mix(in srgb, var(--color-surface-container-low) 82%, var(--color-surface) 18%);
+  border-color: color-mix(in srgb, var(--atlas-border-soft) 76%, transparent 24%);
+}
+
+html.dark .atlas-status-chip[data-tone="accent"] {
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-primary) 22%, var(--atlas-border-soft));
+  color: color-mix(in srgb, var(--color-primary) 76%, white 24%);
+}
+
+html.dark .atlas-mode-entry:hover,
+html.dark .atlas-integration-provider-button[data-active="true"] {
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+}
+
+html.dark .atlas-integration-shell .panel-muted {
+  background: color-mix(in srgb, var(--color-surface-container-low) 78%, var(--color-surface) 22%);
+  border-color: color-mix(in srgb, var(--atlas-border-soft) 78%, transparent 22%);
+}
+
+html.dark .atlas-callout-card[data-tone="positive"],
+html.dark .atlas-kpi-tile[data-tone="positive"] {
+  border-color: color-mix(in srgb, var(--color-primary) 34%, var(--atlas-border-soft));
+}
+
+html.dark .atlas-callout-card[data-tone="warning"],
+html.dark .atlas-kpi-tile[data-tone="warning"] {
+  border-color: color-mix(in srgb, var(--color-tertiary) 24%, var(--atlas-border-soft));
 }

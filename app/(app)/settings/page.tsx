@@ -209,11 +209,17 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="atlas-settings-room space-y-6">
+    <div className="atlas-settings-room atlas-page-stack">
       <PageHeader
         eyebrow="Configurações"
-        title={selectedBrandName}
-        description="Ajustes estratégicos da marca, sem poluir a Torre."
+        title="Central estratégica"
+        description="Ajustes de governança, IA, fontes e equipe fora do fluxo operacional principal."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <span className="atlas-inline-metric">{selectedBrandName}</span>
+            <span className="atlas-inline-metric">{BRAND_PLAN_LABELS[governance.planTier]}</span>
+          </div>
+        }
       />
 
       <section className="grid gap-3 md:grid-cols-3">
@@ -241,10 +247,11 @@ export default function SettingsPage() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
-        <SurfaceCard className="atlas-settings-hub p-4">
+        <SurfaceCard className="atlas-settings-hub">
           <SectionHeading
             title="Abrir agora"
             description="Escolha o bloco certo e siga."
+            aside={<span className="atlas-inline-metric">{modules.length} frentes</span>}
           />
 
           <div className="mt-4 grid gap-2 md:grid-cols-2">
@@ -255,7 +262,7 @@ export default function SettingsPage() {
                   <StackItem
                     title={
                       <span className="flex items-center gap-2">
-                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-outline bg-surface-container-low text-primary">
+                        <span className="inline-flex h-7 w-7 items-center justify-center border border-outline bg-surface-container-low text-primary">
                           <Icon size={14} />
                         </span>
                         <span>{module.label}</span>
@@ -277,26 +284,26 @@ export default function SettingsPage() {
           </div>
         </SurfaceCard>
 
-        <SurfaceCard className="atlas-settings-focus p-4">
+        <SurfaceCard className="atlas-settings-focus">
           <SectionHeading
             title="O que pede ajuste"
             description="Um relance para decidir o próximo clique."
             aside={<ShieldCheck size={14} className="text-primary" />}
           />
 
-          <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
-            <span className="rounded-full border border-primary/20 bg-primary-container px-2.5 py-1 text-on-primary-container">
+          <div className="mt-4 atlas-status-cluster">
+            <span className="atlas-status-chip" data-tone="accent">
               {healthyIntegrations}/3 frentes prontas
             </span>
-            <span className="rounded-full border border-outline px-2.5 py-1">
+            <span className="atlas-status-chip">
               {BRAND_PLAN_LABELS[governance.planTier]}
             </span>
-            <span className="rounded-full border border-outline px-2.5 py-1">
+            <span className="atlas-status-chip">
               {governance.featureFlags.atlasAi ? "Atlas IA liberado" : "Atlas IA bloqueado"}
             </span>
           </div>
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 atlas-component-stack-compact">
             <StackItem
               title={strategicFocus.title}
               description={strategicFocus.description}
@@ -340,26 +347,26 @@ export default function SettingsPage() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)]">
-        <SurfaceCard id="platform-governance" className="atlas-settings-focus p-4">
+        <SurfaceCard id="platform-governance" className="atlas-settings-focus">
           <SectionHeading
             title="Governança e limites"
             description="O que esta marca pode usar agora."
             aside={<ShieldCheck size={14} className="text-primary" />}
           />
 
-          <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
-            <span className="rounded-full border border-outline px-2.5 py-1">
+          <div className="mt-4 atlas-status-cluster">
+            <span className="atlas-status-chip">
               {BRAND_PLAN_LABELS[governance.planTier]}
             </span>
-            <span className="rounded-full border border-outline px-2.5 py-1">
+            <span className="atlas-status-chip">
               IA por plano
             </span>
-            <span className="rounded-full border border-outline px-2.5 py-1">
+            <span className="atlas-status-chip">
               grupos e marcas
             </span>
           </div>
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 atlas-component-stack-compact">
             <StackItem
               title="Plano"
               description="Camada que libera IA, aprendizado e catálogo de modelos."
@@ -387,7 +394,7 @@ export default function SettingsPage() {
           </div>
         </SurfaceCard>
 
-        <SurfaceCard className="atlas-settings-focus p-4">
+        <SurfaceCard className="atlas-settings-focus">
           <SectionHeading
             title="Apoio rápido"
             description="Atalhos que destravam operação sem poluir a Torre."
@@ -398,7 +405,7 @@ export default function SettingsPage() {
             }
           />
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 atlas-component-stack-compact">
             <StackItem
               title="Tutoriais"
               description="Passos guiados para Meta, GA4 e Gemini."
@@ -433,21 +440,21 @@ export default function SettingsPage() {
         </SurfaceCard>
       </section>
 
-      <SurfaceCard className="p-4">
+      <SurfaceCard>
         <IntegrationAutomationSettingsPanel />
       </SurfaceCard>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
-        <SurfaceCard className="p-4">
+        <SurfaceCard>
           <AtlasAnalystSettingsPanel />
         </SurfaceCard>
 
-        <SurfaceCard className="p-4">
+        <SurfaceCard>
           <AtlasContextWorkspace mode="settings" limit={8} />
         </SurfaceCard>
       </section>
 
-      <SurfaceCard className="p-4">
+      <SurfaceCard>
         <AtlasBusinessLearningPanel />
       </SurfaceCard>
     </div>

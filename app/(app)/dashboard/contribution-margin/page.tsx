@@ -38,14 +38,13 @@ export default function ContributionMarginPage() {
 
   if (isBrandLoading) {
     return (
-      <div className="space-y-6">
+      <div className="atlas-page-stack">
         <PageHeader
           eyebrow="Torre de Controle"
           title="Margem de contribuição"
           description={`Carregando a série histórica da loja ${selectedBrandName}.`}
-          badge={selectedPeriodLabel}
         />
-        <div className="space-y-6 animate-pulse">
+        <div className="atlas-page-stack animate-pulse">
           <div className="grid gap-4 md:grid-cols-4">
             {[...Array(4)].map((_, index) => (
               <div key={index} className="h-24 rounded-xl bg-surface-container" />
@@ -119,14 +118,15 @@ export default function ContributionMarginPage() {
         : "Despesas operacionais";
 
   return (
-    <div className="space-y-6">
+    <div className="atlas-page-stack">
       <PageHeader
         eyebrow="Torre de Controle"
         title="Margem de contribuição"
         description="Veja rápido onde a margem ganha ou perde tração e aprofunde só quando precisar."
-        badge={viewBadge}
         actions={
           <div className="flex flex-wrap items-center justify-end gap-2">
+            <span className="atlas-inline-metric">{selectedBrandName}</span>
+            <span className="atlas-inline-metric">{viewBadge}</span>
             <div className="brandops-tabs">
               <button
                 type="button"
@@ -240,39 +240,39 @@ export default function ContributionMarginPage() {
       </SurfaceCard>
 
       {activeSection === "radar" ? (
-        <section className="space-y-6">
+<section className="atlas-component-stack">
           <SurfaceCard>
-            <SectionHeading
-              title="Evolução mensal"
-              description="Contribuição antes das despesas e resultado final em uma única leitura."
-              aside={
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                  <span className="status-chip">
-                    {viewMode === "historical" ? "Comparando toda a série" : "Comparando o recorte atual"}
-                  </span>
+              <SectionHeading
+                title="Evolução mensal"
+                description="Contribuição antes das despesas e resultado final em uma única leitura."
+                aside={
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <span className="atlas-inline-metric">
+                      {viewMode === "historical" ? "Comparando toda a série" : "Comparando o recorte atual"}
+                    </span>
                   {latestMonth ? (
-                    <span className="status-chip">
+                    <span className="atlas-inline-metric">
                       Último mês: {latestMonth.label}
                     </span>
                   ) : null}
-                </div>
-              }
+                  </div>
+                }
             />
             <div className="mt-5">
               <ContributionTrendPanel data={trendData} />
             </div>
           </SurfaceCard>
 
-          <div className="grid gap-6 xl:grid-cols-2">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(18rem,0.92fr)]">
             <SurfaceCard>
               <SectionHeading
                 title={momentum.title}
                 description="Leia o momento atual e abra o próximo corte só se precisar."
               />
-              <div className="mt-5 space-y-4">
+              <div className="mt-5 atlas-component-stack">
                 <article
                   className={cn(
-                    "atlas-soft-subcard p-4",
+                    "atlas-soft-subcard p-3.5",
                     momentum.tone === "positive" && "border-primary/16 bg-primary-container/30",
                     momentum.tone === "warning" && "border-tertiary/16 bg-tertiary-container/24",
                   )}
@@ -299,7 +299,7 @@ export default function ContributionMarginPage() {
                     <span>Abrir pressão sobre a receita líquida</span>
                     <span>3</span>
                   </summary>
-                  <div className="mt-4 space-y-3 text-sm">
+                  <div className="mt-4 atlas-component-stack-tight text-sm">
                     <div>
                       <div className="mb-1 flex items-center justify-between gap-3">
                         <span className="text-on-surface-variant">CMV</span>
@@ -371,41 +371,41 @@ export default function ContributionMarginPage() {
         </section>
       ) : (
         <SurfaceCard className="p-0 overflow-hidden">
-          <div className="border-b border-outline/50 p-5">
+          <div className="border-b border-outline/50 p-4">
             <SectionHeading
               title="Linha do tempo mensal"
               description="Tabela de apoio para localizar quando a margem ganhou tração ou perdeu fôlego."
-              aside={<span className="status-chip">{trendData.length} competências</span>}
+              aside={<span className="atlas-inline-metric">{trendData.length} competências</span>}
             />
           </div>
           <div className="grid gap-0 xl:grid-cols-[minmax(0,0.36fr)_minmax(0,1fr)]">
-            <div className="border-b border-outline/50 p-5 xl:border-b-0 xl:border-r xl:border-r-outline/50">
+            <div className="border-b border-outline/50 p-4 xl:border-b-0 xl:border-r xl:border-r-outline/50">
               <div className="grid gap-3">
-                <article className="atlas-soft-subcard p-4">
+                <article className="atlas-soft-subcard p-3.5">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Último resultado
                   </p>
                   <p className={cn("mt-2 font-headline text-2xl font-semibold", latestMonth && latestMonth.netResult >= 0 ? "text-secondary" : "text-tertiary")}>
                     {latestMonth ? currencyFormatter.format(latestMonth.netResult) : "N/A"}
                   </p>
-                  <p className="mt-1 text-xs text-on-surface-variant">
+                  <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
                     Resultado líquido do mês mais recente da série analisada.
                   </p>
                 </article>
-                <article className="atlas-soft-subcard p-4">
+                <article className="atlas-soft-subcard p-3.5">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Contribuição média
                   </p>
                   <p className={cn("mt-2 font-headline text-2xl font-semibold", report.total.contributionMargin >= 0 ? "text-primary" : "text-tertiary")}>
                     {percentFormatter.format(report.total.contributionMargin)}
                   </p>
-                  <p className="mt-1 text-xs text-on-surface-variant">
+                  <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
                     Participação acumulada da contribuição sobre a receita líquida.
                   </p>
                 </article>
               </div>
             </div>
-            <div className="brandops-table-container rounded-none border-0 bg-transparent">
+            <div className="brandops-table-container atlas-table-shell bg-transparent">
               <table className="brandops-table-compact w-full min-w-[860px]">
                 <thead>
                   <tr>

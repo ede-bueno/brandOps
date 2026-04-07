@@ -342,7 +342,7 @@ export function AtlasAnalystSettingsPanel() {
   }
 
   return (
-    <div id="atlas-ai-settings" className="space-y-4">
+    <div id="atlas-ai-settings" className="atlas-component-stack">
       <SectionHeading
         title={
           <span className="flex items-center gap-2">
@@ -402,7 +402,7 @@ export function AtlasAnalystSettingsPanel() {
           label="Modelo Gemini"
           hint="O Atlas tenta listar os modelos reais liberados pela chave desta loja."
         >
-          <div className="space-y-3">
+          <div className="atlas-component-stack-tight">
             {availableModels.length > 0 ? (
               <select
                 value={effectiveModel}
@@ -510,7 +510,7 @@ export function AtlasAnalystSettingsPanel() {
           label="Temperatura"
           hint="Mais baixa deixa o Atlas mais conservador; mais alta abre espaço para formulação mais exploratória."
         >
-          <div className="space-y-3 rounded-2xl border border-outline/70 bg-surface-container-low px-4 py-3">
+          <div className="atlas-component-stack-tight rounded-2xl border border-outline/70 bg-surface-container-low px-4 py-3">
             <div className="flex items-center justify-between gap-3">
               <span className="text-[11px] leading-5 text-on-surface-variant">
                 Estilo de resposta
@@ -594,7 +594,7 @@ export function AtlasAnalystSettingsPanel() {
             </span>
             <ChevronDown size={15} className="atlas-disclosure-chevron" />
           </summary>
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 atlas-component-stack-tight">
             <p className="text-[11px] leading-5 text-on-surface-variant">
               Ensine critérios, restrições e contexto histórico que o Atlas deve priorizar.
             </p>

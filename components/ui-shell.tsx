@@ -19,30 +19,22 @@ export function PageHeader({
   badge?: ReactNode;
 }) {
   return (
-    <section className="brandops-panel atlas-header-panel mb-2 p-3 sm:p-3.5">
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-3xl">
-            {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
-            <h1 className="font-headline text-[1.1rem] font-semibold tracking-tight text-on-surface sm:text-[1.32rem]">
-              {title}
-            </h1>
-            {description && (
-              <div className="mt-1 max-w-xl text-[10px] leading-[1.1rem] text-on-surface-variant/78 sm:text-[11px] sm:leading-5">
-                {description}
-              </div>
-            )}
+    <section className="brandops-panel atlas-header-panel mb-2">
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between lg:gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="atlas-header-titleline">
+              {eyebrow ? <p className="eyebrow atlas-header-eyebrow">{eyebrow}</p> : null}
+              <h1 className="atlas-header-title">{title}</h1>
+              {description ? <div className="atlas-header-description">{description}</div> : null}
+            </div>
           </div>
 
-          {badge ? (
-            <div className="flex w-full flex-wrap items-center gap-1.5 lg:w-auto lg:justify-end">
-              <div className="status-chip">{badge}</div>
-            </div>
-          ) : null}
+          {badge ? <div className="atlas-header-meta lg:justify-end">{badge}</div> : null}
         </div>
 
         {actions ? (
-          <div className="atlas-header-actions-row flex min-w-0 flex-wrap items-center gap-2 border-t border-outline/50 pt-2.5">
+          <div className="atlas-header-actions-row flex min-w-0 flex-wrap items-center gap-3">
             {actions}
           </div>
         ) : null}
@@ -61,7 +53,7 @@ export function SurfaceCard({
   id?: string;
 }) {
   return (
-    <section id={id} className={`brandops-panel atlas-tech-grid p-4 ${className}`.trim()}>
+    <section id={id} className={`brandops-panel atlas-tech-grid p-5 lg:p-5 ${className}`.trim()}>
       {children}
     </section>
   );
@@ -77,19 +69,19 @@ export function SectionHeading({
   aside?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1 border-b border-outline/60 pb-2 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <h2 className="font-headline text-[13px] font-semibold tracking-tight text-on-surface">
+    <div className="flex flex-col gap-4 border-b border-outline/60 pb-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+      <div className="min-w-0 flex-1">
+        <h2 className="font-headline text-[14px] font-semibold tracking-tight text-on-surface">
           {title}
         </h2>
         {description && (
-          <div className="mt-0.5 max-w-xl text-[10px] leading-[1.15rem] text-on-surface-variant/78 sm:text-[11px]">
+          <div className="mt-2 max-w-[74ch] text-[12px] leading-[1.42rem] text-on-surface-variant/84">
             {description}
           </div>
         )}
       </div>
       {aside && (
-        <div className="mt-1.5 shrink-0 text-[11px] text-on-surface-variant sm:mt-0">
+        <div className="max-w-full text-[11px] leading-[1.4rem] text-on-surface-variant lg:mt-0 lg:max-w-[22rem] lg:flex-none lg:text-right">
           {aside}
         </div>
       )}
@@ -207,7 +199,7 @@ export function AtlasModal({
           }`}
         >
           <div className="flex items-start justify-between gap-4 border-b border-outline pb-4">
-            <div>
+            <div className="min-w-0 flex-1">
               <h2 className="font-headline text-xl font-semibold tracking-tight text-on-surface">
                 {title}
               </h2>
@@ -246,14 +238,18 @@ export function StackItem({
 }) {
   return (
     <article className={`atlas-list-row ${className}`.trim()} data-tone={tone}>
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
         <div className="min-w-0 flex-1">
           <div className="text-[13px] font-semibold text-on-surface">{title}</div>
           {description ? (
-            <div className="mt-1 text-[11px] leading-5 text-on-surface-variant">{description}</div>
+            <div className="mt-2.5 text-[12px] leading-[1.45rem] text-on-surface-variant">{description}</div>
           ) : null}
         </div>
-        {aside ? <div className="shrink-0 text-[12px] font-semibold text-on-surface">{aside}</div> : null}
+        {aside ? (
+          <div className="text-[11px] leading-[1.35rem] text-on-surface-variant lg:max-w-[14rem] lg:flex-none lg:text-right">
+            {aside}
+          </div>
+        ) : null}
       </div>
     </article>
   );
@@ -374,19 +370,21 @@ export function ModeEntryCard({
 }) {
   return (
     <Link href={href} prefetch={false} className="atlas-mode-entry">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-5">
         <div className="min-w-0 flex-1">
           <div className="eyebrow">{eyebrow}</div>
-          <div className="mt-2 text-[15px] font-semibold tracking-tight text-on-surface">
+          <div className="mt-2 text-[14px] font-semibold tracking-tight text-on-surface">
             {title}
           </div>
+          <div className="mt-2 max-w-[38ch] text-[12px] leading-5 text-on-surface-variant">
+            {description}
+          </div>
         </div>
-        <span className="atlas-analytics-action shrink-0">
+        <span className="atlas-inline-action shrink-0">
           {actionLabel}
           <ArrowUpRight size={12} />
         </span>
       </div>
-      <div className="mt-2 text-[12px] leading-6 text-on-surface-variant">{description}</div>
     </Link>
   );
 }
@@ -443,3 +441,5 @@ export function InfoHint({
     </span>
   );
 }
+
+

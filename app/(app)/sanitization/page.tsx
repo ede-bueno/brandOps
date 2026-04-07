@@ -171,14 +171,13 @@ export default function SanitizationPage() {
 
   if (activeBrandId && (!activeBrand || isBrandHydrating || isReportLoading)) {
     return (
-      <div className="space-y-6">
+      <div className="atlas-page-stack">
         <PageHeader
           eyebrow="Decisão operacional"
           title="Saneamento"
           description={`Carregando histórico e pendências de saneamento da loja ${selectedBrandName}.`}
-          badge="Histórico completo da marca"
         />
-        <div className="space-y-6 animate-pulse">
+        <div className="atlas-page-stack animate-pulse">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="h-24 rounded-2xl bg-surface-container" />
@@ -274,7 +273,7 @@ export default function SanitizationPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="atlas-page-stack-compact">
       <ProcessingOverlay
         open={isProcessing}
         title="Atualizando saneamento"
@@ -283,12 +282,17 @@ export default function SanitizationPage() {
 
       <PageHeader
         eyebrow="Decisão operacional"
-        title="Saneamento"
-        description="Decida rápido o que entra no cálculo e preserve o histórico da marca."
-        badge="Histórico completo da marca"
+        title="Console de saneamento"
+        description="Decida o que entra no cálculo, preserve histórico e trate ruído operacional sem sair da marca."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <span className="atlas-inline-metric">{selectedBrandName}</span>
+            <span className="atlas-inline-metric">Histórico completo</span>
+          </div>
+        }
       />
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <section className="atlas-kpi-grid xl:grid-cols-3">
         <AnalyticsKpiCard
           label="Pendentes"
           value={String(summary.pending)}
@@ -359,6 +363,7 @@ export default function SanitizationPage() {
             <SectionHeading
               title="Fila operacional"
               description="Pendências abertas ou histórico completo, sem sair da marca."
+              aside={<span className="atlas-inline-metric">{activeTab === "pending" ? "Pendências" : "Histórico"}</span>}
             />
             <div className="brandops-subtabs">
               {[
@@ -413,21 +418,21 @@ export default function SanitizationPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-outline px-5 py-3 text-xs text-on-surface-variant">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-outline px-5 py-3 text-[11px] leading-5 text-on-surface-variant">
           <span>
             Exibindo {visibleAnomalies.length} ocorrência(s) em {activeTab === "pending" ? "pendência" : "histórico"}.
           </span>
-          <span className="status-chip">
+          <span className="atlas-inline-metric">
             {activeTab === "pending" ? "Decisão aberta" : "Auditoria concluída"}
           </span>
         </div>
 
         {!visibleAnomalies.length ? (
-          <div className="p-6 text-sm text-on-surface-variant">
+          <div className="p-5 text-sm text-on-surface-variant">
             Nenhuma ocorrência encontrada nesta categoria no histórico operacional da marca.
           </div>
         ) : (
-          <div className="brandops-table-container rounded-none border-0 max-h-[72vh] overflow-auto">
+          <div className="brandops-table-container atlas-table-shell max-h-[72vh] overflow-auto">
             <table className="brandops-table-compact min-w-[1040px] w-full">
               <thead>
                 <tr>
@@ -448,24 +453,24 @@ export default function SanitizationPage() {
                         <p className="font-semibold text-on-surface">
                           {anomaly.target === "MEDIA" ? "Mídia" : "Pedido"}
                         </p>
-                        <p className="mt-1 text-xs text-on-surface-variant">{anomaly.date}</p>
+                        <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">{anomaly.date}</p>
                       </td>
                       <td className="align-top">
                         <p className="max-w-[260px] truncate font-semibold text-on-surface">
                           {anomaly.campaignName}
                         </p>
-                        <p className="mt-1 text-xs text-on-surface-variant">
+                        <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
                           {anomaly.target === "ORDER"
                             ? anomaly.orderNumber
                             : `${anomaly.adsetName} • ${anomaly.adName}`}
                         </p>
                       </td>
                       <td className="align-top">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                           {anomaly.metric}
                         </p>
                         <p className="mt-1 font-semibold text-on-surface">{anomaly.value}</p>
-                        <p className="mt-2 max-w-[360px] whitespace-normal break-words text-xs leading-5 text-on-surface-variant">
+                        <p className="mt-2 max-w-[360px] whitespace-normal break-words text-[11px] leading-5 text-on-surface-variant">
                           {anomaly.reason}
                         </p>
                       </td>
@@ -479,12 +484,12 @@ export default function SanitizationPage() {
                             }))
                           }
                           placeholder="Contexto da decisão do operador"
-                          className="brandops-input min-h-[88px] w-full max-w-[220px] text-xs"
+                          className="brandops-input min-h-[88px] w-full max-w-[220px] text-[11px]"
                           disabled={isProcessing}
                         />
                       </td>
                       <td className="align-top">
-                        <div className="space-y-2">
+                        <div className="atlas-component-stack-tight">
                           <span
                             className={cn(
                               "inline-flex rounded-full px-3 py-1 text-[11px] font-semibold",
@@ -494,7 +499,7 @@ export default function SanitizationPage() {
                             {statusLabel(anomaly.sanitizationStatus)}
                           </span>
                           {anomaly.sanitizedAt ? (
-                            <p className="text-xs text-on-surface-variant">
+                            <p className="text-[11px] leading-5 text-on-surface-variant">
                               Revisado em{" "}
                               {new Intl.DateTimeFormat("pt-BR", {
                                 dateStyle: "short",

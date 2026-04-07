@@ -255,7 +255,7 @@ export function AtlasContextWorkspace({
     }
 
     return (
-      <div className="space-y-3">
+      <div className="atlas-component-stack-tight">
         <SectionHeading
           title="Memória e aprendizado"
           description="Esta área fica pronta para a marca assim que o Atlas IA estiver ativo."
@@ -276,7 +276,7 @@ export function AtlasContextWorkspace({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="atlas-component-stack">
       <SectionHeading
         title={
           <span className="flex items-center gap-2">
@@ -335,8 +335,8 @@ export function AtlasContextWorkspace({
         </InlineNotice>
       ) : null}
 
-      <div className={isSettingsMode ? "grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_20rem]" : "space-y-3"}>
-        <div className="space-y-3">
+      <div className={isSettingsMode ? "grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_20rem]" : "atlas-component-stack-tight"}>
+        <div className="atlas-component-stack-tight">
           {entries.length ? (
             entries.map((entry) => (
               <article key={entry.id} className="atlas-list-row">
@@ -406,7 +406,7 @@ export function AtlasContextWorkspace({
               description="Registre o fato curto. O Atlas usa isso nas próximas leituras."
             />
 
-            <div className="mt-3 space-y-3">
+            <div className="mt-3 atlas-component-stack-tight">
               <FormField label="Tipo">
                 <select
                   value={formState.entryType}

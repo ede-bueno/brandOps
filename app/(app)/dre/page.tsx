@@ -10,7 +10,7 @@ import {
 import { EmptyState } from "@/components/EmptyState";
 import { ContributionTrendPanel, mapContributionTrendPoints } from "@/components/finance/ContributionTrendPanel";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { EntityChip, PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import { EntityChip, PageHeader, SectionHeading, SurfaceCard, WorkspaceTabs } from "@/components/ui-shell";
 import { currencyFormatter, percentFormatter } from "@/lib/brandops/format";
 import { cn } from "@/lib/utils";
 
@@ -36,14 +36,13 @@ export default function DrePage() {
 
   if (isBrandLoading) {
     return (
-      <div className="space-y-6">
+      <div className="atlas-page-stack">
         <PageHeader
           eyebrow="Relatório gerencial"
           title="DRE"
           description={`Carregando o DRE da loja ${selectedBrandName}.`}
-          badge={`Período: ${selectedPeriodLabel}`}
         />
-        <div className="space-y-6 animate-pulse">
+        <div className="atlas-page-stack animate-pulse">
           <div className="grid gap-4 md:grid-cols-6">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="h-24 bg-surface-container rounded-2xl" />
@@ -68,7 +67,7 @@ export default function DrePage() {
 
   if (!report) {
     return (
-      <div className="space-y-6 animate-pulse">
+      <div className="atlas-page-stack animate-pulse">
         <div className="h-32 bg-surface-container rounded-3xl" />
         <div className="grid gap-4 md:grid-cols-6">
           {[...Array(6)].map((_, i) => (
@@ -105,38 +104,41 @@ export default function DrePage() {
       : "Use a grade mensal para validar o comportamento por competência.";
 
   return (
-    <div className="space-y-6">
+    <div className="atlas-page-stack">
       <PageHeader
         eyebrow="Relatório gerencial"
-        title="DRE"
-        description="Veja rápido onde a margem abre ou fecha e mergulhe na matriz só quando precisar."
-        badge={viewMode === "historical" ? "Histórico completo" : `Período: ${selectedPeriodLabel}`}
+        title="Painel DRE"
+        description="Pressão, margem e leitura do recorte atual."
         actions={
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <div className="brandops-tabs">
-              <button
-                type="button"
-                data-active={viewMode === "historical"}
-                className="brandops-tab"
-                onClick={() => setViewMode("historical")}
-              >
-                DRE histórico
-              </button>
-              <button
-                type="button"
-                data-active={viewMode === "filtered"}
-                className="brandops-tab"
-                onClick={() => setViewMode("filtered")}
-              >
-                DRE filtrado
-              </button>
-            </div>
+          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+            <WorkspaceTabs
+              items={[
+                {
+                  key: "dre-historical",
+                  label: "DRE histórico",
+                  active: viewMode === "historical",
+                  onClick: () => setViewMode("historical"),
+                },
+                {
+                  key: "dre-filtered",
+                  label: "DRE filtrado",
+                  active: viewMode === "filtered",
+                  onClick: () => setViewMode("filtered"),
+                },
+              ]}
+            />
             <Link href="/cost-center" className="brandops-button brandops-button-secondary">
               Lançar despesas
             </Link>
             <Link href="/help#dre" className="brandops-button brandops-button-ghost">
               Entender cálculos
             </Link>
+            <div className="flex flex-wrap gap-2">
+              <span className="atlas-inline-metric">{selectedBrandName}</span>
+              <span className="atlas-inline-metric">
+                {viewMode === "historical" ? "Histórico completo" : selectedPeriodLabel}
+              </span>
+            </div>
           </div>
         }
       />
@@ -259,11 +261,12 @@ export default function DrePage() {
         </AnalyticsPanel>
       </section>
 
-      <SurfaceCard className="p-4">
+      <SurfaceCard>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <SectionHeading
             title="Exploração do DRE"
             description="Alterne entre resumo executivo e matriz mensal."
+            aside={<span className="atlas-inline-metric">Base {viewMode === "historical" ? "histórica" : "filtrada"}</span>}
           />
           <div className="brandops-subtabs">
             <button
@@ -287,7 +290,7 @@ export default function DrePage() {
       </SurfaceCard>
 
       {activeSection === "overview" ? (
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(220px,0.45fr)]">
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.62fr)_minmax(18rem,0.38fr)]">
           <SurfaceCard>
             <SectionHeading
               title="Tendência da margem"
@@ -344,7 +347,7 @@ export default function DrePage() {
         </section>
       ) : (
         <SurfaceCard className="p-0 overflow-hidden">
-          <div className="border-b border-outline p-5">
+          <div className="border-b border-outline p-4">
             <SectionHeading
               title="DRE mensal"
               description={
@@ -355,7 +358,7 @@ export default function DrePage() {
             />
           </div>
 
-          <div className="brandops-table-container rounded-none border-0">
+          <div className="brandops-table-container atlas-table-shell">
             <table className="brandops-table-compact min-w-[1080px] w-full">
             <thead>
               <tr>
@@ -518,13 +521,13 @@ export default function DrePage() {
 
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <SurfaceCard className="p-0 overflow-hidden">
-          <div className="border-b border-outline p-5">
+          <div className="border-b border-outline p-4">
             <SectionHeading
               title="Composição das despesas"
               description="Categorias que mais pressionam o resultado."
             />
           </div>
-          <div className="p-5">
+          <div className="p-4">
             {report.expenseBreakdown.length ? (
               <div className="brandops-table-container border-0 rounded-none shadow-none">
                 <table className="brandops-table-compact w-full min-w-0">

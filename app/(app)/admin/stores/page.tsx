@@ -307,7 +307,7 @@ export default function AdminStoresPage() {
     });
 
   return (
-    <div className="space-y-4">
+    <div className="atlas-page-stack-compact">
       <PageHeader
         eyebrow="Superadmin"
         title="Lojas e Convites"
@@ -382,7 +382,7 @@ export default function AdminStoresPage() {
       ) : null}
 
       <section className="grid gap-4 xl:grid-cols-[300px_1fr]">
-        <aside className="space-y-4">
+<aside className="atlas-component-stack">
           <SurfaceCard className="flex max-h-[720px] flex-col p-3">
             <div className="mb-3 brandops-input-with-icon">
               <Search size={16} />
@@ -394,9 +394,9 @@ export default function AdminStoresPage() {
               />
             </div>
 
-            <div className="space-y-2 overflow-y-auto pr-1 flex-1 custom-scrollbar">
+            <div className="atlas-component-stack-compact overflow-y-auto pr-1 flex-1 custom-scrollbar">
               {loading ? (
-                <div className="space-y-3">
+<div className="atlas-component-stack-compact">
                   <SkeletonCard />
                   <SkeletonCard />
                   <SkeletonCard />
@@ -421,7 +421,7 @@ export default function AdminStoresPage() {
                         setIsCreating(false);
                         setActiveTab("general");
                       }}
-                      className={`w-full group flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-all ${
+                      className={`w-full group flex items-center gap-3 atlas-list-row text-left transition-all ${
                         isSelected
                           ? "border-secondary/40 bg-secondary/5"
                           : "border-outline bg-transparent hover:border-secondary/30 hover:bg-surface-container/40"
@@ -437,7 +437,7 @@ export default function AdminStoresPage() {
                           <p className={`truncate text-sm font-semibold ${isSelected ? "text-secondary" : "text-on-surface"}`}>
                             {brand.name}
                           </p>
-                          <span className="status-chip shrink-0">
+                          <span className="atlas-inline-metric shrink-0">
                             {brand.brand_members?.length ?? 0}
                           </span>
                         </div>
@@ -447,8 +447,8 @@ export default function AdminStoresPage() {
                           {brand.website_url ? <span className="truncate">site ativo</span> : null}
                         </div>
                         <div className="mt-2 flex flex-wrap gap-1.5">
-                          <span className="status-chip">{BRAND_PLAN_LABELS[governance.planTier]}</span>
-                          <span className="status-chip">
+                          <span className="atlas-inline-metric">{BRAND_PLAN_LABELS[governance.planTier]}</span>
+                          <span className="atlas-inline-metric">
                             {governance.featureFlags.atlasAi ? "IA on" : "IA off"}
                           </span>
                         </div>
@@ -533,17 +533,17 @@ export default function AdminStoresPage() {
                         <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-secondary/80">
                           ID: {selectedBrand.id.split("-")[0]}
                         </p>
-                        {selectedBrand.slug ? <span className="status-chip">{selectedBrand.slug}</span> : null}
+                        {selectedBrand.slug ? <span className="atlas-inline-metric">{selectedBrand.slug}</span> : null}
                       </div>
                       <h2 className="mt-1 truncate text-2xl font-bold tracking-tight text-on-surface">
                         {selectedBrand.name}
                       </h2>
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-on-surface-variant">
-                        <span className="status-chip">{BRAND_PLAN_LABELS[selectedGovernance.planTier]}</span>
-                        <span className="status-chip">
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] leading-5 text-on-surface-variant">
+                        <span className="atlas-inline-metric">{BRAND_PLAN_LABELS[selectedGovernance.planTier]}</span>
+                        <span className="atlas-inline-metric">
                           {selectedGovernance.featureFlags.atlasAi ? "Atlas IA liberado" : "Atlas IA bloqueado"}
                         </span>
-                        <span className="status-chip">
+                        <span className="atlas-inline-metric">
                           {countReleasedCapabilities(selectedGovernance)} capacidade(s)
                         </span>
                         {selectedBrand.contact_email ? (
@@ -618,7 +618,7 @@ export default function AdminStoresPage() {
                       Novo acesso
                     </button>
                   </div>
-                  <span className="status-chip">Loja ativa</span>
+                  <span className="atlas-inline-metric">Loja ativa</span>
                 </div>
               </div>
 
@@ -659,7 +659,7 @@ export default function AdminStoresPage() {
                       disabled={saving}
                       mode="edit"
                     />
-                    <div className="space-y-3">
+<div className="atlas-component-stack-compact">
                       <SectionHeading
                         title="Leitura rápida da loja"
                         description="Resumo executivo para não depender da tela inteira antes de agir."
@@ -685,7 +685,7 @@ export default function AdminStoresPage() {
                         description={describeGovernance(selectedGovernance)}
                         tone={selectedGovernance.featureFlags.atlasAi ? "positive" : "info"}
                       />
-                      <div className="panel-muted space-y-3 p-4">
+                      <div className="panel-muted atlas-component-stack-tight p-3.5">
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
@@ -695,7 +695,7 @@ export default function AdminStoresPage() {
                               {BRAND_PLAN_LABELS[selectedForm.planTier]}
                             </p>
                           </div>
-                          <span className="status-chip">Plano</span>
+                          <span className="atlas-inline-metric">Plano</span>
                         </div>
 
                         <FormField label="Plano da marca">
@@ -778,13 +778,13 @@ export default function AdminStoresPage() {
                   </div>
                 ) : activeTab === "team" ? (
                   <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-                    <div className="space-y-4">
+<div className="atlas-component-stack">
                       <SectionHeading
                         title="Time da loja"
                         description="Pessoas com acesso ativo ao workspace desta marca."
                       />
                       {selectedBrand?.brand_members?.length ? (
-                        <div className="space-y-2">
+                        <div className="atlas-component-stack-tight">
                           {selectedBrand.brand_members.map((member) => (
                             <div key={`${selectedBrand.id}-${member.user_id}`} className="atlas-list-row group flex items-center justify-between transition-colors hover:border-secondary/30">
                               <div className="flex items-center gap-4">
@@ -795,12 +795,12 @@ export default function AdminStoresPage() {
                                    <p className="truncate text-sm font-semibold text-on-surface">
                                      {member.user_profiles?.full_name || "Membro confirmado"}
                                    </p>
-                                   <p className="mt-0.5 truncate text-xs font-medium text-on-surface-variant">
+                                   <p className="mt-0.5 truncate text-[11px] font-medium leading-5 text-on-surface-variant">
                                      {member.user_profiles?.email ?? "Email ocultado"}
                                    </p>
                                  </div>
                               </div>
-                              <span className="status-chip shrink-0">
+                              <span className="atlas-inline-metric shrink-0">
                                 {member.user_profiles?.role === "SUPER_ADMIN" ? "S-ADMIN" : "MARCA"}
                               </span>
                             </div>
@@ -809,11 +809,11 @@ export default function AdminStoresPage() {
                       ) : (
                         <div className="atlas-empty-state px-6 py-8 text-center">
                           <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant/70">Workspace indefinido</p>
-                          <p className="mx-auto mt-1 max-w-[220px] text-xs text-on-surface-variant/50">Ninguém possui acesso direto a este ambiente no momento.</p>
+                          <p className="mx-auto mt-1 max-w-[220px] text-[11px] leading-5 text-on-surface-variant/50">Ninguém possui acesso direto a este ambiente no momento.</p>
                         </div>
                       )}
                     </div>
-                    <div className="space-y-3">
+<div className="atlas-component-stack-compact">
                       <SectionHeading
                         title="Resumo do time"
                         description="Visão curta para decidir convite, ajuste ou revisão de acesso."
@@ -833,13 +833,13 @@ export default function AdminStoresPage() {
                   </div>
                 ) : (
                   <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-                    <div className="space-y-4">
+<div className="atlas-component-stack">
                       <SectionHeading
                         title="Criar acesso"
                         description="Cadastre um responsável com senha definida. O acesso fica isolado apenas nesta marca."
                       />
                       {lastProvisionedAccess ? (
-                        <div className="panel-muted p-4">
+                        <div className="panel-muted p-3.5">
                           <p className="text-[11px] font-bold uppercase tracking-widest text-secondary">
                             Credencial pronta
                           </p>
@@ -853,14 +853,14 @@ export default function AdminStoresPage() {
                               <p className="mt-1 text-sm font-semibold text-on-surface">{lastProvisionedAccess.password}</p>
                             </div>
                           </div>
-                          <p className="mt-3 text-xs text-on-surface-variant">
+                          <p className="mt-3 text-[11px] leading-5 text-on-surface-variant">
                             {lastProvisionedAccess.alreadyExisted
                               ? "O usuário já existia e a senha foi redefinida."
                               : "O usuário foi criado e já pode entrar com essa senha."}
                           </p>
                         </div>
                       ) : null}
-                      <div className="brandops-toolbar-panel space-y-3">
+                      <div className="brandops-toolbar-panel atlas-component-stack-tight">
                         <input
                           value={inviteForm.fullName}
                           onChange={(event) => setInviteForm((current) => ({ ...current, fullName: event.target.value }))}
@@ -926,18 +926,18 @@ export default function AdminStoresPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-3">
+<div className="atlas-component-stack-compact">
                       <SectionHeading
                         title="Resumo do time"
                         description="Os dados resumidos ajudam a não alongar a área de convite."
                       />
-                      <article className="panel-muted p-4">
-                        <p className="text-xs font-semibold uppercase tracking-widest text-on-surface-variant">Membros ativos</p>
+                      <article className="panel-muted p-3.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">Membros ativos</p>
                         <p className="mt-2 text-3xl font-semibold text-on-surface">{selectedMemberCount}</p>
                         <p className="mt-1 text-sm text-on-surface-variant">Usuários vinculados à marca.</p>
                       </article>
-                      <article className="panel-muted p-4">
-                        <p className="text-xs font-semibold uppercase tracking-widest text-on-surface-variant">Próximo passo</p>
+                      <article className="panel-muted p-3.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">Próximo passo</p>
                         <p className="mt-2 text-sm leading-6 text-on-surface-variant">
                           Gere o acesso, copie a credencial e valide o papel atribuído na mesma sessão.
                         </p>
@@ -974,9 +974,9 @@ function BrandForm({
   void _mode;
 
   return (
-    <div className="space-y-6">
+    <div className="atlas-component-stack">
       {formSections.map((section) => (
-        <div key={section.title} className="space-y-3">
+<div key={section.title} className="atlas-component-stack-compact">
           <div className="flex items-center gap-3">
              <h3 className="shrink-0 text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">{section.title}</h3>
              <div className="h-px flex-1 bg-outline" />
@@ -995,7 +995,7 @@ function BrandForm({
         </div>
       ))}
 
-      <div className="space-y-3">
+<div className="atlas-component-stack-compact">
         <div className="flex items-center gap-3">
            <h3 className="shrink-0 text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">Comentários e SEO</h3>
            <div className="h-px flex-1 bg-outline" />

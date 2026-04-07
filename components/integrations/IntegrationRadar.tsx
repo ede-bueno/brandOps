@@ -40,8 +40,8 @@ export function IntegrationRadar({
           : "Mantenha a rotina de upload limpa para preservar a origem comercial.";
 
   return (
-    <div className={`space-y-3 ${className ?? ""}`}>
-      <SurfaceCard className="p-4">
+    <div className={`atlas-component-stack-tight ${className ?? ""}`}>
+      <SurfaceCard>
         <SectionHeading
           title="Situação agora"
           description="Só o que ajuda a decidir o próximo passo."
@@ -77,7 +77,7 @@ export function IntegrationRadar({
         </div>
       </SurfaceCard>
 
-      <SurfaceCard className="p-4">
+      <SurfaceCard>
         <SectionHeading
           title="Diretriz curta"
           description={shortGuide}

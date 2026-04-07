@@ -16,9 +16,8 @@ import {
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { IntegrationRadar } from "@/components/integrations/IntegrationRadar";
-import { IntegrationRail } from "@/components/integrations/IntegrationRail";
 import { IntegrationWorkspaceHeader } from "@/components/integrations/IntegrationWorkspaceHeader";
-import { FormField, InlineNotice, PageHeader, SectionHeading, StackItem, SurfaceCard } from "@/components/ui-shell";
+import { FormField, InlineNotice, PageHeader, SectionHeading, StackItem, SurfaceCard, WorkspaceTabs } from "@/components/ui-shell";
 import Link from "next/link";
 import type {
   BrandIntegrationConfig,
@@ -369,7 +368,7 @@ export default function IntegrationsPage() {
     () => searchParams ?? new URLSearchParams(),
     [searchParams],
   );
-  const { activeBrand, profile, refreshActiveBrand, session } = useBrandOps();
+  const { activeBrand, profile, refreshActiveBrand, selectedPeriodLabel, session } = useBrandOps();
   const [hydratedIntegrations, setHydratedIntegrations] = useState<BrandIntegrationConfig[]>([]);
   const [formState, setFormState] = useState<IntegrationFormState>(emptyIntegrationForm);
   const [metaApiKey, setMetaApiKey] = useState("");
@@ -571,16 +570,6 @@ export default function IntegrationsPage() {
   const currentState = formState[activeProvider];
   const isInternalPlatformViewer = profile?.email?.toLowerCase() === "edbo84@gmail.com";
   const options = getModeOptions(activeProvider);
-  const providerHealthSummary = (["ink", "meta", "ga4", "gemini"] as const).map((provider) => {
-    const integration = integrationsMap.get(provider);
-    const health = resolveProviderHealth(provider, integration, activeBrand.governance);
-
-    return {
-      provider,
-      integration,
-      health,
-    };
-  });
   const providerContextCard = {
     ink: {
       title: "Origem comercial manual",
@@ -700,14 +689,14 @@ export default function IntegrationsPage() {
           tone: "warning" as const,
           icon: <ShieldCheck size={18} />,
           content: isInternalPlatformViewer ? (
-            <div className="space-y-1">
+            <div className="atlas-component-stack-tight">
               <p>Falta preparar o ambiente seguro da plataforma antes de operar segredos por loja.</p>
               <p className="text-on-surface-variant">
                 Cadastre a variável necessária na Vercel, faça um novo deploy e tente novamente.
               </p>
             </div>
           ) : (
-            <div className="space-y-1">
+            <div className="atlas-component-stack-tight">
               <p>Esta operação depende de uma preparação técnica que ainda não foi concluída.</p>
               <p className="text-on-surface-variant">
                 Acione o gestor da plataforma e tente novamente depois da regularização do ambiente.
@@ -722,7 +711,7 @@ export default function IntegrationsPage() {
           tone: "warning" as const,
           icon: <ShieldCheck size={18} />,
           content: (
-            <div className="space-y-1">
+            <div className="atlas-component-stack-tight">
               <p>Esta integração depende de uma preparação técnica da plataforma que ainda não foi concluída.</p>
               <p className="text-on-surface-variant">
                 Se você é operador da loja, acione o gestor da plataforma. Se você é gestor técnico, revise o preparo do banco e das secrets.
@@ -737,7 +726,7 @@ export default function IntegrationsPage() {
           tone: "warning" as const,
           icon: <AlertCircle size={18} />,
           content: (
-            <div className="space-y-1">
+            <div className="atlas-component-stack-tight">
               <p>O token da Meta existe, mas o app ou o usuário não têm permissão suficiente para a API do catálogo.</p>
               <p className="text-on-surface-variant">
                 Revise capacidades do app, acesso ao catálogo no Business Manager e permissões do token usado por esta loja.
@@ -752,7 +741,7 @@ export default function IntegrationsPage() {
           tone: "warning" as const,
           icon: <Link2 size={18} />,
           content: (
-            <div className="space-y-1">
+            <div className="atlas-component-stack-tight">
               <p>A Meta desta loja ainda não pode operar por API.</p>
               <p className="text-on-surface-variant">
                 Salve o token próprio da marca e depois execute a sincronização novamente.
@@ -767,7 +756,7 @@ export default function IntegrationsPage() {
           tone: "info" as const,
           icon: <Radar size={18} />,
           content: (
-            <div className="space-y-1">
+            <div className="atlas-component-stack-tight">
               <p>Esta integração só fica operacional quando a credencial própria da marca é salva com sucesso.</p>
               <p className="text-on-surface-variant">
                 Se precisar do passo a passo, abra o{" "}
@@ -793,7 +782,7 @@ export default function IntegrationsPage() {
         tone: "warning" as const,
         icon: <AlertCircle size={18} />,
         content: (
-          <div className="space-y-1">
+          <div className="atlas-component-stack-tight">
             <p className="font-semibold">O plano atual desta marca ainda não libera o Atlas IA.</p>
             <p className="text-on-surface-variant">
               Primeiro ajuste a governança em{" "}
@@ -834,7 +823,7 @@ export default function IntegrationsPage() {
   function renderHeaderActions() {
     if (activeProvider === "gemini") {
       return (
-        <div className="flex flex-wrap gap-2">
+        <div className="atlas-action-cluster">
           {formState.gemini.hasApiKey ? (
             <button
               type="button"
@@ -873,7 +862,7 @@ export default function IntegrationsPage() {
 
     if (activeProvider === "meta") {
       return (
-        <div className="flex flex-wrap gap-2">
+        <div className="atlas-action-cluster">
           <button
             onClick={handleSave}
             disabled={!canManageIntegrations || saving}
@@ -926,7 +915,7 @@ export default function IntegrationsPage() {
 
     if (activeProvider === "ga4") {
       return (
-        <div className="flex flex-wrap gap-2">
+        <div className="atlas-action-cluster">
           <button
             onClick={handleSave}
             disabled={!canManageIntegrations || saving}
@@ -1582,12 +1571,26 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="atlas-integration-room space-y-4 xl:flex xl:h-[calc(100dvh-8.75rem)] xl:flex-col xl:overflow-hidden">
+    <div className="atlas-integration-room atlas-page-stack-compact xl:flex xl:h-[calc(100dvh-8.75rem)] xl:flex-col xl:overflow-hidden">
       <PageHeader
         eyebrow="Plataforma"
-        title="Integrações da loja"
-        description="Escolha a fonte, opere e revise no mesmo console."
-        badge={activeProvider === "ink" ? "Origem comercial" : providerLabels[activeProvider]}
+        title="Console de integrações"
+        description="Atlas organiza integrações, parâmetros e prontidão operacional."
+        actions={
+          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+            <WorkspaceTabs
+              className="overflow-x-auto"
+              items={(["ink", "meta", "ga4", "gemini"] as const).map((provider) => ({
+                key: `integration-provider-${provider}`,
+                label: providerLabels[provider],
+                active: activeProvider === provider,
+                onClick: () => activateWorkspace(provider, activeProvider === provider ? activeSection : "overview"),
+              }))}
+            />
+            <span className="atlas-inline-metric">{activeBrand?.name ?? "Marca ativa"}</span>
+            <span className="atlas-inline-metric">{selectedPeriodLabel}</span>
+          </div>
+        }
       />
 
       {operationalNotice ? (
@@ -1596,19 +1599,7 @@ export default function IntegrationsPage() {
         </InlineNotice>
       ) : null}
 
-      <section className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[14.5rem_minmax(0,1fr)]">
-        <IntegrationRail
-          providerHealthSummary={providerHealthSummary}
-          activeProvider={activeProvider}
-          activeSection={activeSection}
-          activateWorkspace={activateWorkspace}
-          providerIcons={providerIcons}
-          providerLabels={providerLabels}
-          providerEyebrows={providerEyebrows}
-          formatSyncLabel={formatSyncLabel}
-          className="xl:h-full xl:min-h-0"
-        />
-
+      <section className="grid gap-4 xl:min-h-0 xl:flex-1">
         <SurfaceCard className="atlas-integration-shell atlas-integration-workspace min-w-0 p-4 lg:p-5 xl:flex xl:h-full xl:min-h-0 xl:flex-col">
           <IntegrationWorkspaceHeader
             activeProvider={activeProvider}
@@ -1642,7 +1633,7 @@ export default function IntegrationsPage() {
             ) : null}
 
             {activeSection === "config" ? (
-            <div className="brandops-command-slab p-4 sm:p-5 xl:h-full xl:min-h-0 xl:overflow-y-auto">
+            <div className="brandops-command-slab px-5 py-5 xl:h-full xl:min-h-0 xl:overflow-y-auto">
               <SectionHeading
                 title="Conexão da fonte"
                 description="Defina modo, identificadores e credencial própria da loja."
@@ -1715,7 +1706,7 @@ export default function IntegrationsPage() {
                       />
                     </FormField>
                     <FormField label="Token da Meta" className="text-sm lg:col-span-2">
-                      <div className="space-y-3">
+                      <div className="atlas-component-stack-compact">
                         <input
                           type="password"
                           value={metaApiKey}
@@ -1819,7 +1810,7 @@ export default function IntegrationsPage() {
                       />
                     </FormField>
                     <FormField label="JSON da credencial do GA4" className="text-sm lg:col-span-2">
-                      <div className="space-y-3">
+                      <div className="atlas-component-stack-compact">
                         <textarea
                           value={ga4ApiKey}
                           onChange={(event) => setGa4ApiKey(event.target.value)}
@@ -1860,7 +1851,7 @@ export default function IntegrationsPage() {
                       </div>
                     </FormField>
                     <FormField label="Nova chave Gemini da loja" className="text-sm lg:col-span-2">
-                      <div className="space-y-3">
+                      <div className="atlas-component-stack-compact">
                         <input
                           type="password"
                           value={geminiApiKey}
@@ -1917,10 +1908,10 @@ export default function IntegrationsPage() {
                               : `Nenhuma ${activeProvider === "meta" ? "token" : "credencial"} própria salva para esta loja.`}
                         </p>
                       </div>
-                      <span className="status-chip">{current?.lastSyncStatus ?? "idle"}</span>
+                      <span className="atlas-inline-metric">{current?.lastSyncStatus ?? "idle"}</span>
                     </div>
                     {current?.lastSyncError ? (
-                      <div className="mt-3 rounded-xl border border-error/12 bg-error/8 px-4 py-3 text-error">
+                      <div className="atlas-soft-subcard mt-3 border-error/18 bg-error/8 px-4 py-3 text-error">
                         {current.lastSyncError}
                       </div>
                     ) : null}
@@ -1933,15 +1924,15 @@ export default function IntegrationsPage() {
                           <p className="font-medium text-on-surface">Sincronização do catálogo</p>
                           <p className="mt-1">{formatCatalogSyncLabel(current)}</p>
                         </div>
-                        <span className="status-chip">{current?.settings.catalogSyncStatus ?? "idle"}</span>
+                        <span className="atlas-inline-metric">{current?.settings.catalogSyncStatus ?? "idle"}</span>
                       </div>
                       {current?.settings.catalogProductCount ? (
-                        <p className="mt-2 text-xs text-on-surface-variant">
+                        <p className="mt-2 text-[11px] leading-5 text-on-surface-variant">
                           {current.settings.catalogProductCount} item(ns) consolidados da fonte Meta.
                         </p>
                       ) : null}
                       {current?.settings.catalogSyncError ? (
-                        <div className="mt-3 rounded-xl border border-error/12 bg-error/8 px-4 py-3 text-error">
+                        <div className="atlas-soft-subcard mt-3 border-error/18 bg-error/8 px-4 py-3 text-error">
                           {current.settings.catalogSyncError}
                         </div>
                       ) : null}
@@ -2045,7 +2036,7 @@ export default function IntegrationsPage() {
                   description="O que esta fonte exige e quando vale agir."
                 />
                 <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem]">
-                  <div className="space-y-2">
+                  <div className="atlas-component-stack-tight">
                     <StackItem
                       title={providerContextCard.title}
                       description={providerContextCard.body}

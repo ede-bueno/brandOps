@@ -70,15 +70,16 @@ export function PeriodCommandMenu({
       <button
         type="button"
         onClick={onToggle}
-        className="atlas-period-trigger inline-flex h-10 items-center gap-2 rounded-2xl border px-3.5 text-left transition"
+        className="atlas-period-trigger"
         aria-expanded={open}
         aria-label="Abrir filtro de período"
       >
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-outline/45 bg-surface-container-low/78 text-on-surface-variant">
+        <span className="atlas-period-trigger-icon">
           <CalendarRange size={14} />
         </span>
-        <span className="hidden min-w-0 lg:block">
-          <span className="block truncate text-[12px] font-medium leading-4 text-on-surface">
+        <span className="min-w-0">
+          <span className="atlas-period-trigger-label">Recorte</span>
+          <span className="atlas-period-trigger-value">
             {selectedPeriodLabel}
           </span>
         </span>

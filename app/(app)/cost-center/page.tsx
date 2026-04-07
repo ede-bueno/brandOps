@@ -435,12 +435,11 @@ export default function CostCenterPage() {
 
   if ((isLoading || isBrandHydrating) && !activeBrand) {
     return (
-      <div className="space-y-6">
+      <div className="atlas-page-stack">
         <PageHeader
           eyebrow="Fluxo financeiro"
           title="Lançamentos DRE"
           description={`Carregando os lançamentos da loja ${selectedBrandName}.`}
-          badge={`Período ativo: ${selectedPeriodLabel}`}
         />
         <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr] animate-pulse">
           <div className="brandops-panel h-[360px]" />
@@ -451,14 +450,15 @@ export default function CostCenterPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="atlas-page-stack-compact">
       <PageHeader
         eyebrow="Fluxo financeiro"
         title="Lançamentos DRE"
         description="Lance despesas, revise a competência e corte ruído no DRE."
-        badge={`Loja ativa: ${selectedBrandName}`}
         actions={
           <div className="flex flex-wrap items-center justify-end gap-2">
+            <span className="atlas-inline-metric">{selectedBrandName}</span>
+            <span className="atlas-inline-metric">{selectedPeriodLabel}</span>
             <Link href="/dre" className="brandops-button brandops-button-secondary">
               Abrir DRE
             </Link>
@@ -537,7 +537,7 @@ export default function CostCenterPage() {
       </SurfaceCard>
 
       {activeTab === "launches" ? (
-        <div className="space-y-6">
+        <div className="atlas-component-stack">
           <SurfaceCard>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <SectionHeading
@@ -590,9 +590,9 @@ export default function CostCenterPage() {
           </section>
 
           {launchView === "overview" ? (
-            <div className="grid gap-6 xl:grid-cols-[1.45fr_1fr]">
+            <div className="grid gap-4 xl:grid-cols-[1.52fr_0.92fr]">
               <SurfaceCard>
-                <div className="space-y-4">
+<div className="atlas-component-stack">
                   <SectionHeading
                     title="Tabela mensal de despesas"
                     description="Visão consolidada por competência para entender rapidamente o peso das despesas no DRE."
@@ -639,13 +639,13 @@ export default function CostCenterPage() {
               </SurfaceCard>
 
               <SurfaceCard>
-                <div className="space-y-4">
+<div className="atlas-component-stack">
                   <SectionHeading
                     title="Leitura por categoria"
                     description="Distribuição acumulada das despesas por categoria para apoiar análise e revisão."
                   />
                   {categorySummary.length ? (
-                    <div className="space-y-3">
+<div className="atlas-component-stack-compact">
                       {categorySummary.slice(0, 8).map((row) => (
                         <StackItem
                           key={row.categoryId}
@@ -665,7 +665,7 @@ export default function CostCenterPage() {
             </div>
           ) : (
             <SurfaceCard>
-              <div className="space-y-4">
+<div className="atlas-component-stack">
                 <SectionHeading
                   title="Livro de lançamentos"
                   description="Histórico operacional para editar, revisar ou excluir movimentos do DRE."
@@ -780,7 +780,7 @@ export default function CostCenterPage() {
           )}
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="atlas-component-stack">
           <SurfaceCard>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <SectionHeading
@@ -809,7 +809,7 @@ export default function CostCenterPage() {
           </SurfaceCard>
 
           {categoryView === "overview" ? (
-            <div className="space-y-6">
+            <div className="atlas-component-stack">
               <div className="grid gap-4 md:grid-cols-3">
                 <AnalyticsKpiCard
                   label="Categorias totais"
@@ -829,16 +829,16 @@ export default function CostCenterPage() {
                 />
               </div>
 
-              <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.18fr)_minmax(18rem,0.82fr)]">
                 <SurfaceCard>
-                  <div className="space-y-4">
+<div className="atlas-component-stack">
                     <SectionHeading
                       title="Categorias mais usadas"
                       description="As categorias que mais apareceram nos lançamentos recentes e tendem a puxar a leitura mensal."
                       aside={`${categorySummary.length} grupos com movimento`}
                     />
                     {categorySummary.length ? (
-                      <div className="space-y-3">
+<div className="atlas-component-stack-compact">
                         {categorySummary.slice(0, 8).map((row) => (
                           <StackItem
                             key={row.categoryId}
@@ -857,12 +857,12 @@ export default function CostCenterPage() {
                   </SurfaceCard>
 
                 <SurfaceCard>
-                  <div className="space-y-4">
+<div className="atlas-component-stack">
                     <SectionHeading
                       title="Próximas ações"
                       description="Atalhos rápidos para manter a base de despesas limpa e útil."
                     />
-                    <div className="grid gap-3">
+                    <div className="atlas-component-stack-compact">
                       <AnalyticsCalloutCard
                         eyebrow="Catálogo"
                         title="Criar categoria"
@@ -887,7 +887,7 @@ export default function CostCenterPage() {
             </div>
           ) : (
             <SurfaceCard>
-              <div className="space-y-4">
+<div className="atlas-component-stack">
                 <SectionHeading
                   title="Catálogo de categorias"
                   description="Cadastre novas categorias e ajuste as categorias customizadas existentes. Categorias de sistema permanecem protegidas."
@@ -953,7 +953,7 @@ export default function CostCenterPage() {
         }}
         mode="side"
       >
-        <form className="space-y-5" onSubmit={handleExpenseSubmit}>
+<form className="atlas-component-stack" onSubmit={handleExpenseSubmit}>
           <div className="grid gap-4">
             <FormField label="Categoria">
               <select
@@ -1041,7 +1041,7 @@ export default function CostCenterPage() {
         }}
         mode="center"
       >
-        <form className="space-y-5" onSubmit={handleCategorySubmit}>
+<form className="atlas-component-stack" onSubmit={handleCategorySubmit}>
           <FormField label="Nome da categoria">
             <input
               value={categoryForm.name}

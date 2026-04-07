@@ -401,7 +401,7 @@ export function AtlasBusinessLearningPanel() {
   }
 
   return (
-    <div id="atlas-learning" className="space-y-4">
+    <div id="atlas-learning" className="atlas-component-stack">
       <SectionHeading
         title="Aprender negócio"
         description="Varredura histórica para o Atlas consolidar o que esta marca realmente é, onde trava e onde cresce."
@@ -566,7 +566,7 @@ export function AtlasBusinessLearningPanel() {
                                   <p className="mt-1 text-sm font-semibold text-on-surface">{evidence.title}</p>
                                 </div>
                                 {evidence.metricDisplay ? (
-                                  <span className="atlas-soft-pill shrink-0 text-[11px] normal-case tracking-[0.02em]">
+                                  <span className="atlas-inline-metric shrink-0">
                                     {evidence.metricDisplay}
                                   </span>
                                 ) : null}
@@ -605,7 +605,7 @@ export function AtlasBusinessLearningPanel() {
                 </div>
               </article>
 
-              <div className="space-y-4">
+              <div className="atlas-component-stack">
                 <article className="atlas-soft-section px-4 py-4">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
                     Mudança de ciclo
@@ -676,7 +676,7 @@ export function AtlasBusinessLearningPanel() {
                   <summary className="cursor-pointer list-none text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
                     Abrir mapa completo
                   </summary>
-                  <div className="mt-4 space-y-4">
+                  <div className="mt-4 atlas-component-stack">
                     {structuredGroups.length ? (
                       structuredGroups.map((group) => (
                         <div key={group.title}>

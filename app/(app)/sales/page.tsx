@@ -14,7 +14,7 @@ import {
 import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { InlineNotice, PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import { InlineNotice, PageHeader, SectionHeading, SurfaceCard, WorkspaceTabs } from "@/components/ui-shell";
 import { fetchSalesDetailReport } from "@/lib/brandops/database";
 import { currencyFormatter, formatCompactDate, integerFormatter } from "@/lib/brandops/format";
 import type { SalesDetailReport } from "@/lib/brandops/types";
@@ -147,14 +147,13 @@ export default function SalesPage() {
 
   if (isBrandLoading) {
     return (
-      <div className="space-y-6">
+      <div className="atlas-page-stack">
         <PageHeader
           eyebrow="Leitura comercial"
           title="Vendas"
           description={`Carregando dados comerciais da loja ${selectedBrandName}.`}
-          badge={`Período analisado: ${selectedPeriodLabel}`}
         />
-        <div className="space-y-6 animate-pulse">
+        <div className="atlas-page-stack animate-pulse">
           <div className="grid gap-4 md:grid-cols-6">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="h-24 bg-surface-container rounded-2xl" />
@@ -194,20 +193,23 @@ export default function SalesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="atlas-page-stack">
       <PageHeader
         eyebrow="Leitura comercial"
-        title="Vendas"
-        description="Veja rápido o ritmo comercial, o mix e o que ajustar primeiro no período."
-        badge={`Período analisado: ${selectedPeriodLabel}`}
+        title="Console comercial"
+        description="Ritmo, mix e prioridade comercial do período sem transformar a área em dashboard inflado."
         actions={
-          <Link href="/help#dashboard" className="brandops-button brandops-button-ghost">
-            Entender cálculos
-          </Link>
+          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+            <span className="atlas-inline-metric">{selectedBrandName}</span>
+            <span className="atlas-inline-metric">{selectedPeriodLabel}</span>
+            <Link href="/help#dashboard" className="brandops-button brandops-button-ghost">
+              Entender cálculos
+            </Link>
+          </div>
         }
       />
 
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <section className="atlas-kpi-grid xl:grid-cols-4">
         <AnalyticsKpiCard
           label="Pedidos pagos"
           value={integerFormatter.format(metrics.paidOrderCount)}
@@ -234,25 +236,27 @@ export default function SalesPage() {
         />
       </section>
 
-      <section className="grid gap-3 md:grid-cols-3">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.38fr)_minmax(18rem,0.62fr)]">
         <AnalyticsCalloutCard
           eyebrow="Decisão do período"
           title={primaryAction ?? salesDetail.analysis.narrativeTitle ?? "Rever ritmo comercial"}
-          description="O movimento com maior impacto imediato no faturado e no mix."
+          description="O movimento com maior impacto imediato no faturado, no mix e na cadência do período."
           tone="info"
         />
-        <AnalyticsCalloutCard
-          eyebrow="Maior oportunidade"
-          title={salesDetail.analysis.topOpportunity ?? "Sem oportunidade dominante"}
-          description="Produto ou frente com melhor sinal para empurrar distribuição agora."
-          tone="positive"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Revisar primeiro"
-          title={salesDetail.analysis.topRisk ?? "Sem risco principal identificado"}
-          description="Ponto do mix que pede revisão antes de acelerar novas ações."
-          tone="warning"
-        />
+        <div className="atlas-side-stack">
+          <AnalyticsCalloutCard
+            eyebrow="Maior oportunidade"
+            title={salesDetail.analysis.topOpportunity ?? "Sem oportunidade dominante"}
+            description="Produto ou frente com melhor sinal para empurrar distribuição agora."
+            tone="positive"
+          />
+          <AnalyticsCalloutCard
+            eyebrow="Revisar primeiro"
+            title={salesDetail.analysis.topRisk ?? "Sem risco principal identificado"}
+            description="Ponto do mix que pede revisão antes de acelerar novas ações."
+            tone="warning"
+          />
+        </div>
       </section>
 
       <SurfaceCard>
@@ -260,23 +264,35 @@ export default function SalesPage() {
           <SectionHeading
             title="Modo comercial"
             description="Escolha entre resumo, cadência e ranking sem alongar a leitura."
+            aside={<span className="atlas-inline-metric">{view === "summary" ? "Resumo" : view === "cadence" ? "Cadência" : "Produtos"}</span>}
           />
-          <div className="brandops-subtabs">
-            <button type="button" className="brandops-subtab" data-active={view === "summary"} onClick={() => setView("summary")}>
-              Resumo
-            </button>
-            <button type="button" className="brandops-subtab" data-active={view === "cadence"} onClick={() => setView("cadence")}>
-              Cadência
-            </button>
-            <button type="button" className="brandops-subtab" data-active={view === "products"} onClick={() => setView("products")}>
-              Produtos
-            </button>
-          </div>
+          <WorkspaceTabs
+            items={[
+              {
+                key: "sales-summary",
+                label: "Resumo",
+                active: view === "summary",
+                onClick: () => setView("summary"),
+              },
+              {
+                key: "sales-cadence",
+                label: "Cadência",
+                active: view === "cadence",
+                onClick: () => setView("cadence"),
+              },
+              {
+                key: "sales-products",
+                label: "Produtos",
+                active: view === "products",
+                onClick: () => setView("products"),
+              },
+            ]}
+          />
         </div>
       </SurfaceCard>
 
       {view === "summary" ? (
-        <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.22fr)_minmax(0,0.78fr)]">
           <SurfaceCard>
             <SectionHeading
               title={salesDetail.analysis.narrativeTitle || "Leitura comercial"}
@@ -331,11 +347,11 @@ export default function SalesPage() {
               </summary>
               <div className="mt-4">
                 <InlineNotice tone="info">
-                  <div className="space-y-2">
+                  <div className="atlas-component-stack-tight">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
                       Próximas ações
                     </p>
-                    <div className="space-y-1.5 text-sm text-on-surface-variant">
+                    <div className="atlas-component-stack-tight text-sm text-on-surface-variant">
                       {salesDetail.analysis.nextActions.length ? (
                         salesDetail.analysis.nextActions.map((action) => <p key={action}>• {action}</p>)
                       ) : (
@@ -398,34 +414,36 @@ export default function SalesPage() {
               description="Ranking por faturamento bruto e volume de peças."
             />
           </div>
-          <div className="grid gap-3 border-b border-outline/60 p-5 md:grid-cols-3">
+          <div className="grid gap-4 border-b border-outline/60 p-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(17rem,0.6fr)]">
             <AnalyticsCalloutCard
               eyebrow="Expandir"
               title={salesDetail.analysis.topOpportunity ?? "Sem oportunidade dominante"}
               description="Produto com melhor sinal para puxar distribuição no período."
               tone="positive"
             />
-            <AnalyticsCalloutCard
-              eyebrow="Revisar"
-              title={salesDetail.analysis.topRisk ?? "Sem risco principal identificado"}
-              description="Item que merece revisão de vitrine, exposição ou permanência no mix."
-              tone="warning"
-            />
-            <AnalyticsCalloutCard
-              eyebrow="Mix"
-              title={topProduct?.productName ?? "Sem produto líder"}
-              description={
-                topProduct
-                  ? `${integerFormatter.format(topProduct.quantity)} peça(s) • ${currencyFormatter.format(topProduct.grossRevenue)}`
-                  : "Sem volume suficiente para ranking."
-              }
-              tone="info"
-            />
+            <div className="atlas-side-stack">
+              <AnalyticsCalloutCard
+                eyebrow="Revisar"
+                title={salesDetail.analysis.topRisk ?? "Sem risco principal identificado"}
+                description="Item que merece revisão de vitrine, exposição ou permanência no mix."
+                tone="warning"
+              />
+              <AnalyticsCalloutCard
+                eyebrow="Mix"
+                title={topProduct?.productName ?? "Sem produto líder"}
+                description={
+                  topProduct
+                    ? `${integerFormatter.format(topProduct.quantity)} peça(s) • ${currencyFormatter.format(topProduct.grossRevenue)}`
+                    : "Sem volume suficiente para ranking."
+                }
+                tone="info"
+              />
+            </div>
           </div>
           {salesDetailError ? (
             <div className="p-5 text-sm text-tertiary">{salesDetailError}</div>
           ) : (
-            <div className="brandops-table-container rounded-none border-0">
+            <div className="brandops-table-container atlas-table-shell">
               <table className="brandops-table-compact min-w-[560px] w-full">
                 <thead>
                   <tr>

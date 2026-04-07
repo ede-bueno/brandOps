@@ -86,10 +86,10 @@ function PlaybookColumn({
         title={title}
         description={`${description} ${count ? `${count} item(ns) classificados.` : "Sem itens classificados nesta zona."}`}
       />
-      <div className="mt-5 space-y-3">
+      <div className="mt-5 atlas-component-stack-compact">
         {items.length ? (
           items.map((product) => (
-            <article key={`${title}-${product.id}`} className="panel-muted p-4">
+            <article key={`${title}-${product.id}`} className="panel-muted p-3.5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-on-surface">{product.printName}</p>
@@ -101,7 +101,7 @@ function PlaybookColumn({
                   <p className="font-semibold text-on-surface">
                     {integerFormatter.format(product.unitsSold)} pçs
                   </p>
-                  <p className="mt-1 text-xs text-on-surface-variant">
+                  <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
                     {integerFormatter.format(product.galleryCount)} imgs
                   </p>
                 </div>
@@ -109,7 +109,7 @@ function PlaybookColumn({
             </article>
           ))
         ) : (
-          <div className="panel-muted p-4 text-sm text-on-surface-variant">
+          <div className="panel-muted p-3.5 text-sm text-on-surface-variant">
             O Atlas ainda não encontrou itens suficientes nesta faixa do playbook.
           </div>
         )}
@@ -197,14 +197,13 @@ export default function FeedPage() {
 
   if (isPageLoading) {
     return (
-      <div className="space-y-6">
+      <div className="atlas-page-stack">
         <PageHeader
           eyebrow="Catalogo visual"
           title="Feed de Produtos"
           description={`Carregando o catalogo da loja ${selectedBrandName}.`}
-          badge={`Período analisado: ${selectedPeriodLabel}`}
         />
-        <div className="space-y-6 animate-pulse">
+        <div className="atlas-page-stack animate-pulse">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="h-24 rounded-2xl bg-surface-container" />
@@ -240,15 +239,20 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="atlas-page-stack">
       <PageHeader
         eyebrow="Catalogo visual"
-        title="Feed de Produtos"
-        description="Veja rápido o que escalar, revisar ou cobrir melhor no catálogo da marca."
-        badge={`Fonte atual: ${report.meta.sourceLabel}`}
+        title="Console de catálogo"
+        description="Leia cobertura, venda e distribuição visual do catálogo sem transformar a área em vitrine."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <span className="atlas-inline-metric">{selectedBrandName}</span>
+            <span className="atlas-inline-metric">{report.meta.sourceLabel}</span>
+          </div>
+        }
       />
 
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <section className="atlas-kpi-grid xl:grid-cols-4">
         <AnalyticsKpiCard
           label="SKUs no recorte"
           value={integerFormatter.format(report.summary.totalProducts)}
@@ -301,6 +305,7 @@ export default function FeedPage() {
           <SectionHeading
             title="Filtro rápido"
             description="Refine a leitura sem espalhar controles pela tela."
+            aside={<span className="atlas-inline-metric">{selectedPeriodLabel}</span>}
           />
           <div className="mt-5 brandops-toolbar-grid lg:grid-cols-2">
             <label className="brandops-field-stack lg:col-span-2">
@@ -376,7 +381,11 @@ export default function FeedPage() {
 
       <SurfaceCard>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <SectionHeading title="Exploração do catálogo" description="Visão geral, playbook e grade em um fluxo curto." />
+          <SectionHeading
+            title="Exploração do catálogo"
+            description="Visão geral, playbook e grade em um fluxo curto."
+            aside={<span className="atlas-inline-metric">{report.rows.length} produto(s)</span>}
+          />
           <div className="brandops-subtabs">
             <button type="button" className="brandops-subtab" data-active={view === "overview"} onClick={() => setView("overview")}>Visão geral</button>
             <button type="button" className="brandops-subtab" data-active={view === "playbook"} onClick={() => setView("playbook")}>Playbook</button>
@@ -397,34 +406,34 @@ export default function FeedPage() {
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               {report.analysis.nextActions.length ? (
                 report.analysis.nextActions.map((action) => (
-                  <article key={action} className="panel-muted p-4 text-sm leading-6 text-on-surface-variant">{action}</article>
+                  <article key={action} className="panel-muted p-3.5 text-sm leading-6 text-on-surface-variant">{action}</article>
                 ))
               ) : (
-                <article className="panel-muted p-4 text-sm leading-6 text-on-surface-variant md:col-span-3">Ainda não há ações fortes para o recorte atual.</article>
+                <article className="panel-muted p-3.5 text-sm leading-6 text-on-surface-variant md:col-span-3">Ainda não há ações fortes para o recorte atual.</article>
               )}
             </div>
           </details>
         </SurfaceCard>
 
-        <section className="grid gap-6 xl:grid-cols-2">
+        <section className="grid gap-4 xl:grid-cols-2">
           <SurfaceCard>
             <SectionHeading title="Mais vendidos" description="Produtos que já merecem mais atenção." />
-            <div className="mt-5 space-y-3">
+            <div className="mt-5 atlas-component-stack-tight">
               {report.highlights.topSellers.length ? report.highlights.topSellers.map((product) => (
                 <div key={product.id} className="rounded-2xl border border-outline bg-surface-container-low p-3">
                   <p className="font-semibold text-on-surface">{product.printName}</p>
-                  <p className="mt-1 text-xs text-on-surface-variant">{product.productType ?? "Sem tipo"} • {integerFormatter.format(product.unitsSold)} pecas</p>
+                  <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">{product.productType ?? "Sem tipo"} • {integerFormatter.format(product.unitsSold)} pecas</p>
                 </div>
               )) : <p className="text-sm text-on-surface-variant">Ainda nao ha produtos vendidos no recorte.</p>}
             </div>
           </SurfaceCard>
           <SurfaceCard>
             <SectionHeading title="Oportunidades de cobertura" description="Itens que ainda pedem reforço visual ou distribuição." />
-            <div className="mt-5 space-y-3">
+            <div className="mt-5 atlas-component-stack-tight">
               {report.highlights.uncovered.length ? report.highlights.uncovered.map((product) => (
                 <div key={product.id} className="rounded-2xl border border-outline bg-surface-container-low p-3">
                   <p className="font-semibold text-on-surface">{product.printName}</p>
-                  <p className="mt-1 text-xs text-on-surface-variant">{product.productType ?? "Sem tipo"} • {integerFormatter.format(product.galleryCount)} imagens • {integerFormatter.format(product.unitsSold)} pecas</p>
+                  <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">{product.productType ?? "Sem tipo"} • {integerFormatter.format(product.galleryCount)} imagens • {integerFormatter.format(product.unitsSold)} pecas</p>
                 </div>
               )) : <p className="text-sm text-on-surface-variant">Nao ha gargalos visuais evidentes neste recorte.</p>}
             </div>
@@ -434,7 +443,7 @@ export default function FeedPage() {
       ) : null}
 
       {view === "playbook" ? (
-      <section className="grid gap-6 xl:grid-cols-3">
+      <section className="grid gap-4 xl:grid-cols-3">
         <PlaybookColumn {...report.playbook.scale} />
         <PlaybookColumn {...report.playbook.review} />
         <PlaybookColumn {...report.playbook.monitor} />
@@ -452,13 +461,13 @@ export default function FeedPage() {
                 <div className="flex h-full items-center justify-center text-on-surface-variant"><Images size={28} /></div>
               )}
             </div>
-            <div className="space-y-4 p-4">
+              <div className="atlas-component-stack p-3.5">
               <div className="flex flex-wrap items-center gap-2">
-                {product.productType ? <span className="status-chip">{product.productType}</span> : null}
-                <span className="rounded-full bg-surface-container-high px-3 py-1 text-[11px] font-semibold text-on-surface-variant">
+                {product.productType ? <span className="atlas-inline-metric">{product.productType}</span> : null}
+                <span className="atlas-inline-metric">
                   {product.dataSource === "meta_catalog" ? "Meta Catalog" : "Feed manual"}
                 </span>
-                <span className="rounded-full bg-secondary-container px-3 py-1 text-[11px] font-semibold text-on-secondary-container">
+                <span className="atlas-inline-metric">
                   {integerFormatter.format(product.unitsSold)} pecas
                 </span>
               </div>
@@ -468,11 +477,11 @@ export default function FeedPage() {
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="panel-muted p-3">
-                  <p className="text-xs uppercase tracking-wide text-on-surface-variant">Preco</p>
+                  <p className="text-[11px] uppercase tracking-wide text-on-surface-variant">Preco</p>
                   <p className="mt-1 font-semibold text-on-surface">{currencyFormatter.format(product.salePrice ?? product.price)}</p>
                 </div>
                 <div className="panel-muted p-3">
-                  <p className="text-xs uppercase tracking-wide text-on-surface-variant">Galeria</p>
+                  <p className="text-[11px] uppercase tracking-wide text-on-surface-variant">Galeria</p>
                   <p className="mt-1 font-semibold text-on-surface">{integerFormatter.format(product.galleryCount)} imagens</p>
                 </div>
               </div>

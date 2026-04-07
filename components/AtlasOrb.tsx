@@ -11,7 +11,8 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import { BrainCircuit, Sparkles, TrendingUp } from "lucide-react";
+import { BrainCircuit, TrendingUp } from "lucide-react";
+import { AtlasMark } from "./AtlasMark";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_HINTS = [
@@ -102,7 +103,6 @@ export function AtlasOrb({
 
   const sizeClass =
     size === "sm" ? "h-10 w-10" : size === "lg" ? "h-[4.6rem] w-[4.6rem]" : "h-14 w-14";
-  const iconSize = size === "sm" ? 14 : size === "lg" ? 24 : 18;
   const orbDimension = size === "sm" ? 40 : size === "lg" ? 74 : 56;
 
   const hintList = useMemo(() => hints.slice(0, 3), [hints]);
@@ -344,7 +344,7 @@ export function AtlasOrb({
           </span>
         ) : null}
         <span className="atlas-orb-core">
-          {icon ? <Sparkles size={iconSize} className="text-primary" /> : null}
+          {icon ? <AtlasMark size={size === "lg" ? "lg" : size === "sm" ? "sm" : "md"} className="atlas-orb-mark" /> : null}
         </span>
       </button>
 
@@ -384,10 +384,10 @@ export function AtlasOrb({
 
             {previewActions.length ? (
               <div className="mt-3 flex flex-wrap gap-2">
-                {previewActions.map((action) =>
+                {previewActions.map((action, index) =>
                   action.href ? (
                     <Link
-                      key={action.label}
+                      key={`${action.label}-${action.href ?? action.targetId ?? action.action ?? "link"}-${index}`}
                       href={action.href}
                       prefetch={false}
                       className="pointer-events-auto rounded-full border border-outline bg-surface-container-low px-3 py-1.5 text-[11px] font-semibold text-on-surface-variant transition hover:border-secondary/30 hover:text-on-surface"
@@ -396,7 +396,7 @@ export function AtlasOrb({
                     </Link>
                   ) : (
                     <button
-                      key={action.label}
+                      key={`${action.label}-${action.href ?? action.targetId ?? action.action ?? "button"}-${index}`}
                       type="button"
                       onClick={() => handleHoverAction(action)}
                       className="rounded-full border border-outline bg-surface-container-low px-3 py-1.5 text-[11px] font-semibold text-on-surface-variant transition hover:border-secondary/30 hover:text-on-surface"

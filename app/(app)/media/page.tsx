@@ -19,7 +19,14 @@ import {
 } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { ModeEntryCard, ModeTabs, PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import {
+  ModeEntryCard,
+  PageHeader,
+  SectionHeading,
+  StackItem,
+  SurfaceCard,
+  WorkspaceTabs,
+} from "@/components/ui-shell";
 import { fetchMediaReport } from "@/lib/brandops/database";
 import {
   currencyFormatter,
@@ -245,14 +252,13 @@ export function MediaWorkspace({
 
   if (isBrandLoading) {
     return (
-      <div className="space-y-6">
+      <div className="atlas-page-stack">
         <PageHeader
           eyebrow="Aquisição"
           title="Performance Mídia"
           description={`Carregando os dados de mídia da loja ${selectedBrandName}.`}
-          badge={`Período analisado: ${selectedPeriodLabel}`}
         />
-        <div className="space-y-6 animate-pulse">
+        <div className="atlas-page-stack animate-pulse">
           <div className="grid gap-4 md:grid-cols-4">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="h-24 rounded-xl bg-surface-container" />
@@ -297,34 +303,48 @@ export function MediaWorkspace({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="atlas-page-stack-compact">
       <PageHeader
-        eyebrow={pageMode === "home" ? "Aquisição" : "Mídia e performance"}
-        title={pageTitle}
-        description={pageDescription}
-        badge={selectedPeriodLabel}
+        eyebrow={pageMode === "home" ? "Aquisição" : "Mídia"}
+        title={pageMode === "home" ? "Operação de mídia" : pageTitle}
+        description={
+          pageMode === "home"
+            ? "Escala, revisão e eficiência do recorte atual."
+            : pageDescription
+        }
         actions={
-          <ModeTabs
-            items={[
-              { label: "Home", href: APP_ROUTES.media, active: pageMode === "home" },
-              {
-                label: "Executivo",
-                href: APP_ROUTES.mediaExecutive,
-                active: pageMode === "executive",
-              },
-              { label: "Radar", href: APP_ROUTES.mediaRadar, active: pageMode === "trend" },
-              {
-                label: "Campanhas",
-                href: APP_ROUTES.mediaCampaigns,
-                active: pageMode === "campaigns",
-              },
-            ]}
-          />
+          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+            <WorkspaceTabs
+              items={[
+                { key: "media-home", label: "Home", href: APP_ROUTES.media, active: pageMode === "home" },
+                {
+                  key: "media-executive",
+                  label: "Executivo",
+                  href: APP_ROUTES.mediaExecutive,
+                  active: pageMode === "executive",
+                },
+                {
+                  key: "media-radar",
+                  label: "Radar",
+                  href: APP_ROUTES.mediaRadar,
+                  active: pageMode === "trend",
+                },
+                {
+                  key: "media-campaigns",
+                  label: "Campanhas",
+                  href: APP_ROUTES.mediaCampaigns,
+                  active: pageMode === "campaigns",
+                },
+              ]}
+            />
+            <span className="atlas-inline-metric">{selectedBrandName}</span>
+            <span className="atlas-inline-metric">{selectedPeriodLabel}</span>
+          </div>
         }
       />
 
       {pageMode === "home" ? (
-        <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <section className="atlas-kpi-grid xl:grid-cols-4">
           <AnalyticsKpiCard
             label="Investimento"
             value={currencyFormatter.format(summary.spend)}
@@ -354,7 +374,7 @@ export function MediaWorkspace({
 
       {pageMode === "home" ? (
         <>
-          <section className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.42fr)_minmax(18rem,0.58fr)]">
             <AnalyticsCalloutCard
               eyebrow={analysis.narrativeTitle}
               title={bestScale ? `Escalar ${bestScale.campaignName}` : "A mídia pede uma decisão curta"}
@@ -364,7 +384,8 @@ export function MediaWorkspace({
             <SurfaceCard>
               <SectionHeading
                 title="Escolha a leitura"
-                description="A home resume; o aprofundamento mora em páginas próprias."
+                description="A home resume. O aprofundamento fica nas trilhas executiva, radar e campanhas."
+                aside={<span className="atlas-inline-metric">Recorte ativo</span>}
               />
               <div className="mt-5 grid gap-3 md:grid-cols-3">
                 <ModeEntryCard
@@ -389,7 +410,7 @@ export function MediaWorkspace({
             </SurfaceCard>
           </section>
 
-          <section className="grid gap-4 xl:grid-cols-3">
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.34fr)_minmax(18rem,0.66fr)]">
             <AnalyticsCalloutCard
               eyebrow="Campanha em foco"
               title={topCampaignBySpend?.campaignName ?? "Sem campanha dominante"}
@@ -403,35 +424,63 @@ export function MediaWorkspace({
                   : "Aguardando massa de mídia suficiente."
               }
             />
-            <AnalyticsCalloutCard
-              eyebrow="Escalar primeiro"
-              title={bestScale ? bestScale.campaignName : "Sem campanha elegível"}
-              description={
-                report.commandRoom.bestScaleSummary ??
-                "Ainda não há sinal forte o bastante para ampliar verba com segurança."
-              }
-              tone="positive"
-              footer={
-                bestScale
-                  ? `${bestScale.roas.toFixed(2)}x ROAS · ${percentFormatter.format(bestScale.ctrAll)} CTR`
-                  : "Aguardando campanha com sinal consistente."
-              }
-            />
-            <AnalyticsCalloutCard
-              eyebrow="Revisar primeiro"
-              title={priorityReview ? priorityReview.campaignName : "Sem alerta crítico"}
-              description={
-                primaryAction ??
-                report.commandRoom.priorityReviewSummary ??
-                "Nenhuma revisão dominante agora."
-              }
-              tone="warning"
-              footer={
-                priorityReview
-                  ? `${priorityReview.roas.toFixed(2)}x ROAS · ${percentFormatter.format(priorityReview.ctrAll)} CTR`
-                  : "Sem campanha crítica no recorte."
-              }
-            />
+            <div className="atlas-side-stack">
+              <AnalyticsCalloutCard
+                eyebrow="Escalar primeiro"
+                title={bestScale ? bestScale.campaignName : "Sem campanha elegível"}
+                description={
+                  report.commandRoom.bestScaleSummary ??
+                  "Ainda não há sinal forte o bastante para ampliar verba com segurança."
+                }
+                tone="positive"
+                footer={
+                  bestScale
+                    ? `${bestScale.roas.toFixed(2)}x ROAS · ${percentFormatter.format(bestScale.ctrAll)} CTR`
+                    : "Aguardando campanha com sinal consistente."
+                }
+              />
+              <StackItem
+                tone="warning"
+                title={priorityReview ? `Revisar ${priorityReview.campaignName}` : "Sem alerta crítico"}
+                description={
+                  primaryAction ??
+                  report.commandRoom.priorityReviewSummary ??
+                  "Nenhuma revisão dominante agora."
+                }
+                aside={
+                  priorityReview
+                    ? `${priorityReview.roas.toFixed(2)}x ROAS · ${percentFormatter.format(priorityReview.ctrAll)} CTR`
+                    : "Sem campanha crítica no recorte."
+                }
+              />
+            </div>
+            <SurfaceCard className="xl:col-span-2">
+              <SectionHeading
+                title="Prioridade do recorte"
+                description="Uma faixa única para decidir onde corrigir, manter ou abrir a tabela."
+              />
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                <StackItem
+                  tone="default"
+                  title={topCampaignBySpend ? `Foco em ${topCampaignBySpend.campaignName}` : "Sem campanha dominante"}
+                  description={
+                    topCampaignBySpend?.summary ??
+                    "Abra campanhas para localizar a peça com maior peso operacional."
+                  }
+                  aside={
+                    topCampaignBySpend
+                      ? `${currencyFormatter.format(topCampaignBySpend.spend)} investidos`
+                      : "Aguardando massa de mídia suficiente."
+                  }
+                />
+                <StackItem
+                  tone="info"
+                  title="Próximo passo operacional"
+                  description={report.commandRoom.narrative}
+                  aside={topCampaignBySpend ? `${currencyFormatter.format(topCampaignBySpend.spend)} investidos` : "Aguardando massa de mídia suficiente."}
+                />
+              </div>
+            </SurfaceCard>
           </section>
         </>
       ) : null}
@@ -444,7 +493,7 @@ export function MediaWorkspace({
             <span className="atlas-disclosure-chevron">abrir</span>
           </summary>
           <div className="atlas-disclosure-body">
-            <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <section className="atlas-kpi-grid xl:grid-cols-4">
               <AnalyticsKpiCard
                 label="CTR (todos)"
                 value={percentFormatter.format(summary.ctrAll)}
@@ -477,7 +526,7 @@ export function MediaWorkspace({
 
       {view === "executive" ? (
         <>
-          <section className="grid gap-6 xl:grid-cols-[1.42fr_0.58fr]">
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.64fr)]">
             <SurfaceCard>
               <SectionHeading
                 title="Investimento x retorno por dia"
@@ -543,14 +592,14 @@ export function MediaWorkspace({
                 title="Sala de comando"
                 description="Leitura curta para decidir verba, prioridade e ajuste de criativo sem abrir a tabela inteira."
               />
-              <div className="mt-5 grid gap-3">
+              <div className="mt-5 grid gap-4">
                 <AnalyticsCalloutCard
                   eyebrow={analysis.narrativeTitle}
                   title="Leitura do período"
                   description={analysis.narrativeBody}
                   footer={report.commandRoom.narrative}
                 />
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2">
                   <AnalyticsCalloutCard
                     eyebrow="Escalar agora"
                     title={bestScale ? bestScale.campaignName : "Sem campanha elegível"}
@@ -581,47 +630,44 @@ export function MediaWorkspace({
                   />
                 </div>
                 {analysis.nextActions.length ? (
-                  <article className="rounded-2xl border border-outline/70 bg-surface-container-low/80 p-4 shadow-sm">
+                  <div className="atlas-soft-subcard p-3.5">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
                       Próximos passos
                     </p>
-                    <div className="mt-3 space-y-2">
+                    <div className="mt-3 atlas-component-stack-tight">
                       {analysis.nextActions.map((item) => (
-                        <div
-                          key={item}
-                          className="rounded-xl border border-outline bg-surface px-3 py-2 text-sm text-on-surface-variant"
-                        >
+                        <div key={item} className="panel-muted px-4 py-3 text-sm leading-6 text-on-surface-variant">
                           {item}
                         </div>
                       ))}
                     </div>
-                  </article>
+                  </div>
                 ) : null}
               </div>
             </SurfaceCard>
           </section>
 
-          <section className="grid gap-6 xl:grid-cols-3">
+          <section className="grid gap-4 xl:grid-cols-3">
             {[playbook.scale, playbook.review, playbook.monitor].map((group) => (
               <SurfaceCard key={group.title}>
                 <SectionHeading title={group.title} description={group.description} />
                 <div className="mt-4 flex items-center justify-between">
-                  <span className="status-chip">{group.count} campanha(s)</span>
+                  <span className="atlas-inline-metric">{group.count} campanha(s)</span>
                 </div>
-                <div className="mt-4 space-y-3">
+                <div className="mt-4 atlas-component-stack-tight">
                   {group.items.length ? (
                     group.items.map((campaign) => (
-                      <div key={campaign.campaignName} className="panel-muted p-4">
+                      <div key={campaign.campaignName} className="panel-muted p-3.5">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="truncate font-semibold text-on-surface">{campaign.campaignName}</p>
-                            <p className="mt-1 text-xs text-on-surface-variant">{campaign.summary}</p>
+                            <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">{campaign.summary}</p>
                           </div>
-                          <span className={`inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${actionClassName(campaign.action)}`}>
+                          <span className={`atlas-compact-badge ${actionClassName(campaign.action)}`}>
                             {actionLabel(campaign.action)}
                           </span>
                         </div>
-                        <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-on-surface-variant">
+                        <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-on-surface-variant">
                           <span>ROAS {campaign.roas.toFixed(2)}x</span>
                           <span>CTR {percentFormatter.format(campaign.ctrAll)}</span>
                           <span>CPA {campaign.purchases ? currencyFormatter.format(campaign.cpa) : "-"}</span>
@@ -636,14 +682,14 @@ export function MediaWorkspace({
             ))}
           </section>
 
-          <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+          <section className="grid gap-4 xl:grid-cols-[0.94fr_1.06fr]">
             <SurfaceCard>
               <SectionHeading
                 title="Top sinais do período"
                 description="Indicadores auxiliares para entender qualidade de tráfego e pressão de custo."
               />
               <div className="mt-5 grid gap-3">
-                <article className="panel-muted p-4">
+                <article className="panel-muted p-3.5">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Campanha líder em verba
                   </p>
@@ -652,7 +698,7 @@ export function MediaWorkspace({
                       <p className="font-semibold text-on-surface">
                         {topCampaignBySpend?.campaignName ?? "Sem campanha"}
                       </p>
-                      <p className="mt-1 text-xs text-on-surface-variant">
+                      <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
                         {topCampaignBySpend
                           ? topCampaignBySpend.summary
                           : "Sem dados suficientes"}
@@ -664,14 +710,14 @@ export function MediaWorkspace({
                   </div>
                 </article>
 
-                <article className="panel-muted p-4">
+                <article className="panel-muted p-3.5">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Alcance e entrega
                   </p>
                   <p className="mt-2 font-headline text-2xl font-semibold text-on-surface">
                     {integerFormatter.format(summary.reach)}
                   </p>
-                  <p className="mt-1 text-xs text-on-surface-variant">
+                  <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
                     {integerFormatter.format(summary.impressions)} impressões no período.
                   </p>
                 </article>
@@ -685,7 +731,7 @@ export function MediaWorkspace({
                   description="Ranking com indicação de escala, monitoramento ou revisão."
                 />
               </div>
-              <div className="brandops-table-container rounded-none border-0">
+              <div className="brandops-table-container atlas-table-shell">
                 <table className="brandops-table-compact w-full min-w-[980px]">
                   <thead>
                     <tr>
@@ -705,7 +751,7 @@ export function MediaWorkspace({
                           {campaign.campaignName}
                         </td>
                         <td className="text-right">
-                          <span className={`inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${actionClassName(campaign.action)}`}>
+                          <span className={`atlas-compact-badge ${actionClassName(campaign.action)}`}>
                             {actionLabel(campaign.action)}
                           </span>
                         </td>
@@ -725,7 +771,7 @@ export function MediaWorkspace({
       ) : null}
 
       {view === "trend" ? (
-        <section className="grid gap-6">
+        <section className="grid gap-4">
           <SurfaceCard>
             <SectionHeading
               title="Cadência do gasto"
@@ -764,7 +810,7 @@ export function MediaWorkspace({
             </div>
           </SurfaceCard>
 
-          <section className="grid gap-4 xl:grid-cols-[0.54fr_0.46fr]">
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,0.76fr)_minmax(0,0.24fr)]">
             <SurfaceCard>
               <SectionHeading
                 title="Eficiência diária"
@@ -839,29 +885,29 @@ export function MediaWorkspace({
                 description="Resumo rápido para saber se o ganho de verba veio com retorno ou só com volume."
               />
               <div className="mt-5 grid gap-3">
-                <article className="panel-muted p-4">
+                <article className="panel-muted p-3.5">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     ROAS atribuído médio
                   </p>
                   <p className="mt-2 font-headline text-[clamp(1.7rem,3vw,2.2rem)] font-semibold text-on-surface">
                     {summary.attributedRoas.toFixed(2)}x
                   </p>
-                  <p className="mt-1 text-xs text-on-surface-variant">
+                  <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
                     Receita atribuída dividida pelo investimento do período.
                   </p>
                 </article>
-                <article className="panel-muted p-4">
+                <article className="panel-muted p-3.5">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Compras atribuídas
                   </p>
                   <p className="mt-2 font-headline text-[clamp(1.7rem,3vw,2.2rem)] font-semibold text-on-surface">
                     {integerFormatter.format(summary.purchases)}
                   </p>
-                  <p className="mt-1 text-xs text-on-surface-variant">
+                  <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
                     Volume de compras puxado pelas campanhas da janela ativa.
                   </p>
                 </article>
-                <article className="panel-muted p-4 text-sm leading-6 text-on-surface-variant">
+                <article className="panel-muted p-3.5 text-sm leading-6 text-on-surface-variant">
                   {report.commandRoom.narrative}
                 </article>
               </div>
@@ -878,7 +924,7 @@ export function MediaWorkspace({
               description="Tabela completa para decidir onde subir verba, observar ou revisar."
             />
           </div>
-          <div className="brandops-table-container rounded-none border-0">
+          <div className="brandops-table-container atlas-table-shell">
             <table className="brandops-table-compact min-w-[1240px] w-full">
               <thead>
                 <tr>
@@ -902,7 +948,7 @@ export function MediaWorkspace({
                       {campaign.campaignName}
                     </td>
                     <td>
-                      <span className={`inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${actionClassName(campaign.action)}`}>
+                      <span className={`atlas-compact-badge ${actionClassName(campaign.action)}`}>
                         {actionLabel(campaign.action)}
                       </span>
                     </td>

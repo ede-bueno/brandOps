@@ -19,7 +19,7 @@ export default async function IntegrationTutorialProviderPage({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="atlas-page-stack">
       <PageHeader
         eyebrow={tutorial.eyebrow}
         title={tutorial.title}
@@ -86,13 +86,13 @@ export default async function IntegrationTutorialProviderPage({
         />
 
         <div className="mt-5 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="atlas-soft-subcard p-4">
+          <div className="atlas-soft-subcard">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
               Para quem é
             </p>
             <p className="mt-2 text-sm leading-6 text-on-surface">{tutorial.audience}</p>
           </div>
-          <div className="atlas-soft-subcard p-4">
+          <div className="atlas-soft-subcard">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
               Pré-requisitos
             </p>
@@ -114,9 +114,9 @@ export default async function IntegrationTutorialProviderPage({
           description="Siga a ordem abaixo para reduzir erro de configuração e validar o resultado."
         />
 
-        <div className="mt-5 space-y-4">
+        <div className="atlas-component-stack">
           {tutorial.steps.map((step, index) => (
-            <article key={step.title} className="atlas-soft-subcard p-4">
+            <article key={step.title} className="atlas-soft-subcard">
               <details className="atlas-disclosure" open={index === 0}>
                 <summary>
                   <span>{`${index + 1}. ${step.title}`}</span>
@@ -147,7 +147,7 @@ export default async function IntegrationTutorialProviderPage({
             title="Validação"
             description="Use este checklist para saber se a integração realmente ficou pronta."
           />
-          <div className="mt-5 space-y-3">
+          <div className="atlas-component-stack">
             {tutorial.validation.map((item) => (
               <div key={item} className="atlas-soft-subcard flex items-start gap-3 p-4">
                 <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-secondary" />
@@ -162,9 +162,9 @@ export default async function IntegrationTutorialProviderPage({
             title="Erros comuns"
             description="Se algo falhar, comece por aqui antes de repetir a operação inteira."
           />
-          <div className="mt-5 space-y-3">
+          <div className="atlas-component-stack">
             {tutorial.commonErrors.map((error) => (
-              <article key={error.title} className="atlas-soft-subcard p-4">
+              <article key={error.title} className="atlas-soft-subcard">
                 <div className="flex items-start gap-3">
                   <CircleAlert size={16} className="mt-0.5 shrink-0 text-secondary" />
                   <div className="min-w-0 flex-1">
@@ -201,7 +201,7 @@ export default async function IntegrationTutorialProviderPage({
               href={link.href}
               target="_blank"
               rel="noreferrer"
-              className="atlas-soft-subcard flex h-full flex-col justify-between gap-3 p-4 transition hover:border-secondary/30"
+              className="atlas-soft-subcard flex h-full flex-col justify-between gap-3 transition hover:border-secondary/30"
             >
               <div>
                 <p className="text-sm font-semibold text-on-surface">{link.label}</p>

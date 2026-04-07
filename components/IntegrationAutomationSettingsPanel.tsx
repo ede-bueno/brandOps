@@ -146,7 +146,7 @@ export function IntegrationAutomationSettingsPanel() {
   }
 
   return (
-    <div id="integration-automation" className="space-y-4">
+    <div id="integration-automation" className="atlas-component-stack">
       <SectionHeading
         title="Cadência de sincronização"
         description="Programe Meta e GA4 por loja sem depender de execução manual."
@@ -172,7 +172,7 @@ export function IntegrationAutomationSettingsPanel() {
                     {item.description}
                   </p>
                 </div>
-                <span className="atlas-soft-pill">
+                <span className="atlas-inline-metric">
                   {item.state.enabled ? getIntervalLabel(item.state.intervalHours) : "Manual"}
                 </span>
               </div>

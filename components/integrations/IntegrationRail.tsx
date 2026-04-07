@@ -40,11 +40,11 @@ export function IntegrationRail({
 }) {
   return (
     <SurfaceCard
-      className={`atlas-integration-nav self-start p-3.5 xl:flex xl:h-full xl:min-h-0 xl:flex-col ${className ?? ""}`}
+      className={`atlas-integration-nav self-start xl:flex xl:h-full xl:min-h-0 xl:flex-col ${className ?? ""}`}
     >
       <SectionHeading title="Conectores" description="Escolha a fonte." />
-      <div className="mt-4 xl:min-h-0 xl:flex-1">
-        <div className="space-y-2">
+      <div className="mt-5 xl:min-h-0 xl:flex-1">
+        <div className="atlas-component-stack-compact">
           {providerHealthSummary.map(({ provider, integration, health }) => {
             const ProviderIcon = providerIcons[provider];
             const isActive = activeProvider === provider;
@@ -57,8 +57,8 @@ export function IntegrationRail({
                 data-active={isActive}
                 onClick={() => activateWorkspace(provider, isActive ? activeSection : "overview")}
                 className={[
-                  "atlas-integration-provider-button w-full text-left transition-transform duration-150",
-                  isActive ? "pl-4 ring-1 ring-primary/28 translate-x-0" : "ml-1 pl-4.5 opacity-92 hover:opacity-100",
+                  "atlas-integration-provider-button w-full text-left transition-colors duration-150",
+                  isActive ? "translate-x-0" : "opacity-95 hover:opacity-100",
                 ].join(" ")}
               >
                 <div className="atlas-integration-provider-head">
@@ -68,15 +68,17 @@ export function IntegrationRail({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-on-surface">{providerLabels[provider]}</p>
-                      {isActive ? <span className="atlas-soft-pill">aberto</span> : null}
+                      <span className="text-[10px] uppercase tracking-[0.14em] text-ink-muted">
+                        {isActive ? "ativo" : providerEyebrows[provider]}
+                      </span>
                     </div>
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-ink-muted">
-                      {providerEyebrows[provider]}
+                    <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
+                      {health.description}
                     </p>
                   </div>
                 </div>
-                <div className="mt-2 flex items-center justify-between gap-3">
-                  <span className="atlas-soft-pill">{health.label}</span>
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <span className="atlas-inline-metric">{health.label}</span>
                   <span className="text-[11px] text-on-surface-variant">{formatSyncLabel(integration)}</span>
                 </div>
               </button>

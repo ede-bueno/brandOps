@@ -22,6 +22,7 @@ export function AnalyticsPanel({
   footer,
   className,
   bodyClassName,
+  variant = "default",
 }: {
   eyebrow?: string;
   title: string;
@@ -30,16 +31,35 @@ export function AnalyticsPanel({
   footer?: ReactNode;
   className?: string;
   bodyClassName?: string;
+  variant?: "default" | "chart" | "callout";
 }) {
   return (
-    <SurfaceCard className={cn("h-full", className)}>
+    <SurfaceCard
+      className={cn(
+        variant === "chart"
+          ? "atlas-panel-chart"
+          : variant === "callout"
+            ? "atlas-panel-callout"
+            : "atlas-panel-default",
+        className,
+      )}
+    >
       <SectionHeading
         title={title}
         description={description}
         aside={eyebrow ? <span className="eyebrow">{eyebrow}</span> : undefined}
       />
-      <div className={cn("mt-4 grid gap-3", bodyClassName)}>{children}</div>
-      {footer ? <div className="mt-4">{footer}</div> : null}
+      <div
+        className={cn(
+          variant === "chart"
+            ? "atlas-panel-body atlas-panel-body-chart"
+            : "atlas-panel-body atlas-panel-body-default",
+          bodyClassName,
+        )}
+      >
+        {children}
+      </div>
+      {footer ? <div className="atlas-panel-footer">{footer}</div> : null}
     </SurfaceCard>
   );
 }
@@ -66,23 +86,23 @@ export function AnalyticsKpiCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="atlas-analytics-eyebrow">{label}</p>
-          <p className="atlas-analytics-value mt-2" data-tone={tone}>
+          <p className="atlas-analytics-value mt-2.5" data-tone={tone}>
             {value}
           </p>
         </div>
         {href ? (
-          <span className="atlas-analytics-action shrink-0">
+          <span className="atlas-inline-action shrink-0">
             {actionLabel}
             <ChevronRight size={12} />
           </span>
         ) : null}
       </div>
-      <div className="atlas-analytics-copy mt-2.5">{description}</div>
+      <div className="atlas-analytics-copy mt-3">{description}</div>
       {footer ? <div className="mt-3">{footer}</div> : null}
     </>
   );
 
-  const className = "atlas-analytics-card text-left";
+  const className = "atlas-kpi-tile text-left";
 
   if (href) {
     return (
@@ -123,21 +143,21 @@ export function AnalyticsCalloutCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="atlas-analytics-eyebrow">{eyebrow}</p>
-          <p className="mt-2 line-clamp-2 text-sm font-semibold leading-6 text-on-surface">{title}</p>
+          <p className="mt-2 text-sm font-semibold leading-6 text-on-surface">{title}</p>
         </div>
         {href ? (
-          <span className="atlas-analytics-action shrink-0">
+          <span className="atlas-inline-action shrink-0">
             {actionLabel}
             <ChevronRight size={12} />
           </span>
         ) : null}
       </div>
-      <div className="atlas-analytics-copy mt-2.5">{description}</div>
+      <div className="atlas-analytics-copy mt-3">{description}</div>
       {footer ? <div className="mt-3 text-[11px] font-medium text-on-surface-variant">{footer}</div> : null}
     </>
   );
 
-  const className = "atlas-analytics-card";
+  const className = "atlas-callout-card text-left";
 
   if (href) {
     return (
