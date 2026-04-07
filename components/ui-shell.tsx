@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useId, useState, type FocusEvent, type ReactNode } from "react";
-import { Info } from "lucide-react";
+import { ArrowUpRight, Info } from "lucide-react";
 import { AtlasOrb } from "./AtlasOrb";
 
 export function PageHeader({
@@ -18,26 +19,33 @@ export function PageHeader({
   badge?: ReactNode;
 }) {
   return (
-    <section className="brandops-panel atlas-header-panel mb-2 p-3.5 sm:p-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-4xl">
-          {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
-          <h1 className="font-headline text-[1.38rem] font-semibold tracking-tight text-on-surface sm:text-[1.7rem]">
-            {title}
-          </h1>
-          {description && (
-            <div className="mt-1.5 max-w-3xl text-[11px] leading-5 text-on-surface-variant/90 sm:text-xs">
-              {description}
+    <section className="brandops-panel atlas-header-panel mb-2 p-3 sm:p-3.5">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-3xl">
+            {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
+            <h1 className="font-headline text-[1.1rem] font-semibold tracking-tight text-on-surface sm:text-[1.32rem]">
+              {title}
+            </h1>
+            {description && (
+              <div className="mt-1 max-w-xl text-[10px] leading-[1.1rem] text-on-surface-variant/78 sm:text-[11px] sm:leading-5">
+                {description}
+              </div>
+            )}
+          </div>
+
+          {badge ? (
+            <div className="flex w-full flex-wrap items-center gap-1.5 lg:w-auto lg:justify-end">
+              <div className="status-chip">{badge}</div>
             </div>
-          )}
+          ) : null}
         </div>
 
-        {(actions ?? badge) && (
-          <div className="flex w-full flex-col items-start gap-2.5 lg:w-auto lg:items-end">
-            {badge && <div className="status-chip">{badge}</div>}
+        {actions ? (
+          <div className="atlas-header-actions-row flex min-w-0 flex-wrap items-center gap-2 border-t border-outline/50 pt-2.5">
             {actions}
           </div>
-        )}
+        ) : null}
       </div>
     </section>
   );
@@ -69,19 +77,19 @@ export function SectionHeading({
   aside?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2 border-b border-outline/60 pb-2.5 sm:flex-row sm:items-start sm:justify-between">
+    <div className="flex flex-col gap-1 border-b border-outline/60 pb-2 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h2 className="font-headline text-[15px] font-semibold tracking-tight text-on-surface">
+        <h2 className="font-headline text-[13px] font-semibold tracking-tight text-on-surface">
           {title}
         </h2>
         {description && (
-          <div className="mt-0.5 text-xs leading-5 text-on-surface-variant/90">
+          <div className="mt-0.5 max-w-xl text-[10px] leading-[1.15rem] text-on-surface-variant/78 sm:text-[11px]">
             {description}
           </div>
         )}
       </div>
       {aside && (
-        <div className="shrink-0 text-xs text-on-surface-variant mt-2 sm:mt-0">
+        <div className="mt-1.5 shrink-0 text-[11px] text-on-surface-variant sm:mt-0">
           {aside}
         </div>
       )}
@@ -148,10 +156,13 @@ export function ProcessingOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-surface/55 px-4 backdrop-blur-sm">
-      <div className="brandops-panel w-full max-w-md p-6 text-center shadow-2xl">
+    <div className="atlas-sync-overlay fixed inset-0 z-[90] flex items-center justify-center px-4">
+      <div className="atlas-sync-stage atlas-tech-grid relative w-full max-w-md p-6 text-center">
+        <div className="atlas-sync-grid" />
+        <div className="atlas-sync-rings" />
+        <div className="atlas-sync-scanline" />
         <div className="mx-auto flex items-center justify-center">
-          <AtlasOrb size="lg" />
+          <AtlasOrb size="lg" className="atlas-sync-orb" />
         </div>
         <h3 className="mt-4 font-headline text-xl font-semibold tracking-tight text-on-surface">
           {title}
@@ -235,14 +246,14 @@ export function StackItem({
 }) {
   return (
     <article className={`atlas-list-row ${className}`.trim()} data-tone={tone}>
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-on-surface">{title}</div>
+          <div className="text-[13px] font-semibold text-on-surface">{title}</div>
           {description ? (
-            <div className="mt-1 text-xs leading-5 text-on-surface-variant">{description}</div>
+            <div className="mt-1 text-[11px] leading-5 text-on-surface-variant">{description}</div>
           ) : null}
         </div>
-        {aside ? <div className="shrink-0 text-sm font-semibold text-on-surface">{aside}</div> : null}
+        {aside ? <div className="shrink-0 text-[12px] font-semibold text-on-surface">{aside}</div> : null}
       </div>
     </article>
   );
@@ -263,7 +274,7 @@ export function FormField({
     <label className={`brandops-field-stack ${className}`.trim()}>
       <span className="brandops-field-label">{label}</span>
       {children}
-      {hint ? <span className="text-[11px] leading-5 text-on-surface-variant">{hint}</span> : null}
+      {hint ? <span className="text-[10px] leading-[1.15rem] text-on-surface-variant">{hint}</span> : null}
     </label>
   );
 }
@@ -282,6 +293,101 @@ export function EntityChip({
       {icon ? <span className="atlas-entity-chip-icon">{icon}</span> : null}
       <span className="truncate">{text}</span>
     </span>
+  );
+}
+
+export function ModeTabs({
+  items,
+}: {
+  items: Array<{
+    label: string;
+    href: string;
+    active?: boolean;
+  }>;
+}) {
+  return (
+    <WorkspaceTabs
+      items={items.map((item) => ({
+        key: `${item.href}-${item.label}`,
+        label: item.label,
+        href: item.href,
+        active: item.active,
+      }))}
+    />
+  );
+}
+
+export function WorkspaceTabs({
+  items,
+  className = "",
+}: {
+  items: Array<{
+    key?: string;
+    label: ReactNode;
+    active?: boolean;
+    href?: string;
+    onClick?: () => void;
+  }>;
+  className?: string;
+}) {
+  return (
+    <div className={`brandops-subtabs ${className}`.trim()}>
+      {items.map((item) => (
+        item.href ? (
+          <Link
+            key={item.key ?? `${item.href}-${String(item.label)}`}
+            href={item.href}
+            prefetch={false}
+            className="brandops-subtab"
+            data-active={item.active ? "true" : "false"}
+          >
+            {item.label}
+          </Link>
+        ) : (
+          <button
+            key={item.key ?? String(item.label)}
+            type="button"
+            onClick={item.onClick}
+            className="brandops-subtab"
+            data-active={item.active ? "true" : "false"}
+          >
+            {item.label}
+          </button>
+        )
+      ))}
+    </div>
+  );
+}
+
+export function ModeEntryCard({
+  eyebrow,
+  title,
+  description,
+  href,
+  actionLabel = "Abrir",
+}: {
+  eyebrow: ReactNode;
+  title: ReactNode;
+  description: ReactNode;
+  href: string;
+  actionLabel?: string;
+}) {
+  return (
+    <Link href={href} prefetch={false} className="atlas-mode-entry">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="eyebrow">{eyebrow}</div>
+          <div className="mt-2 text-[15px] font-semibold tracking-tight text-on-surface">
+            {title}
+          </div>
+        </div>
+        <span className="atlas-analytics-action shrink-0">
+          {actionLabel}
+          <ArrowUpRight size={12} />
+        </span>
+      </div>
+      <div className="mt-2 text-[12px] leading-6 text-on-surface-variant">{description}</div>
+    </Link>
   );
 }
 
@@ -318,9 +424,9 @@ export function InfoHint({
         aria-label={label}
         aria-describedby={isOpen ? descriptionId : undefined}
         onClick={() => setIsOpen((current) => !current)}
-        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-outline/70 bg-surface-container-low text-on-surface-variant transition hover:border-secondary/30 hover:text-on-surface"
+        className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-outline/70 bg-surface-container-low text-on-surface-variant transition hover:border-outline hover:text-on-surface"
       >
-        <Info size={11} />
+        <Info size={10} />
       </button>
 
       {isOpen ? (

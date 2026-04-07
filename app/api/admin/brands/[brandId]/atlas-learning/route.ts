@@ -21,6 +21,8 @@ import type {
   AtlasBrandLearningRequestPayload,
   AtlasBrandLearningScope,
 } from "@/lib/brandops/ai/types";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type PostgrestLikeError = {
   code?: string;
@@ -132,13 +134,13 @@ function assertBrandLearningEnabled(
 }
 
 async function executeAtlasBrandLearningRun(options: {
-  context: Awaited<ReturnType<typeof requireBrandAccess>>;
+  supabase: SupabaseClient;
   brandId: string;
   runId: string;
   request: Request;
   scope?: AtlasBrandLearningScope;
 }) {
-  const { context, brandId, runId, request, scope } = options;
+  const { supabase, brandId, runId, request, scope } = options;
   const authorization = request.headers.get("authorization");
 
   if (!authorization) {
@@ -155,13 +157,13 @@ async function executeAtlasBrandLearningRun(options: {
   const gemini = await resolveAtlasAnalystGeminiAccess(brandId);
   const learningWindow = resolveLearningWindow(scope, gemini.analysisWindowDays);
   const [brandContext, previousSnapshot, brandResponse] = await Promise.all([
-    listAtlasContextEntries(context.supabase, brandId, 12),
-    getLatestAtlasBrandLearningSnapshot(context.supabase, brandId),
-    context.supabase.from("brands").select("name").eq("id", brandId).maybeSingle(),
+    listAtlasContextEntries(supabase, brandId, 12),
+    getLatestAtlasBrandLearningSnapshot(supabase, brandId),
+    supabase.from("brands").select("name").eq("id", brandId).maybeSingle(),
   ]);
   const brand = brandResponse.data;
 
-  await context.supabase
+  await supabase
     .from("atlas_brand_learning_runs")
     .update({
       model: gemini.model,
@@ -182,7 +184,7 @@ async function executeAtlasBrandLearningRun(options: {
   });
 
   const snapshot = await saveAtlasBrandLearningSnapshot(
-    context.supabase,
+    supabase,
     runId,
     {
       ...learningResult.snapshot,
@@ -191,7 +193,7 @@ async function executeAtlasBrandLearningRun(options: {
     learningResult.evidences,
   );
 
-  await completeAtlasBrandLearningRun(context.supabase, runId, {
+  await completeAtlasBrandLearningRun(supabase, runId, {
     summary: snapshot.summary,
   });
 }
@@ -203,24 +205,25 @@ export async function GET(
   try {
     const { brandId } = await params;
     const context = await requireBrandAccess(request, brandId);
+    const privilegedSupabase = createSupabaseServiceRoleClient();
     assertBrandLearningEnabled(context);
     const [snapshots, runs] = await Promise.all([
-      listAtlasBrandLearningSnapshots(context.supabase, brandId, 2),
-      listAtlasBrandLearningRuns(context.supabase, brandId),
+      listAtlasBrandLearningSnapshots(privilegedSupabase, brandId, 2),
+      listAtlasBrandLearningRuns(privilegedSupabase, brandId),
     ]);
     const [snapshot, previousSnapshot] = snapshots;
     const findings =
       snapshot?.id
-        ? await listAtlasBrandLearningFindings(context.supabase, snapshot.id)
+        ? await listAtlasBrandLearningFindings(privilegedSupabase, snapshot.id)
         : [];
     const evidences =
       snapshot?.id
-        ? await listAtlasBrandLearningEvidence(context.supabase, snapshot.id)
+        ? await listAtlasBrandLearningEvidence(privilegedSupabase, snapshot.id)
         : [];
     const feedback =
       snapshot?.id
         ? await getAtlasBrandLearningFeedbackSummary(
-            context.supabase,
+            privilegedSupabase,
             brandId,
             snapshot.id,
             context.user.id,
@@ -255,10 +258,11 @@ export async function PATCH(
   try {
     const { brandId } = await params;
     const context = await requireBrandAccess(request, brandId);
+    const privilegedSupabase = createSupabaseServiceRoleClient();
     assertBrandLearningEnabled(context);
     const payload = (await request.json()) as AtlasBrandLearningFeedbackPayload;
     const feedback = await saveAtlasBrandLearningFeedback(
-      context.supabase,
+      privilegedSupabase,
       brandId,
       context.user.id,
       payload,
@@ -286,15 +290,15 @@ export async function POST(
   let context:
     | Awaited<ReturnType<typeof requireBrandAccess>>
     | null = null;
-  let resolvedBrandId: string | null = null;
+  let privilegedSupabase: SupabaseClient | null = null;
 
   try {
     const { brandId } = await params;
-    resolvedBrandId = brandId;
     context = await requireBrandAccess(request, brandId);
+    privilegedSupabase = createSupabaseServiceRoleClient();
     assertBrandLearningEnabled(context);
     const body = (await request.json().catch(() => null)) as AtlasBrandLearningRequestPayload | null;
-    const run = await startAtlasBrandLearningRun(context.supabase, context.user.id, brandId, {
+    const run = await startAtlasBrandLearningRun(privilegedSupabase, context.user.id, brandId, {
       scopeLabel: "Preparando aprendizado",
     });
     runId = run.id;
@@ -304,9 +308,13 @@ export async function POST(
         return;
       }
 
+      if (!privilegedSupabase) {
+        throw new Error("Cliente privilegiado indisponível para concluir o aprendizado do Atlas.");
+      }
+
       try {
         await executeAtlasBrandLearningRun({
-          context,
+          supabase: privilegedSupabase,
           brandId,
           runId: run.id,
           request,
@@ -315,7 +323,7 @@ export async function POST(
       } catch (error) {
         try {
           await failAtlasBrandLearningRun(
-            context.supabase,
+            privilegedSupabase,
             run.id,
             getLearningErrorMessage(
               error,
@@ -346,10 +354,10 @@ export async function POST(
       { status: 202 },
     );
   } catch (error) {
-    if (runId && context && resolvedBrandId) {
+    if (runId && privilegedSupabase) {
       try {
         await failAtlasBrandLearningRun(
-          context.supabase,
+          privilegedSupabase,
           runId,
           error instanceof Error
             ? error.message

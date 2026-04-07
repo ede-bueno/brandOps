@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
-import { ArrowUpRight, Radar } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowUpRight, Radar, Sparkles } from "lucide-react";
 import { useBrandOps } from "./BrandOpsProvider";
 import { AtlasAnalystPanel } from "./AtlasAnalystPanel";
-import { SectionHeading, StackItem, SurfaceCard } from "./ui-shell";
+import { SectionHeading, StackItem, SurfaceCard, WorkspaceTabs } from "./ui-shell";
 import { useSanitizationPendingCount } from "@/hooks/use-sanitization-summary";
-import { ATLAS_GEMINI_DEFAULT_MODEL } from "@/lib/brandops/ai/model-policy";
 import { currencyFormatter, percentFormatter } from "@/lib/brandops/format";
 import { APP_ROUTES } from "@/lib/brandops/routes";
 
@@ -120,6 +119,7 @@ function buildTowerSignals({
 }
 
 export function AtlasControlTowerHome() {
+  const [activeView, setActiveView] = useState<"mesa" | "radar">("mesa");
   const {
     activeBrand,
     activeBrandId,
@@ -168,134 +168,152 @@ export function AtlasControlTowerHome() {
     return null;
   }
 
-  const modelLabel = geminiIntegration?.settings.model ?? ATLAS_GEMINI_DEFAULT_MODEL;
   const primarySignal = signals[0] ?? null;
-  const secondarySignals = signals.slice(1);
-
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.68fr)_21.5rem]">
-      <SurfaceCard id="atlas-ai-home" className="atlas-command-deck p-4 sm:p-5">
-        <div className="space-y-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="eyebrow">Atlas IA</p>
-              <h2 className="mt-1 font-headline text-[1.2rem] font-semibold tracking-tight text-on-surface sm:text-[1.45rem]">
-                Mesa do Atlas
-              </h2>
-              <p className="mt-2 text-[12px] leading-6 text-on-surface-variant">
-                Pressão dominante, decisão agora e próximo clique.
-              </p>
-            </div>
+    <SurfaceCard id="atlas-ai-home" className="atlas-command-deck p-4 sm:p-5">
+      <div className="space-y-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-3xl">
+            <span className="atlas-ai-badge">
+              <span className="atlas-ai-badge-orb">
+                <Sparkles size={12} />
+              </span>
+              Atlas IA
+            </span>
+            <h2 className="mt-1 font-headline text-[1.16rem] font-semibold tracking-tight text-on-surface sm:text-[1.36rem]">
+              Mesa do Atlas
+            </h2>
+            <p className="mt-2 text-[12px] leading-6 text-on-surface-variant">
+              IA separada da operação factual. Use a mesa para priorizar, abrir sinais e decidir o próximo clique.
+            </p>
+          </div>
 
+          <div className="flex flex-col items-start gap-2 lg:items-end">
+            <WorkspaceTabs
+              items={[
+                {
+                  key: "atlas-mesa",
+                  label: "Mesa",
+                  active: activeView === "mesa",
+                  onClick: () => setActiveView("mesa"),
+                },
+                {
+                  key: "atlas-radar",
+                  label: "Radar",
+                  active: activeView === "radar",
+                  onClick: () => setActiveView("radar"),
+                },
+              ]}
+            />
             <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
               <span className="rounded-full border border-primary/20 bg-primary-container px-2.5 py-1 text-on-primary-container">
                 {selectedPeriodLabel}
               </span>
-              <span className="rounded-full border border-outline px-2.5 py-1">{modelLabel}</span>
+              <span className="rounded-full border border-outline px-2.5 py-1">Atlas separado da base factual</span>
             </div>
           </div>
+        </div>
 
-          {primarySignal ? (
-            <Link
-              href={primarySignal.href}
-              prefetch={false}
-              className="atlas-command-priority-strip block rounded-[18px] px-3 py-3 transition hover:border-primary/20"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                    Pressão dominante
-                  </p>
-                  <p className="mt-1 text-[12px] font-semibold leading-5 text-on-surface">
-                    {primarySignal.title}
-                  </p>
-                  <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
-                    {primarySignal.description}
-                  </p>
+        {activeView === "mesa" ? (
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_17rem]">
+            <AtlasAnalystPanel variant="command-center" />
+
+            <div className="space-y-3">
+              <SurfaceCard className="atlas-alert-rail p-4">
+                <SectionHeading
+                  title="Sinal dominante"
+                  description="O principal alerta do corte fica à vista."
+                  aside={<Radar size={14} className="text-primary" />}
+                />
+                <div className="mt-4 space-y-2">
+                  {primarySignal ? (
+                    <Link href={primarySignal.href} prefetch={false} className="relative z-10 block">
+                      <StackItem
+                        title={primarySignal.title}
+                        description={primarySignal.description}
+                        aside={
+                          <span className="inline-flex items-center gap-1.5">
+                            {primarySignal.aside}
+                            <ArrowUpRight size={12} />
+                          </span>
+                        }
+                        tone={primarySignal.tone}
+                        className="transition hover:border-secondary/30"
+                      />
+                    </Link>
+                  ) : null}
                 </div>
-                <span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] font-semibold text-on-surface">
-                  {primarySignal.aside}
-                  <ArrowUpRight size={12} />
-                </span>
-              </div>
-            </Link>
-          ) : null}
+              </SurfaceCard>
 
-          <AtlasAnalystPanel variant="command-center" />
-        </div>
-      </SurfaceCard>
-
-      <SurfaceCard className="atlas-alert-rail p-4">
-        <SectionHeading
-          title="Radar do corte"
-          description="Um alerta principal e o resto por clique."
-          aside={<Radar size={14} className="text-primary" />}
-        />
-
-        <div className="mt-4 space-y-2">
-          {primarySignal ? (
-            <Link href={primarySignal.href} prefetch={false} className="relative z-10 block">
-              <StackItem
-                title={primarySignal.title}
-                description={primarySignal.description}
-                aside={
-                  <span className="inline-flex items-center gap-1.5">
-                    {primarySignal.aside}
-                    <ArrowUpRight size={12} />
-                  </span>
-                }
-                tone={primarySignal.tone}
-                className="transition hover:border-secondary/30"
-              />
-            </Link>
-          ) : null}
-        </div>
-
-        {secondarySignals.length ? (
-          <details className="atlas-disclosure mt-3">
-            <summary className="atlas-disclosure-summary">
-              <span>Ver outros alertas</span>
-              <span className="atlas-disclosure-chevron">{secondarySignals.length}</span>
-            </summary>
-            <div className="atlas-disclosure-body">
-              {secondarySignals.map((signal) => (
-                <Link key={signal.id} href={signal.href} prefetch={false} className="relative z-10 block">
-                  <StackItem
-                    title={signal.title}
-                    description={signal.description}
-                    aside={
-                      <span className="inline-flex items-center gap-1.5">
-                        {signal.aside}
-                        <ArrowUpRight size={12} />
-                      </span>
-                    }
-                    tone={signal.tone}
-                    className="transition hover:border-secondary/30"
-                  />
-                </Link>
-              ))}
+              <SurfaceCard className="p-4">
+                <SectionHeading
+                  title="Ajustes fora da mesa"
+                  description="Configuração e ensino ficam fora do cockpit."
+                />
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="atlas-soft-pill" data-interactive="true">
+                    Ajustar Atlas
+                  </Link>
+                  <Link href={APP_ROUTES.settingsAtlasContext} prefetch={false} className="atlas-soft-pill" data-interactive="true">
+                    Ensinar Atlas
+                  </Link>
+                  <Link href={APP_ROUTES.integrations} prefetch={false} className="atlas-soft-pill" data-interactive="true">
+                    Revisar fontes
+                  </Link>
+                </div>
+              </SurfaceCard>
             </div>
-          </details>
-        ) : null}
-
-        <details className="atlas-disclosure mt-3">
-          <summary className="atlas-disclosure-summary">
-            <span>Ajustes fora da mesa</span>
-            <span className="atlas-disclosure-chevron">abrir</span>
-          </summary>
-          <div className="atlas-disclosure-body">
-            <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="atlas-soft-pill" data-interactive="true">
-              Ajustar Atlas
-            </Link>
-            <Link href={APP_ROUTES.settingsAtlasContext} prefetch={false} className="atlas-soft-pill" data-interactive="true">
-              Ensinar Atlas
-            </Link>
-            <Link href={APP_ROUTES.integrations} prefetch={false} className="atlas-soft-pill" data-interactive="true">
-              Revisar fontes
-            </Link>
           </div>
-        </details>
-      </SurfaceCard>
-    </div>
+        ) : (
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_17rem]">
+            <SurfaceCard className="p-4">
+              <SectionHeading
+                title="Radar do corte"
+                description="Um alerta principal e fila curta de sinais relacionados."
+              />
+              <div className="mt-4 space-y-2">
+                {signals.map((signal) => (
+                  <Link key={signal.id} href={signal.href} prefetch={false} className="relative z-10 block">
+                    <StackItem
+                      title={signal.title}
+                      description={signal.description}
+                      aside={
+                        <span className="inline-flex items-center gap-1.5">
+                          {signal.aside}
+                          <ArrowUpRight size={12} />
+                        </span>
+                      }
+                      tone={signal.tone}
+                      className="transition hover:border-secondary/30"
+                    />
+                  </Link>
+                ))}
+              </div>
+            </SurfaceCard>
+
+            <SurfaceCard className="p-4">
+              <SectionHeading
+                title="Próximo movimento"
+                description="A IA só entra depois da leitura factual."
+              />
+              <div className="mt-4 space-y-2">
+                <StackItem
+                  title="Abrir leitura financeira"
+                  description="Confirme margem, mídia e despesas antes de aceitar qualquer hipótese."
+                  aside="base"
+                  tone="info"
+                />
+                <StackItem
+                  title="Voltar à mesa"
+                  description="Depois do corte factual, use a IA para ranquear o próximo movimento."
+                  aside="atlas"
+                  tone="default"
+                />
+              </div>
+            </SurfaceCard>
+          </div>
+        )}
+      </div>
+    </SurfaceCard>
   );
 }

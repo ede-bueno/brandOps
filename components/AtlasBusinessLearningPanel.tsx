@@ -5,6 +5,7 @@ import {
   BrainCircuit,
   Check,
   Loader2,
+  ChevronDown,
   Radar,
   RefreshCcw,
   ThumbsDown,
@@ -459,15 +460,15 @@ export function AtlasBusinessLearningPanel() {
       ) : (
         <>
           <div className="atlas-soft-section px-4 py-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                  Disparo da aprendizagem
-                </p>
-                <p className="mt-1 text-sm text-on-surface">
-                  O Atlas lê o período escolhido, reconcilia histórico, memória operacional e base factual, e devolve uma visão executiva da marca.
-                </p>
-              </div>
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                    Disparo da aprendizagem
+                  </p>
+                  <p className="mt-1 text-sm text-on-surface">
+                    O Atlas lê o período escolhido, reconcilia o histórico e devolve a leitura executiva da marca.
+                  </p>
+                </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <select
                   value={selectedScope}
@@ -543,61 +544,64 @@ export function AtlasBusinessLearningPanel() {
                 </div>
 
                 <div className="mt-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                    Evidências que sustentam a leitura
-                  </p>
-                  <div className="mt-3 grid gap-3 md:grid-cols-2">
-                    {evidenceHighlights.length ? (
-                      evidenceHighlights.map((evidence) => (
-                        <details
-                          key={evidence.id}
-                          className="atlas-soft-subcard px-3 py-3"
-                          data-tone={getEvidenceTone(evidence)}
-                        >
-                          <summary className="cursor-pointer list-none">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-                                  {evidence.source.replace("-", " ")}
-                                </p>
-                                <p className="mt-1 text-sm font-semibold text-on-surface">{evidence.title}</p>
+                  <details className="atlas-disclosure">
+                    <summary className="atlas-disclosure-summary">
+                      <span>Evidências que sustentam a leitura</span>
+                      <ChevronDown size={15} className="atlas-disclosure-chevron" />
+                    </summary>
+                    <div className="atlas-disclosure-body">
+                      {evidenceHighlights.length ? (
+                        evidenceHighlights.map((evidence) => (
+                          <details
+                            key={evidence.id}
+                            className="atlas-soft-subcard px-3 py-3"
+                            data-tone={getEvidenceTone(evidence)}
+                          >
+                            <summary className="cursor-pointer list-none">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                                    {evidence.source.replace("-", " ")}
+                                  </p>
+                                  <p className="mt-1 text-sm font-semibold text-on-surface">{evidence.title}</p>
+                                </div>
+                                {evidence.metricDisplay ? (
+                                  <span className="atlas-soft-pill shrink-0 text-[11px] normal-case tracking-[0.02em]">
+                                    {evidence.metricDisplay}
+                                  </span>
+                                ) : null}
                               </div>
-                              {evidence.metricDisplay ? (
-                                <span className="atlas-soft-pill shrink-0 text-[11px] normal-case tracking-[0.02em]">
-                                  {evidence.metricDisplay}
-                                </span>
-                              ) : null}
-                            </div>
-                            <p className="mt-2 text-[11px] leading-5 text-on-surface-variant">
-                              {evidence.summary}
-                            </p>
-                          </summary>
-                          <div className="mt-3 border-t border-outline/50 pt-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-                              Consulta rápida
-                            </p>
-                            <div className="mt-2 space-y-2 text-[11px] leading-5 text-on-surface-variant">
-                              <p>
-                                Tipo: <span className="text-on-surface">{evidence.kind}</span>
+                              <p className="mt-2 text-[11px] leading-5 text-on-surface-variant">
+                                {evidence.summary}
                               </p>
-                              <p>
-                                Referência: <span className="text-on-surface">{evidence.sourceKey ?? "sem chave específica"}</span>
+                            </summary>
+                            <div className="mt-3 border-t border-outline/50 pt-3">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                                Consulta rápida
                               </p>
-                              {evidence.metricLabel && evidence.metricDisplay ? (
+                              <div className="mt-2 space-y-2 text-[11px] leading-5 text-on-surface-variant">
                                 <p>
-                                  {evidence.metricLabel}: <span className="text-on-surface">{evidence.metricDisplay}</span>
+                                  Tipo: <span className="text-on-surface">{evidence.kind}</span>
                                 </p>
-                              ) : null}
+                                <p>
+                                  Referência: <span className="text-on-surface">{evidence.sourceKey ?? "sem chave específica"}</span>
+                                </p>
+                                {evidence.metricLabel && evidence.metricDisplay ? (
+                                  <p>
+                                    {evidence.metricLabel}: <span className="text-on-surface">{evidence.metricDisplay}</span>
+                                  </p>
+                                ) : null}
+                              </div>
                             </div>
-                          </div>
-                        </details>
-                      ))
-                    ) : (
-                      <p className="text-[11px] leading-5 text-on-surface-variant">
-                        Esta rodada ainda nao registrou evidências consultáveis.
-                      </p>
-                    )}
-                  </div>
+                          </details>
+                        ))
+                      ) : (
+                        <p className="text-[11px] leading-5 text-on-surface-variant">
+                          Esta rodada ainda nao registrou evidências consultáveis.
+                        </p>
+                      )}
+                    </div>
+                  </details>
                 </div>
               </article>
 

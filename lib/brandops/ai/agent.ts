@@ -7,6 +7,7 @@ import {
 } from "@google/genai";
 import { ATLAS_GEMINI_DEFAULT_MODEL } from "./model-policy";
 import { ATLAS_ANALYST_SKILLS, resolveAtlasAnalystSkill } from "./skills";
+import type { InkHelpArticleMatch } from "../ink-knowledge";
 import {
   ATLAS_ANALYST_FUNCTION_DECLARATIONS,
   executeAtlasAnalystTool,
@@ -563,6 +564,7 @@ function buildToolPlanningPrompt(
   memoryContext: Array<Record<string, unknown>>,
   curatedContext: Array<Record<string, unknown>>,
   learningContext: Record<string, unknown> | null,
+  inkKnowledgeMatches: InkHelpArticleMatch[],
   operatorGuidance?: string | null,
 ) {
   const periodText =
@@ -586,6 +588,19 @@ function buildToolPlanningPrompt(
     learningContext
       ? `- Aprendizado consolidado da marca: ${JSON.stringify(learningContext, null, 2)}`
       : "- Aprendizado consolidado da marca: sem snapshot aprendido ainda.",
+    inkKnowledgeMatches.length
+      ? `- Base documental da INK consultada: ${JSON.stringify(
+          inkKnowledgeMatches.map((match) => ({
+            title: match.title,
+            categoryTitle: match.categoryTitle,
+            excerpt: match.excerpt,
+            articleUpdatedLabel: match.articleUpdatedLabel,
+            url: match.url,
+          })),
+          null,
+          2,
+        )}`
+      : "- Base documental da INK consultada: nenhuma referência relevante para esta pergunta.",
     operatorGuidance?.trim()
       ? `- Guia operacional da marca para o Atlas: ${operatorGuidance.trim()}`
       : "- Guia operacional da marca para o Atlas: sem orientação estruturada registrada.",
@@ -617,6 +632,7 @@ function buildFinalSynthesisPrompt(
   memoryContext: Array<Record<string, unknown>>,
   curatedContext: Array<Record<string, unknown>>,
   learningContext: Record<string, unknown> | null,
+  inkKnowledgeMatches: InkHelpArticleMatch[],
   usedReports: AtlasAnalystReportId[],
   decisionFrame: Record<string, unknown>,
   operatorGuidance?: string | null,
@@ -646,6 +662,19 @@ function buildFinalSynthesisPrompt(
     learningContext
       ? `- Aprendizado consolidado da marca: ${JSON.stringify(learningContext, null, 2)}`
       : "- Aprendizado consolidado da marca: sem snapshot aprendido ainda.",
+    inkKnowledgeMatches.length
+      ? `- Base documental da INK consultada: ${JSON.stringify(
+          inkKnowledgeMatches.map((match) => ({
+            title: match.title,
+            categoryTitle: match.categoryTitle,
+            excerpt: match.excerpt,
+            articleUpdatedLabel: match.articleUpdatedLabel,
+            url: match.url,
+          })),
+          null,
+          2,
+        )}`
+      : "- Base documental da INK consultada: nenhuma referência relevante para esta pergunta.",
     operatorGuidance?.trim()
       ? `- Guia operacional da marca: ${operatorGuidance.trim()}`
       : "- Guia operacional da marca: sem orientação estruturada registrada.",
@@ -661,6 +690,8 @@ function buildFinalSynthesisPrompt(
     "- Seja direto, operacional e realista.",
     "- Aponte primeiro o driver dominante antes de listar acoes secundarias.",
     "- Trate o frame executivo do backend como trilho inicial da leitura. So contradiga esse frame se a base factual em JSON mostrar claramente o contrario.",
+    "- Quando a base documental da INK estiver presente, use-a para orientar operacao de plataforma, sempre citando o titulo do artigo ou a categoria correspondente.",
+    "- Base documental da INK nao substitui os dados operacionais ou financeiros do Atlas.",
     "- Diferencie sintoma, restricao principal e acao recomendada.",
     "- Se houver contradicao entre crescimento e rentabilidade, explicite essa tensao.",
     "- Nao invente metricas nem causas.",
@@ -677,6 +708,7 @@ function buildFinalSystemInstruction(skillId: keyof typeof ATLAS_ANALYST_SKILLS)
     "Para leitura financeira, trate o relatorio financeiro como verdade de receita, contribuicao, despesas e resultado.",
     "Dados da Meta representam atribuicao de midia e nao substituem a verdade financeira do Atlas.",
     "Dados do GA4 representam comportamento de funil e nao substituem a verdade financeira do Atlas.",
+    "Quando houver base documental da INK na conversa, use-a como referencia de uso da plataforma e cite o titulo do artigo quando isso melhorar a resposta.",
     "Em print on demand, diferencie falta de trafego, friccao de vitrine, validacao de estampa e pressao de margem.",
     "Sua resposta deve separar claramente: restricao principal, evidencias e proxima decisao operacional.",
   ].join("\n");
@@ -712,6 +744,7 @@ async function collectToolDrivenContext(
   memoryContext: Array<Record<string, unknown>>,
   curatedContext: Array<Record<string, unknown>>,
   learningContext: Record<string, unknown> | null,
+  inkKnowledgeMatches: InkHelpArticleMatch[],
   operatorGuidance?: string | null,
 ) {
   const preferredToolNames = reportPlan.map(reportIdToToolName);
@@ -726,6 +759,7 @@ async function collectToolDrivenContext(
             memoryContext,
             curatedContext,
             learningContext,
+            inkKnowledgeMatches,
             operatorGuidance,
           ),
         },
@@ -856,6 +890,7 @@ export async function runAtlasAnalyst(
     brandContext?: AtlasContextEntry[];
     brandLearningSnapshot?: AtlasBrandLearningSnapshot | null;
     brandLearningFindings?: AtlasBrandLearningFinding[];
+    inkKnowledgeMatches?: InkHelpArticleMatch[];
     operatorGuidance?: string | null;
   },
 ): Promise<AtlasAnalystResponse> {
@@ -876,6 +911,7 @@ export async function runAtlasAnalyst(
     options?.brandLearningSnapshot ?? null,
     options?.brandLearningFindings ?? [],
   );
+  const inkKnowledgeMatches = options?.inkKnowledgeMatches ?? [];
 
   const ai = new GoogleGenAI({
     apiKey,
@@ -891,6 +927,7 @@ export async function runAtlasAnalyst(
     memoryContext,
     curatedContext,
     learningContext,
+    inkKnowledgeMatches,
     options?.operatorGuidance ?? null,
   );
 
@@ -933,6 +970,7 @@ export async function runAtlasAnalyst(
               memoryContext,
               curatedContext,
               learningContext,
+              inkKnowledgeMatches,
               usedReports,
               decisionFrame,
               options?.operatorGuidance ?? null,

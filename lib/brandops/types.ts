@@ -15,6 +15,7 @@ export type PeriodFilter =
   | "14d"
   | "30d"
   | "month"
+  | "year"
   | "lastMonth"
   | "all"
   | "custom";

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   CartesianGrid,
   ComposedChart,
@@ -20,9 +21,19 @@ import {
 } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { EntityChip, InlineNotice, PageHeader, SectionHeading, StackItem, SurfaceCard } from "@/components/ui-shell";
+import {
+  EntityChip,
+  InlineNotice,
+  ModeEntryCard,
+  ModeTabs,
+  PageHeader,
+  SectionHeading,
+  StackItem,
+  SurfaceCard,
+} from "@/components/ui-shell";
 import { fetchProductInsightsReport } from "@/lib/brandops/database";
 import { currencyFormatter, formatCompactDate, integerFormatter, percentFormatter } from "@/lib/brandops/format";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 import type {
   ProductDecisionAction,
   ProductInsightClassification,
@@ -31,7 +42,7 @@ import type {
   ProductInsightsReport,
 } from "@/lib/brandops/types";
 
-type ProductView = "executive" | "radar" | "detail";
+type ProductView = "home" | "executive" | "radar" | "detail";
 
 const EMPTY_REPORT: ProductInsightsReport = {
   rows: [],
@@ -130,9 +141,20 @@ function DetailTable({ rows }: { rows: ProductInsightRow[] }) {
   );
 }
 
-export default function ProductInsightsPage() {
-  const [view, setView] = useState<ProductView>("executive");
-  const [executiveSection, setExecutiveSection] = useState<"hero" | "momentum">("hero");
+export function ProductInsightsWorkspace({
+  forcedMode,
+}: {
+  forcedMode?: ProductView;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const routeMode = searchParams?.get("mode") ?? null;
+  const pageMode: ProductView =
+    forcedMode ??
+    (routeMode === "executive" || routeMode === "radar" || routeMode === "detail"
+      ? routeMode
+      : "home");
+  const view = pageMode === "home" ? null : pageMode;
   const [decision, setDecision] = useState<ProductDecisionAction | "all">("all");
   const [classification, setClassification] = useState<ProductInsightClassification | "all">("all");
   const [productType, setProductType] = useState<string | "all">("all");
@@ -211,6 +233,22 @@ export default function ProductInsightsPage() {
   const heroRow = report.hero.row ?? selectedRow;
   const trendSeries = selectedRow ? report.trendByKey[selectedRow.key] ?? [] : [];
   const primaryAction = report.analysis.nextActions[0] ?? null;
+  const pageTitle =
+    pageMode === "home"
+      ? "Insights e categorias"
+      : pageMode === "executive"
+        ? "Produtos · Visão executiva"
+        : pageMode === "radar"
+          ? "Produtos · Radar"
+          : "Produtos · Detalhamento";
+  const pageDescription =
+    pageMode === "home"
+      ? "Escolha entre executivo, radar ou detalhamento."
+      : pageMode === "executive"
+        ? "Leitura curta para decidir o próximo movimento."
+        : pageMode === "radar"
+          ? "Distribuição visual para localizar escala, teste e revisão."
+          : "Auditoria e tabela operacional por estampa.";
 
   const isBrandLoading = Boolean(activeBrandId) && (isLoading || isReportLoading || !activeBrand);
 
@@ -246,139 +284,139 @@ export default function ProductInsightsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Inteligência de produto"
-        title="Insights Categorias"
-        description="Veja rápido quais estampas merecem escala, revisão ou observação."
-        badge={`Período analisado: ${selectedPeriodLabel}`}
+        eyebrow={pageMode === "home" ? "Inteligência de produto" : "Produtos e insights"}
+        title={pageTitle}
+        description={pageDescription}
+        badge={selectedPeriodLabel}
         actions={
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <div className="brandops-tabs">
-              <button type="button" className="brandops-tab" data-active={view === "executive"} onClick={() => setView("executive")}>Visão executiva</button>
-              <button type="button" className="brandops-tab" data-active={view === "radar"} onClick={() => setView("radar")}>Radar</button>
-              <button type="button" className="brandops-tab" data-active={view === "detail"} onClick={() => setView("detail")}>Detalhamento</button>
-            </div>
-          </div>
+          <ModeTabs
+            items={[
+              { label: "Home", href: APP_ROUTES.productInsights, active: pageMode === "home" },
+              {
+                label: "Executivo",
+                href: APP_ROUTES.productInsightsExecutive,
+                active: pageMode === "executive",
+              },
+              {
+                label: "Radar",
+                href: APP_ROUTES.productInsightsRadar,
+                active: pageMode === "radar",
+              },
+              {
+                label: "Detalhe",
+                href: APP_ROUTES.productInsightsDetail,
+                active: pageMode === "detail",
+              },
+            ]}
+          />
         }
       />
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <AnalyticsKpiCard
-          label="Estampas ativas"
-          value={integerFormatter.format(report.overview.totalRows)}
-          description="Quantidade de estampas que entraram no recorte atual."
-          tone="info"
-        />
-        <AnalyticsKpiCard
-          label="Views totais"
-          value={integerFormatter.format(report.overview.totalViews)}
-          description="Volume de atenção coletado no GA4 para itens do catálogo."
-          tone="default"
-        />
-        <AnalyticsKpiCard
-          label="Peças reais"
-          value={integerFormatter.format(report.overview.totalRealUnitsSold)}
-          description="Venda real conciliada da INK no mesmo recorte."
-          tone={report.overview.totalRealUnitsSold > 0 ? "positive" : "default"}
-        />
-        <AnalyticsKpiCard
-          label="Receita real"
-          value={currencyFormatter.format(report.overview.totalRealGrossRevenue)}
-          description="Receita operacional confirmada pela INK."
-          tone={report.overview.totalRealGrossRevenue > 0 ? "positive" : "default"}
-        />
-      </section>
+      {pageMode === "home" ? (
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <AnalyticsKpiCard
+            label="Estampas ativas"
+            value={integerFormatter.format(report.overview.totalRows)}
+            description="Quantidade de estampas que entraram no recorte atual."
+            tone="info"
+          />
+          <AnalyticsKpiCard
+            label="Views totais"
+            value={integerFormatter.format(report.overview.totalViews)}
+            description="Volume de atenção coletado no GA4 para itens do catálogo."
+            tone="default"
+          />
+          <AnalyticsKpiCard
+            label="Peças reais"
+            value={integerFormatter.format(report.overview.totalRealUnitsSold)}
+            description="Venda real conciliada da INK no mesmo recorte."
+            tone={report.overview.totalRealUnitsSold > 0 ? "positive" : "default"}
+          />
+          <AnalyticsKpiCard
+            label="Receita real"
+            value={currencyFormatter.format(report.overview.totalRealGrossRevenue)}
+            description="Receita operacional confirmada pela INK."
+            tone={report.overview.totalRealGrossRevenue > 0 ? "positive" : "default"}
+          />
+        </section>
+      ) : null}
 
-      <section className="grid gap-3 lg:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow={report.analysis.narrativeTitle || "Leitura do portfólio"}
-          title="Decisão do recorte"
-          description={report.analysis.narrativeBody || "Sem leitura dominante para o período."}
-          footer={primaryAction ?? undefined}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Maior oportunidade"
-          title={report.analysis.topOpportunity ?? "Sem destaque dominante"}
-          description={heroRow?.recommendedAction ?? "O Atlas ainda não consolidou um movimento dominante de escala."}
-          tone="positive"
-          footer={heroRow?.stampName ?? undefined}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Maior risco"
-          title={report.analysis.topRisk ?? "Sem risco dominante"}
-          description={heroRow?.decisionSummary ?? "Sem risco crítico consolidado para o recorte atual."}
-          tone="warning"
-          footer={selectedRow?.stampName ?? undefined}
-        />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <SurfaceCard>
-          <SectionHeading title="Estampa em foco" description="O item que melhor resume a leitura atual do recorte." />
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
-            <AnalyticsKpiCard
-              label="Foco atual"
-              value={heroRow?.stampName ?? "Sem foco"}
-              description={heroRow?.decisionSummary ?? "Selecione uma estampa para abrir a leitura detalhada."}
+      {pageMode === "home" ? (
+        <>
+          <section className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
+            <AnalyticsCalloutCard
+              eyebrow={report.analysis.narrativeTitle || "Leitura do recorte"}
+              title={report.analysis.topOpportunity ?? "O portfólio pede uma decisão comercial curta"}
+              description={report.analysis.narrativeBody || "Sem leitura dominante para o período."}
+              footer={primaryAction ?? undefined}
             />
-            <AnalyticsKpiCard
-              label="Próxima ação"
-              value={primaryAction ?? "Sem ação dominante"}
-              description={heroRow?.recommendedAction ?? "O Atlas ainda não consolidou um próximo passo dominante."}
-              tone={primaryAction ? "info" : "default"}
-            />
-          </div>
-        </SurfaceCard>
+            <SurfaceCard>
+              <SectionHeading
+                title="Escolha a leitura"
+                description="A home resume; o aprofundamento mora em páginas próprias."
+              />
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                <ModeEntryCard
+                  eyebrow="Visão executiva"
+                  title="Foco e decisão"
+                  description="Momentum, estampa em foco e próxima ação comercial."
+                  href={APP_ROUTES.productInsightsExecutive}
+                />
+                <ModeEntryCard
+                  eyebrow="Radar"
+                  title="Mapa do portfólio"
+                  description="Distribuição visual para localizar escala, teste e revisão."
+                  href={APP_ROUTES.productInsightsRadar}
+                />
+                <ModeEntryCard
+                  eyebrow="Detalhamento"
+                  title="Tabela operacional"
+                  description="Auditoria por estampa, filtros e leitura item a item."
+                  href={APP_ROUTES.productInsightsDetail}
+                />
+              </div>
+            </SurfaceCard>
+          </section>
 
-        <SurfaceCard>
-          <SectionHeading title="Filtros operacionais" description="Ajuste a leitura sem espalhar controles pela tela." />
-          <div className="mt-5 brandops-toolbar-grid lg:grid-cols-2">
-          <label className="brandops-field-stack">
-            <span className="brandops-field-label">Ação</span>
-              <select value={decision} onChange={(event) => setDecision(event.target.value as ProductDecisionAction | "all")} className="brandops-input">
-                <option value="all">Todas as ações</option>
-                {report.decisions.map((item) => <option key={item.decision} value={item.decision}>{item.title} ({item.count})</option>)}
-              </select>
-          </label>
-          <label className="brandops-field-stack">
-            <span className="brandops-field-label">Classificação</span>
-              <select value={classification} onChange={(event) => setClassification(event.target.value as ProductInsightClassification | "all")} className="brandops-input">
-                <option value="all">Todas as classificações</option>
-                {report.classifications.map((item) => <option key={item.classification} value={item.classification}>{item.label} ({item.count})</option>)}
-              </select>
-          </label>
-          <label className="brandops-field-stack">
-            <span className="brandops-field-label">Tipo</span>
-              <select value={productType} onChange={(event) => setProductType(event.target.value)} className="brandops-input">
-                <option value="all">Todos os tipos</option>
-                {report.filters.availableTypes.map((type) => <option key={type} value={type}>{type}</option>)}
-              </select>
-          </label>
-          <label className="brandops-field-stack">
-            <span className="brandops-field-label">Ordenação</span>
-              <select value={sort} onChange={(event) => setSort(event.target.value as ProductInsightSort)} className="brandops-input">
-                {report.filters.availableSorts.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-              </select>
-          </label>
-          </div>
-        </SurfaceCard>
-      </section>
+          <section className="grid gap-4 xl:grid-cols-3">
+            <AnalyticsCalloutCard
+              eyebrow="Estampa em foco"
+              title={heroRow?.stampName ?? "Sem foco dominante"}
+              description={
+                heroRow?.decisionSummary ??
+                "Abra o detalhamento para localizar o item que está puxando a leitura."
+              }
+              footer={primaryAction ?? heroRow?.recommendedAction ?? undefined}
+            />
+            <AnalyticsCalloutCard
+              eyebrow="Maior oportunidade"
+              title={report.analysis.topOpportunity ?? "Sem destaque dominante"}
+              description={
+                heroRow?.recommendedAction ??
+                "O Atlas ainda não consolidou um movimento dominante de escala."
+              }
+              tone="positive"
+              footer={heroRow?.stampName ?? undefined}
+            />
+            <AnalyticsCalloutCard
+              eyebrow="Maior risco"
+              title={report.analysis.topRisk ?? "Sem risco dominante"}
+              description={
+                heroRow?.decisionSummary ??
+                "Sem risco crítico consolidado para o recorte atual."
+              }
+              tone="warning"
+              footer={heroRow?.stampName ?? undefined}
+            />
+          </section>
+        </>
+      ) : null}
 
       {view === "executive" ? (
         <>
-          <SurfaceCard>
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <SectionHeading title="Modo executivo" description="Foco principal e momentum em dois blocos curtos." />
-              <div className="brandops-subtabs">
-                <button type="button" className="brandops-subtab" data-active={executiveSection === "hero"} onClick={() => setExecutiveSection("hero")}>Estampa em foco</button>
-                <button type="button" className="brandops-subtab" data-active={executiveSection === "momentum"} onClick={() => setExecutiveSection("momentum")}>Momentum</button>
-              </div>
-            </div>
-          </SurfaceCard>
-
-          {executiveSection === "hero" ? (
           <section className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
             <SurfaceCard>
-              <SectionHeading title="Estampa em foco" description="O backend já entrega a leitura principal e o motivo da decisão." />
+              <SectionHeading title="Estampa em foco" description="Leitura principal da estampa que resume o recorte." />
               {heroRow ? (
                 <div className="mt-5 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
                   <div className="space-y-4">
@@ -430,7 +468,7 @@ export default function ProductInsightsPage() {
             </SurfaceCard>
 
             <SurfaceCard>
-              <SectionHeading title="Decisões do recorte" description="Resumo compacto da distribuição por ação sugerida." />
+              <SectionHeading title="Decisões do recorte" description="Distribuição curta por ação sugerida." />
               <div className="mt-5 grid gap-3">
                 {report.playbook.map((group) => (
                   <AnalyticsCalloutCard
@@ -439,20 +477,15 @@ export default function ProductInsightsPage() {
                     title={`${group.count} estampas no recorte`}
                     description={group.description}
                     tone={group.decision === "scale_now" ? "positive" : group.decision === "review_listing" ? "warning" : "default"}
-                    onClick={() => {
-                      setDecision(group.decision);
-                      setView("detail");
-                    }}
-                    actionLabel="Filtrar"
+                    onClick={() => router.push(APP_ROUTES.productInsightsDetail)}
+                    actionLabel="Abrir detalhe"
                     footer={group.items.length ? group.items.slice(0, 3).map((item) => item.stampName).join(" • ") : undefined}
                   />
                 ))}
               </div>
             </SurfaceCard>
           </section>
-          ) : null}
 
-          {executiveSection === "momentum" ? (
           <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
             <SurfaceCard>
               <SectionHeading title={report.analysis.narrativeTitle || "Leitura do portfólio"} description={report.analysis.narrativeBody || "Síntese curta do recorte atual."} />
@@ -503,7 +536,6 @@ export default function ProductInsightsPage() {
               </div>
             </SurfaceCard>
           </section>
-          ) : null}
         </>
       ) : null}
 
@@ -621,6 +653,35 @@ export default function ProductInsightsPage() {
           <SurfaceCard className="p-0 overflow-hidden">
             <div className="border-b border-outline p-5">
               <SectionHeading title="Tabela operacional" description="Tabela completa para auditar a decisão, o volume e a venda real por estampa." />
+              <div className="mt-4 brandops-toolbar-grid lg:grid-cols-4">
+                <label className="brandops-field-stack">
+                  <span className="brandops-field-label">Ação</span>
+                  <select value={decision} onChange={(event) => setDecision(event.target.value as ProductDecisionAction | "all")} className="brandops-input">
+                    <option value="all">Todas as ações</option>
+                    {report.decisions.map((item) => <option key={item.decision} value={item.decision}>{item.title} ({item.count})</option>)}
+                  </select>
+                </label>
+                <label className="brandops-field-stack">
+                  <span className="brandops-field-label">Classificação</span>
+                  <select value={classification} onChange={(event) => setClassification(event.target.value as ProductInsightClassification | "all")} className="brandops-input">
+                    <option value="all">Todas as classificações</option>
+                    {report.classifications.map((item) => <option key={item.classification} value={item.classification}>{item.label} ({item.count})</option>)}
+                  </select>
+                </label>
+                <label className="brandops-field-stack">
+                  <span className="brandops-field-label">Tipo</span>
+                  <select value={productType} onChange={(event) => setProductType(event.target.value)} className="brandops-input">
+                    <option value="all">Todos os tipos</option>
+                    {report.filters.availableTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+                  </select>
+                </label>
+                <label className="brandops-field-stack">
+                  <span className="brandops-field-label">Ordenação</span>
+                  <select value={sort} onChange={(event) => setSort(event.target.value as ProductInsightSort)} className="brandops-input">
+                    {report.filters.availableSorts.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </label>
+              </div>
             </div>
             <DetailTable rows={report.rows} />
           </SurfaceCard>
@@ -628,4 +689,8 @@ export default function ProductInsightsPage() {
       ) : null}
     </div>
   );
+}
+
+export default function ProductInsightsPage() {
+  return <ProductInsightsWorkspace />;
 }

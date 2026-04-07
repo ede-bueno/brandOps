@@ -46,15 +46,15 @@ export function ThemeToggle({
   const sizeClass = size === "sm" ? "h-8 w-8" : "h-9 w-9";
   const variantClass =
     variant === "panel"
-      ? "border border-outline/55 bg-surface-container-low/80 text-on-surface-variant hover:border-primary/18 hover:bg-surface-container hover:text-on-surface"
-      : "border border-transparent bg-transparent text-on-surface-variant/90 hover:border-primary/10 hover:bg-primary/10 hover:text-primary";
+      ? "border border-outline/24 bg-surface-container-low/56 text-on-surface-variant hover:border-on-surface/10 hover:bg-surface-container/82 hover:text-on-surface"
+      : "border border-outline/6 bg-surface-container-low/18 text-on-surface-variant/68 hover:border-on-surface/8 hover:bg-surface-container/40 hover:text-on-surface";
 
   return (
     <button
       onClick={toggle}
       aria-label={isDark ? "Mudar para modo claro" : "Mudar para modo escuro"}
       title={isDark ? "Modo claro" : "Modo escuro"}
-      className={`atlas-theme-toggle inline-flex items-center justify-center rounded-full transition-all duration-150 ${sizeClass} ${variantClass}`}
+      className={`atlas-theme-toggle inline-flex items-center justify-center rounded-xl transition-all duration-150 ${sizeClass} ${variantClass}`}
     >
       {isDark ? <Sun size={size === "sm" ? 14 : 15} /> : <Moon size={size === "sm" ? 14 : 15} />}
     </button>

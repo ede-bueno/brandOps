@@ -531,6 +531,14 @@ export function buildPeriodRange(
     };
   }
 
+  if (period === "year") {
+    start.setMonth(0, 1);
+    return {
+      start: toDateKey(start),
+      end: toDateKey(end),
+    };
+  }
+
   if (period === "lastMonth") {
     const lastMonthStart = new Date(end.getFullYear(), end.getMonth() - 1, 1);
     const lastMonthEnd = new Date(end.getFullYear(), end.getMonth(), 0);
@@ -602,6 +610,8 @@ export function getPeriodLabel(period: PeriodFilter, customRange?: CustomDateRan
       return "Últimos 30 dias";
     case "month":
       return "Mês atual";
+    case "year":
+      return "Ano atual";
     case "lastMonth":
       return "Mês passado";
     case "all":

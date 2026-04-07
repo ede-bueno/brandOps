@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { requireBrandAccess } from "@/lib/brandops/admin";
 import { runAtlasAnalyst } from "@/lib/brandops/ai/agent";
 import { resolveAtlasAnalystGeminiAccess } from "@/lib/brandops/ai/config";
+import { searchInkHelpArticles } from "@/lib/brandops/ink-knowledge";
+import type { InkHelpArticleMatch } from "@/lib/brandops/ink-knowledge";
 import {
   getLatestAtlasBrandLearningSnapshot,
   listAtlasBrandLearningFindings,
@@ -10,6 +12,7 @@ import {
   persistAtlasAnalystRun,
   saveAtlasAnalystFeedback,
 } from "@/lib/brandops/ai/store";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import type {
   AtlasAnalystSkillId,
   AtlasAnalystFeedbackPayload,
@@ -79,6 +82,17 @@ export async function POST(
       brandLearningSnapshot?.id
         ? await listAtlasBrandLearningFindings(context.supabase, brandLearningSnapshot.id)
         : [];
+    let inkKnowledgeMatches: InkHelpArticleMatch[] = [];
+    try {
+      const privilegedSupabase = createSupabaseServiceRoleClient();
+      inkKnowledgeMatches = await searchInkHelpArticles(privilegedSupabase, {
+        query: body.question,
+        pageContext: body.pageContext ?? null,
+        limit: 3,
+      });
+    } catch {
+      inkKnowledgeMatches = [];
+    }
     const gemini = await resolveAtlasAnalystGeminiAccess(brandId);
     const requestedSkill = body.skill ?? "auto";
     const resolvedSkill: AtlasAnalystSkillId =
@@ -104,6 +118,7 @@ export async function POST(
         brandContext,
         brandLearningSnapshot,
         brandLearningFindings,
+        inkKnowledgeMatches,
         operatorGuidance: gemini.operatorGuidance,
       },
     );

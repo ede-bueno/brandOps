@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BrainCircuit,
+  ChevronDown,
   Loader2,
   Radar,
   RefreshCw,
@@ -353,7 +354,7 @@ export function AtlasAnalystSettingsPanel() {
             </InfoHint>
           </span>
         }
-        description="Defina como o Atlas pensa antes de entrar em ação."
+        description="Defina o comportamento do Atlas desta marca."
         aside={<BrainCircuit size={14} className="text-primary" />}
       />
 
@@ -396,7 +397,7 @@ export function AtlasAnalystSettingsPanel() {
         </InlineNotice>
       ) : null}
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid gap-3 xl:grid-cols-2">
         <FormField
           label="Modelo Gemini"
           hint="O Atlas tenta listar os modelos reais liberados pela chave desta loja."
@@ -586,24 +587,31 @@ export function AtlasAnalystSettingsPanel() {
           </select>
         </FormField>
 
-        <FormField
-          label="Guia da marca para o Atlas"
-          hint="Ensine critérios, restrições e contexto histórico que o Atlas deve priorizar."
-          className="lg:col-span-2"
-        >
-          <textarea
-            value={formState.operatorGuidance}
-            onChange={(event) =>
-              setFormState((current) => ({
-                ...current,
-                operatorGuidance: event.target.value.slice(0, 2400),
-              }))
-            }
-            rows={7}
-            className="brandops-input min-h-[168px] resize-y"
-            placeholder="Ex.: priorize margem real sobre ROAS, trate promoções agressivas como exceção, sinalize risco de catálogo quando uma campanha depender de poucas estampas..."
-          />
-        </FormField>
+        <details className="atlas-soft-section px-4 py-4 xl:col-span-2">
+          <summary className="atlas-disclosure-summary list-none">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+              Guia da marca para o Atlas
+            </span>
+            <ChevronDown size={15} className="atlas-disclosure-chevron" />
+          </summary>
+          <div className="mt-4 space-y-3">
+            <p className="text-[11px] leading-5 text-on-surface-variant">
+              Ensine critérios, restrições e contexto histórico que o Atlas deve priorizar.
+            </p>
+            <textarea
+              value={formState.operatorGuidance}
+              onChange={(event) =>
+                setFormState((current) => ({
+                  ...current,
+                  operatorGuidance: event.target.value.slice(0, 2400),
+                }))
+              }
+              rows={7}
+              className="brandops-input min-h-[168px] resize-y"
+              placeholder="Ex.: priorize margem real sobre ROAS, trate promoções agressivas como exceção, sinalize risco de catálogo quando uma campanha depender de poucas estampas..."
+            />
+          </div>
+        </details>
       </div>
 
       <div className="flex flex-col gap-3 border-t border-outline/60 pt-3 sm:flex-row sm:items-center sm:justify-between">

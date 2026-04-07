@@ -17,6 +17,7 @@ Data de consolidação: 2026-04-04
 - `feito` Atlas Analyst read-only com memória recente e feedback
 - `feito` credencial Gemini por loja
 - `feito` central estratégica em Configurações para modelo, temperatura, skill, janela e playbook
+- `feito` base documental da INK sincronizada no Supabase com busca lexical barata para apoiar o Atlas sem custo extra de embeddings
 - `em andamento` qualidade e consistência dos especialistas do Atlas com frame executivo consolidado antes da síntese
 - `pendente` function calling mais profundo com ferramentas internas especializadas
 
@@ -30,6 +31,9 @@ Data de consolidação: 2026-04-04
 - `feito` hints da Torre com fundo sólido e contraste de leitura adequado
 - `feito` suavização das bordas e cápsulas visuais na mesa de decisão do Atlas
 - `feito` Torre refatorada para priorizar alerta dominante, decisão agora e drilldown sob demanda
+- `feito` shell reposicionado como deck de comando, com header compacto, filtro de período em menu flutuante e menos competição visual com o conteúdo
+- `feito` dark mode reposicionado para base chumbo/obsidiana, deixando azul e violeta como sinais e energia do Atlas
+- `feito` sidebar com hierarquia mais clara entre grupo e página, com submenu visualmente recuado e item ativo mais legível
 - `feito` núcleo do Atlas simplificado com primeira dobra mais curta em Torre, Analyst, aprendizado e configurações
 - `feito` adoção explícita da régua utilidade máxima + carga cognitiva mínima como critério de aceite das telas
 - `feito parcial` ajuda, tutoriais, margem histórica e superadmin já ganharam primeira dobra mais curta e orientada a ação
@@ -63,6 +67,7 @@ Data de consolidação: 2026-04-04
 - `em andamento` revisão fina da UX da aba de Integrações
 - `feito parcial` Integrações reorganizada como workspace curto com trilho lateral, subtabs e radar compacto
 - `feito parcial` Integrações agora usa componentes dedicados para rail, header de workspace e radar, abrindo espaço para fatiar Conectar/Operar/Regras
+- `feito` Integrações reestruturada como console de workspace único com `Home`, `Conectar`, `Operar` e `Regras`, sem a antiga disputa de três colunas
 - `feito parcial` Configurações reorganizada como central de ação rápida, foco atual e governança sem blocos longos de explicação
 - `feito` quadro de saúde dos conectores para leitura rápida de status e bloqueios
 - `feito` autofoco do workspace no conector que realmente pede ação, erro ou configuração
@@ -113,17 +118,18 @@ Data de consolidação: 2026-04-04
 7. aprofundar o papel do Orb como radar/atalho, sem duplicar a Torre
 8. substituir o pós-resposta atual por fila/worker mais durável para o aprendizado assíncrono
 9. consolidar a régua ADHD-friendly nas telas restantes de apoio, admin e fluxos menos recorrentes
-10. separar `Produtos e Insights` e `Mídia e Performance` em home estável + páginas próprias de leitura, evitando trocar contexto e conteúdo no mesmo scroll
+10. `feito` separar `Produtos e Insights` e `Mídia e Performance` em home estável + páginas próprias de leitura, evitando trocar contexto e conteúdo no mesmo scroll
+11. expandir a base de conhecimento da INK com refresh operacional e uso mais explícito em fluxos de ajuda/contexto do Atlas
 
 ## 8. Navegação e arquitetura do produto
 
 - `feito` reorganização do sidebar por camadas de produto: Controle, Negócio, Aquisição, Operação e Plataforma
-- `feito parcial` sidebar com legibilidade suavizada, conta movida para o header e menor peso tipográfico
+- `feito` sidebar com legibilidade suavizada, conta movida para o header, hierarquia de submenu mais clara e menor peso tipográfico
 - `pendente` consolidar a camada de relatórios como leitura histórica e a camada operacional como execução
 - `pendente` preparar a futura camada de criação para conteúdo, social e anúncios sem poluir a navegação atual
 - `pendente` expandir a busca global do Orb para navegar entre dados, guias e comandos de plataforma
 - `pendente` revisar a taxonomia final do menu com marcas reais e uso recorrente
-- `pendente` evoluir o sidebar para grupos colapsáveis e arquitetura final por domínios de trabalho
+- `feito` evoluir o sidebar para grupos colapsáveis e arquitetura por domínios de trabalho sem rolagem lateral no desktop
 
 ## 11. Meta, social e camada criativa
 

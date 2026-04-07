@@ -1,8 +1,10 @@
 import type { ElementType, ReactNode } from "react";
-import { AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import type { BrandIntegrationConfig, IntegrationProvider, IntegrationMode } from "@/lib/brandops/types";
+import { WorkspaceTabs } from "@/components/ui-shell";
 
 type HealthTone = "default" | "positive" | "warning" | "info";
+
+type IntegrationSection = "overview" | "config" | "sync" | "rules";
 
 type IntegrationStateSummary = {
   mode: IntegrationMode;
@@ -19,7 +21,6 @@ export function IntegrationWorkspaceHeader({
   providerLabels,
   providerDescriptions,
   providerEyebrows,
-  workspaceSectionMeta,
   activeSection,
   activateWorkspace,
   headerActions,
@@ -33,27 +34,26 @@ export function IntegrationWorkspaceHeader({
   providerLabels: Record<IntegrationProvider, string>;
   providerDescriptions: Record<IntegrationProvider, string>;
   providerEyebrows: Record<IntegrationProvider, string>;
-  workspaceSectionMeta: { eyebrow: string; title: string; description: string };
-  activeSection: "config" | "sync" | "rules";
-  activateWorkspace: (provider: IntegrationProvider, section: "config" | "sync" | "rules") => void;
+  activeSection: IntegrationSection;
+  activateWorkspace: (provider: IntegrationProvider, section: IntegrationSection) => void;
   headerActions: ReactNode;
   formatSyncLabel: (integration?: BrandIntegrationConfig) => string;
 }) {
   return (
     <>
-      <div className="flex flex-col gap-4 border-b border-outline/50 pb-4">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <div className="flex flex-col gap-3 border-b border-outline/50 pb-3">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
-            <p className="eyebrow mb-2">{providerEyebrows[activeProvider]}</p>
+            <p className="eyebrow mb-1.5">{providerEyebrows[activeProvider]}</p>
             <div className="flex items-center gap-3">
               <span className="atlas-integration-hero-icon">
                 <ActiveProviderIcon size={18} />
               </span>
               <div className="min-w-0">
-                <h2 className="text-xl font-semibold tracking-tight text-on-surface">
+                <h2 className="text-[1.1rem] font-semibold tracking-tight text-on-surface">
                   {providerLabels[activeProvider]}
                 </h2>
-                <p className="mt-1 max-w-2xl text-sm leading-6 text-on-surface-variant">
+                <p className="mt-0.5 max-w-2xl text-[12px] leading-5 text-on-surface-variant">
                   {providerDescriptions[activeProvider]}
                 </p>
               </div>
@@ -72,98 +72,69 @@ export function IntegrationWorkspaceHeader({
           </div>
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-3">
-          <AnalyticsKpiCard
-            label="Modo"
-            value={
-              currentState.mode === "api"
+        <div className="atlas-integration-summary-strip">
+          <div className="atlas-integration-summary-item">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Estado</p>
+            <p className="mt-1 text-[13px] font-semibold text-on-surface">
+              {currentState.mode === "api"
                 ? "API ativa"
                 : currentState.mode === "disabled"
                   ? "Integração desligada"
-                  : "Fluxo manual"
-            }
-            description="Como este conector está operando agora."
-            tone={
-              currentState.mode === "api"
-                ? "positive"
-                : currentState.mode === "disabled"
-                  ? "warning"
-                  : "default"
-            }
-          />
-          <AnalyticsKpiCard
-            label="Credencial"
-            value={
-              activeProvider === "ink"
-                ? "N/A"
+                  : "Fluxo manual"}
+            </p>
+            <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
+              {activeHealth.description}
+            </p>
+          </div>
+          <div className="atlas-integration-summary-item">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Última referência</p>
+            <p className="mt-1 text-[13px] font-semibold text-on-surface">
+              {formatSyncLabel(current)}
+            </p>
+            <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
+              {activeProvider === "ink"
+                ? "Origem comercial manual da INK."
                 : currentState.hasApiKey
-                  ? "Loja pronta"
-                  : "Pendente"
-            }
-            description={
-              activeProvider === "ink"
-                ? "A origem comercial segue por CSV."
-                : currentState.hasApiKey
-                  ? `Segredo salvo em ${currentState.apiKeyHint || "ambiente seguro"}.`
-                  : "Falta salvar a credencial da loja."
-            }
-            tone={activeProvider === "ink" ? "info" : currentState.hasApiKey ? "positive" : "warning"}
-          />
-          <AnalyticsKpiCard
-            label="Última referência"
-            value={formatSyncLabel(current)}
-            description="Último sinal útil deste conector."
-            tone={
-              current?.lastSyncStatus === "error"
-                ? "warning"
-                : current?.lastSyncStatus === "success"
-                  ? "positive"
-                  : "default"
-            }
-          />
+                  ? `Credencial pronta em ${currentState.apiKeyHint || "ambiente seguro"}.`
+                  : "Credencial própria ainda pendente."}
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="mt-4 flex flex-col gap-4">
-        <div className="flex flex-col gap-4 border-b border-outline/50 pb-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
-            <p className="eyebrow mb-2">{workspaceSectionMeta.eyebrow}</p>
-            <h3 className="text-xl font-semibold text-on-surface">{workspaceSectionMeta.title}</h3>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-on-surface-variant">
-              {workspaceSectionMeta.description}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="atlas-soft-pill">{current?.lastSyncStatus ?? activeHealth.label}</span>
-            {headerActions}
-          </div>
-        </div>
-
-        <div className="brandops-subtabs overflow-x-auto">
-          <button
-            type="button"
-            className="brandops-subtab"
-            data-active={activeSection === "config"}
-            onClick={() => activateWorkspace(activeProvider, "config")}
-          >
-            Conectar
-          </button>
-          <button
-            type="button"
-            className="brandops-subtab"
-            data-active={activeSection === "sync"}
-            onClick={() => activateWorkspace(activeProvider, "sync")}
-          >
-            Operar
-          </button>
-          <button
-            type="button"
-            className="brandops-subtab"
-            data-active={activeSection === "rules"}
-            onClick={() => activateWorkspace(activeProvider, "rules")}
-          >
-            Regras
-          </button>
+      <div className="mt-3 flex flex-col gap-2 border-t border-outline/50 pt-3 lg:flex-row lg:items-center lg:justify-between">
+        <WorkspaceTabs
+          className="overflow-x-auto"
+          items={[
+            {
+              key: `${activeProvider}-overview`,
+              label: "Resumo",
+              active: activeSection === "overview",
+              onClick: () => activateWorkspace(activeProvider, "overview"),
+            },
+            {
+              key: `${activeProvider}-config`,
+              label: "Conexão",
+              active: activeSection === "config",
+              onClick: () => activateWorkspace(activeProvider, "config"),
+            },
+            {
+              key: `${activeProvider}-sync`,
+              label: "Execução",
+              active: activeSection === "sync",
+              onClick: () => activateWorkspace(activeProvider, "sync"),
+            },
+            {
+              key: `${activeProvider}-rules`,
+              label: "Guia",
+              active: activeSection === "rules",
+              onClick: () => activateWorkspace(activeProvider, "rules"),
+            },
+          ]}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="atlas-soft-pill">{current?.lastSyncStatus ?? activeHealth.label}</span>
+          {headerActions}
         </div>
       </div>
     </>

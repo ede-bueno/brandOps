@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Area,
   AreaChart,
@@ -19,18 +19,18 @@ import {
 } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import { ModeEntryCard, ModeTabs, PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { fetchMediaReport } from "@/lib/brandops/database";
-import { APP_ROUTES } from "@/lib/brandops/routes";
 import {
   currencyFormatter,
   formatCompactDate,
   integerFormatter,
   percentFormatter,
 } from "@/lib/brandops/format";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 import type { MediaCampaignAction, MediaReport, MediaSignal } from "@/lib/brandops/types";
 
-type MediaView = "executive" | "trend" | "campaigns";
+type MediaView = "home" | "executive" | "trend" | "campaigns";
 
 const EMPTY_MEDIA_REPORT: MediaReport = {
   summary: {
@@ -136,9 +136,19 @@ function actionClassName(action: MediaCampaignAction) {
   }
 }
 
-export default function MediaPage() {
-  const [view, setView] = useState<MediaView>("executive");
-  const [executiveSection, setExecutiveSection] = useState<"command" | "playbook" | "signals">("command");
+export function MediaWorkspace({
+  forcedMode,
+}: {
+  forcedMode?: MediaView;
+}) {
+  const searchParams = useSearchParams();
+  const routeMode = searchParams?.get("mode") ?? null;
+  const pageMode: MediaView =
+    forcedMode ??
+    (routeMode === "executive" || routeMode === "trend" || routeMode === "campaigns"
+      ? routeMode
+      : "home");
+  const view = pageMode === "home" ? null : pageMode;
   const [report, setReport] = useState<MediaReport>(EMPTY_MEDIA_REPORT);
   const [isReportLoading, setIsReportLoading] = useState(false);
   const [reportError, setReportError] = useState<string | null>(null);
@@ -213,6 +223,22 @@ export default function MediaPage() {
   const playbook = report.playbook;
   const analysis = report.analysis;
   const primaryAction = analysis.nextActions[0] ?? null;
+  const pageTitle =
+    pageMode === "home"
+      ? "Mídia e performance"
+      : pageMode === "executive"
+        ? "Mídia · Visão executiva"
+        : pageMode === "trend"
+          ? "Mídia · Radar"
+          : "Mídia · Campanhas";
+  const pageDescription =
+    pageMode === "home"
+      ? "Escolha entre executivo, radar ou campanhas."
+      : pageMode === "executive"
+        ? "Comando, prioridade e próximo movimento."
+        : pageMode === "trend"
+          ? "Curva diária e eficiência do gasto."
+          : "Tabela operacional por campanha.";
 
   const isBrandLoading =
     Boolean(activeBrandId) && (isDatasetLoading || isReportLoading || !activeBrand);
@@ -272,159 +298,185 @@ export default function MediaPage() {
 
   return (
     <div className="space-y-6">
-        <PageHeader
-          eyebrow="Aquisição"
-          title="Performance Mídia"
-          description="Veja rápido onde escalar, revisar ou segurar verba no período."
-          badge={`Período analisado: ${selectedPeriodLabel}`}
-          actions={
-            <div className="flex flex-wrap items-center justify-end gap-2">
-            <div className="brandops-tabs">
-              <button
-                type="button"
-                className="brandops-tab"
-                data-active={view === "executive"}
-                onClick={() => setView("executive")}
-              >
-                Visão executiva
-              </button>
-              <button
-                type="button"
-                className="brandops-tab"
-                data-active={view === "trend"}
-                onClick={() => setView("trend")}
-              >
-                Tendência
-              </button>
-              <button
-                type="button"
-                className="brandops-tab"
-                data-active={view === "campaigns"}
-                onClick={() => setView("campaigns")}
-              >
-                Campanhas
-              </button>
-            </div>
-            <Link href={APP_ROUTES.integrations} prefetch={false} className="brandops-button brandops-button-ghost">
-              Ir para integrações
-            </Link>
-          </div>
+      <PageHeader
+        eyebrow={pageMode === "home" ? "Aquisição" : "Mídia e performance"}
+        title={pageTitle}
+        description={pageDescription}
+        badge={selectedPeriodLabel}
+        actions={
+          <ModeTabs
+            items={[
+              { label: "Home", href: APP_ROUTES.media, active: pageMode === "home" },
+              {
+                label: "Executivo",
+                href: APP_ROUTES.mediaExecutive,
+                active: pageMode === "executive",
+              },
+              { label: "Radar", href: APP_ROUTES.mediaRadar, active: pageMode === "trend" },
+              {
+                label: "Campanhas",
+                href: APP_ROUTES.mediaCampaigns,
+                active: pageMode === "campaigns",
+              },
+            ]}
+          />
         }
       />
 
-      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <AnalyticsKpiCard
-          label="Investimento"
-          value={currencyFormatter.format(summary.spend)}
-          description="Gasto ativo da Meta no período saneado."
-          tone="default"
-        />
-        <AnalyticsKpiCard
-          label="Receita Meta atribuída"
-          value={currencyFormatter.format(summary.purchaseValue)}
-          tone="positive"
-          description="Receita de compra atribuída pela Meta. Não substitui o faturado real da INK."
-        />
-        <AnalyticsKpiCard
-          label="Compras Meta"
-          value={integerFormatter.format(summary.purchases)}
-          description="Volume de compras atribuídas pela plataforma."
-          tone="info"
-        />
-        <AnalyticsKpiCard
-          label="ROAS atribuído"
-          value={`${summary.attributedRoas.toFixed(2)}x`}
-          description={signals.attributedRoas.description}
-          tone={signalAccent(signals.attributedRoas)}
-        />
-      </section>
+      {pageMode === "home" ? (
+        <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <AnalyticsKpiCard
+            label="Investimento"
+            value={currencyFormatter.format(summary.spend)}
+            description="Gasto ativo da Meta no período saneado."
+            tone="default"
+          />
+          <AnalyticsKpiCard
+            label="Receita Meta atribuída"
+            value={currencyFormatter.format(summary.purchaseValue)}
+            tone="positive"
+            description="Receita de compra atribuída pela Meta. Não substitui o faturado real da INK."
+          />
+          <AnalyticsKpiCard
+            label="Compras Meta"
+            value={integerFormatter.format(summary.purchases)}
+            description="Volume de compras atribuídas pela plataforma."
+            tone="info"
+          />
+          <AnalyticsKpiCard
+            label="ROAS atribuído"
+            value={`${summary.attributedRoas.toFixed(2)}x`}
+            description={signals.attributedRoas.description}
+            tone={signalAccent(signals.attributedRoas)}
+          />
+        </section>
+      ) : null}
 
-      <section className="grid gap-3 lg:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow={analysis.narrativeTitle}
-          title="Decisão do período"
-          description={analysis.narrativeBody}
-          footer={report.commandRoom.narrative}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Escalar primeiro"
-          title={bestScale ? bestScale.campaignName : "Sem campanha elegível"}
-          description={
-            report.commandRoom.bestScaleSummary ??
-            "Ainda não há sinal forte o bastante para ampliar verba com segurança."
-          }
-          tone="positive"
-          footer={
-            bestScale
-              ? `${bestScale.roas.toFixed(2)}x ROAS · ${percentFormatter.format(bestScale.ctrAll)} CTR`
-              : "Aguardando campanha com sinal consistente."
-          }
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Revisar primeiro"
-          title={priorityReview ? priorityReview.campaignName : "Sem alerta crítico"}
-          description={primaryAction ?? report.commandRoom.priorityReviewSummary ?? "Nenhuma revisão dominante agora."}
-          tone="warning"
-          footer={
-            priorityReview
-              ? `${priorityReview.roas.toFixed(2)}x ROAS · ${percentFormatter.format(priorityReview.ctrAll)} CTR`
-              : "Sem campanha crítica no recorte."
-          }
-        />
-      </section>
+      {pageMode === "home" ? (
+        <>
+          <section className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
+            <AnalyticsCalloutCard
+              eyebrow={analysis.narrativeTitle}
+              title={bestScale ? `Escalar ${bestScale.campaignName}` : "A mídia pede uma decisão curta"}
+              description={analysis.narrativeBody}
+              footer={primaryAction ?? report.commandRoom.narrative}
+            />
+            <SurfaceCard>
+              <SectionHeading
+                title="Escolha a leitura"
+                description="A home resume; o aprofundamento mora em páginas próprias."
+              />
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                <ModeEntryCard
+                  eyebrow="Visão executiva"
+                  title="Comando da mídia"
+                  description="Escala, revisão e próximos movimentos do recorte."
+                  href={APP_ROUTES.mediaExecutive}
+                />
+                <ModeEntryCard
+                  eyebrow="Radar"
+                  title="Curva e eficiência"
+                  description="Curva diária, gasto, retorno e pressão no tempo."
+                  href={APP_ROUTES.mediaRadar}
+                />
+                <ModeEntryCard
+                  eyebrow="Campanhas"
+                  title="Tabela operacional"
+                  description="Leitura por campanha, prioridade e ação recomendada."
+                  href={APP_ROUTES.mediaCampaigns}
+                />
+              </div>
+            </SurfaceCard>
+          </section>
 
-      <details className="atlas-disclosure">
-        <summary className="atlas-disclosure-summary">
-          Indicadores auxiliares de mídia
-          <span className="atlas-disclosure-chevron">abrir</span>
-        </summary>
-        <div className="atlas-disclosure-body">
-          <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-            <AnalyticsKpiCard
-              label="CTR (todos)"
-              value={percentFormatter.format(summary.ctrAll)}
-              description={signals.ctrAll.description}
-              tone={signalAccent(signals.ctrAll)}
+          <section className="grid gap-4 xl:grid-cols-3">
+            <AnalyticsCalloutCard
+              eyebrow="Campanha em foco"
+              title={topCampaignBySpend?.campaignName ?? "Sem campanha dominante"}
+              description={
+                topCampaignBySpend?.summary ??
+                "Abra campanhas para localizar a peça com maior peso operacional."
+              }
+              footer={
+                topCampaignBySpend
+                  ? `${currencyFormatter.format(topCampaignBySpend.spend)} investidos`
+                  : "Aguardando massa de mídia suficiente."
+              }
             />
-            <AnalyticsKpiCard
-              label="CTR link"
-              value={percentFormatter.format(summary.ctrLink)}
-              description={signals.ctrLink.description}
-              tone={signalAccent(signals.ctrLink)}
+            <AnalyticsCalloutCard
+              eyebrow="Escalar primeiro"
+              title={bestScale ? bestScale.campaignName : "Sem campanha elegível"}
+              description={
+                report.commandRoom.bestScaleSummary ??
+                "Ainda não há sinal forte o bastante para ampliar verba com segurança."
+              }
+              tone="positive"
+              footer={
+                bestScale
+                  ? `${bestScale.roas.toFixed(2)}x ROAS · ${percentFormatter.format(bestScale.ctrAll)} CTR`
+                  : "Aguardando campanha com sinal consistente."
+              }
             />
-            <AnalyticsKpiCard
-              label="CPC"
-              value={currencyFormatter.format(summary.cpc)}
-              description={signals.cpc.description}
-              tone={signalAccent(signals.cpc)}
-            />
-            <AnalyticsKpiCard
-              label="CPA meta"
-              value={summary.purchases ? currencyFormatter.format(summary.cpa) : "-"}
-              description={signals.cpa.description}
-              tone={signalAccent(signals.cpa)}
+            <AnalyticsCalloutCard
+              eyebrow="Revisar primeiro"
+              title={priorityReview ? priorityReview.campaignName : "Sem alerta crítico"}
+              description={
+                primaryAction ??
+                report.commandRoom.priorityReviewSummary ??
+                "Nenhuma revisão dominante agora."
+              }
+              tone="warning"
+              footer={
+                priorityReview
+                  ? `${priorityReview.roas.toFixed(2)}x ROAS · ${percentFormatter.format(priorityReview.ctrAll)} CTR`
+                  : "Sem campanha crítica no recorte."
+              }
             />
           </section>
-        </div>
-      </details>
+        </>
+      ) : null}
+
+      {pageMode === "home" ? (
+      <>
+        <details className="atlas-disclosure">
+          <summary className="atlas-disclosure-summary">
+            Indicadores auxiliares de mídia
+            <span className="atlas-disclosure-chevron">abrir</span>
+          </summary>
+          <div className="atlas-disclosure-body">
+            <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+              <AnalyticsKpiCard
+                label="CTR (todos)"
+                value={percentFormatter.format(summary.ctrAll)}
+                description={signals.ctrAll.description}
+                tone={signalAccent(signals.ctrAll)}
+              />
+              <AnalyticsKpiCard
+                label="CTR link"
+                value={percentFormatter.format(summary.ctrLink)}
+                description={signals.ctrLink.description}
+                tone={signalAccent(signals.ctrLink)}
+              />
+              <AnalyticsKpiCard
+                label="CPC"
+                value={currencyFormatter.format(summary.cpc)}
+                description={signals.cpc.description}
+                tone={signalAccent(signals.cpc)}
+              />
+              <AnalyticsKpiCard
+                label="CPA meta"
+                value={summary.purchases ? currencyFormatter.format(summary.cpa) : "-"}
+                description={signals.cpa.description}
+                tone={signalAccent(signals.cpa)}
+              />
+            </section>
+          </div>
+        </details>
+      </>
+      ) : null}
 
       {view === "executive" ? (
         <>
-          <SurfaceCard>
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <SectionHeading
-                title="Modo executivo"
-                description="Comando, playbook e sinais do período."
-              />
-              <div className="brandops-subtabs">
-                <button type="button" className="brandops-subtab" data-active={executiveSection === "command"} onClick={() => setExecutiveSection("command")}>Sala de comando</button>
-                <button type="button" className="brandops-subtab" data-active={executiveSection === "playbook"} onClick={() => setExecutiveSection("playbook")}>Ações</button>
-                <button type="button" className="brandops-subtab" data-active={executiveSection === "signals"} onClick={() => setExecutiveSection("signals")}>Sinais</button>
-              </div>
-            </div>
-          </SurfaceCard>
-
-          {executiveSection === "command" ? (
           <section className="grid gap-6 xl:grid-cols-[1.42fr_0.58fr]">
             <SurfaceCard>
               <SectionHeading
@@ -548,9 +600,7 @@ export default function MediaPage() {
               </div>
             </SurfaceCard>
           </section>
-          ) : null}
 
-          {executiveSection === "playbook" ? (
           <section className="grid gap-6 xl:grid-cols-3">
             {[playbook.scale, playbook.review, playbook.monitor].map((group) => (
               <SurfaceCard key={group.title}>
@@ -585,9 +635,7 @@ export default function MediaPage() {
               </SurfaceCard>
             ))}
           </section>
-          ) : null}
 
-          {executiveSection === "signals" ? (
           <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
             <SurfaceCard>
               <SectionHeading
@@ -673,7 +721,6 @@ export default function MediaPage() {
               </div>
             </SurfaceCard>
           </section>
-          ) : null}
         </>
       ) : null}
 
@@ -879,4 +926,8 @@ export default function MediaPage() {
       ) : null}
     </div>
   );
+}
+
+export default function MediaPage() {
+  return <MediaWorkspace />;
 }

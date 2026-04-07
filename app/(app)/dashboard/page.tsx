@@ -8,7 +8,8 @@ import {
 import { AtlasControlTowerHome } from "@/components/AtlasControlTowerHome";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, SectionHeading, StackItem, SurfaceCard } from "@/components/ui-shell";
+import { PageHeader, SectionHeading, StackItem, SurfaceCard, WorkspaceTabs } from "@/components/ui-shell";
+import { useSanitizationPendingCount } from "@/hooks/use-sanitization-summary";
 import {
   currencyFormatter,
   integerFormatter,
@@ -16,23 +17,35 @@ import {
 } from "@/lib/brandops/format";
 
 export default function DashboardPage() {
-  const [activeSection, setActiveSection] = useState<"kpis" | "diagnostics">("kpis");
+  const [activeSection, setActiveSection] = useState<"overview" | "diagnostics" | "atlas">("overview");
   const { 
     activeBrand, 
     activeBrandId,
     brands,
-    filteredBrand,
     selectedPeriodLabel, 
     isLoading: isDatasetLoading,
     isMetricsLoading,
     financialReportFiltered,
+    session,
   } = useBrandOps();
   const selectedBrandName =
     activeBrand?.name ??
     brands.find((brand) => brand.id === activeBrandId)?.name ??
     "Loja";
+  const pendingSanitizationCount = useSanitizationPendingCount(
+    activeBrandId,
+    session?.access_token,
+  );
   const isBrandLoading =
     Boolean(activeBrandId) && (isDatasetLoading || isMetricsLoading || !activeBrand);
+  const geminiIntegration =
+    activeBrand?.integrations.find((integration) => integration.provider === "gemini") ?? null;
+  const canUseAtlasTab =
+    (activeBrand?.governance.featureFlags.atlasAi ?? false) &&
+    (activeBrand?.governance.featureFlags.atlasCommandCenter ?? false) &&
+    geminiIntegration?.mode === "api";
+  const effectiveSection =
+    !canUseAtlasTab && activeSection === "atlas" ? "overview" : activeSection;
 
   if (isBrandLoading) {
     return (
@@ -82,7 +95,6 @@ export default function DashboardPage() {
   }
 
   const metrics = financialReportFiltered?.total;
-  const expenseSummary = financialReportFiltered?.expenseBreakdown.slice(0, 4) ?? [];
 
   if (!metrics || !financialReportFiltered) {
     return (
@@ -97,9 +109,6 @@ export default function DashboardPage() {
   const breakEvenValue =
     metrics.breakEvenDisplay !== null ? currencyFormatter.format(metrics.breakEvenDisplay) : "N/A";
   const breakEvenHelp = metrics.breakEvenReason;
-  const pendingSanitizationCount =
-    (filteredBrand?.media.filter((row) => row.sanitizationStatus === "PENDING").length ?? 0) +
-    (filteredBrand?.paidOrders.filter((order) => order.sanitizationStatus === "PENDING").length ?? 0);
   const mediaIntegration =
     activeBrand.integrations.find((integration) => integration.provider === "meta") ?? null;
   const ga4Integration =
@@ -178,15 +187,43 @@ export default function DashboardPage() {
         tone: "info",
         href: "/product-insights",
       },
-      {
+    );
+
+    if (canUseAtlasTab) {
+      diagnostics.push({
         eyebrow: "Atlas",
-        title: "Use a Torre para explorar o próximo corte",
-        description: "Abra a casa do Atlas IA para uma leitura mais direcionada.",
+        title: "Abra a mesa inteligente só quando precisar",
+        description: "A camada Atlas IA fica separada da leitura operacional desta tela.",
         tone: "secondary",
         href: "/dashboard#atlas-ai-home",
-      },
-    );
+      });
+    }
   }
+
+  const primaryDiagnostic = diagnostics[0] ?? null;
+  const secondaryDiagnostics = diagnostics.slice(1);
+  const nextOperationalCut =
+    primaryDiagnostic?.href === "/dre"
+      ? "Abra o DRE e localize o maior grupo de pressão antes de mudar mídia."
+      : primaryDiagnostic?.href === "/dashboard/contribution-margin"
+        ? "Cruze margem, mídia e CMV antes de escalar qualquer frente."
+        : primaryDiagnostic?.href === "/integrations"
+          ? "Valide Meta e GA4 antes de confiar no corte atual."
+          : "Use a leitura operacional para confirmar volume, retenção e custo.";
+  const baseIntegrityMessage =
+    pendingSanitizationCount > 0
+      ? `${pendingSanitizationCount} pendência(s) ainda pedem revisão.`
+      : "Sem pendência estrutural aberta na base deste corte.";
+  const focusThirdItemTitle =
+    pendingSanitizationCount > 0 ? "Integridade da base" : "Custo variável";
+  const focusThirdItemDescription =
+    pendingSanitizationCount > 0
+      ? baseIntegrityMessage
+      : `CMV + mídia consomem ${percentFormatter.format(variableCostShare)} da RLD.`;
+  const focusThirdItemAside =
+    pendingSanitizationCount > 0 ? "revisar" : percentFormatter.format(variableCostShare);
+  const focusThirdItemTone =
+    pendingSanitizationCount > 0 ? "warning" : variableCostShare > 0.7 ? "warning" : "default";
 
   return (
     <div className="space-y-6">
@@ -195,241 +232,240 @@ export default function DashboardPage() {
         title={activeBrand.name}
         description="O que importa agora na operação, sem ruído."
         badge={selectedPeriodLabel}
+        actions={
+          <WorkspaceTabs
+            items={[
+              {
+                key: "dashboard-overview",
+                label: "Operação",
+                active: effectiveSection === "overview",
+                onClick: () => setActiveSection("overview"),
+              },
+              {
+                key: "dashboard-diagnostics",
+                label: "Alertas",
+                active: effectiveSection === "diagnostics",
+                onClick: () => setActiveSection("diagnostics"),
+              },
+              ...(canUseAtlasTab
+                ? [
+                    {
+                      key: "dashboard-atlas",
+                      label: "Atlas IA",
+                      active: effectiveSection === "atlas",
+                      onClick: () => setActiveSection("atlas"),
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        }
       />
 
-      <AtlasControlTowerHome />
-
-      <section className="grid gap-4 xl:grid-cols-3">
-        <AnalyticsPanel
-          eyebrow="Leitura comercial"
-          title="Volume e ticket"
-          description="Se a loja está convertendo melhor ou só girando mais itens."
-        >
-          <AnalyticsKpiCard
-            label="Pedidos pagos"
-            value={integerFormatter.format(metrics.paidOrderCount)}
-            description="Pedidos pagos no período."
-            tone="positive"
-          />
-          <AnalyticsKpiCard
-            label="Itens vendidos"
-            value={integerFormatter.format(metrics.unitsSold)}
-            description="Soma de `Items no Pedido` da INK."
-          />
-          <AnalyticsKpiCard
-            label="Ticket médio"
-            value={currencyFormatter.format(metrics.averageTicket)}
-            description="Faturado dividido pelos pedidos pagos."
-          />
-          <AnalyticsKpiCard
-            label="Itens por venda"
-            value={metrics.itemsPerOrder.toFixed(2)}
-            description="Peças médias por pedido."
-          />
-        </AnalyticsPanel>
-
-        <AnalyticsPanel
-          eyebrow="Resultado"
-          title="Receita e margem"
-          description="Se o comercial segurou valor ou deixou margem escapar."
-        >
-          <AnalyticsKpiCard
-            label="Faturado"
-            value={currencyFormatter.format(metrics.grossRevenue)}
-            description="Soma de `Valor do Pedido` na exportação da INK."
-            tone="secondary"
-          />
-          <AnalyticsKpiCard
-            label="Descontos totais"
-            value={currencyFormatter.format(metrics.discounts)}
-            description={`Via cupom identificado: ${currencyFormatter.format(metrics.couponDiscounts)}.`}
-            tone="warning"
-          />
-          <AnalyticsKpiCard
-            label="Comissão INK"
-            value={currencyFormatter.format(metrics.inkProfit)}
-            description="Campo `Comissao` exportado pela INK."
-            tone="positive"
-          />
-          <AnalyticsKpiCard
-            label="Lucro médio"
-            value={currencyFormatter.format(metrics.averageInkProfit)}
-            description="Comissão INK por item vendido."
-            tone={metrics.averageInkProfit >= 0 ? "positive" : "negative"}
-          />
-        </AnalyticsPanel>
-
-        <AnalyticsPanel
-          eyebrow="Pressão"
-          title="Custo e equilíbrio"
-          description="O que consome a RLD e o que falta para cobrir a operação."
-        >
-          <AnalyticsKpiCard
-            label="Investimento mídia"
-            value={currencyFormatter.format(metrics.mediaSpend)}
-            description={`ROAS bruto ${metrics.grossRoas.toFixed(2)}x.`}
-            tone="warning"
-          />
-          <AnalyticsKpiCard
-            label="CMV aplicado"
-            value={currencyFormatter.format(metrics.cmvTotal)}
-            description="Custo histórico por item vendido."
-            tone="warning"
-          />
-          <AnalyticsKpiCard
-            label="Despesas operacionais"
-            value={currencyFormatter.format(metrics.operatingExpensesTotal)}
-            description={`${expenseSummary.length} categorias lançadas no período.`}
-            tone="warning"
-          />
-          <AnalyticsKpiCard
-            label="Margem de contribuição"
-            value={currencyFormatter.format(metrics.contributionAfterMedia)}
-            description={percentFormatter.format(metrics.contributionMargin)}
-            tone={metrics.contributionAfterMedia >= 0 ? "positive" : "negative"}
-            href="/dashboard/contribution-margin"
-            actionLabel="Explorar"
-          />
-          <AnalyticsKpiCard
-            label="Ponto de equilíbrio"
-            value={breakEvenValue}
-            description={
-              metrics.breakEvenDisplay !== null
-                ? `${breakEvenHelp} Meta mensal de RLD.`
-                : breakEvenHelp
-            }
-            tone={metrics.breakEvenDisplay !== null ? "secondary" : "warning"}
-          />
-        </AnalyticsPanel>
-      </section>
-
-      <SurfaceCard>
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <SectionHeading
-            title="Foco do período"
-            description="Alterne entre o resumo do corte e o diagnóstico prioritário."
-          />
-          <div className="brandops-subtabs">
-            <button
-              type="button"
-              className="brandops-subtab"
-              data-active={activeSection === "kpis"}
-              onClick={() => setActiveSection("kpis")}
-            >
-              Resumo
-            </button>
-            <button
-              type="button"
-              className="brandops-subtab"
-              data-active={activeSection === "diagnostics"}
-              onClick={() => setActiveSection("diagnostics")}
-            >
-              Diagnóstico
-            </button>
-          </div>
-        </div>
-      </SurfaceCard>
-
-      {activeSection === "kpis" ? (
-        <SurfaceCard className="p-4">
-          <SectionHeading
-            title="Resumo do período"
-            description="Leitura curta do recorte ativo."
-          />
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
-            <AnalyticsKpiCard
-              label="Receita líquida de desconto"
-              value={currencyFormatter.format(metrics.rld)}
-              description="Receita líquida após descontos, antes dos custos variáveis."
-              tone={metrics.rld > 0 ? "info" : "default"}
-            />
-            <AnalyticsKpiCard
-              label="Despesas operacionais"
-              value={currencyFormatter.format(metrics.operatingExpensesTotal)}
-              description="Lançadas por competência para manter o DRE consistente."
-              tone={metrics.operatingExpensesTotal > 0 ? "warning" : "default"}
-            />
-            <AnalyticsKpiCard
-              label="Resultado operacional"
-              value={currencyFormatter.format(metrics.netResult)}
-              description="Resultado final depois de CMV, mídia e despesas."
-              tone={metrics.netResult >= 0 ? "positive" : "negative"}
-            />
-            <AnalyticsKpiCard
-              label="Custo variável"
-              value={percentFormatter.format(variableCostShare)}
-              description="CMV + mídia sobre a receita líquida disponível."
-              tone={variableCostShare > 0.7 ? "warning" : "default"}
-            />
-          </div>
-          {expenseSummary.length ? (
-            <details className="atlas-disclosure mt-4">
-              <summary>
-                <span>Abrir maiores despesas do período</span>
-                <span>{expenseSummary.length}</span>
-              </summary>
-              <div className="mt-4 space-y-2">
-                {expenseSummary.map((expense) => (
-                  <StackItem
-                    key={expense.categoryName}
-                    title={expense.categoryName}
-                    description="Categoria que mais pesa no período atual."
-                    aside={currencyFormatter.format(expense.total)}
-                  />
-                ))}
-              </div>
-            </details>
-          ) : null}
-        </SurfaceCard>
-      ) : (
-        <SurfaceCard className="p-4">
-          <SectionHeading
-            title="Diagnóstico prioritário"
-            description="Sinais que merecem ação antes do resto."
-          />
-          <div className="mt-4 grid gap-3 xl:grid-cols-3">
-            {diagnostics.slice(0, 3).map((diagnostic) => (
-              <AnalyticsCalloutCard
-                key={`${diagnostic.eyebrow}-${diagnostic.title}`}
-                eyebrow={diagnostic.eyebrow}
-                title={diagnostic.title}
-                description={diagnostic.description}
-                tone={diagnostic.tone}
-                href={diagnostic.href}
+      {effectiveSection === "overview" ? (
+        <>
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.24fr)_18rem]">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <AnalyticsKpiCard
+                label="Faturado"
+                value={currencyFormatter.format(metrics.grossRevenue)}
+                description="Receita bruta exportada da INK."
+                tone="secondary"
               />
-            ))}
-          </div>
-          <details className="atlas-disclosure mt-4">
-            <summary>
-              <span>Abrir contexto do recorte</span>
-              <span>3</span>
-            </summary>
-            <div className="mt-4 grid gap-3 xl:grid-cols-3">
-              <div className="atlas-soft-subcard px-4 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                  Recorte ativo
-                </p>
-                <p className="mt-2 text-sm font-semibold text-on-surface">{selectedPeriodLabel}</p>
-              </div>
-              <div className="atlas-soft-subcard px-4 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                  Resultado operacional
-                </p>
-                <p className="mt-2 text-sm font-semibold text-on-surface">
-                  {currencyFormatter.format(metrics.netResult)}
-                </p>
-              </div>
-              <div className="atlas-soft-subcard px-4 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                  Margem depois da mídia
-                </p>
-                <p className="mt-2 text-sm font-semibold text-on-surface">
-                  {currencyFormatter.format(metrics.contributionAfterMedia)}
-                </p>
-              </div>
+              <AnalyticsKpiCard
+                label="Resultado operacional"
+                value={currencyFormatter.format(metrics.netResult)}
+                description="Resultado após CMV, mídia e despesas."
+                tone={metrics.netResult >= 0 ? "positive" : "negative"}
+              />
+              <AnalyticsKpiCard
+                label="Margem de contribuição"
+                value={currencyFormatter.format(metrics.contributionAfterMedia)}
+                description={percentFormatter.format(metrics.contributionMargin)}
+                tone={metrics.contributionAfterMedia >= 0 ? "positive" : "negative"}
+                href="/dashboard/contribution-margin"
+                actionLabel="Explorar"
+              />
             </div>
-          </details>
-        </SurfaceCard>
+
+            <SurfaceCard className="p-4">
+              <SectionHeading
+                title="Foco do corte"
+                description="Uma leitura curta para orientar o próximo clique."
+              />
+              <div className="mt-4 space-y-2">
+                <StackItem
+                  title={primaryDiagnostic?.title ?? "Operação estável neste corte"}
+                  description={
+                    primaryDiagnostic?.description ??
+                    "Sem alerta estrutural crítico. Aproveite o recorte para ganhar eficiência."
+                  }
+                  aside={primaryDiagnostic?.eyebrow ?? "agora"}
+                  tone={
+                    primaryDiagnostic
+                      ? primaryDiagnostic.tone === "secondary"
+                        ? "default"
+                        : primaryDiagnostic.tone
+                      : "positive"
+                  }
+                />
+                <StackItem
+                  title="Próximo corte"
+                  description={nextOperationalCut}
+                  aside="seguir"
+                  tone="info"
+                />
+                <StackItem
+                  title={focusThirdItemTitle}
+                  description={focusThirdItemDescription}
+                  aside={focusThirdItemAside}
+                  tone={focusThirdItemTone}
+                />
+              </div>
+            </SurfaceCard>
+          </section>
+
+          <section className="grid gap-4 xl:grid-cols-3">
+            <AnalyticsPanel
+              eyebrow="Leitura comercial"
+              title="Volume e ticket"
+              description="Base operacional do comercial no período."
+            >
+              <AnalyticsKpiCard
+                label="Pedidos pagos"
+                value={integerFormatter.format(metrics.paidOrderCount)}
+                description="Pedidos pagos no período."
+                tone="positive"
+              />
+              <AnalyticsKpiCard
+                label="Itens vendidos"
+                value={integerFormatter.format(metrics.unitsSold)}
+                description="Soma de itens do pedido."
+              />
+              <AnalyticsKpiCard
+                label="Ticket médio"
+                value={currencyFormatter.format(metrics.averageTicket)}
+                description="Faturado dividido pelos pedidos pagos."
+              />
+            </AnalyticsPanel>
+
+            <AnalyticsPanel
+              eyebrow="Resultado"
+              title="Receita e retenção"
+              description="Valor que o comercial segurou no período."
+            >
+              <AnalyticsKpiCard
+                label="RLD"
+                value={currencyFormatter.format(metrics.rld)}
+                description="Receita líquida após descontos."
+                tone="info"
+              />
+              <AnalyticsKpiCard
+                label="Descontos"
+                value={currencyFormatter.format(metrics.discounts)}
+                description={`Cupom identificado: ${currencyFormatter.format(metrics.couponDiscounts)}.`}
+                tone="warning"
+              />
+              <AnalyticsKpiCard
+                label="Comissão INK"
+                value={currencyFormatter.format(metrics.inkProfit)}
+                description="Lucro operacional vindo da INK."
+                tone="positive"
+              />
+            </AnalyticsPanel>
+
+            <AnalyticsPanel
+              eyebrow="Pressão"
+              title="Custo e equilíbrio"
+              description="O que aperta margem e caixa."
+            >
+              <AnalyticsKpiCard
+                label="Investimento mídia"
+                value={currencyFormatter.format(metrics.mediaSpend)}
+                description={`ROAS bruto ${metrics.grossRoas.toFixed(2)}x.`}
+                tone="warning"
+              />
+              <AnalyticsKpiCard
+                label="CMV aplicado"
+                value={currencyFormatter.format(metrics.cmvTotal)}
+                description="Custo histórico por item vendido."
+                tone="warning"
+              />
+              <AnalyticsKpiCard
+                label="Ponto de equilíbrio"
+                value={breakEvenValue}
+                description={
+                  metrics.breakEvenDisplay !== null
+                    ? `${breakEvenHelp} Meta mensal de RLD.`
+                    : breakEvenHelp
+                }
+                tone={metrics.breakEvenDisplay !== null ? "secondary" : "warning"}
+              />
+            </AnalyticsPanel>
+          </section>
+        </>
+      ) : effectiveSection === "diagnostics" ? (
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_18rem]">
+          <SurfaceCard className="p-4">
+            <SectionHeading
+              title="Diagnóstico prioritário"
+              description="O primeiro alerta pede atenção imediata. O resto fica em fila curta."
+            />
+            {primaryDiagnostic ? (
+              <div className="mt-4 space-y-3">
+                <AnalyticsCalloutCard
+                  eyebrow={primaryDiagnostic.eyebrow}
+                  title={primaryDiagnostic.title}
+                  description={primaryDiagnostic.description}
+                  tone={primaryDiagnostic.tone}
+                  href={primaryDiagnostic.href}
+                />
+                {secondaryDiagnostics.length ? (
+                  <div className="grid gap-2 lg:grid-cols-2">
+                    {secondaryDiagnostics.map((diagnostic) => (
+                      <StackItem
+                        key={`${diagnostic.eyebrow}-${diagnostic.title}`}
+                        title={diagnostic.title}
+                        description={diagnostic.description}
+                        aside={diagnostic.eyebrow}
+                        tone={diagnostic.tone === "secondary" ? "default" : diagnostic.tone}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </SurfaceCard>
+
+          <SurfaceCard className="p-4">
+            <SectionHeading
+              title="Contexto do corte"
+              description="Só os números que ajudam a validar a prioridade."
+            />
+            <div className="mt-4 space-y-2">
+              <StackItem
+                title="Recorte ativo"
+                description={selectedPeriodLabel}
+                aside="período"
+                tone="default"
+              />
+              <StackItem
+                title="Resultado operacional"
+                description={currencyFormatter.format(metrics.netResult)}
+                aside={metrics.netResult >= 0 ? "ok" : "atenção"}
+                tone={metrics.netResult >= 0 ? "positive" : "negative"}
+              />
+              <StackItem
+                title="Margem depois da mídia"
+                description={currencyFormatter.format(metrics.contributionAfterMedia)}
+                aside={percentFormatter.format(metrics.contributionMargin)}
+                tone={metrics.contributionAfterMedia >= 0 ? "positive" : "negative"}
+              />
+            </div>
+          </SurfaceCard>
+        </section>
+      ) : (
+        <AtlasControlTowerHome />
       )}
     </div>
   );

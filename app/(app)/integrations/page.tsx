@@ -18,7 +18,7 @@ import { useBrandOps } from "@/components/BrandOpsProvider";
 import { IntegrationRadar } from "@/components/integrations/IntegrationRadar";
 import { IntegrationRail } from "@/components/integrations/IntegrationRail";
 import { IntegrationWorkspaceHeader } from "@/components/integrations/IntegrationWorkspaceHeader";
-import { FormField, InlineNotice, PageHeader, SurfaceCard } from "@/components/ui-shell";
+import { FormField, InlineNotice, PageHeader, SectionHeading, StackItem, SurfaceCard } from "@/components/ui-shell";
 import Link from "next/link";
 import type {
   BrandIntegrationConfig,
@@ -48,12 +48,14 @@ type IntegrationFormState = Record<
   }
 >;
 
+type IntegrationSection = "overview" | "config" | "sync" | "rules";
+
 function isIntegrationProvider(value: string | null): value is IntegrationProvider {
   return value === "ink" || value === "meta" || value === "ga4" || value === "gemini";
 }
 
-function isIntegrationSection(value: string | null): value is "config" | "sync" | "rules" {
-  return value === "config" || value === "sync" || value === "rules";
+function isIntegrationSection(value: string | null): value is IntegrationSection {
+  return value === "overview" || value === "config" || value === "sync" || value === "rules";
 }
 
 const providerLabels: Record<IntegrationProvider, string> = {
@@ -355,7 +357,7 @@ function resolveSuggestedWorkspace(
 
   return {
     provider: firstOperationalProvider,
-    section: firstOperationalProvider === "gemini" ? ("config" as const) : ("sync" as const),
+    section: "overview" as const,
   };
 }
 
@@ -385,13 +387,13 @@ export default function IntegrationsPage() {
   const [syncingMeta, setSyncingMeta] = useState(false);
   const [syncingCatalog, setSyncingCatalog] = useState(false);
   const [activeProvider, setActiveProvider] = useState<IntegrationProvider>("ink");
-  const [activeSection, setActiveSection] = useState<"config" | "sync" | "rules">("config");
+  const [activeSection, setActiveSection] = useState<IntegrationSection>("overview");
   const [workspaceSeedBrandId, setWorkspaceSeedBrandId] = useState<string | null>(null);
 
   const replaceWorkspaceUrl = useCallback(
     (
       nextProvider: IntegrationProvider,
-      nextSection: "config" | "sync" | "rules",
+      nextSection: IntegrationSection,
     ) => {
       if (!pathname) {
         return;
@@ -415,7 +417,7 @@ export default function IntegrationsPage() {
   const activateWorkspace = useCallback(
     (
       nextProvider: IntegrationProvider,
-      nextSection: "config" | "sync" | "rules",
+      nextSection: IntegrationSection,
     ) => {
       setActiveProvider(nextProvider);
       setActiveSection(nextSection);
@@ -495,7 +497,7 @@ export default function IntegrationsPage() {
     if (!activeBrand) {
       return {
         provider: "ink" as const,
-        section: "config" as const,
+        section: "overview" as const,
       };
     }
 
@@ -829,25 +831,6 @@ export default function IntegrationsPage() {
   })();
   const activeHealth = resolveProviderHealth(activeProvider, current, activeBrand.governance);
   const ActiveProviderIcon = providerIcons[activeProvider];
-  const workspaceSectionMeta =
-    activeSection === "config"
-      ? {
-          eyebrow: "Conectar",
-          title: "Ajuste da integração",
-          description: "Defina origem, identificadores e credenciais sem sair do mesmo workspace.",
-        }
-      : activeSection === "sync"
-        ? {
-            eyebrow: "Operar",
-            title: "Sincronização e estado",
-            description: "Veja o estado da fonte e rode sincronizações quando realmente fizer sentido.",
-          }
-        : {
-            eyebrow: "Regras",
-            title: "Como esta frente entra no Atlas",
-            description: "Leia o papel do conector e abra ajuda só quando houver dúvida real.",
-          };
-
   function renderHeaderActions() {
     if (activeProvider === "gemini") {
       return (
@@ -1601,15 +1584,10 @@ export default function IntegrationsPage() {
   return (
     <div className="atlas-integration-room space-y-4 xl:flex xl:h-[calc(100dvh-8.75rem)] xl:flex-col xl:overflow-hidden">
       <PageHeader
-        eyebrow="Configuração por loja"
-        title="Integrações"
-        description="Conecte, valide e opere a fonte certa sem sair do workspace."
-        badge={
-          <span className="atlas-entity-chip">
-            <span className="font-semibold">{activeBrand.name}</span>
-            <span className="text-on-surface-variant">workspace ativo</span>
-          </span>
-        }
+        eyebrow="Plataforma"
+        title="Integrações da loja"
+        description="Escolha a fonte, opere e revise no mesmo console."
+        badge={activeProvider === "ink" ? "Origem comercial" : providerLabels[activeProvider]}
       />
 
       {operationalNotice ? (
@@ -1618,14 +1596,12 @@ export default function IntegrationsPage() {
         </InlineNotice>
       ) : null}
 
-      <section className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[14.5rem_minmax(0,1fr)_16.5rem]">
+      <section className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[14.5rem_minmax(0,1fr)]">
         <IntegrationRail
           providerHealthSummary={providerHealthSummary}
           activeProvider={activeProvider}
           activeSection={activeSection}
           activateWorkspace={activateWorkspace}
-          tutorialHref={tutorialHref}
-          tutorialCtaLabel={tutorialCtaLabel}
           providerIcons={providerIcons}
           providerLabels={providerLabels}
           providerEyebrows={providerEyebrows}
@@ -1643,7 +1619,6 @@ export default function IntegrationsPage() {
             providerLabels={providerLabels}
             providerDescriptions={providerDescriptions}
             providerEyebrows={providerEyebrows}
-            workspaceSectionMeta={workspaceSectionMeta}
             activeSection={activeSection}
             activateWorkspace={activateWorkspace}
             headerActions={renderHeaderActions()}
@@ -1651,9 +1626,28 @@ export default function IntegrationsPage() {
           />
 
             <div className="mt-5 xl:min-h-0 xl:flex-1">
+            {activeSection === "overview" ? (
+              <div className="xl:h-full xl:min-h-0 xl:overflow-y-auto">
+                <IntegrationRadar
+                  activeProvider={activeProvider}
+                  current={current}
+                  currentState={currentState}
+                  providerNextAction={providerNextAction}
+                  tutorialHref={tutorialHref}
+                  tutorialCtaLabel={tutorialCtaLabel}
+                  formatSyncLabel={formatSyncLabel}
+                  className="h-full"
+                />
+              </div>
+            ) : null}
+
             {activeSection === "config" ? (
             <div className="brandops-command-slab p-4 sm:p-5 xl:h-full xl:min-h-0 xl:overflow-y-auto">
-              <div className="brandops-toolbar-grid" data-columns="2">
+              <SectionHeading
+                title="Conexão da fonte"
+                description="Defina modo, identificadores e credencial própria da loja."
+              />
+              <div className="brandops-toolbar-grid mt-4" data-columns="2">
                 <FormField label="Origem principal" className="text-sm lg:col-span-2">
                   <select
                     value={currentState.mode}
@@ -1903,200 +1897,209 @@ export default function IntegrationsPage() {
             ) : null}
 
             {activeSection === "sync" ? (
-              <div className="grid gap-4 xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_16rem]">
-                <div className="brandops-toolbar-panel text-sm text-on-surface-variant xl:min-h-0 xl:overflow-y-auto">
-                  {activeProvider === "gemini" ? (
-                    <>
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="font-medium text-on-surface">Status da credencial</p>
-                          <p className="mt-1">
-                            {currentState.hasApiKey
+              <div className="brandops-toolbar-panel text-sm text-on-surface-variant xl:h-full xl:min-h-0 xl:overflow-y-auto">
+                <SectionHeading
+                  title="Execução da fonte"
+                  description="Estado atual, sincronização e ação manual do conector."
+                />
+                <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                  <div className="atlas-soft-subcard px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-on-surface">Estado da integração</p>
+                        <p className="mt-1">
+                          {activeProvider === "gemini"
+                            ? currentState.hasApiKey
                               ? `Chave própria salva em ${currentState.apiKeyHint}.`
-                              : "Nenhuma chave própria salva para esta loja."}
-                          </p>
-                        </div>
-                        <span className="status-chip">
-                          {currentState.mode === "api" ? "agent ready" : "disabled"}
-                        </span>
-                      </div>
-                      <div className="mt-4 border-t border-outline/50 pt-4">
-                        <p className="font-medium text-on-surface">Leitura operacional</p>
-                        <p className="mt-1 leading-6">
-                          O Gemini não faz sync em lote. Ele responde quando o operador chama o Atlas sobre dados internos já consolidados.
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="space-y-4">
-                      {activeProvider === "meta" || activeProvider === "ga4" ? (
-                        <div className="atlas-soft-subcard px-4 py-3">
-                          <p className="font-medium text-on-surface">Status da credencial</p>
-                          <p className="mt-1">
-                            {currentState.hasApiKey
+                              : "Nenhuma chave própria salva para esta loja."
+                            : currentState.hasApiKey
                               ? `${activeProvider === "meta" ? "Token" : "Credencial"} própria salva em ${currentState.apiKeyHint}.`
                               : `Nenhuma ${activeProvider === "meta" ? "token" : "credencial"} própria salva para esta loja.`}
-                          </p>
-                        </div>
-                      ) : null}
-                      <div className="atlas-soft-subcard px-4 py-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="font-medium text-on-surface">Última sincronização</p>
-                            <p className="mt-1">{formatSyncLabel(current)}</p>
-                          </div>
-                          <span className="status-chip">{current?.lastSyncStatus ?? "idle"}</span>
-                        </div>
-                        {current?.lastSyncError ? (
-                          <div className="mt-3 rounded-xl border border-error/12 bg-error/8 px-4 py-3 text-error">
-                            {current.lastSyncError}
-                          </div>
-                        ) : null}
+                        </p>
                       </div>
-                      {activeProvider === "meta" ? (
-                        <div className="atlas-soft-subcard px-4 py-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <p className="font-medium text-on-surface">Sincronização do catálogo</p>
-                              <p className="mt-1">{formatCatalogSyncLabel(current)}</p>
-                            </div>
-                            <span className="status-chip">
-                              {current?.settings.catalogSyncStatus ?? "idle"}
-                            </span>
-                          </div>
-                          {current?.settings.catalogProductCount ? (
-                            <p className="mt-2 text-xs text-on-surface-variant">
-                              {current.settings.catalogProductCount} item(ns) consolidados da fonte Meta.
-                            </p>
-                          ) : null}
-                          {current?.settings.catalogSyncError ? (
-                            <div className="mt-3 rounded-xl border border-error/12 bg-error/8 px-4 py-3 text-error">
-                              {current.settings.catalogSyncError}
-                            </div>
-                          ) : null}
+                      <span className="status-chip">{current?.lastSyncStatus ?? "idle"}</span>
+                    </div>
+                    {current?.lastSyncError ? (
+                      <div className="mt-3 rounded-xl border border-error/12 bg-error/8 px-4 py-3 text-error">
+                        {current.lastSyncError}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {activeProvider === "meta" ? (
+                    <div className="atlas-soft-subcard px-4 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-on-surface">Sincronização do catálogo</p>
+                          <p className="mt-1">{formatCatalogSyncLabel(current)}</p>
+                        </div>
+                        <span className="status-chip">{current?.settings.catalogSyncStatus ?? "idle"}</span>
+                      </div>
+                      {current?.settings.catalogProductCount ? (
+                        <p className="mt-2 text-xs text-on-surface-variant">
+                          {current.settings.catalogProductCount} item(ns) consolidados da fonte Meta.
+                        </p>
+                      ) : null}
+                      {current?.settings.catalogSyncError ? (
+                        <div className="mt-3 rounded-xl border border-error/12 bg-error/8 px-4 py-3 text-error">
+                          {current.settings.catalogSyncError}
                         </div>
                       ) : null}
                     </div>
-                  )}
-                </div>
+                  ) : null}
 
-                <div className="brandops-toolbar-panel text-sm text-on-surface-variant xl:min-h-0 xl:overflow-y-auto">
-                  <p className="font-medium text-on-surface">Executar agora</p>
-                  <p className="mt-1 leading-6">
-                    {activeProvider === "gemini"
-                      ? "O comportamento do agente fica em Configurações. Aqui você só garante que a chave da loja está pronta."
-                      : "Rode sync quando a fonte externa mudar ou quando a leitura da marca precisar ser atualizada."}
-                  </p>
-                  <div className="brandops-toolbar-actions pt-4">
-                    {activeProvider === "meta" ? (
-                      <>
+                  <div className="atlas-soft-subcard px-4 py-3 lg:col-span-2">
+                    <p className="font-medium text-on-surface">Executar agora</p>
+                    <p className="mt-1 leading-6">
+                      {activeProvider === "gemini"
+                        ? "O comportamento do agente fica em Configurações. Aqui você só garante que a chave da loja está pronta."
+                        : "Rode sync quando a fonte externa mudar ou quando a leitura da marca precisar ser atualizada."}
+                    </p>
+                    <div className="brandops-toolbar-actions pt-4">
+                      {activeProvider === "meta" ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={handleMetaSync}
+                            disabled={
+                              syncingMeta ||
+                              currentState.mode !== "api" ||
+                              !currentState.adAccountId ||
+                              !metaCredentialReady
+                            }
+                            className="brandops-button brandops-button-primary"
+                          >
+                            {syncingMeta ? (
+                              <>
+                                <Loader2 size={16} className="animate-spin" />
+                                Sincronizando Meta
+                              </>
+                            ) : (
+                              "Sincronizar Meta agora"
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleMetaCatalogSync}
+                            disabled={
+                              syncingCatalog ||
+                              currentState.mode !== "api" ||
+                              !currentState.catalogId ||
+                              !metaCredentialReady
+                            }
+                            className="brandops-button brandops-button-ghost"
+                          >
+                            {syncingCatalog ? (
+                              <>
+                                <Loader2 size={16} className="animate-spin" />
+                                Sincronizando catálogo
+                              </>
+                            ) : (
+                              "Sincronizar catálogo"
+                            )}
+                          </button>
+                        </>
+                      ) : null}
+                      {activeProvider === "ga4" ? (
                         <button
                           type="button"
-                          onClick={handleMetaSync}
+                          onClick={handleGa4Sync}
                           disabled={
-                            syncingMeta ||
+                            syncingGa4 ||
                             currentState.mode !== "api" ||
-                            !currentState.adAccountId ||
-                            !metaCredentialReady
+                            !currentState.propertyId ||
+                            !ga4CredentialReady
                           }
                           className="brandops-button brandops-button-primary"
                         >
-                          {syncingMeta ? (
+                          {syncingGa4 ? (
                             <>
                               <Loader2 size={16} className="animate-spin" />
-                              Sincronizando Meta
+                              Sincronizando GA4
                             </>
                           ) : (
-                            "Sincronizar Meta agora"
+                            "Sincronizar GA4 agora"
                           )}
                         </button>
-                        <button
-                          type="button"
-                          onClick={handleMetaCatalogSync}
-                          disabled={
-                            syncingCatalog ||
-                            currentState.mode !== "api" ||
-                            !currentState.catalogId ||
-                            !metaCredentialReady
-                          }
-                          className="brandops-button brandops-button-ghost"
-                        >
-                          {syncingCatalog ? (
-                            <>
-                              <Loader2 size={16} className="animate-spin" />
-                              Sincronizando catálogo
-                            </>
-                          ) : (
-                            "Sincronizar catálogo"
-                          )}
-                        </button>
-                      </>
-                    ) : null}
-                    {activeProvider === "ga4" ? (
-                      <button
-                        type="button"
-                        onClick={handleGa4Sync}
-                        disabled={
-                          syncingGa4 ||
-                          currentState.mode !== "api" ||
-                          !currentState.propertyId ||
-                          !ga4CredentialReady
-                        }
-                        className="brandops-button brandops-button-primary"
-                      >
-                        {syncingGa4 ? (
-                          <>
-                            <Loader2 size={16} className="animate-spin" />
-                            Sincronizando GA4
-                          </>
-                        ) : (
-                          "Sincronizar GA4 agora"
-                        )}
-                      </button>
-                    ) : null}
+                      ) : null}
+                      {activeProvider === "gemini" ? (
+                        <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="brandops-button brandops-button-primary">
+                          Abrir Configurações do Atlas
+                        </Link>
+                      ) : null}
+                    </div>
                     {activeProvider === "gemini" ? (
-                      <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="brandops-button brandops-button-primary">
-                        Abrir Configurações do Atlas
-                      </Link>
+                      <p className="mt-4 text-[11px] leading-5 text-on-surface-variant">
+                        Modelo, skill e janela padrão ficam na Central Estratégica.
+                      </p>
                     ) : null}
                   </div>
-                  {activeProvider === "gemini" ? (
-                    <p className="mt-4 text-[11px] leading-5 text-on-surface-variant">
-                      Modelo, skill e janela padrão ficam na Central Estratégica.
-                    </p>
-                  ) : null}
                 </div>
               </div>
             ) : null}
 
             {activeSection === "rules" ? (
               <div className="brandops-toolbar-panel text-sm text-on-surface-variant xl:h-full xl:min-h-0 xl:overflow-y-auto">
-                <p className="font-medium text-on-surface">{providerContextCard.title}</p>
-                <p className="leading-6">{providerContextCard.body}</p>
-                {providerTutorial ? (
-                  <div className="flex flex-wrap gap-2">
-                    {providerTutorial ? (
-                      <Link href={providerTutorial.route} className="brandops-button brandops-button-ghost">
+                <SectionHeading
+                  title="Guia operacional"
+                  description="O que esta fonte exige e quando vale agir."
+                />
+                <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem]">
+                  <div className="space-y-2">
+                    <StackItem
+                      title={providerContextCard.title}
+                      description={providerContextCard.body}
+                      aside="contexto"
+                      tone="default"
+                    />
+                    <StackItem
+                      title="Quando entrar aqui"
+                      description={
+                        activeProvider === "ink"
+                          ? "Quando a operação comercial subir um novo CSV ou quando o histórico pedir conferência."
+                          : activeProvider === "gemini"
+                            ? "Só para garantir prontidão técnica da chave. Estratégia do agente fica em Configurações."
+                            : "Quando a fonte mudar, falhar ou precisar reidratar a leitura da marca."
+                      }
+                      aside="uso"
+                      tone="info"
+                    />
+                    <StackItem
+                      title="Próximo passo fora desta tela"
+                      description={
+                        activeProvider === "meta"
+                          ? "Volte para Mídia e Performance depois do sync."
+                          : activeProvider === "ga4"
+                            ? "Volte para Tráfego Digital após validar propriedade e coleta."
+                            : activeProvider === "gemini"
+                              ? "Ajuste modelo, skill e aprendizado na Central Estratégica."
+                              : "Retome ETL e leituras comerciais assim que o upload fechar."
+                      }
+                      aside="seguir"
+                      tone="default"
+                    />
+                  </div>
+
+                  {providerTutorial ? (
+                    <div className="atlas-soft-subcard flex flex-col justify-between gap-4 px-4 py-4">
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                          Tutorial
+                        </p>
+                        <p className="mt-2 text-[12px] leading-6 text-on-surface-variant">
+                          Abra o passo a passo detalhado só quando precisar de setup ou validação externa.
+                        </p>
+                      </div>
+                      <Link href={providerTutorial.route} className="brandops-button brandops-button-ghost w-full justify-between">
                         {tutorialCtaLabel}
                       </Link>
-                    ) : null}
-                  </div>
-                ) : null}
+                    </div>
+                  ) : null}
+                </div>
               </div>
             ) : null}
             </div>
         </SurfaceCard>
-
-        <IntegrationRadar
-          activeProvider={activeProvider}
-          current={current}
-          currentState={currentState}
-          providerNextAction={providerNextAction}
-          tutorialHref={tutorialHref}
-          tutorialCtaLabel={tutorialCtaLabel}
-          formatSyncLabel={formatSyncLabel}
-          className="xl:h-full xl:min-h-0"
-        />
       </section>
     </div>
   );
