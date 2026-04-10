@@ -103,10 +103,42 @@ function compactFinancialReport(report: AnnualDreReport) {
 }
 
 function compactMediaReport(report: MediaReport) {
+  const compactAdCandidate = (item: MediaReport["ads"]["rows"][number]) => ({
+    campaignName: item.campaignName,
+    adsetName: item.adsetName,
+    adId: item.adId,
+    adName: item.adName,
+    creativeId: item.creativeId,
+    creativeName: item.creativeName,
+    roas: item.roas,
+    ctrLink: item.ctrLink,
+    spend: item.spend,
+    purchases: item.purchases,
+    confidence: item.confidence,
+    reasonCodes: item.reasonCodes,
+    summary: item.summary,
+  });
+
   return {
     summary: report.summary,
     commandRoom: report.commandRoom,
     highlights: report.highlights,
+    ads: {
+      analysis: report.ads.analysis,
+      highlights: report.ads.highlights,
+      counts: {
+        total: report.ads.rows.length,
+        scale: report.ads.playbook.scale.length,
+        creativeReview: report.ads.playbook.creativeReview.length,
+        audienceReview: report.ads.playbook.audienceReview.length,
+        pause: report.ads.playbook.pause.length,
+        maintain: report.ads.playbook.maintain.length,
+      },
+      scaleCandidates: report.ads.playbook.scale.slice(0, 3).map(compactAdCandidate),
+      creativeReviewCandidates: report.ads.playbook.creativeReview.slice(0, 3).map(compactAdCandidate),
+      audienceReviewCandidates: report.ads.playbook.audienceReview.slice(0, 3).map(compactAdCandidate),
+      pauseCandidates: report.ads.playbook.pause.slice(0, 3).map(compactAdCandidate),
+    },
     signals: report.signals,
     analysis: report.analysis,
     playbookCounts: {
@@ -295,7 +327,7 @@ const TOOL_DEFINITIONS: Record<
     reportId: "media",
     snapshotKey: "media",
     description:
-      "Carrega o relatório de mídia da Meta com command room, sinais, campanhas e playbook de escala, revisão e monitoramento.",
+      "Carrega o relatório de mídia da Meta com command room, sinais, campanhas e também a camada operacional de anúncios e criativos.",
     load: async (request, input) => {
       const query = buildQueryString(input);
       return compactMediaReport(

@@ -3,15 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, TrendingDown, TrendingUp } from "lucide-react";
-import {
-  AnalyticsCalloutCard,
-  AnalyticsKpiCard,
-} from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { ContributionTrendPanel, mapContributionTrendPoints } from "@/components/finance/ContributionTrendPanel";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import { OperationalMetric, OperationalMetricStrip, PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { currencyFormatter, percentFormatter } from "@/lib/brandops/format";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 import { cn } from "@/lib/utils";
 
 export default function ContributionMarginPage() {
@@ -64,6 +61,8 @@ export default function ContributionMarginPage() {
       <EmptyState
         title="Nenhuma marca em foco"
         description="Escolha uma loja para abrir o histórico da margem de contribuição."
+        ctaHref={null}
+        ctaLabel={null}
       />
     );
   }
@@ -75,6 +74,9 @@ export default function ContributionMarginPage() {
       <EmptyState
         title="Histórico indisponível"
         description="Não foi possível consolidar a evolução da margem para esta loja."
+        ctaHref={APP_ROUTES.dre}
+        ctaLabel="Abrir DRE mensal"
+        variant="error"
       />
     );
   }
@@ -154,69 +156,74 @@ export default function ContributionMarginPage() {
       />
 
       <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Decisão da margem"
-          title={primaryAction}
-          description="O movimento mais útil agora para proteger contribuição e resultado."
-          tone={report.total.contributionMargin >= 0 ? "info" : "warning"}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Pressão dominante"
-          title={dominantPressure}
-          description="Hoje é o maior peso sobre a receita líquida disponível."
-          tone="warning"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Melhor leitura seguinte"
-          title={report.total.contributionMargin < 0 ? "Abrir DRE consolidado" : "Cruzar com mídia"}
-          description={
-            report.total.contributionMargin < 0
-              ? "Valide mês, despesas e resultado junto da matriz gerencial."
-              : "Entenda se a margem ganhou ou perdeu tração por gasto ou retorno."
-          }
+        <article className="atlas-soft-subcard p-4">
+          <p className="atlas-analytics-eyebrow">Decisão da margem</p>
+          <p className="mt-1.5 text-[0.98rem] font-semibold text-on-surface">{primaryAction}</p>
+          <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+            O movimento mais útil agora para proteger contribuição e resultado.
+          </p>
+        </article>
+        <article className="atlas-soft-subcard p-4">
+          <p className="atlas-analytics-eyebrow">Pressão dominante</p>
+          <p className="mt-1.5 text-[0.98rem] font-semibold text-on-surface">{dominantPressure}</p>
+          <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+            Hoje é o maior peso sobre a receita líquida disponível.
+          </p>
+        </article>
+        <Link
           href={report.total.contributionMargin < 0 ? "/dre" : "/media"}
-          tone="info"
-        />
+          className="atlas-soft-subcard block p-4 transition hover:border-secondary/30"
+        >
+          <p className="atlas-analytics-eyebrow">Melhor leitura seguinte</p>
+          <p className="mt-1.5 text-[0.98rem] font-semibold text-on-surface">
+            {report.total.contributionMargin < 0 ? "Abrir DRE consolidado" : "Cruzar com mídia"}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+            {report.total.contributionMargin < 0
+              ? "Valide mês, despesas e resultado junto da matriz gerencial."
+              : "Entenda se a margem ganhou ou perdeu tração por gasto ou retorno."}
+          </p>
+        </Link>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-        <AnalyticsKpiCard
+      <OperationalMetricStrip desktopColumns={5}>
+        <OperationalMetric
           label={contributionCardLabel}
           value={currencyFormatter.format(report.total.contributionAfterMedia)}
           tone={report.total.contributionAfterMedia >= 0 ? "positive" : "warning"}
-          description={contributionCardHelp}
+          helper={contributionCardHelp}
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label={resultCardLabel}
           value={currencyFormatter.format(report.total.netResult)}
           tone={report.total.netResult >= 0 ? "positive" : "warning"}
-          description={resultCardHelp}
+          helper={resultCardHelp}
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Margem de contribuição"
           value={percentFormatter.format(report.total.contributionMargin)}
           tone={report.total.contributionMargin >= 0 ? "positive" : "warning"}
-          description="Participação da contribuição sobre a receita líquida disponível."
+          helper="Participação da contribuição sobre a receita líquida disponível."
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Melhor mês"
           value={bestMonth ? currencyFormatter.format(bestMonth.contributionAfterMedia) : "N/A"}
-          description={bestMonth ? `${bestMonth.label}` : "Sem histórico suficiente"}
+          helper={bestMonth ? `${bestMonth.label}` : "Sem histórico suficiente"}
           tone="positive"
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Pior mês"
           value={worstMonth ? currencyFormatter.format(worstMonth.contributionAfterMedia) : "N/A"}
-          description={worstMonth ? `${worstMonth.label}` : "Sem histórico suficiente"}
+          helper={worstMonth ? `${worstMonth.label}` : "Sem histórico suficiente"}
           tone={worstMonth && worstMonth.contributionAfterMedia < 0 ? "warning" : "default"}
         />
-      </section>
+      </OperationalMetricStrip>
 
       <SurfaceCard>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <SectionHeading
             title="Exploração da margem"
-            description="Radar operacional ou linha do tempo, sem alongar a leitura."
+            description="Abra o radar para diagnóstico rápido ou a linha do tempo para entender a evolução da margem."
           />
           <div className="brandops-subtabs">
             <button
@@ -344,27 +351,27 @@ export default function ContributionMarginPage() {
                 description="Abra só o ponto do sistema que mais ajuda a explicar ou corrigir a margem."
               />
               <div className="mt-5 grid gap-3">
-                <AnalyticsCalloutCard
-                  href="/dre"
-                  eyebrow="Próxima leitura"
-                  title="Abrir DRE consolidado"
-                  description="Conferir os meses com maior compressão de margem junto com despesas e resultado final."
-                  tone="info"
-                />
-                <AnalyticsCalloutCard
-                  href="/media"
-                  eyebrow="Próxima leitura"
-                  title="Cruzar com Performance Mídia"
-                  description="Entender se a pressão veio de aumento de mídia, queda de ROAS ou mudança de mix."
-                  tone="default"
-                />
-                <AnalyticsCalloutCard
-                  href="/cost-center"
-                  eyebrow="Próxima leitura"
-                  title="Revisar lançamentos do DRE"
-                  description="Validar se despesas operacionais ou competências recentes distorceram o resultado."
-                  tone="warning"
-                />
+                <Link href="/dre" className="atlas-soft-subcard block p-4 transition hover:border-secondary/30">
+                  <p className="atlas-analytics-eyebrow">Próxima leitura</p>
+                  <p className="mt-1.5 text-[0.98rem] font-semibold text-on-surface">Abrir DRE consolidado</p>
+                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                    Conferir os meses com maior compressão de margem junto com despesas e resultado final.
+                  </p>
+                </Link>
+                <Link href="/media" className="atlas-soft-subcard block p-4 transition hover:border-secondary/30">
+                  <p className="atlas-analytics-eyebrow">Próxima leitura</p>
+                  <p className="mt-1.5 text-[0.98rem] font-semibold text-on-surface">Cruzar com Performance Mídia</p>
+                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                    Entender se a pressão veio de aumento de mídia, queda de ROAS ou mudança de mix.
+                  </p>
+                </Link>
+                <Link href="/cost-center" className="atlas-soft-subcard block p-4 transition hover:border-secondary/30">
+                  <p className="atlas-analytics-eyebrow">Próxima leitura</p>
+                  <p className="mt-1.5 text-[0.98rem] font-semibold text-on-surface">Revisar lançamentos do DRE</p>
+                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                    Validar se despesas operacionais ou competências recentes distorceram o resultado.
+                  </p>
+                </Link>
               </div>
             </SurfaceCard>
           </div>

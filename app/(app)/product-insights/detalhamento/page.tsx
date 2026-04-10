@@ -1,4 +1,4 @@
-import { ProductInsightsWorkspace } from "../page";
+import { ProductInsightsWorkspace } from "../ProductInsightsWorkspace";
 
 export default function ProductInsightsDetailPage() {
   return <ProductInsightsWorkspace forcedMode="detail" />;

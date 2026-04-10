@@ -450,7 +450,7 @@ function shouldIncludeReport(
 
 function buildReportPlan(input: AtlasAnalystExecutionInput) {
   const skill = resolveAtlasAnalystSkill(input);
-  const selectedReports = skill.reportPlan.filter((reportId, index, reports) => {
+  const selectedReports = skill.reportPlan.filter((reportId, _index, reports) => {
     if (reportId === "financial") {
       return true;
     }
@@ -573,21 +573,21 @@ function buildToolPlanningPrompt(
       : input.periodLabel ?? "todo o período disponível";
 
   return [
-    "Consulta do operador Atlas:",
-    `- Marca: ${input.brandLabel ?? input.brandId}`,
+    "Consulta atual para o Atlas:",
+    `- Contexto de marca ativo: ${input.brandLabel ?? input.brandId}`,
     `- Periodo: ${periodText}`,
     `- Tela atual: ${input.pageContext ?? "nao informada"}`,
-    `- Pergunta: ${input.question.trim()}`,
+    `- Pergunta da pessoa logada: ${input.question.trim()}`,
     `- Tools preferenciais para este caso: ${preferredToolNames.join(", ")}`,
     memoryContext.length
       ? `- Memoria recente do analyst: ${JSON.stringify(memoryContext, null, 2)}`
       : "- Memoria recente do analyst: sem historico relevante ainda.",
     curatedContext.length
-      ? `- Contexto curado da marca: ${JSON.stringify(curatedContext, null, 2)}`
-      : "- Contexto curado da marca: sem entradas recentes registradas.",
+      ? `- Contexto curado do negócio: ${JSON.stringify(curatedContext, null, 2)}`
+      : "- Contexto curado do negócio: sem entradas recentes registradas.",
     learningContext
-      ? `- Aprendizado consolidado da marca: ${JSON.stringify(learningContext, null, 2)}`
-      : "- Aprendizado consolidado da marca: sem snapshot aprendido ainda.",
+      ? `- Aprendizado consolidado do negócio: ${JSON.stringify(learningContext, null, 2)}`
+      : "- Aprendizado consolidado do negócio: sem snapshot aprendido ainda.",
     inkKnowledgeMatches.length
       ? `- Base documental da INK consultada: ${JSON.stringify(
           inkKnowledgeMatches.map((match) => ({
@@ -602,8 +602,8 @@ function buildToolPlanningPrompt(
         )}`
       : "- Base documental da INK consultada: nenhuma referência relevante para esta pergunta.",
     operatorGuidance?.trim()
-      ? `- Guia operacional da marca para o Atlas: ${operatorGuidance.trim()}`
-      : "- Guia operacional da marca para o Atlas: sem orientação estruturada registrada.",
+      ? `- Guia operacional para o Atlas: ${operatorGuidance.trim()}`
+      : "- Guia operacional para o Atlas: sem orientação estruturada registrada.",
     "",
     "Antes da resposta final, consulte as ferramentas internas do Atlas para montar a base factual.",
     "Chame apenas uma ferramenta por vez.",
@@ -643,25 +643,25 @@ function buildFinalSynthesisPrompt(
       : input.periodLabel ?? "todo o período disponível";
 
   return [
-    "Agora gere a resposta final para o operador do Atlas.",
+    "Agora gere a resposta final do Atlas conversando diretamente com a pessoa logada no BrandOps.",
     "Use somente os fatos presentes nas tools consultadas e no contexto abaixo.",
     "",
     "Contexto da consulta:",
-    `- Marca: ${input.brandLabel ?? input.brandId}`,
+    `- Contexto de marca ativo: ${input.brandLabel ?? input.brandId}`,
     `- Periodo: ${periodText}`,
     `- Tela atual: ${input.pageContext ?? "nao informada"}`,
-    `- Pergunta do operador: ${input.question.trim()}`,
+    `- Pergunta da pessoa logada: ${input.question.trim()}`,
     warnings.length ? `- Avisos de dados: ${warnings.join(" ")}` : "- Avisos de dados: nenhum aviso relevante.",
     usedReports.length ? `- Relatorios consultados: ${usedReports.join(", ")}` : "- Relatorios consultados: nenhum relatorio consultado.",
     memoryContext.length
       ? `- Memoria recente: ${JSON.stringify(memoryContext, null, 2)}`
       : "- Memoria recente: sem historico relevante.",
     curatedContext.length
-      ? `- Contexto curado da marca: ${JSON.stringify(curatedContext, null, 2)}`
-      : "- Contexto curado da marca: sem entradas recentes registradas.",
+      ? `- Contexto curado do negócio: ${JSON.stringify(curatedContext, null, 2)}`
+      : "- Contexto curado do negócio: sem entradas recentes registradas.",
     learningContext
-      ? `- Aprendizado consolidado da marca: ${JSON.stringify(learningContext, null, 2)}`
-      : "- Aprendizado consolidado da marca: sem snapshot aprendido ainda.",
+      ? `- Aprendizado consolidado do negócio: ${JSON.stringify(learningContext, null, 2)}`
+      : "- Aprendizado consolidado do negócio: sem snapshot aprendido ainda.",
     inkKnowledgeMatches.length
       ? `- Base documental da INK consultada: ${JSON.stringify(
           inkKnowledgeMatches.map((match) => ({
@@ -676,8 +676,8 @@ function buildFinalSynthesisPrompt(
         )}`
       : "- Base documental da INK consultada: nenhuma referência relevante para esta pergunta.",
     operatorGuidance?.trim()
-      ? `- Guia operacional da marca: ${operatorGuidance.trim()}`
-      : "- Guia operacional da marca: sem orientação estruturada registrada.",
+      ? `- Guia operacional do negócio: ${operatorGuidance.trim()}`
+      : "- Guia operacional do negócio: sem orientação estruturada registrada.",
     "",
     "Frame executivo consolidado pelo backend:",
     JSON.stringify(decisionFrame, null, 2),
@@ -687,6 +687,8 @@ function buildFinalSynthesisPrompt(
     "",
     "Instrucoes finais:",
     "- Responda em portugues pt-BR.",
+    "- Fale diretamente com a pessoa logada, como uma conversa natural de trabalho.",
+    "- Evite narrar a marca em terceira pessoa quando estiver orientando a acao; prefira falar com voce e usar a marca apenas como contexto factual.",
     "- Seja direto, operacional e realista.",
     "- Aponte primeiro o driver dominante antes de listar acoes secundarias.",
     "- Trate o frame executivo do backend como trilho inicial da leitura. So contradiga esse frame se a base factual em JSON mostrar claramente o contrario.",
@@ -1013,3 +1015,4 @@ export async function runAtlasAnalyst(
     feedbackVote: null,
   };
 }
+

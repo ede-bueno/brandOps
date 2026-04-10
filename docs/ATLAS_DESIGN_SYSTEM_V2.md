@@ -74,7 +74,8 @@ Criar uma linguagem única para o Atlas, com base estrutural inspirada no Carbon
 - `PageHeader`
 - `WorkspaceTabs`
 - `AnalyticsPanel`
-- `AnalyticsKpiCard`
+- `OperationalMetricStrip`
+- `OperationalMetric`
 - `AnalyticsCalloutCard`
 - `StackItem`
 - `SurfaceCard`

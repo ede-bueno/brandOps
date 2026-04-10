@@ -7,6 +7,11 @@ import {
 import { parseDateParam } from "@/lib/brandops/server/report-params";
 
 const PAGE_SIZE = 1000;
+const MEDIA_SELECT_WITH_CREATIVE =
+  "id, report_start, date, campaign_id, campaign_name, adset_id, adset_name, ad_id, ad_name, creative_id, creative_name, delivery, reach, impressions, clicks_all, link_clicks, spend, purchases, conversion_value, is_ignored";
+const MEDIA_SELECT_BASE =
+  "id, report_start, date, campaign_name, adset_name, ad_name, delivery, reach, impressions, clicks_all, link_clicks, spend, purchases, conversion_value, is_ignored";
+type MediaReportRows = Parameters<typeof buildMediaReport>[0];
 
 async function fetchAllRows<T>(
   fetchPage: (from: number, to: number) => Promise<{ data: T[] | null; error: Error | null }>,
@@ -33,6 +38,10 @@ async function fetchAllRows<T>(
 }
 
 function needsMediaFallback(report: ReturnType<typeof normalizeMediaReportPayload>) {
+  if (report.campaigns.length > 0 && report.ads.rows.length <= 0) {
+    return true;
+  }
+
   if (report.summary.impressions <= 0) {
     return false;
   }
@@ -51,6 +60,42 @@ function needsMediaFallback(report: ReturnType<typeof normalizeMediaReportPayloa
       ((campaign.clicksAll > 0 && campaign.ctrAll <= 0) ||
         (campaign.linkClicks > 0 && campaign.ctrLink <= 0)),
   );
+}
+
+function isMissingMediaCreativeColumns(error: unknown) {
+  return (
+    error instanceof Error &&
+    /column media_performance\.(campaign_id|adset_id|ad_id|creative_id|creative_name) does not exist/i.test(
+      error.message,
+    )
+  );
+}
+
+async function fetchMediaRows(
+  supabase: Awaited<ReturnType<typeof requireBrandAccess>>["supabase"],
+  brandId: string,
+): Promise<MediaReportRows> {
+  try {
+    return await fetchAllRows<MediaReportRows[number]>(async (pageFrom, pageTo) =>
+      supabase
+        .from("media_performance")
+        .select(MEDIA_SELECT_WITH_CREATIVE)
+        .eq("brand_id", brandId)
+        .range(pageFrom, pageTo),
+    );
+  } catch (error) {
+    if (!isMissingMediaCreativeColumns(error)) {
+      throw error;
+    }
+
+    return fetchAllRows<MediaReportRows[number]>(async (pageFrom, pageTo) =>
+      supabase
+        .from("media_performance")
+        .select(MEDIA_SELECT_BASE)
+        .eq("brand_id", brandId)
+        .range(pageFrom, pageTo),
+    );
+  }
 }
 
 export async function GET(
@@ -78,15 +123,7 @@ export async function GET(
           .eq("brand_id", brandId)
           .eq("provider", "meta")
           .maybeSingle(),
-        fetchAllRows(async (pageFrom, pageTo) =>
-          supabase
-            .from("media_performance")
-            .select(
-              "id, report_start, date, campaign_name, adset_name, ad_name, delivery, reach, impressions, clicks_all, link_clicks, spend, purchases, conversion_value, is_ignored",
-            )
-            .eq("brand_id", brandId)
-            .range(pageFrom, pageTo),
-        ),
+        fetchMediaRows(supabase, brandId),
       ]);
 
       if (integrationError) {
@@ -116,15 +153,7 @@ export async function GET(
         .eq("brand_id", brandId)
         .eq("provider", "meta")
         .maybeSingle(),
-      fetchAllRows(async (pageFrom, pageTo) =>
-        supabase
-          .from("media_performance")
-          .select(
-            "id, report_start, date, campaign_name, adset_name, ad_name, delivery, reach, impressions, clicks_all, link_clicks, spend, purchases, conversion_value, is_ignored",
-          )
-          .eq("brand_id", brandId)
-          .range(pageFrom, pageTo),
-      ),
+      fetchMediaRows(supabase, brandId),
     ]);
 
     if (integrationError) {

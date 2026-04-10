@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  distDir:
+    (process.env.BRANDOPS_DIST_DIR?.trim() as string | undefined) ||
+    undefined,
   output:
     (process.env.BRANDOPS_OUTPUT_MODE?.trim() as "standalone" | undefined) ||
     undefined,

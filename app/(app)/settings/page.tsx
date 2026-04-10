@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
-import { AnalyticsCalloutCard } from "@/components/analytics/AnalyticsPrimitives";
 import { AtlasBusinessLearningPanel } from "@/components/AtlasBusinessLearningPanel";
 import { AtlasAnalystSettingsPanel } from "@/components/AtlasAnalystSettingsPanel";
 import { AtlasContextWorkspace } from "@/components/AtlasContextWorkspace";
@@ -213,7 +212,7 @@ export default function SettingsPage() {
       <PageHeader
         eyebrow="Configurações"
         title="Central estratégica"
-        description="Ajustes de governança, IA, fontes e equipe fora do fluxo operacional principal."
+        description="Governança, IA, fontes e equipe da marca."
         actions={
           <div className="flex flex-wrap gap-2">
             <span className="atlas-inline-metric">{selectedBrandName}</span>
@@ -222,72 +221,71 @@ export default function SettingsPage() {
         }
       />
 
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Próximo clique"
-          title={strategicFocus.title}
-          description={strategicFocus.description}
-          href={strategicFocus.href}
-          tone={strategicFocus.tone}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Plano"
-          title={BRAND_PLAN_LABELS[governance.planTier]}
-          description={atlasEnabled ? "Atlas IA liberado nesta marca." : "IA ainda bloqueada para esta marca."}
-          href={APP_ROUTES.settingsGovernance}
-          tone={atlasEnabled ? "positive" : "default"}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Aprendizado"
-          title={governance.featureFlags.brandLearning ? "Aprender negócio liberado" : "Aprender negócio bloqueado"}
-          description="Memória, contexto curado e comportamento do Atlas ficam aqui."
-          href={APP_ROUTES.settingsAtlasAi}
-          tone={governance.featureFlags.brandLearning ? "info" : "default"}
-        />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(20rem,0.92fr)]">
         <SurfaceCard className="atlas-settings-hub">
           <SectionHeading
-            title="Abrir agora"
-            description="Escolha o bloco certo e siga."
+            title="Direção da marca"
+            description="Abra o módulo certo para destravar a operação."
             aside={<span className="atlas-inline-metric">{modules.length} frentes</span>}
           />
 
-          <div className="mt-4 grid gap-2 md:grid-cols-2">
-            {modules.map((module) => {
-              const Icon = module.icon;
-              return (
-                <Link key={module.href} href={module.href} prefetch={false} className="relative z-10 block">
-                  <StackItem
-                    title={
-                      <span className="flex items-center gap-2">
-                        <span className="inline-flex h-7 w-7 items-center justify-center border border-outline bg-surface-container-low text-primary">
-                          <Icon size={14} />
-                        </span>
-                        <span>{module.label}</span>
-                      </span>
-                    }
-                    description={module.description}
-                    aside={
-                      <span className="inline-flex items-center gap-1.5">
-                        {module.aside ?? "Abrir"}
-                        <ArrowUpRight size={12} />
-                      </span>
-                    }
-                    tone={module.tone ?? "default"}
-                    className="h-full transition hover:border-secondary/30"
-                  />
+          <div className="mt-4 atlas-component-stack">
+            <article className="panel-muted p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                Próximo clique
+              </p>
+              <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-on-surface">{strategicFocus.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                    {strategicFocus.description}
+                  </p>
+                </div>
+                <Link
+                  href={strategicFocus.href}
+                  prefetch={false}
+                  className="brandops-button brandops-button-primary"
+                >
+                  {strategicFocus.cta}
                 </Link>
-              );
-            })}
+              </div>
+            </article>
+
+            <div className="grid gap-2 md:grid-cols-2">
+              {modules.map((module) => {
+                const Icon = module.icon;
+                return (
+                  <Link key={module.href} href={module.href} prefetch={false} className="relative z-10 block">
+                    <StackItem
+                      title={
+                        <span className="flex items-center gap-2">
+                          <span className="inline-flex h-7 w-7 items-center justify-center border border-outline bg-surface-container-low text-primary">
+                            <Icon size={14} />
+                          </span>
+                          <span>{module.label}</span>
+                        </span>
+                      }
+                      description={module.description}
+                      aside={
+                        <span className="inline-flex items-center gap-1.5">
+                          {module.aside ?? "Abrir"}
+                          <ArrowUpRight size={12} />
+                        </span>
+                      }
+                      tone={module.tone ?? "default"}
+                      className="h-full transition hover:border-secondary/30"
+                    />
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </SurfaceCard>
 
         <SurfaceCard className="atlas-settings-focus">
           <SectionHeading
-            title="O que pede ajuste"
-            description="Um relance para decidir o próximo clique."
+            title="Pulso da marca"
+            description="Estado atual das frentes principais da marca."
             aside={<ShieldCheck size={14} className="text-primary" />}
           />
 
@@ -305,18 +303,18 @@ export default function SettingsPage() {
 
           <div className="mt-4 atlas-component-stack-compact">
             <StackItem
-              title={strategicFocus.title}
-              description={strategicFocus.description}
+              title="Plano"
+              description={atlasEnabled ? "Atlas IA já pode operar nesta marca." : "A camada Atlas ainda depende do plano."}
               aside={
                 <Link
-                  href={strategicFocus.href}
+                  href={APP_ROUTES.settingsGovernance}
                   prefetch={false}
                   className="relative z-10 text-secondary hover:underline"
                 >
-                  {strategicFocus.cta}
+                  Abrir governança
                 </Link>
               }
-              tone={strategicFocus.tone}
+              tone={atlasEnabled ? "positive" : "default"}
             />
             <StackItem
               title="Meta"
@@ -341,6 +339,20 @@ export default function SettingsPage() {
               }
               aside={!atlasEnabled ? "Bloqueado" : atlasReady ? "Ativo" : "Pendente"}
               tone={!atlasEnabled ? "warning" : atlasReady ? "positive" : "info"}
+            />
+            <StackItem
+              title="Aprendizado"
+              description={
+                governance.featureFlags.brandLearning
+                  ? "Memória e comportamento do Atlas podem evoluir nesta marca."
+                  : "O aprendizado do negócio ainda depende da governança."
+              }
+              aside={
+                <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="relative z-10 text-secondary hover:underline">
+                  Abrir Atlas
+                </Link>
+              }
+              tone={governance.featureFlags.brandLearning ? "info" : "default"}
             />
           </div>
         </SurfaceCard>
@@ -396,11 +408,11 @@ export default function SettingsPage() {
 
         <SurfaceCard className="atlas-settings-focus">
           <SectionHeading
-            title="Apoio rápido"
-            description="Atalhos que destravam operação sem poluir a Torre."
+            title="Apoio operacional"
+            description="Guias e atalhos para executar a operação."
             aside={
               <InfoHint label="Como usar">
-                Tutoriais e ajuda ficam fora do fluxo operacional principal, mas continuam acessíveis daqui.
+                Use esta área para abrir ajuda, tutoriais e acessos sem sair da marca.
               </InfoHint>
             }
           />

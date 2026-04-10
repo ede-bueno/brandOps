@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, KeyRound, Loader2, LockKeyhole, MailCheck } from "lucide-react";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { BRANDING } from "@/lib/branding";
+import { requestBrandSelectionOnNextWorkspaceLoad } from "@/lib/brandops/provider-workspace";
 
 type LoginMode = "password" | "magic-link";
 
@@ -63,10 +64,12 @@ export default function LoginPage() {
 
     try {
       if (mode === "password") {
+        requestBrandSelectionOnNextWorkspaceLoad();
         await signIn(email.trim(), password);
         return;
       }
 
+      requestBrandSelectionOnNextWorkspaceLoad();
       await requestMagicLink(email.trim());
       setNotice(
         "Se este email estiver autorizado no Atlas, enviamos um link magico para concluir o acesso.",

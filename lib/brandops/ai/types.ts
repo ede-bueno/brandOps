@@ -58,6 +58,7 @@ export interface AtlasAnalystRequestPayload {
   pageContext?: string | null;
   periodLabel?: string | null;
   brandLabel?: string | null;
+  userLabel?: string | null;
   from?: string | null;
   to?: string | null;
 }
@@ -230,3 +231,5 @@ export interface AtlasBrandLearningFeedbackSummary {
   alignedCount: number;
   needsReviewCount: number;
 }
+
+

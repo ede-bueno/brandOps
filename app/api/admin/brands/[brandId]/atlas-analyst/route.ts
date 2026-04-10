@@ -107,6 +107,7 @@ export async function POST(
         pageContext: body.pageContext ?? null,
         periodLabel: body.periodLabel ?? null,
         brandLabel: body.brandLabel ?? null,
+        userLabel: body.userLabel ?? context.user.email ?? null,
         from: body.from ?? null,
         to: body.to ?? null,
       },
@@ -133,6 +134,7 @@ export async function POST(
         pageContext: body.pageContext ?? null,
         periodLabel: body.periodLabel ?? null,
         brandLabel: body.brandLabel ?? null,
+        userLabel: body.userLabel ?? context.user.email ?? null,
         from: body.from ?? null,
         to: body.to ?? null,
       },
@@ -200,3 +202,5 @@ export async function PATCH(
     );
   }
 }
+
+

@@ -6,15 +6,22 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock3,
-  DatabaseZap,
   FileCheck2,
   Loader2,
   UploadCloud,
 } from "lucide-react";
-import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { EmptyState } from "@/components/EmptyState";
-import { InlineNotice, PageHeader, SectionHeading, StackItem, SurfaceCard } from "@/components/ui-shell";
+import {
+  InlineNotice,
+  OperationalMetric,
+  OperationalMetricStrip,
+  PageHeader,
+  SectionHeading,
+  StackItem,
+  SurfaceCard,
+  WorkspaceTabs,
+} from "@/components/ui-shell";
 import type { CsvFileKind, IntegrationMode, IntegrationProvider } from "@/lib/brandops/types";
 
 type ImportStatus = "idle" | "running" | "success" | "error";
@@ -97,7 +104,7 @@ function getProviderMode(
 }
 
 export default function ImportPage() {
-  const { activeBrand, importFiles, isBrandHydrating } = useBrandOps();
+  const { activeBrand, importFiles, isBrandHydrating, selectedPeriodLabel } = useBrandOps();
   const [files, setFiles] = useState<File[]>([]);
   const [status, setStatus] = useState<ImportStatus>("idle");
   const [message, setMessage] = useState("");
@@ -238,6 +245,8 @@ export default function ImportPage() {
       <EmptyState
         title="Nenhuma marca selecionada"
         description="Escolha uma loja para importar e consolidar os arquivos da operação."
+        ctaHref={null}
+        ctaLabel={null}
       />
     );
   }
@@ -247,108 +256,123 @@ export default function ImportPage() {
       <PageHeader
         eyebrow="Integração de dados"
         title="Console de importação"
-        description="Envie arquivos, confira a fila e mantenha a base íntegra sem espalhar decisões pela operação."
+        description="Envie arquivos, acompanhe a fila e mantenha a base íntegra."
         actions={
           <div className="flex flex-wrap gap-2">
+            <WorkspaceTabs
+              items={importTabs.map((tab) => ({
+                key: tab.key,
+                label: tab.label,
+                active: activeTab === tab.key,
+                onClick: () => setActiveTab(tab.key),
+              }))}
+            />
             <span className="atlas-inline-metric">{activeBrand.name}</span>
             <span className="atlas-inline-metric">{progressPercent}% consolidado</span>
           </div>
         }
       />
 
-      <SurfaceCard className="p-0 overflow-hidden">
-        <div className="flex flex-col gap-4 border-b border-outline p-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary-container text-secondary">
-              <DatabaseZap size={22} />
-            </div>
-            <div>
-              <p className="eyebrow">Base ativa</p>
-              <h2 className="font-headline text-lg font-semibold tracking-tight text-on-surface">
-                {activeBrand.name}
-              </h2>
-              <p className="mt-1 text-sm text-on-surface-variant">
-                {progressPercent}% do checklist padrão já consolidado.
-              </p>
-            </div>
-          </div>
-
-          <div className="min-w-[220px]">
-            <div className="mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-              <span>Saúde da base</span>
-              <span>{progressPercent}%</span>
-            </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-surface-container-high">
-              <div
-                className="h-full rounded-full bg-secondary transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="px-4 pt-4">
-          <div className="brandops-subtabs">
-            {importTabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className="brandops-subtab"
-                data-active={activeTab === tab.key}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </SurfaceCard>
-
-      <section className="atlas-kpi-grid xl:grid-cols-4">
-        <AnalyticsKpiCard
+      <OperationalMetricStrip>
+        <OperationalMetric
           label="Rodadas"
           value={String(stats?.totalRuns ?? 0)}
-          description="Total de importações registradas pela marca."
+          helper="Total de importações registradas pela marca."
           tone="info"
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Linhas"
           value={(stats?.totalRows ?? 0).toLocaleString("pt-BR")}
-          description="Volume total lido por CSV ao longo do histórico."
-          tone="default"
+          helper="Volume total lido por CSV ao longo do histórico."
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Consolidação"
           value={String(progressPercent)}
-          description="Percentual do checklist padrão já consolidado."
+          helper="Percentual do checklist padrão já consolidado."
           tone="positive"
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Período"
           value={`${formatDate(stats?.firstOrderDate)} - ${formatDate(stats?.lastOrderDate)}`}
-          description="Janela comercial coberta pela base ativa."
-          tone="default"
+          helper="Janela comercial coberta pela base ativa."
         />
-      </section>
+      </OperationalMetricStrip>
 
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Próximo movimento"
-          title={primaryAction}
-          description="A melhor ação agora para manter a base íntegra e pronta para leitura."
-          tone="info"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Cobertura atual"
-          title={`${completedSources}/${sourceChecklist.length} fontes consolidadas`}
-          description="Quanto do checklist padrão já está coberto nesta marca."
-          tone={progressPercent >= 100 ? "positive" : "warning"}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Modo Meta"
-          title={metaMode}
-          description="O canal Meta continua aceitando contingência por CSV quando necessário."
-          tone="default"
-        />
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(20rem,0.92fr)]">
+        <SurfaceCard>
+          <SectionHeading
+            title="Direção da base"
+            description="O próximo movimento para manter a importação íntegra e pronta para operação."
+            aside={<span className="atlas-inline-metric">{selectedPeriodLabel}</span>}
+          />
+          <div className="mt-5 atlas-component-stack">
+            <article className="panel-muted p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                Próximo movimento
+              </p>
+              <p className="mt-2 font-semibold text-on-surface">{primaryAction}</p>
+              <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                A ação principal agora para manter a base íntegra e pronta para uso.
+              </p>
+            </article>
+            <div className="grid gap-3 md:grid-cols-2">
+              <article className="panel-muted p-3.5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                  Cobertura atual
+                </p>
+                <p className="mt-2 font-semibold text-on-surface">
+                  {completedSources}/{sourceChecklist.length} fontes consolidadas
+                </p>
+                <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                  O checklist padrão da marca já avançou {progressPercent}% neste ambiente.
+                </p>
+              </article>
+              <article className="panel-muted p-3.5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                  Modo Meta
+                </p>
+                <p className="mt-2 font-semibold text-on-surface">{metaMode}</p>
+                <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                  O canal Meta continua aceitando contingência por CSV quando necessário.
+                </p>
+              </article>
+            </div>
+          </div>
+        </SurfaceCard>
+
+        <SurfaceCard>
+          <SectionHeading
+            title="Pulso da importação"
+            description="Saúde da base e janela coberta."
+          />
+            <div className="mt-5 atlas-component-stack">
+              <article className="panel-muted p-3.5">
+                <div className="mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                  <span>Saúde da base</span>
+                <span>{progressPercent}%</span>
+              </div>
+              <div className="h-2.5 overflow-hidden rounded-full bg-surface-container-high">
+                <div
+                  className="h-full rounded-full bg-secondary transition-all duration-500"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </article>
+            <OperationalMetricStrip baseColumns={2} desktopColumns={2}>
+              <OperationalMetric
+                label="Checklist"
+                value={`${completedSources}/${sourceChecklist.length}`}
+                helper="Fontes já consolidadas na base ativa."
+                tone={progressPercent >= 100 ? "positive" : "info"}
+              />
+              <OperationalMetric
+                label="Janela coberta"
+                value={`${formatDate(stats?.firstOrderDate)} - ${formatDate(stats?.lastOrderDate)}`}
+                helper="Faixa comercial já reconhecida na marca."
+              />
+            </OperationalMetricStrip>
+          </div>
+        </SurfaceCard>
       </section>
 
       {activeTab === "upload" && (
@@ -436,20 +460,19 @@ export default function ImportPage() {
           <SurfaceCard className="flex flex-col gap-4">
             <SectionHeading
               title="Guia rápido"
-              description="Regras curtas para importar sem ruído."
+              description="Regras rápidas para importar a base."
             />
             <div className="grid gap-3 sm:grid-cols-2">
-              <AnalyticsKpiCard
+              <OperationalMetric
                 label="Checklist pronto"
                 value={`${completedSources}/${sourceChecklist.length}`}
-                description="Fontes já consolidadas na base ativa."
+                helper="Fontes já consolidadas na base ativa."
                 tone={progressPercent >= 100 ? "positive" : "info"}
               />
-              <AnalyticsKpiCard
+              <OperationalMetric
                 label="Janela coberta"
                 value={`${formatDate(stats?.firstOrderDate)} - ${formatDate(stats?.lastOrderDate)}`}
-                description="Faixa comercial já reconhecida na marca."
-                tone="default"
+                helper="Faixa comercial já reconhecida na marca."
               />
             </div>
             <details className="atlas-disclosure" open={!files.length}>
@@ -469,31 +492,30 @@ export default function ImportPage() {
 
       {activeTab === "checklist" && (
         <section className="grid gap-4 xl:grid-cols-[1fr_1.05fr]">
-          <SurfaceCard className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
-            <AnalyticsKpiCard
-              label="Rodadas importadas"
-              value={String(stats?.totalRuns ?? 0)}
-              description="Total acumulado de execuções por fonte."
-              tone="info"
-            />
-            <AnalyticsKpiCard
-              label="Linhas processadas"
-              value={(stats?.totalRows ?? 0).toLocaleString("pt-BR")}
-              description="Volume total lido e consolidado."
-              tone="default"
-            />
-            <AnalyticsKpiCard
-              label="Primeiro pedido"
-              value={formatDate(stats?.firstOrderDate)}
-              description="Início do histórico comercial."
-              tone="default"
-            />
-            <AnalyticsKpiCard
-              label="Último pedido"
-              value={formatDate(stats?.lastOrderDate)}
-              description="Fim da janela já reconhecida."
-              tone="default"
-            />
+          <SurfaceCard>
+            <OperationalMetricStrip>
+              <OperationalMetric
+                label="Rodadas importadas"
+                value={String(stats?.totalRuns ?? 0)}
+                helper="Total acumulado de execuções por fonte."
+                tone="info"
+              />
+              <OperationalMetric
+                label="Linhas processadas"
+                value={(stats?.totalRows ?? 0).toLocaleString("pt-BR")}
+                helper="Volume total lido e consolidado."
+              />
+              <OperationalMetric
+                label="Primeiro pedido"
+                value={formatDate(stats?.firstOrderDate)}
+                helper="Início do histórico comercial."
+              />
+              <OperationalMetric
+                label="Último pedido"
+                value={formatDate(stats?.lastOrderDate)}
+                helper="Fim da janela já reconhecida."
+              />
+            </OperationalMetricStrip>
           </SurfaceCard>
 
           <SurfaceCard className="p-0 overflow-hidden">
@@ -559,7 +581,7 @@ export default function ImportPage() {
             <div className="border-b border-outline p-4">
               <SectionHeading
                 title="Últimas importações"
-                description="O que entrou por último na base, sem precisar abrir cada fonte."
+                description="O que entrou por último na base."
               />
             </div>
 

@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, CheckCircle2, CircleAlert } from "lucide-react";
-import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { notFound } from "next/navigation";
-import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import { OperationalMetric, OperationalMetricStrip, PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { getIntegrationTutorial } from "@/lib/brandops/integration-tutorials";
 import { APP_ROUTES } from "@/lib/brandops/routes";
 
@@ -37,52 +36,48 @@ export default async function IntegrationTutorialProviderPage({
         }
       />
 
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsKpiCard
+      <OperationalMetricStrip baseColumns={1} desktopColumns={3}>
+        <OperationalMetric
           label="Passos"
           value={String(tutorial.steps.length)}
-          description="Etapas principais do guia."
+          helper="Etapas principais do guia."
           tone="info"
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Validações"
           value={String(tutorial.validation.length)}
-          description="Checks para confirmar que a integração ficou pronta."
+          helper="Checks para confirmar que a integração ficou pronta."
           tone="positive"
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Links oficiais"
           value={String(tutorial.externalLinks.length)}
-          description="Atalhos para o ambiente certo do provedor."
-          tone="default"
+          helper="Atalhos para o ambiente certo do provedor."
         />
-      </section>
+      </OperationalMetricStrip>
 
       <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Para quem é"
-          title={tutorial.audience}
-          description="Perfil operacional esperado para executar este fluxo."
-          tone="info"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Abrir agora"
-          title={tutorial.externalLinks[0]?.label ?? "Painel oficial"}
-          description={tutorial.externalLinks[0]?.helper ?? "Abra o ambiente correto do provedor."}
-          tone="default"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Resumo"
-          title={tutorial.summary}
-          description="Visão curta do que este tutorial cobre."
-          tone="default"
-        />
+        <article className="atlas-soft-subcard p-4">
+          <p className="atlas-analytics-eyebrow">Para quem é</p>
+          <p className="mt-1.5 text-[0.95rem] font-semibold text-on-surface">{tutorial.audience}</p>
+          <p className="mt-2 text-sm leading-6 text-on-surface-variant">Perfil esperado para executar este fluxo.</p>
+        </article>
+        <article className="atlas-soft-subcard p-4">
+          <p className="atlas-analytics-eyebrow">Abrir agora</p>
+          <p className="mt-1.5 text-[0.95rem] font-semibold text-on-surface">{tutorial.externalLinks[0]?.label ?? "Painel oficial"}</p>
+          <p className="mt-2 text-sm leading-6 text-on-surface-variant">{tutorial.externalLinks[0]?.helper ?? "Abra o ambiente correto do provedor."}</p>
+        </article>
+        <article className="atlas-soft-subcard p-4">
+          <p className="atlas-analytics-eyebrow">Resumo</p>
+          <p className="mt-1.5 text-[0.95rem] font-semibold text-on-surface">{tutorial.summary}</p>
+          <p className="mt-2 text-sm leading-6 text-on-surface-variant">Visão do que este tutorial cobre.</p>
+        </article>
       </section>
 
       <SurfaceCard>
         <SectionHeading
           title="Visão geral"
-          description="Pré-requisitos e contexto, sem expor detalhes internos da plataforma."
+          description="Pré-requisitos e contexto para executar o fluxo."
         />
 
         <div className="mt-5 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">

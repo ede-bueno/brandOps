@@ -1,4 +1,5 @@
-import type { ElementType, ReactNode } from "react";
+import type { ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 import type { BrandIntegrationConfig, IntegrationProvider, IntegrationMode } from "@/lib/brandops/types";
 import { WorkspaceTabs } from "@/components/ui-shell";
 
@@ -25,12 +26,13 @@ export function IntegrationWorkspaceHeader({
   activateWorkspace,
   headerActions,
   formatSyncLabel,
+  providerTabs,
 }: {
   activeProvider: IntegrationProvider;
   current: BrandIntegrationConfig | undefined;
   currentState: IntegrationStateSummary;
   activeHealth: { label: string; description: string; tone: HealthTone };
-  activeIcon: ElementType;
+  activeIcon: LucideIcon;
   providerLabels: Record<IntegrationProvider, string>;
   providerDescriptions: Record<IntegrationProvider, string>;
   providerEyebrows: Record<IntegrationProvider, string>;
@@ -38,11 +40,17 @@ export function IntegrationWorkspaceHeader({
   activateWorkspace: (provider: IntegrationProvider, section: IntegrationSection) => void;
   headerActions: ReactNode;
   formatSyncLabel: (integration?: BrandIntegrationConfig) => string;
+  providerTabs: Array<{
+    key: string;
+    label: string;
+    active: boolean;
+    onClick: () => void;
+  }>;
 }) {
   return (
     <>
       <div className="flex flex-col gap-5 border-b border-outline/50 pb-5">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between xl:gap-7">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between xl:gap-7">
           <div className="min-w-0">
             <p className="eyebrow mb-1.5">{providerEyebrows[activeProvider]}</p>
             <div className="flex items-center gap-3">
@@ -75,32 +83,35 @@ export function IntegrationWorkspaceHeader({
           </div>
         </div>
 
-        <div className="atlas-integration-summary-strip">
-          <div className="atlas-integration-summary-item">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Estado</p>
-            <p className="mt-1 text-[13px] font-semibold text-on-surface">
-              {currentState.mode === "api"
-                ? "API ativa"
-                : currentState.mode === "disabled"
-                  ? "Integração desligada"
-                  : "Fluxo manual"}
-            </p>
-            <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
-              {activeHealth.description}
-            </p>
-          </div>
-          <div className="atlas-integration-summary-item">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Última referência</p>
-            <p className="mt-1 text-[13px] font-semibold text-on-surface">
-              {formatSyncLabel(current)}
-            </p>
-            <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
-              {activeProvider === "ink"
-                ? "Origem comercial manual da INK."
-                : currentState.hasApiKey
-                  ? `Credencial pronta em ${currentState.apiKeyHint || "ambiente seguro"}.`
-                  : "Credencial própria ainda pendente."}
-            </p>
+        <div className="flex flex-col gap-3 rounded-[0.12rem] border border-outline/40 bg-surface/70 p-3.5 xl:flex-row xl:items-center xl:justify-between">
+          <WorkspaceTabs className="overflow-x-auto" items={providerTabs} />
+          <div className="atlas-integration-summary-strip xl:min-w-[28rem]">
+            <div className="atlas-integration-summary-item">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Estado</p>
+              <p className="mt-1 text-[13px] font-semibold text-on-surface">
+                {currentState.mode === "api"
+                  ? "API ativa"
+                  : currentState.mode === "disabled"
+                    ? "Integração desligada"
+                    : "Fluxo manual"}
+              </p>
+              <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
+                {activeHealth.description}
+              </p>
+            </div>
+            <div className="atlas-integration-summary-item">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Última referência</p>
+              <p className="mt-1 text-[13px] font-semibold text-on-surface">
+                {formatSyncLabel(current)}
+              </p>
+              <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
+                {activeProvider === "ink"
+                  ? "Origem comercial manual da INK."
+                  : currentState.hasApiKey
+                    ? `Credencial pronta em ${currentState.apiKeyHint || "ambiente seguro"}.`
+                    : "Credencial própria ainda pendente."}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -135,13 +146,10 @@ export function IntegrationWorkspaceHeader({
             },
           ]}
         />
-        <div className="atlas-action-cluster lg:justify-end">
-          <span className="atlas-inline-metric">
-            {current?.lastSyncStatus ?? activeHealth.label}
-          </span>
-          {headerActions}
-        </div>
+        <div className="atlas-action-cluster lg:justify-end">{headerActions}</div>
       </div>
     </>
   );
 }
+
+

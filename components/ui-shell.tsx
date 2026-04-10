@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState, type FocusEvent, type ReactNode } from "react";
+import { useId, useState, type CSSProperties, type FocusEvent, type ReactNode } from "react";
 import { ArrowUpRight, Info } from "lucide-react";
 import { AtlasOrb } from "./AtlasOrb";
 
@@ -59,6 +59,99 @@ export function SurfaceCard({
   );
 }
 
+export function WorkspaceSplitLayout({
+  main,
+  rail,
+  className = "",
+  railSticky = true,
+  layout = "default",
+}: {
+  main: ReactNode;
+  rail?: ReactNode;
+  className?: string;
+  railSticky?: boolean;
+  layout?: "default" | "balanced" | "wide-rail";
+}) {
+  return (
+    <section className={`brandops-workspace-split ${className}`.trim()} data-layout={layout}>
+      <div className="brandops-workspace-main">{main}</div>
+      {rail ? (
+        <aside
+          className={`brandops-workspace-rail ${railSticky ? "brandops-workspace-rail-sticky" : ""}`.trim()}
+        >
+          {rail}
+        </aside>
+      ) : null}
+    </section>
+  );
+}
+
+export function WorkspaceRailSection({
+  title,
+  description,
+  children,
+  className = "",
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <SurfaceCard className={`brandops-workspace-rail-section ${className}`.trim()}>
+      <SectionHeading title={title} description={description} />
+      <div className="mt-4 atlas-component-stack-tight">{children}</div>
+    </SurfaceCard>
+  );
+}
+
+export function OperationalMetricStrip({
+  children,
+  className = "",
+  baseColumns = 2,
+  desktopColumns = 4,
+}: {
+  children: ReactNode;
+  className?: string;
+  baseColumns?: 1 | 2 | 3 | 4 | 5 | 6;
+  desktopColumns?: 1 | 2 | 3 | 4 | 5 | 6;
+}) {
+  const style = {
+    "--brandops-metric-columns-base": String(baseColumns),
+    "--brandops-metric-columns-lg": String(desktopColumns),
+  } as CSSProperties;
+
+  return (
+    <section className={`brandops-metric-strip ${className}`.trim()} style={style}>
+      {children}
+    </section>
+  );
+}
+
+export function OperationalMetric({
+  label,
+  value,
+  helper,
+  tone = "default",
+  className = "",
+  size = "default",
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  helper?: ReactNode;
+  tone?: "default" | "positive" | "warning" | "negative" | "info";
+  className?: string;
+  size?: "default" | "compact";
+}) {
+  return (
+    <article className={`brandops-metric ${className}`.trim()} data-tone={tone} data-size={size}>
+      <span className="brandops-metric-label">{label}</span>
+      <strong className="brandops-metric-value">{value}</strong>
+      {helper ? <span className="brandops-metric-helper">{helper}</span> : null}
+    </article>
+  );
+}
+
 export function SectionHeading({
   title,
   description,
@@ -69,7 +162,7 @@ export function SectionHeading({
   aside?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 border-b border-outline/60 pb-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+    <div className="flex flex-col gap-4 border-b border-outline/60 pb-4 2xl:flex-row 2xl:items-start 2xl:justify-between 2xl:gap-8">
       <div className="min-w-0 flex-1">
         <h2 className="font-headline text-[14px] font-semibold tracking-tight text-on-surface">
           {title}
@@ -81,7 +174,7 @@ export function SectionHeading({
         )}
       </div>
       {aside && (
-        <div className="max-w-full text-[11px] leading-[1.4rem] text-on-surface-variant lg:mt-0 lg:max-w-[22rem] lg:flex-none lg:text-right">
+        <div className="max-w-full text-[11px] leading-[1.45rem] text-on-surface-variant 2xl:mt-0 2xl:max-w-[28rem] 2xl:flex-none 2xl:text-right">
           {aside}
         </div>
       )}
@@ -238,7 +331,7 @@ export function StackItem({
 }) {
   return (
     <article className={`atlas-list-row ${className}`.trim()} data-tone={tone}>
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+      <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-start 2xl:justify-between 2xl:gap-6">
         <div className="min-w-0 flex-1">
           <div className="text-[13px] font-semibold text-on-surface">{title}</div>
           {description ? (
@@ -246,7 +339,7 @@ export function StackItem({
           ) : null}
         </div>
         {aside ? (
-          <div className="text-[11px] leading-[1.35rem] text-on-surface-variant lg:max-w-[14rem] lg:flex-none lg:text-right">
+          <div className="text-[11px] leading-[1.4rem] text-on-surface-variant 2xl:max-w-[16rem] 2xl:flex-none 2xl:text-right">
             {aside}
           </div>
         ) : null}

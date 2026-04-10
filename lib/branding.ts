@@ -1,7 +1,7 @@
 export const BRANDING = {
-  appName: "Atlas",
-  shortName: "ATLAS",
-  tagline: "Intelligence OS para POD",
+  appName: "BrandOps",
+  shortName: "BRANDOPS",
+  tagline: "Console operacional para POD",
   description:
-    "Plataforma SaaS multiempresa para gestão, inteligência e criação em operações Print on Demand.",
+    "Plataforma SaaS multiempresa para gestão, operação e inteligência em operações Print on Demand.",
 };

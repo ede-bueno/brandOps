@@ -2,17 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, Ban, CheckCircle2, RotateCcw, Search, ShieldCheck } from "lucide-react";
-import { AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import {
   InlineNotice,
+  OperationalMetric,
+  OperationalMetricStrip,
   PageHeader,
   ProcessingOverlay,
   SectionHeading,
   SurfaceCard,
+  WorkspaceTabs,
 } from "@/components/ui-shell";
 import { fetchSanitizationReport } from "@/lib/brandops/database";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 import type { SanitizationReport } from "@/lib/brandops/types";
 import { cn } from "@/lib/utils";
 
@@ -197,6 +200,9 @@ export default function SanitizationPage() {
           reportError ??
           "Importe mídia e pedidos para revisar as linhas suspeitas antes de fechar os números."
         }
+        ctaHref={APP_ROUTES.import}
+        ctaLabel="Abrir importação"
+        variant={reportError ? "error" : "default"}
       />
     );
   }
@@ -286,154 +292,96 @@ export default function SanitizationPage() {
         description="Decida o que entra no cálculo, preserve histórico e trate ruído operacional sem sair da marca."
         actions={
           <div className="flex flex-wrap gap-2">
+            <WorkspaceTabs
+              items={[
+                {
+                  key: "pending",
+                  label: `Para decisão (${report.meta.pendingCount})`,
+                  active: activeTab === "pending",
+                  onClick: () => setActiveTab("pending"),
+                },
+                {
+                  key: "history",
+                  label: `Histórico (${report.meta.historyCount})`,
+                  active: activeTab === "history",
+                  onClick: () => setActiveTab("history"),
+                },
+              ]}
+            />
             <span className="atlas-inline-metric">{selectedBrandName}</span>
             <span className="atlas-inline-metric">Histórico completo</span>
           </div>
         }
       />
 
-      <section className="atlas-kpi-grid xl:grid-cols-3">
-        <AnalyticsKpiCard
+      <OperationalMetricStrip desktopColumns={3}>
+        <OperationalMetric
           label="Pendentes"
           value={String(summary.pending)}
-          description="Ocorrências que ainda precisam de decisão."
+          helper="Ocorrências que ainda precisam de decisão."
           tone="warning"
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Histórico"
           value={String(summary.history)}
-          description="Decisões já registradas no banco."
+          helper="Decisões já registradas no banco."
           tone="info"
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Foco atual"
           value={dominantTarget}
-          description={
+          helper={
             summary.pending
               ? "O Atlas destaca primeiro o alvo com mais pressão aberta."
               : "Sem pendência aberta. A tela vira histórico e auditoria."
           }
           tone={summary.pending ? "default" : "positive"}
         />
-      </section>
+      </OperationalMetricStrip>
 
-      <details className="atlas-disclosure">
-        <summary className="atlas-disclosure-summary">
-          Distribuição por alvo
-          <span className="atlas-disclosure-chevron">abrir</span>
-        </summary>
-        <div className="atlas-disclosure-body">
-          <section className="grid gap-3 sm:grid-cols-2">
-            <AnalyticsKpiCard
-              label="Mídia"
-              value={String(summary.media)}
-              description="Ocorrências ligadas a campanhas e investimento."
-              tone="default"
-            />
-            <AnalyticsKpiCard
-              label="Pedidos"
-              value={String(summary.orders)}
-              description="Ocorrências vindas da camada comercial."
-              tone="default"
-            />
-          </section>
-        </div>
-      </details>
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.12fr)_minmax(20rem,0.88fr)]">
+        <SurfaceCard className="p-0 overflow-hidden">
+          {feedback ? (
+            <div className="border-b border-outline/60 px-5 py-3">
+              <InlineNotice
+                tone={feedback.type === "success" ? "success" : "error"}
+                icon={
+                  feedback.type === "success" ? (
+                    <CheckCircle2 size={16} />
+                  ) : (
+                    <AlertCircle size={16} />
+                  )
+                }
+              >
+                <p className="text-sm leading-6">{feedback.message}</p>
+              </InlineNotice>
+            </div>
+          ) : null}
 
-      <SurfaceCard className="p-0 overflow-hidden">
-        {feedback ? (
-          <div className="border-b border-outline/60 px-5 py-3">
-            <InlineNotice
-              tone={feedback.type === "success" ? "success" : "error"}
-              icon={
-                feedback.type === "success" ? (
-                  <CheckCircle2 size={16} />
-                ) : (
-                  <AlertCircle size={16} />
-                )
-              }
-            >
-              <p className="text-sm leading-6">{feedback.message}</p>
-            </InlineNotice>
-          </div>
-        ) : null}
-
-        <div className="border-b border-outline px-5 py-4">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div className="border-b border-outline px-5 py-4">
             <SectionHeading
-              title="Fila operacional"
+              title="Mesa de decisão"
               description="Pendências abertas ou histórico completo, sem sair da marca."
               aside={<span className="atlas-inline-metric">{activeTab === "pending" ? "Pendências" : "Histórico"}</span>}
             />
-            <div className="brandops-subtabs">
-              {[
-                { key: "pending", label: `Para decisão (${report.meta.pendingCount})` },
-                { key: "history", label: `Histórico (${report.meta.historyCount})` },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key as "pending" | "history")}
-                  disabled={isProcessing}
-                  className="brandops-subtab"
-                  data-active={activeTab === tab.key}
-                >
-                  {tab.label}
-                </button>
-              ))}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-outline px-5 py-3 text-[11px] leading-5 text-on-surface-variant">
+            <span>
+              Exibindo {visibleAnomalies.length} ocorrência(s) em {activeTab === "pending" ? "pendência" : "histórico"}.
+            </span>
+            <span className="atlas-inline-metric">
+              {activeTab === "pending" ? "Decisão aberta" : "Auditoria concluída"}
+            </span>
+          </div>
+
+          {!visibleAnomalies.length ? (
+            <div className="p-5 text-sm text-on-surface-variant">
+              Nenhuma ocorrência encontrada nesta categoria no histórico operacional da marca.
             </div>
-          </div>
-
-          <div className="mt-4 brandops-toolbar-panel">
-            <label className="brandops-field-stack xl:col-span-2">
-              <span className="brandops-field-label">Buscar ocorrência</span>
-              <div className="brandops-input-with-icon">
-                <Search size={16} />
-                <input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Campanha, pedido, métrica ou motivo"
-                  className="brandops-input"
-                  disabled={isProcessing}
-                />
-              </div>
-            </label>
-
-            <div className="brandops-field-stack">
-              <span className="brandops-field-label">Filtrar alvo</span>
-              <div className="flex flex-wrap gap-2">
-                {targetOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setTargetFilter(option.value)}
-                    className="brandops-subtab"
-                    data-active={targetFilter === option.value}
-                    disabled={isProcessing}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-outline px-5 py-3 text-[11px] leading-5 text-on-surface-variant">
-          <span>
-            Exibindo {visibleAnomalies.length} ocorrência(s) em {activeTab === "pending" ? "pendência" : "histórico"}.
-          </span>
-          <span className="atlas-inline-metric">
-            {activeTab === "pending" ? "Decisão aberta" : "Auditoria concluída"}
-          </span>
-        </div>
-
-        {!visibleAnomalies.length ? (
-          <div className="p-5 text-sm text-on-surface-variant">
-            Nenhuma ocorrência encontrada nesta categoria no histórico operacional da marca.
-          </div>
-        ) : (
-          <div className="brandops-table-container atlas-table-shell max-h-[72vh] overflow-auto">
-            <table className="brandops-table-compact min-w-[1040px] w-full">
+          ) : (
+            <div className="brandops-table-container atlas-table-shell max-h-[72vh] overflow-auto">
+              <table className="brandops-table-compact min-w-[1040px] w-full">
               <thead>
                 <tr>
                   <th>Alvo</th>
@@ -546,10 +494,85 @@ export default function SanitizationPage() {
                   );
                 })}
               </tbody>
-            </table>
-          </div>
-        )}
-      </SurfaceCard>
+              </table>
+            </div>
+          )}
+        </SurfaceCard>
+
+        <div className="atlas-component-stack">
+          <SurfaceCard>
+            <SectionHeading
+              title="Filtro operacional"
+              description="Refine a fila antes de decidir ou auditar."
+            />
+            <div className="mt-5 atlas-component-stack">
+              <label className="brandops-field-stack">
+                <span className="brandops-field-label">Buscar ocorrência</span>
+                <div className="brandops-input-with-icon">
+                  <Search size={16} />
+                  <input
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Campanha, pedido, métrica ou motivo"
+                    className="brandops-input"
+                    disabled={isProcessing}
+                  />
+                </div>
+              </label>
+
+              <div className="brandops-field-stack">
+                <span className="brandops-field-label">Filtrar alvo</span>
+                <div className="flex flex-wrap gap-2">
+                  {targetOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setTargetFilter(option.value)}
+                      className="brandops-subtab"
+                      data-active={targetFilter === option.value}
+                      disabled={isProcessing}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </SurfaceCard>
+
+          <SurfaceCard>
+            <SectionHeading
+              title="Pulso do saneamento"
+              description="Distribuição e pressão atual por alvo."
+            />
+            <div className="mt-5 atlas-component-stack">
+              <OperationalMetricStrip baseColumns={2} desktopColumns={2}>
+                <OperationalMetric
+                  label="Mídia"
+                  value={String(summary.media)}
+                  helper="Ocorrências ligadas a campanhas e investimento."
+                />
+                <OperationalMetric
+                  label="Pedidos"
+                  value={String(summary.orders)}
+                  helper="Ocorrências vindas da camada comercial."
+                />
+              </OperationalMetricStrip>
+              <article className="panel-muted p-3.5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                  Prioridade atual
+                </p>
+                <p className="mt-2 font-semibold text-on-surface">{dominantTarget}</p>
+                <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                  {summary.pending
+                    ? "O Atlas destaca primeiro o alvo com mais pressão aberta neste recorte."
+                    : "Sem pendência aberta. A tela passa a servir principalmente para auditoria e histórico."}
+                </p>
+              </article>
+            </div>
+          </SurfaceCard>
+        </div>
+      </section>
     </div>
   );
 }

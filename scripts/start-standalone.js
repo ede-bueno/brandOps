@@ -3,7 +3,7 @@ const { join } = require("node:path");
 const { spawn } = require("node:child_process");
 
 const projectRoot = join(__dirname, "..");
-const distDir = (process.env.BRANDOPS_DIST_DIR || "").trim() || ".next";
+const distDir = (process.env.BRANDOPS_DIST_DIR || "").trim() || ".next-build";
 
 const sourceStatic = join(projectRoot, distDir, "static");
 const sourceStandalone = join(projectRoot, distDir, "standalone");

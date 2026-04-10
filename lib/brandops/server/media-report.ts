@@ -1,6 +1,8 @@
 import "server-only";
 
 import type {
+  MediaAdAction,
+  MediaAdReportRow,
   MediaCampaignAction,
   MediaCampaignReportRow,
   MediaReport,
@@ -16,9 +18,14 @@ type RawMediaRow = {
   id: string;
   report_start: string | null;
   date: string | null;
+  campaign_id?: string | null;
   campaign_name: string | null;
+  adset_id?: string | null;
   adset_name: string | null;
+  ad_id?: string | null;
   ad_name: string | null;
+  creative_id?: string | null;
+  creative_name?: string | null;
   delivery: string | null;
   reach: number | null;
   impressions: number | null;
@@ -33,9 +40,14 @@ type RawMediaRow = {
 type EffectiveMediaRow = {
   id: string;
   metricDate: string;
+  campaignId: string | null;
   campaignName: string;
+  adsetId: string | null;
   adsetName: string;
+  adId: string | null;
   adName: string;
+  creativeId: string | null;
+  creativeName: string | null;
   dataSource: MediaDataSource;
   mergeKey: string;
   reach: number;
@@ -64,6 +76,31 @@ const EMPTY_MEDIA_REPORT: MediaReport = {
   },
   dailySeries: [],
   campaigns: [],
+  ads: {
+    rows: [],
+    highlights: {
+      bestScale: null,
+      creativeReview: null,
+      audienceReview: null,
+      pauseCandidate: null,
+    },
+    playbook: {
+      scale: [],
+      creativeReview: [],
+      audienceReview: [],
+      pause: [],
+      maintain: [],
+    },
+    analysis: {
+      narrativeTitle: "Amostra insuficiente",
+      narrativeBody: "Ainda não há massa suficiente para priorizar anúncios e criativos com segurança.",
+      nextActions: [],
+      topScale: null,
+      topCreativeReview: null,
+      topAudienceReview: null,
+      topPause: null,
+    },
+  },
   commandRoom: {
     bestScale: null,
     priorityReview: null,
@@ -197,7 +234,7 @@ function buildPlaybook(campaigns: MediaCampaignReportRow[]) {
 
 function buildAnalysis(
   summary: MediaReportSummary,
-  campaigns: MediaCampaignReportRow[],
+  _campaigns: MediaCampaignReportRow[],
   bestScale: MediaCampaignReportRow | null,
   priorityReview: MediaCampaignReportRow | null,
 ) {
@@ -330,6 +367,91 @@ function mapCampaigns(source: unknown): MediaCampaignReportRow[] {
           : EMPTY_MEDIA_REPORT.commandRoom.narrative,
     };
   });
+}
+
+function normalizeAdAction(action: unknown): MediaAdAction {
+  switch (action) {
+    case "scale_budget":
+    case "review_creative":
+    case "review_audience":
+    case "pause":
+      return action;
+    default:
+      return "maintain";
+  }
+}
+
+function mapAds(source: unknown): MediaAdReportRow[] {
+  if (!Array.isArray(source)) {
+    return [];
+  }
+
+  return source.map((item) => {
+    const payload = (item ?? {}) as Partial<MediaAdReportRow>;
+    return {
+      campaignId:
+        payload.campaignId === null || typeof payload.campaignId === "string"
+          ? payload.campaignId ?? null
+          : null,
+      campaignName:
+        typeof payload.campaignName === "string" && payload.campaignName.trim()
+          ? payload.campaignName
+          : "Campanha sem nome",
+      adsetId:
+        payload.adsetId === null || typeof payload.adsetId === "string"
+          ? payload.adsetId ?? null
+          : null,
+      adsetName:
+        typeof payload.adsetName === "string" && payload.adsetName.trim()
+          ? payload.adsetName
+          : "Sem conjunto",
+      adId:
+        payload.adId === null || typeof payload.adId === "string" ? payload.adId ?? null : null,
+      adName:
+        typeof payload.adName === "string" && payload.adName.trim()
+          ? payload.adName
+          : "Sem anúncio",
+      creativeId:
+        payload.creativeId === null || typeof payload.creativeId === "string"
+          ? payload.creativeId ?? null
+          : null,
+      creativeName:
+        payload.creativeName === null || typeof payload.creativeName === "string"
+          ? payload.creativeName ?? null
+          : null,
+      spend: toNumber(payload.spend),
+      purchaseValue: toNumber(payload.purchaseValue),
+      purchases: toNumber(payload.purchases),
+      reach: toNumber(payload.reach),
+      impressions: toNumber(payload.impressions),
+      clicksAll: toNumber(payload.clicksAll),
+      linkClicks: toNumber(payload.linkClicks),
+      roas: toNumber(payload.roas),
+      ctrAll: toNumber(payload.ctrAll),
+      ctrLink: toNumber(payload.ctrLink),
+      cpc: toNumber(payload.cpc),
+      cpa: toNumber(payload.cpa),
+      confidence: toNumber(payload.confidence),
+      action: normalizeAdAction(payload.action),
+      summary:
+        typeof payload.summary === "string" && payload.summary.trim()
+          ? payload.summary
+          : "Sem leitura consolidada para este anúncio.",
+      reasonCodes: Array.isArray(payload.reasonCodes)
+        ? payload.reasonCodes.filter(
+            (item): item is string => typeof item === "string" && item.trim().length > 0,
+          )
+        : [],
+    };
+  });
+}
+
+function mapAd(source: unknown): MediaAdReportRow | null {
+  if (!source || typeof source !== "object") {
+    return null;
+  }
+
+  return mapAds([source])[0] ?? null;
 }
 
 function mapCampaign(source: unknown): MediaCampaignReportRow | null {
@@ -503,6 +625,59 @@ export function normalizeMediaReportPayload(source: unknown): MediaReport {
     summary,
     dailySeries: mapDailySeries(payload.dailySeries),
     campaigns,
+    ads: {
+      rows: mapAds(payload.ads?.rows),
+      highlights: {
+        bestScale: mapAd(payload.ads?.highlights?.bestScale),
+        creativeReview: mapAd(payload.ads?.highlights?.creativeReview),
+        audienceReview: mapAd(payload.ads?.highlights?.audienceReview),
+        pauseCandidate: mapAd(payload.ads?.highlights?.pauseCandidate),
+      },
+      playbook: {
+        scale: mapAds(payload.ads?.playbook?.scale),
+        creativeReview: mapAds(payload.ads?.playbook?.creativeReview),
+        audienceReview: mapAds(payload.ads?.playbook?.audienceReview),
+        pause: mapAds(payload.ads?.playbook?.pause),
+        maintain: mapAds(payload.ads?.playbook?.maintain),
+      },
+      analysis: {
+        narrativeTitle:
+          typeof payload.ads?.analysis?.narrativeTitle === "string" &&
+          payload.ads.analysis.narrativeTitle.trim()
+            ? payload.ads.analysis.narrativeTitle
+            : EMPTY_MEDIA_REPORT.ads.analysis.narrativeTitle,
+        narrativeBody:
+          typeof payload.ads?.analysis?.narrativeBody === "string" &&
+          payload.ads.analysis.narrativeBody.trim()
+            ? payload.ads.analysis.narrativeBody
+            : EMPTY_MEDIA_REPORT.ads.analysis.narrativeBody,
+        nextActions: Array.isArray(payload.ads?.analysis?.nextActions)
+          ? payload.ads.analysis.nextActions.filter(
+              (item): item is string => typeof item === "string" && item.trim().length > 0,
+            )
+          : EMPTY_MEDIA_REPORT.ads.analysis.nextActions,
+        topScale:
+          payload.ads?.analysis?.topScale === null ||
+          typeof payload.ads?.analysis?.topScale === "string"
+            ? payload.ads.analysis.topScale ?? null
+            : null,
+        topCreativeReview:
+          payload.ads?.analysis?.topCreativeReview === null ||
+          typeof payload.ads?.analysis?.topCreativeReview === "string"
+            ? payload.ads.analysis.topCreativeReview ?? null
+            : null,
+        topAudienceReview:
+          payload.ads?.analysis?.topAudienceReview === null ||
+          typeof payload.ads?.analysis?.topAudienceReview === "string"
+            ? payload.ads.analysis.topAudienceReview ?? null
+            : null,
+        topPause:
+          payload.ads?.analysis?.topPause === null ||
+          typeof payload.ads?.analysis?.topPause === "string"
+            ? payload.ads.analysis.topPause ?? null
+            : null,
+      },
+    },
     commandRoom: {
       bestScale: mapCampaign(payload.commandRoom?.bestScale),
       priorityReview: mapCampaign(payload.commandRoom?.priorityReview),
@@ -582,11 +757,22 @@ function toEffectiveRows(rows: RawMediaRow[], mode: string, manualFallback: bool
       return {
         id: row.id,
         metricDate,
+        campaignId: row.campaign_id?.trim() || null,
         campaignName,
+        adsetId: row.adset_id?.trim() || null,
         adsetName,
+        adId: row.ad_id?.trim() || null,
         adName,
+        creativeId: row.creative_id?.trim() || null,
+        creativeName: row.creative_name?.trim() || null,
         dataSource,
-        mergeKey: [metricDate, campaignName, adsetName, adName].join("::"),
+        mergeKey: [
+          metricDate,
+          row.campaign_id?.trim() || campaignName,
+          row.adset_id?.trim() || adsetName,
+          row.ad_id?.trim() || adName,
+          row.creative_id?.trim() || row.creative_name?.trim() || "",
+        ].join("::"),
         reach: toNumber(row.reach),
         impressions: toNumber(row.impressions),
         clicksAll: toNumber(row.clicks_all),
@@ -880,6 +1066,211 @@ function buildCampaigns(rows: EffectiveMediaRow[]): MediaCampaignReportRow[] {
     });
 }
 
+function buildAdConfidence(
+  row: Omit<
+    MediaAdReportRow,
+    "action" | "summary" | "confidence" | "reasonCodes" | "creativeId" | "creativeName"
+  >,
+) {
+  let score = 0;
+  if (row.spend >= 80) score += 0.25;
+  if (row.impressions >= 4000) score += 0.2;
+  if (row.linkClicks >= 20) score += 0.25;
+  if (row.purchases >= 2) score += 0.3;
+  return Math.min(1, score);
+}
+
+function resolveAdDecision(
+  row: Omit<
+    MediaAdReportRow,
+    "action" | "summary" | "confidence" | "reasonCodes" | "creativeId" | "creativeName"
+  >,
+): { action: MediaAdAction; reasonCodes: string[]; summary: string; confidence: number } {
+  const confidence = buildAdConfidence(row);
+  const reasonCodes: string[] = [];
+
+  if (row.roas >= 1.7 && row.ctrLink >= 0.009 && row.purchases >= 2 && row.spend >= 80) {
+    reasonCodes.push("roas_forte", "cta_funcionando", "compra_confirmada");
+    return {
+      action: "scale_budget",
+      confidence,
+      reasonCodes,
+      summary: "O anúncio já combina retorno, clique qualificado e compra suficiente para receber mais verba com controle.",
+    };
+  }
+
+  if (row.spend >= 160 && row.purchases === 0 && row.linkClicks >= 35) {
+    reasonCodes.push("sem_compra_com_volume", "consumo_sem_retorno");
+    return {
+      action: "pause",
+      confidence,
+      reasonCodes,
+      summary: "O anúncio já consumiu verba e clique demais sem compra atribuída. Vale pausar até revisar a proposta.",
+    };
+  }
+
+  if (row.spend >= 90 && row.ctrLink < 0.006) {
+    reasonCodes.push("ctr_link_baixo", "criativo_ou_cta_fraco");
+    return {
+      action: "review_creative",
+      confidence,
+      reasonCodes,
+      summary: "O anúncio está entregando, mas ainda gera pouco clique qualificado. O criativo e o CTA pedem revisão.",
+    };
+  }
+
+  if (row.spend >= 90 && row.ctrLink >= 0.006 && row.roas < 1) {
+    reasonCodes.push("clique_sem_retorno", "publico_ou_oferta_pressionados");
+    return {
+      action: "review_audience",
+      confidence,
+      reasonCodes,
+      summary: "O anúncio chama clique, mas o retorno não acompanha. Vale revisar público, promessa e destino.",
+    };
+  }
+
+  reasonCodes.push("amostra_em_observacao");
+  return {
+    action: "maintain",
+    confidence,
+    reasonCodes,
+    summary: "O anúncio ainda está em observação. Mantenha a distribuição e reavalie com a próxima janela.",
+  };
+}
+
+function buildAds(rows: EffectiveMediaRow[]): MediaReport["ads"] {
+  const byAd = new Map<
+    string,
+    Omit<
+      MediaAdReportRow,
+      "action" | "summary" | "confidence" | "reasonCodes" | "creativeId" | "creativeName"
+    > & {
+      creativeId: string | null;
+      creativeName: string | null;
+    }
+  >();
+
+  rows.forEach((row) => {
+    const key = [
+      row.campaignId || row.campaignName,
+      row.adsetId || row.adsetName,
+      row.adId || row.adName,
+      row.creativeId || row.creativeName || "",
+    ].join("::");
+    const current = byAd.get(key) ?? {
+      campaignId: row.campaignId,
+      campaignName: row.campaignName,
+      adsetId: row.adsetId,
+      adsetName: row.adsetName,
+      adId: row.adId,
+      adName: row.adName,
+      creativeId: row.creativeId,
+      creativeName: row.creativeName,
+      spend: 0,
+      purchaseValue: 0,
+      purchases: 0,
+      reach: 0,
+      impressions: 0,
+      clicksAll: 0,
+      linkClicks: 0,
+      roas: 0,
+      ctrAll: 0,
+      ctrLink: 0,
+      cpc: 0,
+      cpa: 0,
+    };
+
+    current.creativeId = current.creativeId ?? row.creativeId ?? null;
+    current.creativeName = current.creativeName ?? row.creativeName ?? null;
+    current.spend += row.spend;
+    current.purchaseValue += row.purchaseValue;
+    current.purchases += row.purchases;
+    current.reach += row.reach;
+    current.impressions += row.impressions;
+    current.clicksAll += row.clicksAll;
+    current.linkClicks += row.linkClicks;
+    byAd.set(key, current);
+  });
+
+  const rowsWithDecision = [...byAd.values()]
+    .map((row) => {
+      const normalized = {
+        ...row,
+        roas: row.spend > 0 ? row.purchaseValue / row.spend : 0,
+        ctrAll: row.impressions > 0 ? row.clicksAll / row.impressions : 0,
+        ctrLink: row.impressions > 0 ? row.linkClicks / row.impressions : 0,
+        cpc: row.linkClicks > 0 ? row.spend / row.linkClicks : 0,
+        cpa: row.purchases > 0 ? row.spend / row.purchases : 0,
+      };
+      const decision = resolveAdDecision(normalized);
+      return {
+        ...normalized,
+        creativeId: normalized.creativeId ?? null,
+        creativeName: normalized.creativeName ?? null,
+        ...decision,
+      } satisfies MediaAdReportRow;
+    })
+    .sort((left, right) => {
+      if (right.spend !== left.spend) return right.spend - left.spend;
+      return left.adName.localeCompare(right.adName);
+    });
+
+  const byAction = (action: MediaAdAction) => rowsWithDecision.filter((row) => row.action === action);
+  const bestScale =
+    [...byAction("scale_budget")].sort((left, right) => right.roas - left.roas || right.spend - left.spend)[0] ??
+    null;
+  const creativeReview =
+    [...byAction("review_creative")].sort((left, right) => right.spend - left.spend || left.ctrLink - right.ctrLink)[0] ??
+    null;
+  const audienceReview =
+    [...byAction("review_audience")].sort((left, right) => right.spend - left.spend || left.roas - right.roas)[0] ??
+    null;
+  const pauseCandidate =
+    [...byAction("pause")].sort((left, right) => right.spend - left.spend || left.roas - right.roas)[0] ??
+    null;
+
+  const nextActions: string[] = [];
+  if (bestScale) nextActions.push(`Ampliar verba com controle no anúncio ${bestScale.adName}.`);
+  if (creativeReview) nextActions.push(`Revisar criativo e CTA do anúncio ${creativeReview.adName}.`);
+  if (audienceReview) nextActions.push(`Revisar público e promessa do anúncio ${audienceReview.adName}.`);
+  if (pauseCandidate) nextActions.push(`Segurar o anúncio ${pauseCandidate.adName} até corrigir a eficiência.`);
+
+  const narrativeTitle =
+    bestScale || creativeReview || audienceReview || pauseCandidate
+      ? "Leitura operacional de anúncios"
+      : EMPTY_MEDIA_REPORT.ads.analysis.narrativeTitle;
+  const narrativeBody =
+    bestScale || creativeReview || audienceReview || pauseCandidate
+      ? "A decisão por anúncio já permite separar com mais clareza o que merece verba, revisão criativa, ajuste de público ou pausa."
+      : EMPTY_MEDIA_REPORT.ads.analysis.narrativeBody;
+
+  return {
+    rows: rowsWithDecision,
+    highlights: {
+      bestScale,
+      creativeReview,
+      audienceReview,
+      pauseCandidate,
+    },
+    playbook: {
+      scale: byAction("scale_budget").slice(0, 8),
+      creativeReview: byAction("review_creative").slice(0, 8),
+      audienceReview: byAction("review_audience").slice(0, 8),
+      pause: byAction("pause").slice(0, 8),
+      maintain: byAction("maintain").slice(0, 8),
+    },
+    analysis: {
+      narrativeTitle,
+      narrativeBody,
+      nextActions,
+      topScale: bestScale ? `Escalar ${bestScale.adName}` : null,
+      topCreativeReview: creativeReview ? `Revisar criativo de ${creativeReview.adName}` : null,
+      topAudienceReview: audienceReview ? `Revisar público de ${audienceReview.adName}` : null,
+      topPause: pauseCandidate ? `Pausar ${pauseCandidate.adName}` : null,
+    },
+  };
+}
+
 export function buildMediaReport(
   rows: RawMediaRow[],
   options?: {
@@ -946,11 +1337,13 @@ export function buildMediaReport(
           : "O retorno atribuído ainda está pressionado. Antes de aumentar investimento, a prioridade deve ser corrigir as campanhas que consomem mais verba e devolvem menos.";
   const playbook = buildPlaybook(campaigns);
   const analysis = buildAnalysis(summary, campaigns, bestScale, priorityReview);
+  const ads = buildAds(effectiveRows);
 
   return {
     summary,
     dailySeries: buildDailySeries(effectiveRows),
     campaigns,
+    ads,
     commandRoom: {
       bestScale,
       priorityReview,

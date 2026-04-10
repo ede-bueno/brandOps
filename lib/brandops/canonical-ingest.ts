@@ -44,9 +44,14 @@ export interface OrderLinePayload {
 export interface MetaRowPayload {
   report_start: string;       // ISO date
   report_end: string;
+  campaign_id?: string | null;
   campaign_name?: string;
+  adset_id?: string | null;
   adset_name?: string;
+  ad_id?: string | null;
   ad_name?: string;
+  creative_id?: string | null;
+  creative_name?: string | null;
   account_name?: string;
   platform?: string;
   placement?: string;

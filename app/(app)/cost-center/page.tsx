@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Tags,
   Pencil,
@@ -9,7 +9,6 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import {
@@ -18,15 +17,19 @@ import {
   EntityChip,
   FormField,
   InlineNotice,
+  OperationalMetric,
+  OperationalMetricStrip,
   PageHeader,
   ProcessingOverlay,
   SectionHeading,
   StackItem,
   SurfaceCard,
+  WorkspaceTabs,
 } from "@/components/ui-shell";
 import { currencyFormatter, integerFormatter } from "@/lib/brandops/format";
 
 type CostCenterTab = "launches" | "categories";
+const BOOK_PAGE_SIZE = 25;
 
 function normalizeMonthToDate(value: string) {
   if (!value) {
@@ -56,7 +59,6 @@ export default function CostCenterPage() {
     brands,
     isLoading,
     isBrandHydrating,
-    selectedPeriodLabel,
     createExpenseCategory,
     updateExpenseCategory,
     createExpense,
@@ -65,14 +67,14 @@ export default function CostCenterPage() {
   } = useBrandOps();
 
   const [activeTab, setActiveTab] = useState<CostCenterTab>("launches");
-  const [launchView, setLaunchView] = useState<"overview" | "ledger">("overview");
-  const [categoryView, setCategoryView] = useState<"overview" | "catalog">("overview");
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [bookSearch, setBookSearch] = useState("");
+  const [bookMonthFilter, setBookMonthFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [currentBookPage, setCurrentBookPage] = useState(1);
   const [processingMessage, setProcessingMessage] = useState<string | null>(null);
   const [toast, setToast] = useState<{ tone: "success" | "error"; message: string } | null>(null);
 
@@ -92,9 +94,6 @@ export default function CostCenterPage() {
 
   const expenseCategories = useMemo(() => {
     return [...(activeBrand?.expenseCategories ?? [])].sort((left, right) => {
-      if (left.isSystem !== right.isSystem) {
-        return left.isSystem ? 1 : -1;
-      }
       return left.name.localeCompare(right.name, "pt-BR");
     });
   }, [activeBrand?.expenseCategories]);
@@ -116,6 +115,8 @@ export default function CostCenterPage() {
 
   const bookEntries = useMemo(() => {
     return expenses.filter((expense) => {
+      const matchesMonth =
+        bookMonthFilter === "all" ? true : expense.incurredOn.startsWith(bookMonthFilter);
       const matchesCategory =
         categoryFilter === "all" ? true : expense.categoryId === categoryFilter;
       const search = bookSearch.trim().toLowerCase();
@@ -124,9 +125,9 @@ export default function CostCenterPage() {
           expense.categoryName.toLowerCase().includes(search)
         : true;
 
-      return matchesCategory && matchesSearch;
+      return matchesMonth && matchesCategory && matchesSearch;
     });
-  }, [bookSearch, categoryFilter, expenses]);
+  }, [bookMonthFilter, bookSearch, categoryFilter, expenses]);
 
   const monthlyLedger = useMemo(() => {
     const byMonth = new Map<
@@ -183,12 +184,6 @@ export default function CostCenterPage() {
     return [...totals.values()].sort((left, right) => right.total - left.total);
   }, [expenses]);
 
-  const totalExpenses = useMemo(
-    () => expenses.reduce((accumulator, expense) => accumulator + expense.amount, 0),
-    [expenses],
-  );
-  const topCategory = categorySummary[0] ?? null;
-
   const currentMonthTotal = useMemo(() => {
     return expenses
       .filter((expense) => expense.incurredOn.startsWith(defaultMonth))
@@ -209,12 +204,28 @@ export default function CostCenterPage() {
       ).size,
     [defaultMonth, expenses],
   );
-  const primaryAction =
-    !expenses.length
-      ? "Criar o primeiro lançamento da marca."
-      : activeMonthEntries === 0
-        ? `Abrir ${formatCompetencyLabel(defaultMonth)} e registrar os lançamentos do mês.`
-        : "Revisar o livro do mês e fechar a competência com menos ruído.";
+
+  const totalBookPages = Math.max(1, Math.ceil(bookEntries.length / BOOK_PAGE_SIZE));
+  const paginatedBookEntries = useMemo(() => {
+    const start = (currentBookPage - 1) * BOOK_PAGE_SIZE;
+    return bookEntries.slice(start, start + BOOK_PAGE_SIZE);
+  }, [bookEntries, currentBookPage]);
+  const filteredBookTotal = useMemo(
+    () => bookEntries.reduce((accumulator, expense) => accumulator + expense.amount, 0),
+    [bookEntries],
+  );
+  const pageStartEntry = bookEntries.length ? (currentBookPage - 1) * BOOK_PAGE_SIZE + 1 : 0;
+  const pageEndEntry = Math.min(currentBookPage * BOOK_PAGE_SIZE, bookEntries.length);
+
+  useEffect(() => {
+    setCurrentBookPage(1);
+  }, [activeTab, bookMonthFilter, bookSearch, categoryFilter]);
+
+  useEffect(() => {
+    if (currentBookPage > totalBookPages) {
+      setCurrentBookPage(totalBookPages);
+    }
+  }, [currentBookPage, totalBookPages]);
 
   const resetExpenseForm = () => {
     setExpenseForm({
@@ -452,297 +463,99 @@ export default function CostCenterPage() {
   return (
     <div className="atlas-page-stack-compact">
       <PageHeader
-        eyebrow="Fluxo financeiro"
-        title="Lançamentos DRE"
-        description="Lance despesas, revise a competência e corte ruído no DRE."
+        eyebrow="Financeiro"
+        title="Livro de lançamentos"
+        description={
+          activeTab === "launches"
+            ? "Registre, filtre e revise despesas por competência antes de refletir no DRE mensal."
+            : "Mantenha o catálogo de categorias claro para sustentar um DRE consistente."
+        }
         actions={
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <span className="atlas-inline-metric">{selectedBrandName}</span>
-            <span className="atlas-inline-metric">{selectedPeriodLabel}</span>
-            <Link href="/dre" className="brandops-button brandops-button-secondary">
-              Abrir DRE
-            </Link>
-            <button
-              type="button"
-              className="brandops-button brandops-button-ghost"
-              onClick={openNewCategoryModal}
-            >
-              <Tags size={15} />
-              Nova categoria
-            </button>
-            <button
-              type="button"
-              className="brandops-button brandops-button-primary"
-              onClick={openNewExpenseModal}
-            >
-              <Plus size={15} />
-              Novo lançamento
-            </button>
+          <div className="flex w-full flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <WorkspaceTabs
+              items={[
+                {
+                  key: "cost-center-launches",
+                  label: "Lançamentos",
+                  active: activeTab === "launches",
+                  onClick: () => setActiveTab("launches"),
+                },
+                {
+                  key: "cost-center-categories",
+                  label: "Categorias",
+                  active: activeTab === "categories",
+                  onClick: () => setActiveTab("categories"),
+                },
+              ]}
+            />
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Link href="/dre" className="brandops-button brandops-button-secondary">
+                Abrir DRE
+              </Link>
+              <button
+                type="button"
+                className="brandops-button brandops-button-ghost"
+                onClick={openNewCategoryModal}
+              >
+                <Tags size={15} />
+                Nova categoria
+              </button>
+            </div>
           </div>
         }
       />
 
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Próximo movimento"
-          title={primaryAction}
-          description="O melhor corte agora para manter o DRE limpo e operacional."
-          tone="info"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Maior pressão"
-          title={topCategory ? topCategory.categoryName : "Sem categoria dominante"}
-          description={
-            topCategory
-              ? `${currencyFormatter.format(topCategory.total)} distribuídos em ${topCategory.entries} lançamento(s).`
-              : "Sem lançamentos suficientes para apontar uma categoria dominante."
-          }
-          tone={topCategory ? "warning" : "default"}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Competência ativa"
-          title={`${activeMonthEntries} lançamento(s) em ${formatCompetencyLabel(defaultMonth)}`}
-          description={`${activeMonthCategories} categoria(s) movimentaram o mês ativo.`}
-          tone={activeMonthEntries ? "positive" : "warning"}
-        />
-      </section>
-
-      <SurfaceCard>
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <SectionHeading
-              title="Escolha o fluxo"
-              description="Separe lançamentos e categorias sem alongar a rotina."
-            />
-          </div>
-          <div className="brandops-tabs">
-            <button
-              type="button"
-              className="brandops-tab"
-              data-active={activeTab === "launches"}
-              onClick={() => setActiveTab("launches")}
-            >
-              Lançamentos
-            </button>
-            <button
-              type="button"
-              className="brandops-tab"
-              data-active={activeTab === "categories"}
-              onClick={() => setActiveTab("categories")}
-            >
-              Categorias
-            </button>
-          </div>
-        </div>
-      </SurfaceCard>
-
       {activeTab === "launches" ? (
-        <div className="atlas-component-stack">
-          <SurfaceCard>
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <SectionHeading
-                title="Operação de lançamentos"
-                description="Resumo consolidado ou livro operacional, conforme a tarefa do momento."
-              />
-              <div className="brandops-subtabs">
-                <button
-                  type="button"
-                  className="brandops-subtab"
-                  data-active={launchView === "overview"}
-                  onClick={() => setLaunchView("overview")}
-                >
-                  Resumo do mês
-                </button>
-                <button
-                  type="button"
-                  className="brandops-subtab"
-                  data-active={launchView === "ledger"}
-                  onClick={() => setLaunchView("ledger")}
-                >
-                  Livro de lançamentos
-                </button>
-              </div>
-            </div>
-          </SurfaceCard>
-
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <AnalyticsKpiCard
-              label="Competência em foco"
-              value={formatCompetencyLabel(`${defaultMonth}-01`)}
-              description="Mês padrão usado para leitura rápida e novos lançamentos."
-            />
-            <AnalyticsKpiCard
-              label="Total no mês"
-              value={currencyFormatter.format(currentMonthTotal)}
-              description="Soma de despesas lançadas na competência em foco."
-              tone={currentMonthTotal > 0 ? "warning" : "default"}
-            />
-            <AnalyticsKpiCard
-              label="Lançamentos no mês"
-              value={integerFormatter.format(activeMonthEntries)}
-              description="Quantidade de movimentos lançados na competência ativa."
-            />
-            <AnalyticsKpiCard
-              label="Categorias usadas"
-              value={integerFormatter.format(activeMonthCategories)}
-              description="Categorias que já apareceram na competência em foco."
-            />
-          </section>
-
-          {launchView === "overview" ? (
-            <div className="grid gap-4 xl:grid-cols-[1.52fr_0.92fr]">
-              <SurfaceCard>
-<div className="atlas-component-stack">
-                  <SectionHeading
-                    title="Tabela mensal de despesas"
-                    description="Visão consolidada por competência para entender rapidamente o peso das despesas no DRE."
-                    aside={`${monthlyLedger.length} competências registradas`}
-                  />
-                  {monthlyLedger.length ? (
-                    <div className="brandops-table-container">
-                      <table className="brandops-table-compact">
-                        <thead>
-                          <tr>
-                            <th>Mês</th>
-                            <th className="text-right">Lançamentos</th>
-                            <th className="text-right">Categorias</th>
-                            <th className="text-right">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {monthlyLedger.map((row) => (
-                            <tr key={row.month}>
-                              <td className="font-medium text-on-surface">
-                                {formatCompetencyLabel(`${row.month}-01`)}
-                              </td>
-                              <td className="text-right">{integerFormatter.format(row.entries)}</td>
-                              <td className="text-right">
-                                {integerFormatter.format(row.categories)}
-                              </td>
-                              <td className="text-right font-semibold text-on-surface">
-                                {currencyFormatter.format(row.total)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <EmptyState
-                      title="Nenhuma despesa lançada"
-                      description="Crie o primeiro lançamento para começar a montar o DRE operacional."
-                      ctaLabel="Novo lançamento"
-                      ctaHref="/cost-center"
-                    />
-                  )}
+        <SurfaceCard>
+          <div className="atlas-component-stack">
+            <SectionHeading
+              title="Livro de lançamentos"
+              description="Histórico operacional paginado para editar, revisar ou excluir movimentos do DRE."
+              aside={
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <span className="atlas-inline-metric">
+                    {integerFormatter.format(bookEntries.length)} lançamento(s)
+                  </span>
+                  <span className="atlas-inline-metric">
+                    {currencyFormatter.format(filteredBookTotal)}
+                  </span>
                 </div>
-              </SurfaceCard>
+              }
+            />
 
-              <SurfaceCard>
-<div className="atlas-component-stack">
-                  <SectionHeading
-                    title="Leitura por categoria"
-                    description="Distribuição acumulada das despesas por categoria para apoiar análise e revisão."
-                  />
-                  {categorySummary.length ? (
-<div className="atlas-component-stack-compact">
-                      {categorySummary.slice(0, 8).map((row) => (
-                        <StackItem
-                          key={row.categoryId}
-                          title={row.categoryName}
-                          description={`${integerFormatter.format(row.entries)} lançamentos`}
-                          aside={currencyFormatter.format(row.total)}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <InlineNotice tone="info" className="text-sm text-on-surface-variant">
-                      As categorias começam a aparecer aqui conforme os lançamentos são feitos.
-                    </InlineNotice>
-                  )}
-                </div>
-              </SurfaceCard>
-            </div>
-          ) : (
-            <SurfaceCard>
-<div className="atlas-component-stack">
-                <SectionHeading
-                  title="Livro de lançamentos"
-                  description="Histórico operacional para editar, revisar ou excluir movimentos do DRE."
-                />
-
-                <div className="brandops-toolbar-panel">
-                  <div className="brandops-toolbar-grid xl:grid-cols-[minmax(0,1fr)_260px_200px_auto]">
-                  <FormField label="Buscar">
-                    <div className="brandops-input-shell">
-                      <Search size={15} className="brandops-input-icon" />
-                      <input
-                        value={bookSearch}
-                        onChange={(event) => setBookSearch(event.target.value)}
-                        placeholder="Descrição ou categoria"
-                        className="brandops-input brandops-input-leading"
-                      />
-                    </div>
-                  </FormField>
-
-                  <FormField label="Categoria">
-                    <select
-                      value={categoryFilter}
-                      onChange={(event) => setCategoryFilter(event.target.value)}
-                      className="brandops-input"
-                    >
-                      <option value="all">Todas as categorias</option>
-                      {expenseCategories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </FormField>
-
-                  <StackItem
-                    className="h-full px-4 py-3"
-                    title="Total filtrado"
-                    description="Soma dos lançamentos após os filtros atuais."
-                    aside={currencyFormatter.format(
-                      bookEntries.reduce((accumulator, expense) => accumulator + expense.amount, 0),
-                    )}
-                  />
-
-                  <button
-                    type="button"
-                    className="brandops-button brandops-button-primary self-end"
-                    onClick={openNewExpenseModal}
-                  >
-                    <Plus size={15} />
-                    Lançar despesa
-                  </button>
-                  </div>
-                </div>
-
-                <div className="brandops-table-container">
+            <div className="atlas-ledger-layout">
+              <div className="atlas-ledger-main">
+                <div className="brandops-table-container atlas-ledger-table-shell">
                   <table className="brandops-table-compact">
                     <thead>
                       <tr>
                         <th>Competência</th>
-                        <th>Categoria</th>
-                        <th>Descrição</th>
+                        <th>Lançamento</th>
                         <th className="text-right">Valor</th>
                         <th className="text-right">Ações</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {bookEntries.length ? (
-                        bookEntries.map((expense) => (
+                      {paginatedBookEntries.length ? (
+                        paginatedBookEntries.map((expense) => (
                           <tr key={expense.id}>
-                            <td>{formatCompetencyLabel(expense.incurredOn)}</td>
-                            <td>{expense.categoryName}</td>
-                            <td className="text-on-surface">{expense.description}</td>
-                            <td className="text-right font-semibold text-on-surface">
+                            <td>
+                              <div className="atlas-ledger-month-cell">
+                                <span className="atlas-ledger-month-value">{formatCompetencyLabel(expense.incurredOn)}</span>
+                                <span className="atlas-ledger-month-meta">{expense.incurredOn.slice(0, 7)}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <div className="atlas-ledger-entry-cell">
+                                <span className="atlas-ledger-category-chip">{expense.categoryName}</span>
+                                <p className="atlas-ledger-entry-title">{expense.description}</p>
+                              </div>
+                            </td>
+                            <td className="text-right font-semibold text-on-surface atlas-ledger-value-cell">
                               {currencyFormatter.format(expense.amount)}
                             </td>
                             <td>
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="atlas-ledger-actions">
                                 <button
                                   type="button"
                                   className="brandops-button brandops-button-ghost"
@@ -776,122 +589,134 @@ export default function CostCenterPage() {
                   </table>
                 </div>
               </div>
-            </SurfaceCard>
-          )}
-        </div>
-      ) : (
-        <div className="atlas-component-stack">
-          <SurfaceCard>
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <SectionHeading
-                title="Gestão de categorias"
-                description="Separe a leitura das categorias do catálogo completo para revisar a estrutura do DRE com mais rapidez."
-              />
-              <div className="brandops-subtabs">
-                <button
-                  type="button"
-                  className="brandops-subtab"
-                  data-active={categoryView === "overview"}
-                  onClick={() => setCategoryView("overview")}
-                >
-                  Resumo
-                </button>
-                <button
-                  type="button"
-                  className="brandops-subtab"
-                  data-active={categoryView === "catalog"}
-                  onClick={() => setCategoryView("catalog")}
-                >
-                  Catálogo
-                </button>
-              </div>
-            </div>
-          </SurfaceCard>
 
-          {categoryView === "overview" ? (
-            <div className="atlas-component-stack">
-              <div className="grid gap-4 md:grid-cols-3">
-                <AnalyticsKpiCard
-                  label="Categorias totais"
-                  value={integerFormatter.format(expenseCategories.length)}
-                  description="Categorias disponíveis para alimentar o DRE."
-                />
-                <AnalyticsKpiCard
-                  label="Categorias customizadas"
-                  value={integerFormatter.format(expenseCategories.filter((category) => !category.isSystem).length)}
-                  description="Categorias que podem ser editadas pela operação."
-                />
-                <AnalyticsKpiCard
-                  label="Despesas lançadas"
-                  value={currencyFormatter.format(totalExpenses)}
-                  description="Acumulado de despesas registradas na marca."
-                  tone={totalExpenses > 0 ? "warning" : "default"}
-                />
-              </div>
+              <aside className="atlas-ledger-sidebar">
+                <div className="atlas-ledger-sidebar-inner">
+                  <button
+                    type="button"
+                    className="brandops-button brandops-button-primary w-full"
+                    onClick={openNewExpenseModal}
+                  >
+                    <Plus size={15} />
+                    Novo lançamento
+                  </button>
 
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.18fr)_minmax(18rem,0.82fr)]">
-                <SurfaceCard>
-<div className="atlas-component-stack">
-                    <SectionHeading
-                      title="Categorias mais usadas"
-                      description="As categorias que mais apareceram nos lançamentos recentes e tendem a puxar a leitura mensal."
-                      aside={`${categorySummary.length} grupos com movimento`}
-                    />
-                    {categorySummary.length ? (
-<div className="atlas-component-stack-compact">
-                        {categorySummary.slice(0, 8).map((row) => (
-                          <StackItem
-                            key={row.categoryId}
-                            title={row.categoryName}
-                            description={`${integerFormatter.format(row.entries)} lançamentos`}
-                            aside={currencyFormatter.format(row.total)}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                        <InlineNotice tone="info" className="text-sm text-on-surface-variant">
-                          As categorias com uso real aparecem aqui assim que os lançamentos começam a entrar.
-                        </InlineNotice>
-                      )}
+                  <div className="atlas-ledger-summary-strip atlas-ledger-summary-strip-vertical">
+                    <div className="atlas-ledger-summary-item">
+                      <span className="atlas-ledger-summary-label">Competência ativa</span>
+                      <strong className="atlas-ledger-summary-value">{formatCompetencyLabel(`${defaultMonth}-01`)}</strong>
+                      <span className="atlas-ledger-summary-help">Base padrão para novos lançamentos e leitura rápida.</span>
                     </div>
-                  </SurfaceCard>
+                    <div className="atlas-ledger-summary-item">
+                      <span className="atlas-ledger-summary-label">Total no mês</span>
+                      <strong className="atlas-ledger-summary-value">{currencyFormatter.format(currentMonthTotal)}</strong>
+                      <span className="atlas-ledger-summary-help">{integerFormatter.format(activeMonthEntries)} lançamento(s) na competência ativa.</span>
+                    </div>
+                    <div className="atlas-ledger-summary-item">
+                      <span className="atlas-ledger-summary-label">Categorias em uso</span>
+                      <strong className="atlas-ledger-summary-value">{integerFormatter.format(activeMonthCategories)}</strong>
+                      <span className="atlas-ledger-summary-help">Categorias que já movimentaram o mês atual.</span>
+                    </div>
+                  </div>
 
-                <SurfaceCard>
-<div className="atlas-component-stack">
-                    <SectionHeading
-                      title="Próximas ações"
-                      description="Atalhos rápidos para manter a base de despesas limpa e útil."
-                    />
-                    <div className="atlas-component-stack-compact">
-                      <AnalyticsCalloutCard
-                        eyebrow="Catálogo"
-                        title="Criar categoria"
-                        description="Adicione um novo agrupador para despesas recorrentes ou novas frentes operacionais."
-                        onClick={openNewCategoryModal}
-                        actionLabel="Abrir"
-                      />
-                      <AnalyticsCalloutCard
-                        eyebrow="Livro"
-                        title="Abrir livro de lançamentos"
-                        description="Revisar competências, encontrar um lançamento específico ou corrigir um valor lançado."
-                        onClick={() => {
-                          setActiveTab("launches");
-                          setLaunchView("ledger");
-                        }}
-                        actionLabel="Abrir"
+                  <div className="brandops-toolbar-panel atlas-ledger-toolbar atlas-ledger-toolbar-vertical" data-compact="true">
+                    <div className="atlas-component-stack-tight">
+                      <FormField label="Buscar">
+                        <div className="brandops-input-shell">
+                          <Search size={15} className="brandops-input-icon" />
+                          <input
+                            value={bookSearch}
+                            onChange={(event) => setBookSearch(event.target.value)}
+                            placeholder="Descrição ou categoria"
+                            className="brandops-input brandops-input-leading"
+                          />
+                        </div>
+                      </FormField>
+
+                      <FormField label="Competência">
+                        <select
+                          value={bookMonthFilter}
+                          onChange={(event) => setBookMonthFilter(event.target.value)}
+                          className="brandops-input"
+                        >
+                          <option value="all">Todas as competências</option>
+                          {monthlyLedger.map((row) => (
+                            <option key={row.month} value={row.month}>
+                              {formatCompetencyLabel(`${row.month}-01`)}
+                            </option>
+                          ))}
+                        </select>
+                      </FormField>
+
+                      <FormField label="Categoria">
+                        <select
+                          value={categoryFilter}
+                          onChange={(event) => setCategoryFilter(event.target.value)}
+                          className="brandops-input"
+                        >
+                          <option value="all">Todas as categorias</option>
+                          {expenseCategories.map((category) => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
+                        </select>
+                      </FormField>
+
+                      <StackItem
+                        className="px-4 py-3 atlas-ledger-filter-card"
+                        title="Recorte atual"
+                        description={`${integerFormatter.format(bookEntries.length)} lançamento(s) no filtro.`}
+                        aside={currencyFormatter.format(filteredBookTotal)}
                       />
                     </div>
                   </div>
-                </SurfaceCard>
-              </div>
+
+                  <div className="atlas-ledger-pagination-card">
+                    <p className="text-[11px] leading-[1.4rem] text-on-surface-variant">
+                      {bookEntries.length
+                        ? `Mostrando ${pageStartEntry}-${pageEndEntry} de ${integerFormatter.format(bookEntries.length)} lançamentos.`
+                        : "Nenhum lançamento encontrado para os filtros atuais."}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="brandops-button brandops-button-ghost flex-1"
+                        onClick={() => setCurrentBookPage((current) => Math.max(1, current - 1))}
+                        disabled={currentBookPage === 1}
+                      >
+                        Anterior
+                      </button>
+                      <button
+                        type="button"
+                        className="brandops-button brandops-button-ghost flex-1"
+                        onClick={() => setCurrentBookPage((current) => Math.min(totalBookPages, current + 1))}
+                        disabled={currentBookPage === totalBookPages}
+                      >
+                        Próxima
+                      </button>
+                    </div>
+                    <span className="atlas-inline-metric w-full justify-center">
+                      Página {currentBookPage} de {totalBookPages}
+                    </span>
+                  </div>
+                </div>
+              </aside>
             </div>
-          ) : (
-            <SurfaceCard>
-<div className="atlas-component-stack">
-                <SectionHeading
-                  title="Catálogo de categorias"
-                  description="Cadastre novas categorias e ajuste as categorias customizadas existentes. Categorias de sistema permanecem protegidas."
-                  aside={
+          </div>
+        </SurfaceCard>
+      ) : (
+        <div className="atlas-component-stack">
+          <SurfaceCard>
+            <div className="atlas-component-stack">
+              <SectionHeading
+                title="Catálogo de categorias"
+                description="Cadastre novas categorias e ajuste o catálogo que sustenta a leitura do DRE."
+                aside={
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <span className="atlas-inline-metric">
+                      {integerFormatter.format(expenseCategories.length)} categoria(s)
+                    </span>
                     <button
                       type="button"
                       className="brandops-button brandops-button-primary"
@@ -900,46 +725,63 @@ export default function CostCenterPage() {
                       <Plus size={15} />
                       Nova categoria
                     </button>
-                  }
-                />
+                  </div>
+                }
+              />
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {expenseCategories.map((category) => (
-                    <div
-                      key={category.id}
-                      className="atlas-list-row"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3">
-                          <span
-                            className="mt-1 h-3 w-3 rounded-full border border-white/60 shadow-sm"
-                            style={{ backgroundColor: category.color }}
-                          />
-                          <div>
-                            <p className="text-sm font-semibold text-on-surface">{category.name}</p>
-                            <div className="mt-1 flex flex-wrap gap-2">
-                              <EntityChip text={category.isSystem ? "Sistema" : "Customizada"} />
-                              <EntityChip text={category.isActive ? "Ativa" : "Inativa"} />
-                            </div>
+              <OperationalMetricStrip baseColumns={1} desktopColumns={3}>
+                <OperationalMetric
+                  label="Categorias totais"
+                  value={integerFormatter.format(expenseCategories.length)}
+                  helper="Categorias disponíveis para alimentar o DRE."
+                />
+                <OperationalMetric
+                  label="Ativas"
+                  value={integerFormatter.format(expenseCategories.filter((category) => category.isActive).length)}
+                  helper="Categorias disponíveis para novos lançamentos."
+                  tone="positive"
+                />
+                <OperationalMetric
+                  label="Categorias com uso"
+                  value={integerFormatter.format(categorySummary.length)}
+                  helper="Grupos que já apareceram em lançamentos."
+                  tone="info"
+                />
+              </OperationalMetricStrip>
+
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {expenseCategories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="atlas-list-row"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <span
+                          className="mt-1 h-3 w-3 rounded-full border border-white/60 shadow-sm"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        <div>
+                          <p className="text-sm font-semibold text-on-surface">{category.name}</p>
+                          <div className="mt-1 flex flex-wrap gap-2">
+                            <EntityChip text={category.isActive ? "Ativa" : "Inativa"} />
                           </div>
                         </div>
-                        {!category.isSystem ? (
-                          <button
-                            type="button"
-                            className="brandops-button brandops-button-ghost"
-                            onClick={() => openEditCategoryModal(category.id)}
-                          >
-                            <Pencil size={14} />
-                            Editar
-                          </button>
-                        ) : null}
                       </div>
+                      <button
+                        type="button"
+                        className="brandops-button brandops-button-ghost"
+                        onClick={() => openEditCategoryModal(category.id)}
+                      >
+                        <Pencil size={14} />
+                        Editar
+                      </button>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            </SurfaceCard>
-          )}
+            </div>
+          </SurfaceCard>
         </div>
       )}
 

@@ -16,9 +16,12 @@ import {
   Loader2,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   PlugZap,
   Receipt,
   Settings2,
+  type LucideIcon,
   ShieldAlert,
   Sparkles,
   Tags,
@@ -44,7 +47,7 @@ import { APP_ROUTES, type AppRoute } from "@/lib/brandops/routes";
 interface NavItem {
   href: AppRoute;
   label: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   children?: NavItem[];
 }
 
@@ -73,9 +76,9 @@ const navigationGroups: NavGroup[] = [
   {
     label: "Financeiro",
     items: [
-      { href: APP_ROUTES.dre, label: "DRE Consolidado", icon: Receipt },
+      { href: APP_ROUTES.dre, label: "DRE Mensal", icon: Receipt },
       { href: APP_ROUTES.sales, label: "Receita e Vendas", icon: BarChart3 },
-      { href: APP_ROUTES.costCenter, label: "Lançamentos DRE", icon: Landmark },
+      { href: APP_ROUTES.costCenter, label: "Livro de Lançamentos", icon: Landmark },
       { href: APP_ROUTES.cmv, label: "Custos e CMV", icon: Tags },
     ],
   },
@@ -90,6 +93,7 @@ const navigationGroups: NavGroup[] = [
           { href: APP_ROUTES.mediaExecutive, label: "Visão executiva", icon: TrendingUp },
           { href: APP_ROUTES.mediaRadar, label: "Radar", icon: TrendingUp },
           { href: APP_ROUTES.mediaCampaigns, label: "Campanhas", icon: TrendingUp },
+          { href: APP_ROUTES.mediaAds, label: "Anúncios", icon: TrendingUp },
         ],
       },
       { href: APP_ROUTES.traffic, label: "Tráfego Digital", icon: Activity },
@@ -215,9 +219,26 @@ function getOrbCopy(pathname: string, brandName: string, periodLabel: string) {
       status: "monitorando a operação",
       description: `Atlas acompanha a ${brandName} no recorte ${periodLabel.toLowerCase()} para puxar atenção só para o que realmente pede ação.`,
       hints: [
-        "Use a Torre de Controle para decidir o próximo corte, não para admirar o layout.",
-        "A prioridade da tela é orientar clique e sequência de análise.",
-        "Quando a operação tensiona, o Atlas chama primeiro a margem, o resultado e a base.",
+        "Use a Torre de Controle para decidir o próximo corte com base nos sinais do recorte.",
+        "Quando a operação tensiona, comece por margem, resultado e mídia.",
+        "Se o financeiro apertar, desça para o DRE mensal e para o livro de lançamentos.",
+      ],
+    };
+  }
+
+  if (
+    pathname.startsWith(APP_ROUTES.dre) ||
+    pathname.startsWith(APP_ROUTES.costCenter) ||
+    pathname.startsWith(APP_ROUTES.cmv) ||
+    pathname.startsWith(APP_ROUTES.sales)
+  ) {
+    return {
+      status: "lendo o financeiro",
+      description: `Atlas acompanha faturamento, custos, despesas e resultado da ${brandName} para manter o DRE consistente no período ativo.`,
+      hints: [
+        "Abra o DRE mensal para validar competência, margem e resultado.",
+        "Use o livro de lançamentos para registrar ou corrigir despesas do mês.",
+        "Quando a margem cair, revise CMV, mídia e despesas antes de escalar.",
       ],
     };
   }
@@ -229,7 +250,7 @@ function getOrbCopy(pathname: string, brandName: string, periodLabel: string) {
       hints: [
         "O objetivo é decidir verba e criativo com rapidez.",
         "A leitura de mídia só vale quando o recorte estiver confiável.",
-        "A próxima camada é sair de campanha para anúncio sem perder legibilidade.",
+        "Abra a visão de anúncios quando precisar agir peça por peça.",
       ],
     };
   }
@@ -240,8 +261,8 @@ function getOrbCopy(pathname: string, brandName: string, periodLabel: string) {
       description: `Atlas acompanha intenção, fricção e monetização da ${brandName} no período ativo.`,
       hints: [
         "A leitura de tráfego precisa apontar atrito e oportunidade.",
-        "A navegação deve levar rápido da visão executiva ao detalhe útil.",
-        "A meta aqui não é replicar GA4, e sim traduzir em decisão.",
+        "Use tráfego para encontrar a entrada que merece aprofundamento.",
+        "Cruze os sinais com mídia e DRE quando a qualidade do funil mudar.",
       ],
     };
   }
@@ -251,7 +272,7 @@ function getOrbCopy(pathname: string, brandName: string, periodLabel: string) {
       status: "sincronizando a plataforma",
       description: `Atlas organiza integrações, parâmetros e prontidão operacional da ${brandName}.`,
       hints: [
-        "Configuração deve parecer infraestrutura de operação, não tela técnica solta.",
+        "Mostre primeiro o estado da integração e o próximo passo da operação.",
         "Sempre mostre impacto e próximo passo quando algo falhar.",
         "Fontes saudáveis vêm antes de qualquer recomendação bonita.",
       ],
@@ -262,9 +283,9 @@ function getOrbCopy(pathname: string, brandName: string, periodLabel: string) {
     status: "escutando o sistema",
     description: `Atlas acompanha a ${brandName} no recorte ${periodLabel.toLowerCase()} e mantém contexto sobre a área atual.`,
     hints: [
-      "A shell existe para orientar e acelerar, não para competir com o dado.",
-      "A camada flutuante do Atlas deve ser discreta e útil.",
-      "Navegação, filtro e leitura precisam trabalhar como um mesmo sistema.",
+      "Abra primeiro a área que responde a dúvida operacional do momento.",
+      "Use marca e recorte no header para manter todo o sistema no mesmo contexto.",
+      "O Atlas entra para orientar decisão ou execução, não para competir com o dado.",
     ],
   };
 }
@@ -360,10 +381,12 @@ function SidebarGroup({
   group,
   pathname,
   onNavigate,
+  collapsed = false,
 }: {
   group: NavGroup;
   pathname: string;
   onNavigate: (href: AppRoute) => void;
+  collapsed?: boolean;
 }) {
   const [openBranchHref, setOpenBranchHref] = useState<string | null>(null);
   const activeBranchHref =
@@ -396,13 +419,15 @@ function SidebarGroup({
                   className="atlas-sidebar-link brandops-navlink"
                   data-active={itemActive ? "true" : "false"}
                   data-context={hasActiveChild ? "true" : "false"}
+                  data-collapsed={collapsed ? "true" : "false"}
                   aria-current={itemActive ? "page" : undefined}
+                  title={collapsed ? item.label : undefined}
                 >
                   <Icon size={15} />
                   <span>{item.label}</span>
                 </Link>
 
-                {hasChildren ? (
+                {hasChildren && !collapsed ? (
                   <button
                     type="button"
                     className="atlas-sidebar-branch-trigger"
@@ -421,7 +446,7 @@ function SidebarGroup({
                 ) : null}
               </div>
 
-              {hasChildren && branchExpanded ? (
+              {hasChildren && branchExpanded && !collapsed ? (
                 <div className="atlas-sidebar-branch-children">
                   {item.children?.map((child) => {
                     const ChildIcon = child.icon;
@@ -437,7 +462,9 @@ function SidebarGroup({
                         }}
                         className="atlas-sidebar-link atlas-sidebar-sublink brandops-navlink"
                         data-active={childActive ? "true" : "false"}
+                        data-collapsed={collapsed ? "true" : "false"}
                         aria-current={childActive ? "page" : undefined}
+                        title={collapsed ? child.label : undefined}
                       >
                         <ChildIcon size={12} />
                         <span>{child.label}</span>
@@ -459,6 +486,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "/";
   const showFloatingOrb = false;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return window.localStorage.getItem("atlas.sidebar.collapsed") === "true";
+  });
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(() => {
@@ -566,6 +600,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem("atlas.sidebar.collapsed", String(isSidebarCollapsed));
+  }, [isSidebarCollapsed]);
+
+  useEffect(() => {
     function handleOrbSyncLoading(event: Event) {
       const customEvent = event as CustomEvent<AtlasOrbSyncLoadingDetail>;
       setOrbSyncLoading(customEvent.detail ?? { active: false });
@@ -654,7 +696,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="brandops-shell min-h-[100svh] bg-background text-on-surface">
       <div className="atlas-shell-layout">
-        <aside className="atlas-sidebar-shell hidden lg:flex">
+        <aside
+          className="atlas-sidebar-shell hidden lg:flex"
+          data-collapsed={isSidebarCollapsed ? "true" : "false"}
+        >
           <div className="atlas-sidebar-brand">
             <div className="atlas-sidebar-brandmark">
               <AtlasMark />
@@ -663,6 +708,15 @@ export function AppShell({ children }: { children: ReactNode }) {
               <p className="atlas-sidebar-brandtitle">{BRANDING.appName}</p>
               <p className="atlas-sidebar-brandmeta">Console operacional</p>
             </div>
+            <button
+              type="button"
+              className="atlas-sidebar-toggle"
+              aria-label={isSidebarCollapsed ? "Expandir sidebar" : "Recolher sidebar"}
+              aria-pressed={isSidebarCollapsed}
+              onClick={() => setIsSidebarCollapsed((current) => !current)}
+            >
+              {isSidebarCollapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
+            </button>
           </div>
 
           <div className="atlas-sidebar-nav">
@@ -672,12 +726,17 @@ export function AppShell({ children }: { children: ReactNode }) {
                 group={group}
                 pathname={pathname}
                 onNavigate={handleShellNavigate}
+                collapsed={isSidebarCollapsed}
               />
             ))}
           </div>
 
           <div className="atlas-sidebar-footer">
-            <div className="atlas-sidebar-footer-card" aria-label="Período ativo">
+            <div
+              className="atlas-sidebar-footer-card"
+              aria-label="Período ativo"
+              title={isSidebarCollapsed ? selectedPeriodLabel : undefined}
+            >
               <span className="atlas-sidebar-footer-label">Recorte</span>
               <span className="atlas-sidebar-footer-value">{selectedPeriodLabel}</span>
             </div>
@@ -961,3 +1020,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
 }
+
+
+
+

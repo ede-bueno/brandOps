@@ -4,12 +4,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ExternalLink, Images, Search } from "lucide-react";
-import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import {
+  OperationalMetric,
+  OperationalMetricStrip,
+  PageHeader,
+  SectionHeading,
+  SurfaceCard,
+  WorkspaceSplitLayout,
+  WorkspaceTabs,
+} from "@/components/ui-shell";
 import { fetchCatalogReport } from "@/lib/brandops/database";
 import { currencyFormatter, integerFormatter } from "@/lib/brandops/format";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 import type { CatalogReport, CatalogStatusFilter } from "@/lib/brandops/types";
 
 const EMPTY_REPORT: CatalogReport = {
@@ -191,6 +199,8 @@ export default function FeedPage() {
       <EmptyState
         title="Nenhum catalogo disponivel"
         description="Escolha uma marca para visualizar o catalogo de produtos."
+        ctaHref={null}
+        ctaLabel={null}
       />
     );
   }
@@ -202,6 +212,15 @@ export default function FeedPage() {
           eyebrow="Catalogo visual"
           title="Feed de Produtos"
           description={`Carregando o catalogo da loja ${selectedBrandName}.`}
+          actions={
+            <WorkspaceTabs
+              items={[
+                { key: "overview", label: "Visão geral", active: true, onClick: () => undefined },
+                { key: "playbook", label: "Playbook", active: false, onClick: () => undefined },
+                { key: "grid", label: "Grade", active: false, onClick: () => undefined },
+              ]}
+            />
+          }
         />
         <div className="atlas-page-stack animate-pulse">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -220,6 +239,8 @@ export default function FeedPage() {
       <EmptyState
         title={reportError ? "Catalogo indisponivel" : "Dados da loja indisponiveis"}
         description={reportError ?? "Nao foi possivel carregar o catalogo da loja selecionada."}
+        ctaHref={APP_ROUTES.import}
+        ctaLabel="Abrir importação"
         variant={reportError ? "error" : "default"}
       />
     );
@@ -233,6 +254,8 @@ export default function FeedPage() {
           reportError ??
           "Importe o feed manual ou prepare a integracao Meta Catalog para abrir a biblioteca visual da marca."
         }
+        ctaHref={APP_ROUTES.import}
+        ctaLabel="Importar feed"
         variant={reportError ? "error" : "default"}
       />
     );
@@ -240,159 +263,223 @@ export default function FeedPage() {
 
   return (
     <div className="atlas-page-stack">
-      <PageHeader
-        eyebrow="Catalogo visual"
-        title="Console de catálogo"
-        description="Leia cobertura, venda e distribuição visual do catálogo sem transformar a área em vitrine."
-        actions={
+        <PageHeader
+          eyebrow="Catalogo visual"
+          title="Console de catálogo"
+          description="Acompanhe cobertura, venda e distribuição visual do catálogo da marca."
+          actions={
           <div className="flex flex-wrap gap-2">
+            <WorkspaceTabs
+              items={[
+                { key: "overview", label: "Visão geral", active: view === "overview", onClick: () => setView("overview") },
+                { key: "playbook", label: "Playbook", active: view === "playbook", onClick: () => setView("playbook") },
+                { key: "grid", label: "Grade", active: view === "grid", onClick: () => setView("grid") },
+              ]}
+            />
             <span className="atlas-inline-metric">{selectedBrandName}</span>
             <span className="atlas-inline-metric">{report.meta.sourceLabel}</span>
           </div>
         }
       />
 
-      <section className="atlas-kpi-grid xl:grid-cols-4">
-        <AnalyticsKpiCard
+      <OperationalMetricStrip>
+        <OperationalMetric
           label="SKUs no recorte"
           value={integerFormatter.format(report.summary.totalProducts)}
-          description="Produtos ativos na leitura atual."
+          helper="Produtos ativos na leitura atual."
           tone="info"
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="SKUs com venda"
           value={integerFormatter.format(report.summary.soldProducts)}
-          description="Itens que já provaram demanda no período."
+          helper="Itens que já provaram demanda no período."
           tone="positive"
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Peças conciliadas"
           value={integerFormatter.format(report.summary.totalUnitsSold)}
-          description="Volume vendido já amarrado ao catálogo."
-          tone="default"
+          helper="Volume vendido já amarrado ao catálogo."
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Com galeria"
           value={integerFormatter.format(report.summary.productsWithGallery)}
-          description="Produtos com base visual suficiente para distribuição."
-          tone="default"
+          helper="Produtos com base visual suficiente para distribuição."
         />
-      </section>
+      </OperationalMetricStrip>
 
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Decisão do catálogo"
-          title={primaryAction ?? report.analysis.narrativeTitle}
-          description="O movimento mais útil agora para cobertura, distribuição ou revisão."
-          tone="info"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Maior oportunidade"
-          title={report.analysis.topOpportunity ?? "Sem destaque"}
-          description="Sinal mais promissor para empurrar exposição ou cobertura."
-          tone="positive"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Revisar primeiro"
-          title={report.analysis.topRisk ?? "Sem risco dominante"}
-          description="Gargalo que merece ajuste antes de novas expansões."
-          tone="warning"
-        />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <SurfaceCard>
+      <WorkspaceSplitLayout
+        layout="wide-rail"
+        main={
+          <SurfaceCard>
           <SectionHeading
-            title="Filtro rápido"
-            description="Refine a leitura sem espalhar controles pela tela."
+            title={
+              view === "overview"
+                ? "Leitura do catálogo"
+                : view === "playbook"
+                  ? "Playbook do catálogo"
+                  : "Grade do catálogo"
+            }
+            description={
+              view === "overview"
+                ? "Cobertura, distribuição e próxima ação do catálogo."
+                : view === "playbook"
+                  ? "Zonas de escala, revisão e monitoramento em um fluxo único."
+                  : "Exploração final dos produtos já filtrados no recorte."
+            }
             aside={<span className="atlas-inline-metric">{selectedPeriodLabel}</span>}
           />
-          <div className="mt-5 brandops-toolbar-grid lg:grid-cols-2">
-            <label className="brandops-field-stack lg:col-span-2">
-              <span className="brandops-field-label">Busca</span>
-              <div className="brandops-input-with-icon">
-                <Search size={16} />
-                <input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Buscar por estampa, coleção ou palavra-chave"
-                  className="brandops-input"
-                />
+          {view === "overview" ? (
+            <div className="mt-5 atlas-component-stack">
+              <article className="panel-muted p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                  Próxima decisão
+                </p>
+                <p className="mt-2 font-semibold text-on-surface">
+                  {primaryAction ?? report.analysis.narrativeTitle}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                  {report.analysis.narrativeBody}
+                </p>
+              </article>
+              <div className="grid gap-3 md:grid-cols-2">
+                <article className="panel-muted p-3.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                    Maior oportunidade
+                  </p>
+                  <p className="mt-2 font-semibold text-on-surface">
+                    {report.analysis.topOpportunity ?? "Sem destaque dominante"}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                    O sinal mais promissor para ampliar exposição, reforçar distribuição ou ganhar cobertura.
+                  </p>
+                </article>
+                <article className="panel-muted p-3.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                    Revisar primeiro
+                  </p>
+                  <p className="mt-2 font-semibold text-on-surface">
+                    {report.analysis.topRisk ?? "Sem gargalo dominante"}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                    O principal ponto a ajustar antes de empurrar mais itens ou ampliar distribuição.
+                  </p>
+                </article>
               </div>
-            </label>
-            <label className="brandops-field-stack">
-              <span className="brandops-field-label">Tipo</span>
-              <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="brandops-input">
-                <option value="all">Todos os tipos</option>
-                {report.options.productTypes.map((type) => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-            </label>
-            <label className="brandops-field-stack">
-              <span className="brandops-field-label">Coleção</span>
-              <select value={collectionFilter} onChange={(event) => setCollectionFilter(event.target.value)} className="brandops-input">
-                <option value="all">Todas as coleções</option>
-                {report.options.collections.map((collection) => (
-                  <option key={collection} value={collection}>{collection}</option>
-                ))}
-              </select>
-            </label>
-            <label className="brandops-field-stack">
-              <span className="brandops-field-label">Status</span>
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as CatalogStatusFilter)} className="brandops-input">
-                <option value="all">Com ou sem venda</option>
-                <option value="sold">Somente com venda</option>
-                <option value="unsold">Somente sem venda</option>
-              </select>
-            </label>
-          </div>
-        </SurfaceCard>
-
-        <SurfaceCard>
-          <SectionHeading
-            title="Radar da fonte"
-            description="Origem ativa e cobertura visual em um bloco curto."
-          />
-          <div className="mt-5 grid gap-3">
-            <AnalyticsKpiCard
-              label="Modo de origem"
-              value={report.meta.sourceLabel}
-              description={report.analysis.narrativeBody}
-              tone="info"
-            />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <AnalyticsKpiCard
-                label="Meta Catalog"
-                value={integerFormatter.format(report.summary.metaCatalogProducts)}
-                description="Produtos já prontos para a fonte Meta."
-                tone="positive"
-              />
-              <AnalyticsKpiCard
-                label="Feed manual"
-                value={integerFormatter.format(report.summary.manualFeedProducts)}
-                description="Produtos ainda sustentados pelo feed da INK."
-                tone="default"
-              />
+              <div className="grid gap-3 md:grid-cols-3">
+                {report.analysis.nextActions.length ? (
+                  report.analysis.nextActions.slice(0, 3).map((action) => (
+                    <article key={action} className="panel-muted p-3.5 text-sm leading-6 text-on-surface-variant">
+                      {action}
+                    </article>
+                  ))
+                ) : (
+                  <article className="panel-muted p-3.5 text-sm leading-6 text-on-surface-variant md:col-span-3">
+                    Ainda não há ação dominante no recorte atual.
+                  </article>
+                )}
+              </div>
             </div>
-          </div>
-        </SurfaceCard>
-      </section>
+          ) : (
+            <div className="mt-5 rounded-2xl border border-outline bg-surface-container-low px-4 py-3 text-sm leading-6 text-on-surface-variant">
+              {view === "playbook"
+                ? "Use o playbook para separar o que merece escala, o que pede revisão e o que ainda deve ficar em observação."
+                : "A grade consolida o catálogo filtrado para navegação final por produto, imagem e distribuição."}
+            </div>
+          )}
+          </SurfaceCard>
+        }
+        rail={
+          <div className="atlas-component-stack">
+            <SurfaceCard>
+            <SectionHeading
+              title={view === "grid" ? "Filtrar grade" : "Filtro rápido"}
+              description="Refine a leitura do catálogo."
+            />
+            <div className="mt-5 brandops-toolbar-grid lg:grid-cols-2">
+              <label className="brandops-field-stack lg:col-span-2">
+                <span className="brandops-field-label">Busca</span>
+                <div className="brandops-input-with-icon">
+                  <Search size={16} />
+                  <input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Buscar por estampa, coleção ou palavra-chave"
+                    className="brandops-input"
+                  />
+                </div>
+              </label>
+              <label className="brandops-field-stack">
+                <span className="brandops-field-label">Tipo</span>
+                <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="brandops-input">
+                  <option value="all">Todos os tipos</option>
+                  {report.options.productTypes.map((type) => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="brandops-field-stack">
+                <span className="brandops-field-label">Coleção</span>
+                <select value={collectionFilter} onChange={(event) => setCollectionFilter(event.target.value)} className="brandops-input">
+                  <option value="all">Todas as coleções</option>
+                  {report.options.collections.map((collection) => (
+                    <option key={collection} value={collection}>{collection}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="brandops-field-stack lg:col-span-2">
+                <span className="brandops-field-label">Status</span>
+                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as CatalogStatusFilter)} className="brandops-input">
+                  <option value="all">Com ou sem venda</option>
+                  <option value="sold">Somente com venda</option>
+                  <option value="unsold">Somente sem venda</option>
+                </select>
+              </label>
+            </div>
+          </SurfaceCard>
 
-      <SurfaceCard>
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <SectionHeading
-            title="Exploração do catálogo"
-            description="Visão geral, playbook e grade em um fluxo curto."
-            aside={<span className="atlas-inline-metric">{report.rows.length} produto(s)</span>}
-          />
-          <div className="brandops-subtabs">
-            <button type="button" className="brandops-subtab" data-active={view === "overview"} onClick={() => setView("overview")}>Visão geral</button>
-            <button type="button" className="brandops-subtab" data-active={view === "playbook"} onClick={() => setView("playbook")}>Playbook</button>
-            <button type="button" className="brandops-subtab" data-active={view === "grid"} onClick={() => setView("grid")}>Grade</button>
+          <SurfaceCard>
+            <SectionHeading
+              title="Pulso da fonte"
+              description="Origem ativa e cobertura visual em um bloco curto."
+              aside={<span className="atlas-inline-metric">{report.rows.length} produto(s)</span>}
+            />
+            <div className="mt-5 grid gap-3">
+              <article className="panel-muted p-3.5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                  Origem ativa
+                </p>
+                <p className="mt-2 font-semibold text-on-surface">{report.meta.sourceLabel}</p>
+                <p className="mt-2 text-sm leading-6 text-on-surface-variant">{report.analysis.narrativeBody}</p>
+              </article>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <article className="panel-muted p-3.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                    Meta Catalog
+                  </p>
+                  <p className="mt-2 text-xl font-semibold text-on-surface">
+                    {integerFormatter.format(report.summary.metaCatalogProducts)}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                    Produtos já prontos para a fonte Meta.
+                  </p>
+                </article>
+                <article className="panel-muted p-3.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                    Feed manual
+                  </p>
+                  <p className="mt-2 text-xl font-semibold text-on-surface">
+                    {integerFormatter.format(report.summary.manualFeedProducts)}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                    Produtos ainda sustentados pelo feed da INK.
+                  </p>
+                  </article>
+                </div>
+              </div>
+            </SurfaceCard>
           </div>
-        </div>
-      </SurfaceCard>
+        }
+      />
 
       {view === "overview" ? (
       <>

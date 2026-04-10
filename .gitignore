@@ -28,6 +28,8 @@
 /output/
 /public/_next/
 .next-*.log
+dev-server-*.log
+dev-server-*.err.log
 
 # debug
 npm-debug.log*

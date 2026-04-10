@@ -28,9 +28,14 @@ type MetaActionRow = {
 
 type MetaInsightsRow = {
   account_name?: string;
+  campaign_id?: string;
   campaign_name?: string;
+  adset_id?: string;
   adset_name?: string;
+  ad_id?: string;
   ad_name?: string;
+  creative_id?: string;
+  creative_name?: string;
   publisher_platform?: string;
   platform_position?: string;
   impression_device?: string;
@@ -59,6 +64,17 @@ type MetaApiResponse = {
     error_subcode?: number;
     fbtrace_id?: string;
   };
+};
+
+type MetaAdCreativeNode = {
+  id?: string;
+  name?: string;
+};
+
+type MetaAdNode = {
+  id?: string;
+  name?: string;
+  creative?: MetaAdCreativeNode;
 };
 
 type MetaCatalogProductRow = {
@@ -101,6 +117,11 @@ type FetchMetaInsightsOptions = {
   startDate: string;
   endDate: string;
   accessToken?: string;
+};
+
+type MetaCreativeMapRow = {
+  creativeId: string | null;
+  creativeName: string | null;
 };
 
 export type MetaIntegrationSettings = {
@@ -202,8 +223,11 @@ function buildMetaInsightsUrl({
     level: "ad",
     fields: [
       "account_name",
+      "campaign_id",
       "campaign_name",
+      "adset_id",
       "adset_name",
+      "ad_id",
       "ad_name",
       "date_start",
       "date_stop",
@@ -246,6 +270,57 @@ function formatMetaCatalogApiError(payload: MetaCatalogApiResponse) {
   }
 
   return message;
+}
+
+function chunkStrings(items: string[], size = 50) {
+  const chunks: string[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
+
+async function fetchMetaCreativeMap(
+  adIds: string[],
+  accessToken?: string,
+): Promise<Map<string, MetaCreativeMapRow>> {
+  const token = requireMetaAccessToken(accessToken);
+  const normalizedIds = [...new Set(adIds.map((item) => item.trim()).filter(Boolean))];
+  const creativeMap = new Map<string, MetaCreativeMapRow>();
+
+  for (const chunk of chunkStrings(normalizedIds, 50)) {
+    const params = new URLSearchParams({
+      ids: chunk.join(","),
+      fields: "id,name,creative{id,name}",
+      access_token: token,
+    });
+
+    const response = await fetch(`https://graph.facebook.com/${getMetaApiVersion()}/?${params.toString()}`, {
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
+    const payload = (await response.json()) as Record<string, MetaAdNode> & MetaApiResponse;
+
+    if (!response.ok || payload.error) {
+      throw new Error(formatMetaApiError(payload));
+    }
+
+    chunk.forEach((adId) => {
+      const row = payload[adId];
+      if (!row || typeof row !== "object") {
+        return;
+      }
+
+      creativeMap.set(adId, {
+        creativeId: row.creative?.id?.trim() ?? null,
+        creativeName: row.creative?.name?.trim() ?? null,
+      });
+    });
+  }
+
+  return creativeMap;
 }
 
 function buildMetaCatalogUrl(catalogId: string, accessToken?: string) {
@@ -372,9 +447,14 @@ function mapMetaInsightsRow(row: MetaInsightsRow): MetaRowPayload | null {
   return {
     report_start: reportStart,
     report_end: row.date_stop?.slice(0, 10) ?? reportStart,
+    campaign_id: row.campaign_id?.trim() ?? "",
     campaign_name: row.campaign_name?.trim() ?? "",
+    adset_id: row.adset_id?.trim() ?? "",
     adset_name: row.adset_name?.trim() ?? "",
+    ad_id: row.ad_id?.trim() ?? "",
     ad_name: row.ad_name?.trim() ?? "",
+    creative_id: row.creative_id?.trim() ?? "",
+    creative_name: row.creative_name?.trim() ?? "",
     account_name: row.account_name?.trim() ?? "",
     platform: row.publisher_platform?.trim() || "meta_ads",
     placement: row.platform_position?.trim() || "all",
@@ -430,13 +510,44 @@ export async function fetchMetaDailyInsights({
     nextUrl = payload.paging?.next ?? null;
   }
 
+  try {
+    const creativeMap = await fetchMetaCreativeMap(
+      rows.map((row) => row.ad_id ?? "").filter(Boolean),
+      accessToken,
+    );
+
+    rows.forEach((row) => {
+      if (!row.ad_id) {
+        return;
+      }
+
+      const creative = creativeMap.get(row.ad_id);
+      if (!creative) {
+        return;
+      }
+
+      row.creative_id = creative.creativeId;
+      row.creative_name = creative.creativeName;
+    });
+  } catch {
+    // Não derruba a sync se a camada de criativo falhar nesta rodada.
+  }
+
   const deduped = new Map<string, MetaRowPayload>();
   rows.forEach((row) => {
     const key = [
       row.report_start,
+      row.campaign_id ?? "",
       row.campaign_name ?? "",
+      row.adset_id ?? "",
       row.adset_name ?? "",
+      row.ad_id ?? "",
       row.ad_name ?? "",
+      row.creative_id ?? "",
+      row.creative_name ?? "",
+      row.platform ?? "",
+      row.placement ?? "",
+      row.device_platform ?? "",
     ].join("::");
     deduped.set(key, row);
   });
@@ -500,6 +611,53 @@ function buildMetaRowHash(brandId: string, row: MetaRowPayload) {
   ].join("|");
 }
 
+function isMissingMediaCreativeColumns(error: unknown) {
+  return (
+    error instanceof Error &&
+    /column .*?(campaign_id|adset_id|ad_id|creative_id|creative_name).* does not exist/i.test(
+      error.message,
+    )
+  );
+}
+
+function stripMediaCreativeDimensions<T extends Record<string, unknown>>(row: T) {
+  return {
+    brand_id: row.brand_id,
+    date: row.date,
+    report_start: row.report_start,
+    report_end: row.report_end,
+    campaign_name: row.campaign_name,
+    adset_name: row.adset_name,
+    ad_name: row.ad_name,
+    account_name: row.account_name,
+    platform: row.platform,
+    placement: row.placement,
+    device_platform: row.device_platform,
+    delivery: row.delivery,
+    reach: row.reach,
+    impressions: row.impressions,
+    clicks: row.clicks,
+    clicks_all: row.clicks_all,
+    link_clicks: row.link_clicks,
+    spend: row.spend,
+    purchases: row.purchases,
+    conversion_value: row.conversion_value,
+    ctr_all: row.ctr_all,
+    ctr_link: row.ctr_link,
+    add_to_cart: row.add_to_cart,
+    currency: row.currency,
+    row_hash: row.row_hash,
+    is_ignored: row.is_ignored,
+    ignore_reason: row.ignore_reason,
+    ignored_by: row.ignored_by,
+    ignored_at: row.ignored_at,
+    sanitization_status: row.sanitization_status,
+    sanitization_note: row.sanitization_note,
+    sanitized_at: row.sanitized_at,
+    sanitized_by: row.sanitized_by,
+  };
+}
+
 async function upsertMetaPerformanceRows(
   supabase: SupabaseClient,
   brandId: string,
@@ -545,9 +703,14 @@ async function upsertMetaPerformanceRows(
       date: row.report_start,
       report_start: row.report_start,
       report_end: row.report_end,
+      campaign_id: row.campaign_id ?? null,
       campaign_name: row.campaign_name ?? "",
+      adset_id: row.adset_id ?? null,
       adset_name: row.adset_name ?? "",
+      ad_id: row.ad_id ?? null,
       ad_name: row.ad_name ?? "",
+      creative_id: row.creative_id ?? null,
+      creative_name: row.creative_name ?? null,
       account_name: row.account_name ?? null,
       platform: row.platform ?? "meta_ads",
       placement: row.placement ?? "all",
@@ -577,15 +740,27 @@ async function upsertMetaPerformanceRows(
     };
   });
 
+  let supportsCreativeDimensions = true;
   for (const chunk of chunkRows(payload)) {
-    const { error } = await supabase
-      .from("media_performance")
-      .upsert(chunk, {
-        onConflict: "brand_id,row_hash",
-      });
+    let currentChunk: Array<Record<string, unknown>> = chunk;
 
-    if (error) {
-      throw error;
+    while (true) {
+      const { error } = await supabase
+        .from("media_performance")
+        .upsert(currentChunk, {
+          onConflict: "brand_id,row_hash",
+        });
+
+      if (!error) {
+        break;
+      }
+
+      if (!supportsCreativeDimensions || !isMissingMediaCreativeColumns(error)) {
+        throw error;
+      }
+
+      supportsCreativeDimensions = false;
+      currentChunk = chunk.map(stripMediaCreativeDimensions);
     }
   }
 

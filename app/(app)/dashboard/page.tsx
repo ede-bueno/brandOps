@@ -2,20 +2,25 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import {
-  AnalyticsCalloutCard,
-  AnalyticsKpiCard,
-} from "@/components/analytics/AnalyticsPrimitives";
 import { AtlasControlTowerHome } from "@/components/AtlasControlTowerHome";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, SectionHeading, StackItem, SurfaceCard, WorkspaceTabs } from "@/components/ui-shell";
+import {
+  OperationalMetric,
+  OperationalMetricStrip,
+  PageHeader,
+  SectionHeading,
+  StackItem,
+  SurfaceCard,
+  WorkspaceTabs,
+} from "@/components/ui-shell";
 import { useSanitizationPendingCount } from "@/hooks/use-sanitization-summary";
 import {
   currencyFormatter,
   integerFormatter,
   percentFormatter,
 } from "@/lib/brandops/format";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 
 type DashboardSection = "overview" | "diagnostics" | "atlas";
 
@@ -73,7 +78,7 @@ export default function DashboardPage() {
     }
 
     const syncSectionFromHash = () => {
-      if (window.location.hash === "#atlas-ai-home" && canUseAtlasTab) {
+      if (window.location.hash.startsWith("#atlas-ai-home") && canUseAtlasTab) {
         setActiveSection("atlas");
       }
     };
@@ -109,6 +114,8 @@ export default function DashboardPage() {
       <EmptyState
         title="Nenhuma marca em foco"
         description="Selecione uma marca para abrir a torre de controle."
+        ctaHref={null}
+        ctaLabel={null}
       />
     );
   }
@@ -118,6 +125,9 @@ export default function DashboardPage() {
       <EmptyState
         title="Dados da loja indisponíveis"
         description="Não foi possível montar o dataset da loja selecionada."
+        ctaHref={APP_ROUTES.integrations}
+        ctaLabel="Revisar integrações"
+        variant="error"
       />
     );
   }
@@ -127,6 +137,9 @@ export default function DashboardPage() {
       <EmptyState
         title="Relatório indisponível"
         description="Não foi possível carregar a leitura financeira canônica desta loja."
+        ctaHref={APP_ROUTES.dre}
+        ctaLabel="Abrir DRE mensal"
+        variant="error"
       />
     );
   }
@@ -221,11 +234,11 @@ export default function DashboardPage() {
 
   return (
     <div className="atlas-page-stack-compact">
-      <PageHeader
-        eyebrow="Control Tower"
-        title="Painel executivo"
-        description="Leitura condensada para decidir margem, base e aquisição sem perder tempo com blocos cenográficos."
-        actions={
+        <PageHeader
+          eyebrow="Control Tower"
+          title="Painel executivo"
+          description="Priorize margem, base e aquisição a partir dos sinais mais relevantes do recorte."
+          actions={
           <WorkspaceTabs
             items={[
               {
@@ -244,7 +257,7 @@ export default function DashboardPage() {
                 ? [
                     {
                       key: "dashboard-atlas",
-                      label: "Atlas IA",
+                      label: "Atlas",
                       active: effectiveSection === "atlas",
                       onClick: () => setActiveSection("atlas"),
                     },
@@ -257,80 +270,80 @@ export default function DashboardPage() {
 
       {effectiveSection === "overview" ? (
         <>
-          <section className="atlas-kpi-grid xl:grid-cols-4">
-            <AnalyticsKpiCard
+          <OperationalMetricStrip>
+            <OperationalMetric
               label="Resultado operacional"
               value={currencyFormatter.format(metrics.netResult)}
-              description="Resultado final depois de CMV, mídia e despesas."
+              helper="Resultado final depois de CMV, mídia e despesas."
               tone={metrics.netResult >= 0 ? "positive" : "negative"}
             />
-            <AnalyticsKpiCard
+            <OperationalMetric
               label="Contribuição pós-mídia"
               value={currencyFormatter.format(metrics.contributionAfterMedia)}
-              description={percentFormatter.format(metrics.contributionMargin)}
+              helper={percentFormatter.format(metrics.contributionMargin)}
               tone={metrics.contributionAfterMedia >= 0 ? "positive" : "negative"}
-              href="/dashboard/contribution-margin"
-              actionLabel="Margem"
             />
-            <AnalyticsKpiCard
+            <OperationalMetric
               label="RLD"
               value={currencyFormatter.format(metrics.rld)}
-              description="Receita líquida disponível após descontos."
+              helper="Receita líquida disponível após descontos."
               tone="info"
             />
-            <AnalyticsKpiCard
+            <OperationalMetric
               label="ROAS bruto"
               value={`${metrics.grossRoas.toFixed(2)}x`}
-              description="Faturado bruto dividido pelo investimento de mídia."
+              helper="Faturado bruto dividido pelo investimento de mídia."
               tone={metrics.grossRoas >= 2 ? "positive" : "warning"}
             />
-            <AnalyticsKpiCard
+            <OperationalMetric
               label="Pedidos pagos"
               value={integerFormatter.format(metrics.paidOrderCount)}
-              description="Pedidos pagos no período ativo."
-              tone="default"
+              helper="Pedidos pagos no período ativo."
             />
-            <AnalyticsKpiCard
+            <OperationalMetric
               label="Itens vendidos"
               value={integerFormatter.format(metrics.unitsSold)}
-              description="Volume real de itens usados no DRE."
-              tone="default"
+              helper="Volume real de itens usados no DRE."
             />
-            <AnalyticsKpiCard
+            <OperationalMetric
               label="Ticket médio"
               value={currencyFormatter.format(metrics.averageTicket)}
-              description="Faturado bruto dividido por pedidos pagos."
-              tone="default"
+              helper="Faturado bruto dividido por pedidos pagos."
             />
-            <AnalyticsKpiCard
+            <OperationalMetric
               label="Mídia"
               value={currencyFormatter.format(metrics.mediaSpend)}
-              description="Investimento total saneado no período."
+              helper="Investimento total saneado no período."
               tone="warning"
             />
-          </section>
+          </OperationalMetricStrip>
 
           <section className="grid gap-4 xl:grid-cols-[minmax(0,1.62fr)_18.5rem]">
             <SurfaceCard>
               <SectionHeading
                 title="Prioridade do período"
-                description="O primeiro bloco decide o próximo clique. O restante confirma se o recorte está saudável."
+                description="A prioridade do recorte e os sinais que confirmam a leitura."
                 aside={<span className="atlas-inline-metric">{selectedBrandName}</span>}
               />
               <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(17rem,0.48fr)]">
                 <div className="atlas-priority-rail">
-                  <AnalyticsCalloutCard
-                    eyebrow={primaryDiagnostic?.eyebrow ?? "Operação"}
-                    title={primaryDiagnostic?.title ?? "Sem alerta crítico no corte"}
-                    description={
-                      primaryDiagnostic?.description ??
-                      "A leitura atual não mostra pressão estrutural imediata, então o próximo passo é perseguir eficiência."
-                    }
-                    tone={primaryDiagnostic?.tone ?? "default"}
+                  <Link
                     href={primaryDiagnostic?.href ?? "/dashboard"}
-                    actionLabel="Abrir"
-                    footer={selectedPeriodLabel}
-                  />
+                    className="atlas-soft-subcard block p-4 transition hover:border-secondary/30"
+                  >
+                    <p className="atlas-analytics-eyebrow">{primaryDiagnostic?.eyebrow ?? "Operação"}</p>
+                    <p className="mt-1.5 text-[0.98rem] font-semibold leading-6 text-on-surface">
+                      {primaryDiagnostic?.title ?? "Sem alerta crítico no corte"}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                      {primaryDiagnostic?.description ??
+                        "A leitura atual não mostra pressão estrutural imediata, então o próximo passo é perseguir eficiência."}
+                    </p>
+                    <div className="mt-2 flex items-center justify-between gap-3 text-[11px] font-medium text-on-surface-variant">
+                      <span>{selectedPeriodLabel}</span>
+                      <span className="text-secondary">Abrir</span>
+                    </div>
+                  </Link>
 
                   <div className="atlas-diagnostic-list">
                     {diagnostics.slice(1, 4).map((diagnostic) => (
@@ -371,7 +384,7 @@ export default function DashboardPage() {
             <SurfaceCard>
               <SectionHeading
                 title="Saúde do recorte"
-                description="Validação curta antes de aprofundar."
+                description="Base, integrações e maior pressão do período."
               />
               <div className="mt-4 atlas-compact-stack">
                 <StackItem
@@ -518,13 +531,16 @@ export default function DashboardPage() {
               {diagnostics.map((diagnostic, index) => (
                 <Link key={`${diagnostic.eyebrow}-${diagnostic.title}`} href={diagnostic.href} className="block">
                   {index === 0 ? (
-                    <AnalyticsCalloutCard
-                      eyebrow={diagnostic.eyebrow}
-                      title={diagnostic.title}
-                      description={diagnostic.description}
-                      tone={diagnostic.tone}
-                      actionLabel="Abrir"
-                    />
+                    <article className="atlas-soft-subcard p-4 transition hover:border-secondary/30">
+                      <p className="atlas-analytics-eyebrow">{diagnostic.eyebrow}</p>
+                      <p className="mt-1.5 text-[0.98rem] font-semibold leading-6 text-on-surface">
+                        {diagnostic.title}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                        {diagnostic.description}
+                      </p>
+                      <div className="mt-2 text-[11px] font-medium text-secondary">Abrir</div>
+                    </article>
                   ) : (
                     <StackItem
                       title={diagnostic.title}
@@ -542,7 +558,7 @@ export default function DashboardPage() {
           <SurfaceCard>
             <SectionHeading
               title="Contexto rápido"
-              description="Só o que ajuda a validar a fila."
+              description="Período, resultado e contribuição do recorte."
             />
             <div className="mt-4 atlas-compact-stack">
               <StackItem
@@ -572,3 +588,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

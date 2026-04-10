@@ -15,18 +15,26 @@ export function formatCompactDate(value: string) {
   if (!value) {
     return "-";
   }
+  const parsed = value.includes("T") ? new Date(value) : new Date(`${value}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    return "-";
+  }
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
-  }).format(new Date(`${value}T00:00:00`));
+  }).format(parsed);
 }
 
 export function formatLongDateTime(value: string) {
   if (!value) {
     return "-";
   }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "-";
+  }
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
     timeStyle: "short",
-  }).format(new Date(value));
+  }).format(parsed);
 }

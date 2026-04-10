@@ -676,7 +676,7 @@ export async function fetchBrandDataset(
     supabase
       .from("expense_categories")
       .select("id, name, color, is_system, brand_id")
-      .or(`brand_id.is.null,brand_id.eq.${brandId}`)
+      .eq("brand_id", brandId)
       .order("name"),
     supabase
       .from("brand_expenses")
@@ -892,36 +892,51 @@ export async function fetchBrandDataset(
     }));
 
   const media: MediaRow[] =
-    mediaResult.map((row) => ({
-      id: row.id,
-      rowHash: row.row_hash ?? null,
-      date: row.date ?? row.report_start ?? "",
-      campaignName: row.campaign_name ?? "",
-      adsetName: row.adset_name ?? "",
-      accountName: row.account_name ?? "",
-      adName: row.ad_name ?? "",
-      platform: row.platform ?? "",
-      placement: row.placement ?? "",
-      devicePlatform: row.device_platform ?? "",
-      delivery: row.delivery ?? "",
-      reach: row.reach ?? 0,
-      impressions: row.impressions ?? 0,
-      clicksAll: row.clicks_all ?? 0,
-      spend: Number(row.spend ?? 0),
-      purchases: row.purchases ?? 0,
-      purchaseValue: Number(row.conversion_value ?? 0),
-      linkClicks: row.link_clicks ?? 0,
-      ctrAll: Number(row.ctr_all ?? 0),
-      ctrLink: Number(row.ctr_link ?? 0),
-      addToCart: row.add_to_cart ?? 0,
-      isIgnored: Boolean(row.is_ignored),
-      ignoreReason: row.ignore_reason ?? null,
-      sanitizationStatus: resolveSanitizationStatus(row.sanitization_status, row.is_ignored),
-      sanitizationNote: row.sanitization_note ?? null,
-      sanitizedAt: row.sanitized_at ?? row.ignored_at ?? null,
-      sanitizedBy: row.sanitized_by ?? row.ignored_by ?? null,
-      dataSource: resolveMediaSource(row),
-    }));
+    mediaResult.map((row) => {
+      const creativeDimensions = row as typeof row & {
+        campaign_id?: string | null;
+        adset_id?: string | null;
+        ad_id?: string | null;
+        creative_id?: string | null;
+        creative_name?: string | null;
+      };
+
+      return {
+        id: row.id,
+        rowHash: row.row_hash ?? null,
+        date: row.date ?? row.report_start ?? "",
+        campaignId: creativeDimensions.campaign_id ?? null,
+        campaignName: row.campaign_name ?? "",
+        adsetId: creativeDimensions.adset_id ?? null,
+        adsetName: row.adset_name ?? "",
+        accountName: row.account_name ?? "",
+        adId: creativeDimensions.ad_id ?? null,
+        adName: row.ad_name ?? "",
+        creativeId: creativeDimensions.creative_id ?? null,
+        creativeName: creativeDimensions.creative_name ?? null,
+        platform: row.platform ?? "",
+        placement: row.placement ?? "",
+        devicePlatform: row.device_platform ?? "",
+        delivery: row.delivery ?? "",
+        reach: row.reach ?? 0,
+        impressions: row.impressions ?? 0,
+        clicksAll: row.clicks_all ?? 0,
+        spend: Number(row.spend ?? 0),
+        purchases: row.purchases ?? 0,
+        purchaseValue: Number(row.conversion_value ?? 0),
+        linkClicks: row.link_clicks ?? 0,
+        ctrAll: Number(row.ctr_all ?? 0),
+        ctrLink: Number(row.ctr_link ?? 0),
+        addToCart: row.add_to_cart ?? 0,
+        isIgnored: Boolean(row.is_ignored),
+        ignoreReason: row.ignore_reason ?? null,
+        sanitizationStatus: resolveSanitizationStatus(row.sanitization_status, row.is_ignored),
+        sanitizationNote: row.sanitization_note ?? null,
+        sanitizedAt: row.sanitized_at ?? row.ignored_at ?? null,
+        sanitizedBy: row.sanitized_by ?? row.ignored_by ?? null,
+        dataSource: resolveMediaSource(row),
+      };
+    });
 
   const cmvEntries =
     cmvResult.map((row) => ({
@@ -950,7 +965,7 @@ export async function fetchBrandDataset(
       id: row.id,
       name: row.name,
       color: row.color ?? "#7C8DB5",
-      isSystem: Boolean(row.is_system),
+      isSystem: false,
       isActive: true,
     }));
 
@@ -1532,9 +1547,14 @@ async function replaceMedia(
     media.map((row) => ({
       report_start: row.date,
       report_end: row.date,
+      campaign_id: row.campaignId,
       campaign_name: row.campaignName,
+      adset_id: row.adsetId,
       adset_name: row.adsetName,
+      ad_id: row.adId,
       ad_name: row.adName,
+      creative_id: row.creativeId,
+      creative_name: row.creativeName,
       account_name: row.accountName,
       platform: row.platform || "meta_ads",
       placement: row.placement || "all",
@@ -1555,9 +1575,17 @@ async function replaceMedia(
       [
         brandId,
         row.report_start,
+        row.campaign_id ?? "",
         row.campaign_name,
+        row.adset_id ?? "",
         row.adset_name,
+        row.ad_id ?? "",
         row.ad_name,
+        row.creative_id ?? "",
+        row.creative_name ?? "",
+        row.platform ?? "",
+        row.placement ?? "",
+        row.device_platform ?? "",
       ].join("::"),
   );
 

@@ -1,4 +1,4 @@
-import type { ElementType } from "react";
+import type { LucideIcon } from "lucide-react";
 import { SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import type { BrandIntegrationConfig, IntegrationProvider } from "@/lib/brandops/types";
 
@@ -32,7 +32,7 @@ export function IntegrationRail({
     provider: IntegrationProvider,
     section: "overview" | "config" | "sync" | "rules",
   ) => void;
-  providerIcons: Record<IntegrationProvider, ElementType>;
+  providerIcons: Record<IntegrationProvider, LucideIcon>;
   providerLabels: Record<IntegrationProvider, string>;
   providerEyebrows: Record<IntegrationProvider, string>;
   formatSyncLabel: (integration?: BrandIntegrationConfig) => string;
@@ -89,3 +89,4 @@ export function IntegrationRail({
     </SurfaceCard>
   );
 }
+

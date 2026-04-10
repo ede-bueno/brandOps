@@ -17,7 +17,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { IntegrationRadar } from "@/components/integrations/IntegrationRadar";
 import { IntegrationWorkspaceHeader } from "@/components/integrations/IntegrationWorkspaceHeader";
-import { FormField, InlineNotice, PageHeader, SectionHeading, StackItem, SurfaceCard, WorkspaceTabs } from "@/components/ui-shell";
+import { FormField, InlineNotice, PageHeader, SectionHeading, StackItem, SurfaceCard } from "@/components/ui-shell";
 import Link from "next/link";
 import type {
   BrandIntegrationConfig,
@@ -368,7 +368,7 @@ export default function IntegrationsPage() {
     () => searchParams ?? new URLSearchParams(),
     [searchParams],
   );
-  const { activeBrand, profile, refreshActiveBrand, selectedPeriodLabel, session } = useBrandOps();
+  const { activeBrand, profile, refreshActiveBrand, session } = useBrandOps();
   const [hydratedIntegrations, setHydratedIntegrations] = useState<BrandIntegrationConfig[]>([]);
   const [formState, setFormState] = useState<IntegrationFormState>(emptyIntegrationForm);
   const [metaApiKey, setMetaApiKey] = useState("");
@@ -556,6 +556,8 @@ export default function IntegrationsPage() {
       <EmptyState
         title="Nenhuma marca selecionada"
         description="Selecione uma marca para configurar as origens de dados desta operação."
+        ctaHref={null}
+        ctaLabel={null}
       />
     );
   }
@@ -568,6 +570,15 @@ export default function IntegrationsPage() {
 
   const current = integrationsMap.get(activeProvider);
   const currentState = formState[activeProvider];
+  const activeBrandName = activeBrand?.name ?? "Loja";
+  const activeSectionLabel =
+    activeSection === "overview"
+      ? "Resumo"
+      : activeSection === "config"
+        ? "Conexão"
+        : activeSection === "sync"
+          ? "Execução"
+          : "Guia";
   const isInternalPlatformViewer = profile?.email?.toLowerCase() === "edbo84@gmail.com";
   const options = getModeOptions(activeProvider);
   const providerContextCard = {
@@ -1575,20 +1586,12 @@ export default function IntegrationsPage() {
       <PageHeader
         eyebrow="Plataforma"
         title="Console de integrações"
-        description="Atlas organiza integrações, parâmetros e prontidão operacional."
+        description="Conecte a fonte ativa e ajuste a operação sem perder o contexto da loja."
         actions={
-          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-            <WorkspaceTabs
-              className="overflow-x-auto"
-              items={(["ink", "meta", "ga4", "gemini"] as const).map((provider) => ({
-                key: `integration-provider-${provider}`,
-                label: providerLabels[provider],
-                active: activeProvider === provider,
-                onClick: () => activateWorkspace(provider, activeProvider === provider ? activeSection : "overview"),
-              }))}
-            />
-            <span className="atlas-inline-metric">{activeBrand?.name ?? "Marca ativa"}</span>
-            <span className="atlas-inline-metric">{selectedPeriodLabel}</span>
+          <div className="flex flex-wrap gap-2">
+            <span className="atlas-inline-metric">{activeBrandName}</span>
+            <span className="atlas-inline-metric">{providerLabels[activeProvider]}</span>
+            <span className="atlas-inline-metric">{activeSectionLabel}</span>
           </div>
         }
       />
@@ -1600,7 +1603,7 @@ export default function IntegrationsPage() {
       ) : null}
 
       <section className="grid gap-4 xl:min-h-0 xl:flex-1">
-        <SurfaceCard className="atlas-integration-shell atlas-integration-workspace min-w-0 p-4 lg:p-5 xl:flex xl:h-full xl:min-h-0 xl:flex-col">
+        <SurfaceCard className="atlas-integration-shell atlas-integration-workspace min-w-0 p-3.5 lg:p-4 xl:flex xl:h-full xl:min-h-0 xl:flex-col">
           <IntegrationWorkspaceHeader
             activeProvider={activeProvider}
             current={current}
@@ -1614,6 +1617,12 @@ export default function IntegrationsPage() {
             activateWorkspace={activateWorkspace}
             headerActions={renderHeaderActions()}
             formatSyncLabel={formatSyncLabel}
+            providerTabs={(["ink", "meta", "ga4", "gemini"] as const).map((provider) => ({
+              key: `integration-provider-${provider}`,
+              label: providerLabels[provider],
+              active: activeProvider === provider,
+              onClick: () => activateWorkspace(provider, activeProvider === provider ? activeSection : "overview"),
+            }))}
           />
 
             <div className="mt-5 xl:min-h-0 xl:flex-1">

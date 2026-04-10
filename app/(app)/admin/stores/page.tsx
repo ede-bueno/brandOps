@@ -12,10 +12,6 @@ import {
   AlertCircle
 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
-import {
-  AnalyticsCalloutCard,
-  AnalyticsKpiCard,
-} from "@/components/analytics/AnalyticsPrimitives";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { formatLongDateTime } from "@/lib/brandops/format";
 import {
@@ -27,6 +23,8 @@ import {
   EntityChip,
   FormField,
   InlineNotice,
+  OperationalMetric,
+  OperationalMetricStrip,
   PageHeader,
   SectionHeading,
   SurfaceCard,
@@ -311,7 +309,7 @@ export default function AdminStoresPage() {
       <PageHeader
         eyebrow="Superadmin"
         title="Lojas e Convites"
-        description="Gerencie marcas, planos e acessos sem depender de telas longas."
+        description="Gerencie lojas, planos e acessos da plataforma."
         actions={
           <button
             onClick={() => {
@@ -326,49 +324,98 @@ export default function AdminStoresPage() {
         }
       />
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <AnalyticsKpiCard
+      <OperationalMetricStrip>
+        <OperationalMetric
           label="Lojas ativas"
           value={String(brands.length)}
-          description="Marcas já cadastradas no workspace."
+          helper="Marcas já cadastradas na plataforma."
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Membros totais"
           value={String(totalMembers)}
-          description="Vínculos ativos com acesso às lojas."
+          helper="Vínculos ativos com acesso às lojas."
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Lojas online"
           value={String(brands.filter((brand) => Boolean(brand.website_url)).length)}
-          description="Operações com portal vinculado."
+          helper="Operações com portal vinculado."
           tone="info"
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Georeferenciadas"
           value={String(brands.filter((brand) => Boolean(brand.address_line)).length)}
-          description="Lojas com endereço comercial completo."
+          helper="Lojas com endereço comercial completo."
         />
-      </section>
+      </OperationalMetricStrip>
 
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Próximo movimento"
-          title={isCreating ? "Concluir cadastro da nova loja" : selectedBrand ? `Revisar ${selectedBrand.name}` : "Selecionar uma loja"}
-          description="O corte mais útil agora para manter a governança da plataforma em ordem."
-          tone="info"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Plano em foco"
-          title={selectedBrand ? BRAND_PLAN_LABELS[selectedGovernance.planTier] : "Sem loja em foco"}
-          description={selectedBrand ? describeGovernance(selectedGovernance) : "Escolha uma marca para ver plano e capacidades."}
-          tone={selectedBrand?.governance?.featureFlags.atlasAi || selectedGovernance.featureFlags.atlasAi ? "positive" : "default"}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Acesso"
-          title={selectedBrand ? `${selectedMemberCount} membro(s)` : `${totalMembers} membro(s) no total`}
-          description="Use convites e revisão de time sem sair da área administrativa."
-          tone="default"
-        />
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.02fr)_minmax(18rem,0.98fr)]">
+        <SurfaceCard>
+          <div className="atlas-component-stack">
+            <article className="panel-muted p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                Próximo movimento
+              </p>
+              <p className="mt-2 font-semibold text-on-surface">
+                {isCreating ? "Concluir cadastro da nova loja" : selectedBrand ? `Revisar ${selectedBrand.name}` : "Selecionar uma loja"}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                A ação principal agora para manter lojas, planos e acessos em ordem.
+              </p>
+            </article>
+            <div className="grid gap-3 md:grid-cols-2">
+              <article className="panel-muted p-3.5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                  Plano em foco
+                </p>
+                <p className="mt-2 font-semibold text-on-surface">
+                  {selectedBrand ? BRAND_PLAN_LABELS[selectedGovernance.planTier] : "Sem loja em foco"}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                  {selectedBrand ? describeGovernance(selectedGovernance) : "Escolha uma marca para ver plano e capacidades."}
+                </p>
+              </article>
+              <article className="panel-muted p-3.5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                  Acesso
+                </p>
+                <p className="mt-2 font-semibold text-on-surface">
+                  {selectedBrand ? `${selectedMemberCount} membro(s)` : `${totalMembers} membro(s) no total`}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                  Convide, revise e ajuste acessos desta operação.
+                </p>
+              </article>
+            </div>
+          </div>
+        </SurfaceCard>
+
+        <SurfaceCard>
+          <SectionHeading
+            title="Pulso administrativo"
+            description="Estado atual das lojas e dos acessos."
+          />
+          <div className="mt-5 atlas-component-stack">
+            <article className="panel-muted p-3.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                Loja em foco
+              </p>
+              <p className="mt-2 font-semibold text-on-surface">
+                {selectedBrand?.name ?? "Nenhuma loja selecionada"}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                {selectedBrand ? describeGovernance(selectedGovernance) : "Selecione uma loja para revisar plano, capacidades e time."}
+              </p>
+            </article>
+            <article className="panel-muted p-3.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                Base de acessos
+              </p>
+              <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                {totalMembers} vínculo(s) ativos distribuídos entre {brands.length} loja(s).
+              </p>
+            </article>
+          </div>
+        </SurfaceCard>
       </section>
 
       {notice ? (
@@ -566,29 +613,29 @@ export default function AdminStoresPage() {
                     </div>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
-                    <AnalyticsKpiCard
+                  <OperationalMetricStrip baseColumns={2} desktopColumns={2}>
+                    <OperationalMetric
                       label="Membros"
                       value={selectedMemberCount.toString()}
-                      description="Usuários vinculados ao workspace da marca."
+                      helper="Usuários vinculados à operação da marca."
                     />
-                    <AnalyticsKpiCard
+                    <OperationalMetric
                       label="Site"
                       value={selectedBrand.website_url ? "ativo" : "pendente"}
-                      description="Estado atual do canal público da loja."
+                      helper="Estado atual do canal público da loja."
                       tone={selectedBrand.website_url ? "positive" : "warning"}
                     />
-                    <AnalyticsKpiCard
+                    <OperationalMetric
                       label="Atualizado"
                       value={formatLongDateTime(selectedBrand.updated_at)}
-                      description="Última alteração institucional registrada."
+                      helper="Última alteração institucional registrada."
                     />
-                    <AnalyticsKpiCard
+                    <OperationalMetric
                       label="Local"
                       value={selectedLocation || "Sem endereço"}
-                      description="Referência comercial da operação."
+                      helper="Referência comercial da operação."
                     />
-                  </div>
+                  </OperationalMetricStrip>
                 </div>
               </div>
 
@@ -659,32 +706,31 @@ export default function AdminStoresPage() {
                       disabled={saving}
                       mode="edit"
                     />
-<div className="atlas-component-stack-compact">
+                    <div className="atlas-component-stack-compact">
                       <SectionHeading
                         title="Leitura rápida da loja"
-                        description="Resumo executivo para não depender da tela inteira antes de agir."
+                        description="Resumo da loja para revisão rápida."
                       />
-                      <AnalyticsCalloutCard
-                        title={selectedBrand.slug ?? "Sem slug"}
-                        description="Identificador legível da marca no Atlas."
-                        eyebrow="Slug"
-                      />
-                      <AnalyticsCalloutCard
-                        eyebrow="Contato"
-                        title={selectedBrand.contact_email ?? "Sem email"}
-                        description="Canal principal para recuperação de acesso e operação."
-                      />
-                      <AnalyticsCalloutCard
-                        eyebrow="Convites"
-                        title={String(selectedMemberCount)}
-                        description="Quantidade de acessos ativos nesta marca."
-                      />
-                      <AnalyticsCalloutCard
-                        eyebrow="Plano e governanca"
-                        title={BRAND_PLAN_LABELS[selectedGovernance.planTier]}
-                        description={describeGovernance(selectedGovernance)}
-                        tone={selectedGovernance.featureFlags.atlasAi ? "positive" : "info"}
-                      />
+                      <article className="panel-muted p-3.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">Slug</p>
+                        <p className="mt-2 font-semibold text-on-surface">{selectedBrand.slug ?? "Sem slug"}</p>
+                        <p className="mt-2 text-sm leading-6 text-on-surface-variant">Identificador da marca no sistema.</p>
+                      </article>
+                      <article className="panel-muted p-3.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">Contato</p>
+                        <p className="mt-2 font-semibold text-on-surface">{selectedBrand.contact_email ?? "Sem email"}</p>
+                        <p className="mt-2 text-sm leading-6 text-on-surface-variant">Canal principal para recuperação de acesso e operação.</p>
+                      </article>
+                      <article className="panel-muted p-3.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">Convites</p>
+                        <p className="mt-2 font-semibold text-on-surface">{String(selectedMemberCount)}</p>
+                        <p className="mt-2 text-sm leading-6 text-on-surface-variant">Quantidade de acessos ativos nesta marca.</p>
+                      </article>
+                      <article className="panel-muted p-3.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">Plano e governança</p>
+                        <p className="mt-2 font-semibold text-on-surface">{BRAND_PLAN_LABELS[selectedGovernance.planTier]}</p>
+                        <p className="mt-2 text-sm leading-6 text-on-surface-variant">{describeGovernance(selectedGovernance)}</p>
+                      </article>
                       <div className="panel-muted atlas-component-stack-tight p-3.5">
                         <div className="flex items-center justify-between gap-3">
                           <div>
@@ -778,10 +824,10 @@ export default function AdminStoresPage() {
                   </div>
                 ) : activeTab === "team" ? (
                   <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-<div className="atlas-component-stack">
+                    <div className="atlas-component-stack">
                       <SectionHeading
                         title="Time da loja"
-                        description="Pessoas com acesso ativo ao workspace desta marca."
+                        description="Pessoas com acesso ativo a esta marca."
                       />
                       {selectedBrand?.brand_members?.length ? (
                         <div className="atlas-component-stack-tight">
@@ -808,7 +854,7 @@ export default function AdminStoresPage() {
                         </div>
                       ) : (
                         <div className="atlas-empty-state px-6 py-8 text-center">
-                          <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant/70">Workspace indefinido</p>
+                          <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant/70">Time indefinido</p>
                           <p className="mx-auto mt-1 max-w-[220px] text-[11px] leading-5 text-on-surface-variant/50">Ninguém possui acesso direto a este ambiente no momento.</p>
                         </div>
                       )}
@@ -816,19 +862,19 @@ export default function AdminStoresPage() {
 <div className="atlas-component-stack-compact">
                       <SectionHeading
                         title="Resumo do time"
-                        description="Visão curta para decidir convite, ajuste ou revisão de acesso."
+                        description="Base para decidir convite, ajuste ou revisão de acesso."
                       />
-                      <AnalyticsKpiCard
+                      <OperationalMetric
                         label="Membros ativos"
                         value={selectedMemberCount.toString()}
-                        description="Usuários vinculados à marca."
-                      />
-                      <AnalyticsCalloutCard
-                        eyebrow="Próximo passo"
-                        title="Convidar ou revisar"
-                        description="Gere acesso, confirme o papel e valide o workspace na mesma sessão."
+                        helper="Usuários vinculados à marca."
                         tone="info"
                       />
+                      <article className="panel-muted p-3.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">Próximo passo</p>
+                        <p className="mt-2 font-semibold text-on-surface">Convidar ou revisar</p>
+                        <p className="mt-2 text-sm leading-6 text-on-surface-variant">Gere acesso, confirme o papel e valide a loja na mesma sessão.</p>
+                      </article>
                     </div>
                   </div>
                 ) : (

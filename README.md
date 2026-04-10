@@ -74,6 +74,16 @@ npm run build
 - `supabase/migrations/` fonte de verdade do schema aplicado
 - `docs/` auditorias, handoff e documentação operacional
 
+## Produto
+
+Fonte viva do produto atual em [docs/ATLAS_PRD_VIVO.md](C:\BrandOps\BrandOps-new\docs\ATLAS_PRD_VIVO.md).
+
+Fluxo SDD do Atlas em:
+
+- [docs/sdd/README.md](C:\BrandOps\BrandOps-new\docs\sdd\README.md)
+- [docs/sdd/ATLAS_CONSTITUTION.md](C:\BrandOps\BrandOps-new\docs\sdd\ATLAS_CONSTITUTION.md)
+- [docs/specs/README.md](C:\BrandOps\BrandOps-new\docs\specs\README.md)
+
 ## Deploy
 
 Guia objetivo em [docs/DEPLOY_VERCEL.md](C:\BrandOps\BrandOps-new\docs\DEPLOY_VERCEL.md).

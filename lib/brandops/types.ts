@@ -26,6 +26,36 @@ export type SanitizationDecision = "PENDING" | "KEPT" | "IGNORED";
 export type SanitizationReviewAction = "PENDING" | "KEPT" | "IGNORED";
 
 export type IntegrationProvider = "ink" | "meta" | "ga4" | "gemini";
+export type CreativeTaskSource = "manual" | "media" | "traffic" | "product_insights" | "atlas_ai";
+export type CreativeTaskType = "ad" | "social_post" | "creative" | "copy_test";
+export type CreativeTaskPriority = "low" | "normal" | "high" | "critical";
+export type CreativeTaskChannel =
+  | "instagram_feed"
+  | "instagram_story"
+  | "facebook_feed"
+  | "meta_ad"
+  | "manual_distribution";
+export type CreativeTaskFormat = "image" | "video" | "carousel" | "copy_only";
+export type CreativeTaskStatus =
+  | "draft"
+  | "ready_for_approval"
+  | "approved"
+  | "scheduled"
+  | "published";
+export type CreativeTaskEventType =
+  | "created"
+  | "draft_generated"
+  | "draft_saved"
+  | "status_changed"
+  | "approved"
+  | "scheduled"
+  | "published";
+export type CreativeExecutionJobStatus =
+  | "pending"
+  | "ready"
+  | "completed"
+  | "error"
+  | "canceled";
 
 export type IntegrationMode = "manual_csv" | "api" | "disabled";
 export type AtlasAnalystBehaviorSkill =
@@ -176,10 +206,15 @@ export interface MediaRow {
   id?: string;
   rowHash?: string | null;
   date: string;
+  campaignId?: string | null;
   campaignName: string;
+  adsetId?: string | null;
   adsetName: string;
   accountName: string;
+  adId?: string | null;
   adName: string;
+  creativeId?: string | null;
+  creativeName?: string | null;
   platform: string;
   placement: string;
   devicePlatform: string;
@@ -281,6 +316,68 @@ export interface BrandIntegrationConfig {
   lastSyncAt?: string | null;
   lastSyncStatus: IntegrationSyncStatus;
   lastSyncError?: string | null;
+}
+
+export interface CreativeOpsTaskEvent {
+  id: string;
+  taskId: string;
+  brandId: string;
+  userId?: string | null;
+  eventType: CreativeTaskEventType;
+  eventSummary: string;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface CreativePublicationPlan {
+  channel: CreativeTaskChannel;
+  contentFormat: CreativeTaskFormat;
+  publishInstruction?: string | null;
+  destinationUrl?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface CreativeExecutionJob {
+  id: string;
+  taskId: string;
+  brandId: string;
+  jobStatus: CreativeExecutionJobStatus;
+  channel: CreativeTaskChannel;
+  contentFormat: CreativeTaskFormat;
+  dueAt: string;
+  payload: Record<string, unknown>;
+  lastError?: string | null;
+  queuedAt: string;
+  dispatchedAt?: string | null;
+  completedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreativeOpsTask {
+  id: string;
+  brandId: string;
+  createdBy: string;
+  assignedTo?: string | null;
+  approvedBy?: string | null;
+  source: CreativeTaskSource;
+  taskType: CreativeTaskType;
+  priority: CreativeTaskPriority;
+  status: CreativeTaskStatus;
+  title: string;
+  objective: string;
+  hypothesis?: string | null;
+  contextNotes?: string | null;
+  latestDraft?: string | null;
+  approvedContent?: string | null;
+  scheduledFor?: string | null;
+  approvedAt?: string | null;
+  publishedAt?: string | null;
+  metadata: Record<string, unknown>;
+  publicationPlan?: CreativePublicationPlan | null;
+  createdAt: string;
+  updatedAt: string;
+  events: CreativeOpsTaskEvent[];
 }
 
 export interface GeminiAvailableModel {
@@ -533,6 +630,13 @@ export interface MediaReportDailyPoint extends DailyMediaPoint {
 
 export type MediaCampaignAction = "scale" | "monitor" | "review";
 
+export type MediaAdAction =
+  | "scale_budget"
+  | "maintain"
+  | "review_creative"
+  | "review_audience"
+  | "pause";
+
 export interface MediaCampaignReportRow {
   campaignName: string;
   spend: number;
@@ -549,6 +653,33 @@ export interface MediaCampaignReportRow {
   cpa: number;
   action: MediaCampaignAction;
   summary: string;
+}
+
+export interface MediaAdReportRow {
+  campaignId: string | null;
+  campaignName: string;
+  adsetId: string | null;
+  adsetName: string;
+  adId: string | null;
+  adName: string;
+  creativeId: string | null;
+  creativeName: string | null;
+  spend: number;
+  purchaseValue: number;
+  purchases: number;
+  reach: number;
+  impressions: number;
+  clicksAll: number;
+  linkClicks: number;
+  roas: number;
+  ctrAll: number;
+  ctrLink: number;
+  cpc: number;
+  cpa: number;
+  confidence: number;
+  action: MediaAdAction;
+  summary: string;
+  reasonCodes: string[];
 }
 
 export interface MediaCommandRoom {
@@ -592,6 +723,34 @@ export interface MediaAnalysis {
   topOpportunity: string | null;
 }
 
+export interface MediaAdsAnalysis {
+  narrativeTitle: string;
+  narrativeBody: string;
+  nextActions: string[];
+  topScale: string | null;
+  topCreativeReview: string | null;
+  topAudienceReview: string | null;
+  topPause: string | null;
+}
+
+export interface MediaAdsReport {
+  rows: MediaAdReportRow[];
+  highlights: {
+    bestScale: MediaAdReportRow | null;
+    creativeReview: MediaAdReportRow | null;
+    audienceReview: MediaAdReportRow | null;
+    pauseCandidate: MediaAdReportRow | null;
+  };
+  playbook: {
+    scale: MediaAdReportRow[];
+    creativeReview: MediaAdReportRow[];
+    audienceReview: MediaAdReportRow[];
+    pause: MediaAdReportRow[];
+    maintain: MediaAdReportRow[];
+  };
+  analysis: MediaAdsAnalysis;
+}
+
 export interface MediaReportMeta {
   generatedAt: string;
   from: string | null;
@@ -605,6 +764,7 @@ export interface MediaReport {
   summary: MediaReportSummary;
   dailySeries: MediaReportDailyPoint[];
   campaigns: MediaCampaignReportRow[];
+  ads: MediaAdsReport;
   commandRoom: MediaCommandRoom;
   highlights: MediaHighlights;
   signals: MediaSignals;

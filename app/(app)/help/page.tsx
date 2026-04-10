@@ -1,14 +1,17 @@
 "use client";
 
-import type { ElementType } from "react";
+
 import { useState } from "react";
 import Link from "next/link";
-import { AlertCircle, DatabaseZap, KeyRound, Link2, ShieldCheck, Sparkles } from "lucide-react";
+import { AlertCircle, DatabaseZap, KeyRound, Link2, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
 import {
-  AnalyticsCalloutCard,
-  AnalyticsKpiCard,
-} from "@/components/analytics/AnalyticsPrimitives";
-import { PageHeader, SurfaceCard } from "@/components/ui-shell";
+  OperationalMetric,
+  OperationalMetricStrip,
+  PageHeader,
+  SectionHeading,
+  SurfaceCard,
+  WorkspaceTabs,
+} from "@/components/ui-shell";
 import { APP_ROUTES } from "@/lib/brandops/routes";
 
 type HelpTab = "operation" | "integrations" | "configurations" | "security";
@@ -45,7 +48,7 @@ const operationCards = [
     items: [
       "Manter, ignorar e pendente ficam gravados no banco.",
       "O histórico não depende do filtro global.",
-      "A decisão volta a aparecer no fluxo sem precisar recarregar a marca.",
+      "A decisão volta a aparecer no fluxo ao retomar a operação.",
     ],
   },
   {
@@ -223,7 +226,7 @@ function cardDescription(title: string) {
   if (title === "Integrações") return "Conexão técnica, credenciais por loja e sincronizações.";
   if (title === "Governança SaaS") return "Planos, limites e liberações por marca.";
   if (title === "Ambiente") return "Infraestrutura, envs e migrações que sustentam a plataforma.";
-  return "Leitura curta para agir sem abrir código nem documentação técnica.";
+  return "Resumo objetivo para orientar a próxima ação da operação.";
 }
 
 function HelpCallout({
@@ -232,19 +235,21 @@ function HelpCallout({
   items,
 }: {
   title: string;
-  icon: ElementType;
+  icon: LucideIcon;
   items: string[];
 }) {
   return (
-    <AnalyticsCalloutCard
-      eyebrow={title}
-      title={cardDescription(title)}
-      description={
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-secondary-container/70 text-secondary">
-            <Icon size={16} />
-          </span>
-          <ul className="atlas-component-stack-tight text-[13px] leading-6 text-on-surface-variant">
+    <article className="atlas-soft-subcard p-4">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-secondary-container/70 text-secondary">
+          <Icon size={16} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="atlas-analytics-eyebrow">{title}</p>
+          <p className="mt-1.5 text-[0.95rem] font-semibold leading-6 text-on-surface">
+            {cardDescription(title)}
+          </p>
+          <ul className="mt-3 atlas-component-stack-tight text-[13px] leading-6 text-on-surface-variant">
             {items.map((item) => (
               <li key={item} className="flex gap-2">
                 <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary/80" />
@@ -253,9 +258,8 @@ function HelpCallout({
             ))}
           </ul>
         </div>
-      }
-      tone="default"
-    />
+      </div>
+    </article>
   );
 }
 
@@ -267,70 +271,90 @@ export default function HelpPage() {
       <PageHeader
         eyebrow="Central de ajuda"
         title="Atlas em operação"
-        description="Abra rápido o guia certo sem precisar vasculhar o sistema."
+        description="Guias curtos para operação, integrações, configurações e segurança."
+        actions={
+          <WorkspaceTabs
+            items={helpTabs.map((tab) => ({
+              key: tab.key,
+              label: tab.label,
+              active: activeTab === tab.key,
+              onClick: () => setActiveTab(tab.key),
+            }))}
+          />
+        }
       />
 
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsKpiCard
+      <OperationalMetricStrip desktopColumns={3}>
+        <OperationalMetric
           label="Leitura"
           value="Backend"
-          description="Cálculos e decisões saem do backend. O front só apresenta e opera."
+          helper="Cálculos e decisões saem do backend. O front só apresenta e opera."
           tone="info"
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Integração"
           value="Por loja"
-          description="Meta, GA4 e Gemini usam credencial própria de cada marca."
-          tone="default"
+          helper="Meta, GA4 e Gemini usam credencial própria de cada marca."
         />
-        <AnalyticsKpiCard
+        <OperationalMetric
           label="Confiança"
           value="Auditável"
-          description="Saneamento, histórico e credenciais ficam consistentes e rastreáveis."
+          helper="Saneamento, histórico e credenciais ficam consistentes e rastreáveis."
           tone="positive"
         />
-      </section>
+      </OperationalMetricStrip>
 
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Abrir agora"
-          title="Tutoriais de integração"
-          description="Passo a passo por provedor, com links para os painéis corretos."
-          href={APP_ROUTES.integrationsTutorials}
-          tone="info"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Abrir agora"
-          title="Central estratégica"
-          description="Comportamento do Atlas, learning e governança da marca."
-          href={APP_ROUTES.settings}
-          tone="default"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Abrir agora"
-          title="Área de integrações"
-          description="Conexões, saúde do conector e sincronizações da loja."
-          href={APP_ROUTES.integrations}
-          tone="default"
-        />
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(18rem,0.92fr)]">
+        <SurfaceCard>
+          <SectionHeading
+            title="Abrir agora"
+            description="Use os atalhos principais para resolver a frente certa."
+          />
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <Link href={APP_ROUTES.integrationsTutorials} className="atlas-soft-subcard p-4 transition hover:border-secondary/30">
+              <p className="atlas-analytics-eyebrow">Atalho principal</p>
+              <p className="mt-1.5 text-[0.95rem] font-semibold text-on-surface">Tutoriais de integração</p>
+              <p className="mt-2 text-sm leading-6 text-on-surface-variant">Passo a passo por provedor, com validação e erro comum.</p>
+            </Link>
+            <Link href={APP_ROUTES.settings} className="atlas-soft-subcard p-4 transition hover:border-secondary/30">
+              <p className="atlas-analytics-eyebrow">Configurações</p>
+              <p className="mt-1.5 text-[0.95rem] font-semibold text-on-surface">Central estratégica</p>
+              <p className="mt-2 text-sm leading-6 text-on-surface-variant">Governança, comportamento do Atlas e contexto da marca.</p>
+            </Link>
+            <Link href={APP_ROUTES.integrations} className="atlas-soft-subcard p-4 transition hover:border-secondary/30">
+              <p className="atlas-analytics-eyebrow">Conexão técnica</p>
+              <p className="mt-1.5 text-[0.95rem] font-semibold text-on-surface">Integrações</p>
+              <p className="mt-2 text-sm leading-6 text-on-surface-variant">Conexões, saúde do conector e sincronizações da loja.</p>
+            </Link>
+          </div>
+        </SurfaceCard>
+
+        <SurfaceCard>
+          <div className="atlas-component-stack">
+            <article className="panel-muted p-3.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                Regra principal
+              </p>
+              <p className="mt-2 font-semibold text-on-surface">
+                Backend calcula, frontend opera.
+              </p>
+              <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                Credenciais são por loja, decisões ficam auditáveis e a interface só organiza a operação.
+              </p>
+            </article>
+            <article className="panel-muted p-3.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
+                Quando agir
+              </p>
+              <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                Use Ajuda para entender o fluxo. Use Integrações e Configurações quando a ação pedir execução real.
+              </p>
+            </article>
+          </div>
+        </SurfaceCard>
       </section>
 
       <SurfaceCard className="overflow-hidden p-0">
-        <div className="border-b border-outline px-4 py-3">
-          <div className="brandops-subtabs">
-            {helpTabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className="brandops-subtab"
-                data-active={activeTab === tab.key}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div className="px-4 py-4">
           {activeTab === "operation" && (
             <section className="grid gap-4 xl:grid-cols-2">
@@ -390,22 +414,18 @@ export default function HelpPage() {
                 </summary>
                 <section className="mt-4 grid gap-4 xl:grid-cols-3">
                   {providerTutorials.map((provider) => (
-                    <AnalyticsCalloutCard
-                      key={provider.title}
-                      eyebrow={provider.eyebrow}
-                      title={provider.title}
-                      description={
-                        <ul className="atlas-component-stack-tight text-[13px] leading-6 text-on-surface-variant">
-                          {provider.items.map((item) => (
-                            <li key={item} className="flex gap-2">
-                              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary/80" />
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      }
-                      tone="default"
-                    />
+                    <article key={provider.title} className="atlas-soft-subcard p-4">
+                      <p className="atlas-analytics-eyebrow">{provider.eyebrow}</p>
+                      <p className="mt-1.5 text-[0.95rem] font-semibold text-on-surface">{provider.title}</p>
+                      <ul className="mt-3 atlas-component-stack-tight text-[13px] leading-6 text-on-surface-variant">
+                        {provider.items.map((item) => (
+                          <li key={item} className="flex gap-2">
+                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary/80" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </article>
                   ))}
                 </section>
               </details>
@@ -521,3 +541,4 @@ export default function HelpPage() {
     </div>
   );
 }
+

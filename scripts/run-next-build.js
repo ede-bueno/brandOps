@@ -9,15 +9,32 @@ function cleanupReservedPublicNextFolder() {
   }
 }
 
+function cleanupDistDir() {
+  const distDir = (process.env.BRANDOPS_DIST_DIR || "").trim() || ".next";
+  const distPath = path.join(process.cwd(), distDir);
+  if (fs.existsSync(distPath)) {
+    fs.rmSync(distPath, { recursive: true, force: true });
+  }
+}
+
 function runBuild() {
   cleanupReservedPublicNextFolder();
+  cleanupDistDir();
+
+  const isVercelBuild = Boolean((process.env.VERCEL || "").trim());
+  const distDir = isVercelBuild
+    ? ((process.env.BRANDOPS_DIST_DIR || "").trim() || ".next")
+    : ((process.env.BRANDOPS_DIST_DIR || "").trim() || ".next-build");
+  const outputMode = isVercelBuild
+    ? ((process.env.BRANDOPS_OUTPUT_MODE || "").trim() || "")
+    : ((process.env.BRANDOPS_OUTPUT_MODE || "").trim() || "standalone");
 
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [require.resolve("next/dist/bin/next"), "build"], {
       env: {
         ...process.env,
-        BRANDOPS_DIST_DIR: (process.env.BRANDOPS_DIST_DIR || "").trim() || ".next",
-        BRANDOPS_OUTPUT_MODE: (process.env.BRANDOPS_OUTPUT_MODE || "").trim() || "standalone",
+        BRANDOPS_DIST_DIR: distDir,
+        BRANDOPS_OUTPUT_MODE: outputMode,
       },
       stdio: ["inherit", "pipe", "pipe"],
     });
