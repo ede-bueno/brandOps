@@ -1,12 +1,12 @@
-# Tutorial de Integrações por Loja no Atlas
+# Tutorial de Integrações por Loja no BrandOps
 
 ## Objetivo
 
-Este guia orienta a configuração das integrações por loja no Atlas.
+Este guia orienta a configuração das integrações por loja no BrandOps.
 
 Regras atuais do produto:
 - cada marca deve salvar sua própria credencial
-- Meta, GA4 e Gemini não devem depender da chave global da plataforma para operação normal
+- Meta e GA4 não devem depender da chave global da plataforma para operação normal
 - o backend salva os segredos por marca de forma criptografada
 - a OH MyDog deve receber como segredo próprio os mesmos dados que antes estavam sendo usados como credenciais da plataforma
 
@@ -19,7 +19,7 @@ Antes de tentar salvar qualquer credencial por loja, confirme que o ambiente do 
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `BRANDOPS_SECRET_ENCRYPTION_KEY`
 
-Sem `BRANDOPS_SECRET_ENCRYPTION_KEY`, o Atlas não consegue criptografar e persistir tokens e JSONs por marca.
+Sem `BRANDOPS_SECRET_ENCRYPTION_KEY`, o BrandOps não consegue criptografar e persistir tokens e JSONs por marca.
 
 Regras para `BRANDOPS_SECRET_ENCRYPTION_KEY`:
 - usar um valor longo e estável
@@ -28,7 +28,7 @@ Regras para `BRANDOPS_SECRET_ENCRYPTION_KEY`:
 
 ## Como cadastrar a BRANDOPS_SECRET_ENCRYPTION_KEY na Vercel
 
-1. Abra o projeto do Atlas na Vercel.
+1. Abra o projeto do BrandOps na Vercel.
 2. Entre em `Project Settings`.
 3. Abra `Environment Variables`.
 4. Crie a variável `BRANDOPS_SECRET_ENCRYPTION_KEY`.
@@ -44,7 +44,7 @@ Importante:
 
 ## Fluxo recomendado por loja
 
-1. Selecione a marca correta no Atlas.
+1. Selecione a marca correta no BrandOps.
 2. Abra a aba `Integrações`.
 3. Configure primeiro o modo e os identificadores operacionais.
 4. Salve a configuração.
@@ -127,30 +127,6 @@ Ação:
 - o email da service account precisa ter acesso à propriedade GA4
 - o JSON deve estar completo, com `client_email` e `private_key`
 
-## Gemini / Atlas Analyst
-
-### O que a loja precisa informar
-
-- modo: `API`
-- modelo padrão, como `gemini-2.5-flash`
-- chave própria da API Gemini da loja
-
-### Como configurar
-
-1. Abra `Integrações`.
-2. Entre em `Atlas Analyst / Gemini`.
-3. Defina o modo `API`.
-4. Informe o modelo desejado.
-5. Salve a configuração.
-6. Cole a chave Gemini da própria loja.
-7. Clique em `Salvar integração Gemini`.
-
-### Observações
-
-- Gemini não faz sincronização em lote como Meta e GA4
-- o Analyst consulta os dados já gravados no Atlas
-- sem chave própria salva, a marca não deve operar o Analyst
-
 ## OH MyDog
 
 A OH MyDog já tinha credenciais equivalentes no ambiente da plataforma. No modelo novo, isso não basta.
@@ -158,7 +134,6 @@ A OH MyDog já tinha credenciais equivalentes no ambiente da plataforma. No mode
 Ação obrigatória:
 - salvar na própria marca OH MyDog o token da Meta
 - salvar na própria marca OH MyDog o JSON do GA4
-- salvar na própria marca OH MyDog a chave Gemini
 
 Objetivo:
 - a loja passar a operar com segredos próprios persistidos no banco, e não mais depender de variáveis globais da plataforma
@@ -170,8 +145,7 @@ Objetivo:
 3. Validar Meta sync.
 4. Validar Meta catálogo.
 5. Validar GA4.
-6. Validar Gemini.
-7. Repetir o fluxo para as demais lojas.
+6. Repetir o fluxo para as demais lojas.
 
 ## Critérios de sucesso
 
@@ -179,6 +153,6 @@ Uma integração por loja está correta quando:
 - a configuração operacional foi salva
 - a credencial própria foi salva
 - a sincronização executa sem depender de env global da plataforma
-- o erro exibido, quando existir, é de permissão do provedor e não de infraestrutura do Atlas
+- o erro exibido, quando existir, é de permissão do provedor e não de infraestrutura do BrandOps
 
 

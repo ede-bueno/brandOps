@@ -42,7 +42,7 @@ export default function RootLayout({
   const themeBootScript = `
     (function() {
       try {
-        var saved = localStorage.getItem("atlas.theme");
+        var saved = localStorage.getItem("brandops.theme");
         var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
         var dark = saved ? saved === "dark" : prefersDark;
         var html = document.documentElement;

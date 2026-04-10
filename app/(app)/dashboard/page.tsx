@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { AtlasControlTowerHome } from "@/components/AtlasControlTowerHome";
+import { useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import {
@@ -22,7 +21,7 @@ import {
 } from "@/lib/brandops/format";
 import { APP_ROUTES } from "@/lib/brandops/routes";
 
-type DashboardSection = "overview" | "diagnostics" | "atlas";
+type DashboardSection = "overview" | "diagnostics";
 
 type DiagnosticTone = "default" | "secondary" | "warning" | "info";
 
@@ -63,30 +62,26 @@ export default function DashboardPage() {
     activeBrand?.integrations.find((integration) => integration.provider === "meta") ?? null;
   const ga4Integration =
     activeBrand?.integrations.find((integration) => integration.provider === "ga4") ?? null;
-  const geminiIntegration =
-    activeBrand?.integrations.find((integration) => integration.provider === "gemini") ?? null;
-  const canUseAtlasTab =
-    (activeBrand?.governance.featureFlags.atlasAi ?? false) &&
-    (activeBrand?.governance.featureFlags.atlasCommandCenter ?? false) &&
-    geminiIntegration?.mode === "api";
-  const effectiveSection =
-    !canUseAtlasTab && activeSection === "atlas" ? "overview" : activeSection;
+  const effectiveSection = activeSection;
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const syncSectionFromHash = () => {
-      if (window.location.hash.startsWith("#atlas-ai-home") && canUseAtlasTab) {
-        setActiveSection("atlas");
-      }
-    };
-
-    syncSectionFromHash();
-    window.addEventListener("hashchange", syncSectionFromHash);
-    return () => window.removeEventListener("hashchange", syncSectionFromHash);
-  }, [canUseAtlasTab]);
+  const dashboardTabs = (
+    <WorkspaceTabs
+      items={[
+        {
+          key: "dashboard-overview",
+          label: "Operação",
+          active: effectiveSection === "overview",
+          onClick: () => setActiveSection("overview"),
+        },
+        {
+          key: "dashboard-diagnostics",
+          label: "Alertas",
+          active: effectiveSection === "diagnostics",
+          onClick: () => setActiveSection("diagnostics"),
+        },
+      ]}
+    />
+  );
 
   if (isBrandLoading) {
     return (
@@ -238,34 +233,7 @@ export default function DashboardPage() {
           eyebrow="Control Tower"
           title="Painel executivo"
           description="Priorize margem, base e aquisição a partir dos sinais mais relevantes do recorte."
-          actions={
-          <WorkspaceTabs
-            items={[
-              {
-                key: "dashboard-overview",
-                label: "Operação",
-                active: effectiveSection === "overview",
-                onClick: () => setActiveSection("overview"),
-              },
-              {
-                key: "dashboard-diagnostics",
-                label: "Alertas",
-                active: effectiveSection === "diagnostics",
-                onClick: () => setActiveSection("diagnostics"),
-              },
-              ...(canUseAtlasTab
-                ? [
-                    {
-                      key: "dashboard-atlas",
-                      label: "Atlas",
-                      active: effectiveSection === "atlas",
-                      onClick: () => setActiveSection("atlas"),
-                    },
-                  ]
-                : []),
-            ]}
-          />
-        }
+          actions={dashboardTabs}
       />
 
       {effectiveSection === "overview" ? (
@@ -582,9 +550,7 @@ export default function DashboardPage() {
             </div>
           </SurfaceCard>
         </section>
-      ) : (
-        <AtlasControlTowerHome />
-      )}
+      ) : null}
     </div>
   );
 }

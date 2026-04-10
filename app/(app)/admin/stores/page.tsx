@@ -49,18 +49,12 @@ type AdminBrand = {
   notes?: string | null;
   plan_tier?: BrandPlanTier | null;
   feature_flags?: {
-    atlasAi?: boolean;
-    atlasCommandCenter?: boolean;
     brandLearning?: boolean;
-    geminiModelCatalog?: boolean;
   } | null;
   governance?: {
     planTier: BrandPlanTier;
     featureFlags: {
-      atlasAi: boolean;
-      atlasCommandCenter: boolean;
       brandLearning: boolean;
-      geminiModelCatalog: boolean;
     };
   };
   created_at: string;
@@ -91,10 +85,7 @@ type BrandFormState = {
   taxId: string;
   notes: string;
   planTier: BrandPlanTier;
-  atlasAi: boolean;
-  atlasCommandCenter: boolean;
   brandLearning: boolean;
-  geminiModelCatalog: boolean;
 };
 
 type BrandTextFieldKey = {
@@ -117,10 +108,7 @@ const emptyBrandForm: BrandFormState = {
   taxId: "",
   notes: "",
   planTier: "starter",
-  atlasAi: false,
-  atlasCommandCenter: false,
   brandLearning: false,
-  geminiModelCatalog: false,
 };
 
 function toBrandPayload(form: BrandFormState) {
@@ -128,10 +116,7 @@ function toBrandPayload(form: BrandFormState) {
     ...form,
     planTier: form.planTier,
     featureFlags: {
-      atlasAi: form.atlasAi,
-      atlasCommandCenter: form.atlasCommandCenter,
       brandLearning: form.brandLearning,
-      geminiModelCatalog: form.geminiModelCatalog,
     },
   };
 }
@@ -186,12 +171,7 @@ function toForm(brand: AdminBrand | null): BrandFormState {
     taxId: brand?.tax_id ?? "",
     notes: brand?.notes ?? "",
     planTier: brand?.governance?.planTier ?? "starter",
-    atlasAi: brand?.governance?.featureFlags.atlasAi ?? false,
-    atlasCommandCenter:
-      brand?.governance?.featureFlags.atlasCommandCenter ?? false,
     brandLearning: brand?.governance?.featureFlags.brandLearning ?? false,
-    geminiModelCatalog:
-      brand?.governance?.featureFlags.geminiModelCatalog ?? false,
   };
 }
 
@@ -210,12 +190,9 @@ function describeGovernance(governance: AdminBrand["governance"] | null | undefi
 
   const labels: string[] = [];
 
-  if (governance.featureFlags.atlasAi) labels.push("Atlas IA");
-  if (governance.featureFlags.atlasCommandCenter) labels.push("Torre IA");
   if (governance.featureFlags.brandLearning) labels.push("Aprender negocio");
-  if (governance.featureFlags.geminiModelCatalog) labels.push("Catalogo Gemini");
 
-  return labels.length ? labels.join(", ") : "Sem recursos inteligentes liberados.";
+  return labels.length ? labels.join(", ") : "Sem recursos adicionais liberados.";
 }
 
 export default function AdminStoresPage() {
@@ -496,7 +473,7 @@ export default function AdminStoresPage() {
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           <span className="atlas-inline-metric">{BRAND_PLAN_LABELS[governance.planTier]}</span>
                           <span className="atlas-inline-metric">
-                            {governance.featureFlags.atlasAi ? "IA on" : "IA off"}
+                            {governance.featureFlags.brandLearning ? "aprendizado on" : "aprendizado off"}
                           </span>
                         </div>
                       </div>
@@ -588,7 +565,7 @@ export default function AdminStoresPage() {
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] leading-5 text-on-surface-variant">
                         <span className="atlas-inline-metric">{BRAND_PLAN_LABELS[selectedGovernance.planTier]}</span>
                         <span className="atlas-inline-metric">
-                          {selectedGovernance.featureFlags.atlasAi ? "Atlas IA liberado" : "Atlas IA bloqueado"}
+                          {selectedGovernance.featureFlags.brandLearning ? "Aprendizado liberado" : "Aprendizado bloqueado"}
                         </span>
                         <span className="atlas-inline-metric">
                           {countReleasedCapabilities(selectedGovernance)} capacidade(s)
@@ -756,13 +733,8 @@ export default function AdminStoresPage() {
                                 return {
                                   ...current,
                                   planTier: governance.planTier,
-                                  atlasAi: governance.featureFlags.atlasAi,
-                                  atlasCommandCenter:
-                                    governance.featureFlags.atlasCommandCenter,
                                   brandLearning:
                                     governance.featureFlags.brandLearning,
-                                  geminiModelCatalog:
-                                    governance.featureFlags.geminiModelCatalog,
                                 };
                               })
                             }
@@ -778,43 +750,13 @@ export default function AdminStoresPage() {
 
                         <div className="grid gap-2">
                           <FeatureToggle
-                            label="Atlas IA"
-                            description="Libera uso do Atlas Analyst na marca."
-                            checked={selectedForm.atlasAi}
-                            onChange={(checked) =>
-                              setSelectedForm((current) => ({ ...current, atlasAi: checked }))
-                            }
-                          />
-                          <FeatureToggle
-                            label="Torre com IA"
-                            description="Permite a casa nativa do Atlas dentro da Torre de Controle."
-                            checked={selectedForm.atlasCommandCenter}
-                            onChange={(checked) =>
-                              setSelectedForm((current) => ({
-                                ...current,
-                                atlasCommandCenter: checked,
-                              }))
-                            }
-                          />
-                          <FeatureToggle
                             label="Aprender negócio"
-                            description="Libera varredura histórica e snapshot de aprendizado da marca."
+                            description="Libera histórico e contexto operacional da marca para futuras leituras de decisão."
                             checked={selectedForm.brandLearning}
                             onChange={(checked) =>
                               setSelectedForm((current) => ({
                                 ...current,
                                 brandLearning: checked,
-                              }))
-                            }
-                          />
-                          <FeatureToggle
-                            label="Catálogo de modelos Gemini"
-                            description="Permite listar os modelos disponíveis pela chave da própria loja."
-                            checked={selectedForm.geminiModelCatalog}
-                            onChange={(checked) =>
-                              setSelectedForm((current) => ({
-                                ...current,
-                                geminiModelCatalog: checked,
                               }))
                             }
                           />

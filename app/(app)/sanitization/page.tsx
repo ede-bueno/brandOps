@@ -332,7 +332,7 @@ export default function SanitizationPage() {
           value={dominantTarget}
           helper={
             summary.pending
-              ? "O Atlas destaca primeiro o alvo com mais pressão aberta."
+              ? "A fila destaca primeiro o alvo com mais pressão aberta."
               : "Sem pendência aberta. A tela vira histórico e auditoria."
           }
           tone={summary.pending ? "default" : "positive"}
@@ -565,7 +565,7 @@ export default function SanitizationPage() {
                 <p className="mt-2 font-semibold text-on-surface">{dominantTarget}</p>
                 <p className="mt-2 text-sm leading-6 text-on-surface-variant">
                   {summary.pending
-                    ? "O Atlas destaca primeiro o alvo com mais pressão aberta neste recorte."
+                    ? "A fila destaca primeiro o alvo com mais pressão aberta neste recorte."
                     : "Sem pendência aberta. A tela passa a servir principalmente para auditoria e histórico."}
                 </p>
               </article>

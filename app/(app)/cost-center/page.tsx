@@ -13,7 +13,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import {
   ActionToast,
-  AtlasModal,
+  BrandOpsModal,
   EntityChip,
   FormField,
   InlineNotice,
@@ -785,7 +785,7 @@ export default function CostCenterPage() {
         </div>
       )}
 
-      <AtlasModal
+      <BrandOpsModal
         open={isExpenseModalOpen}
         title={editingExpenseId ? "Editar lançamento" : "Novo lançamento"}
         description="Preencha a competência mensal, a categoria e a descrição. O valor alimenta diretamente o DRE."
@@ -871,9 +871,9 @@ export default function CostCenterPage() {
             </button>
           </div>
         </form>
-      </AtlasModal>
+      </BrandOpsModal>
 
-      <AtlasModal
+      <BrandOpsModal
         open={isCategoryModalOpen}
         title={editingCategoryId ? "Editar categoria" : "Nova categoria"}
         description="Use categorias curtas e claras para facilitar leitura mensal do DRE."
@@ -925,7 +925,7 @@ export default function CostCenterPage() {
             </button>
           </div>
         </form>
-      </AtlasModal>
+      </BrandOpsModal>
 
       <ProcessingOverlay
         open={Boolean(processingMessage)}

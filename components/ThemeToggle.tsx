@@ -25,7 +25,7 @@ export function ThemeToggle({
 }) {
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("atlas.theme");
+      const saved = localStorage.getItem("brandops.theme");
       if (saved) return saved === "dark";
       return window.matchMedia("(prefers-color-scheme: dark)").matches;
     }
@@ -40,7 +40,7 @@ export function ThemeToggle({
     const next = !isDark;
     setIsDark(next);
     applyTheme(next);
-    localStorage.setItem("atlas.theme", next ? "dark" : "light");
+    localStorage.setItem("brandops.theme", next ? "dark" : "light");
   }
 
   const sizeClass = size === "sm" ? "h-8 w-8" : "h-9 w-9";

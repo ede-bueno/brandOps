@@ -72,7 +72,7 @@ export default function LoginPage() {
       requestBrandSelectionOnNextWorkspaceLoad();
       await requestMagicLink(email.trim());
       setNotice(
-        "Se este email estiver autorizado no Atlas, enviamos um link magico para concluir o acesso.",
+        "Se este email estiver autorizado no BrandOps, enviamos um link magico para concluir o acesso.",
       );
     } catch (authError) {
       setError(toFriendlyAuthErrorMessage(authError));
@@ -101,7 +101,7 @@ export default function LoginPage() {
 
         <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
           <span className="rounded-full border border-outline px-2.5 py-1">Torre</span>
-          <span className="rounded-full border border-outline px-2.5 py-1">Atlas IA</span>
+          <span className="rounded-full border border-outline px-2.5 py-1">Decisão operacional</span>
           <span className="rounded-full border border-outline px-2.5 py-1">Operação POD</span>
         </div>
 
@@ -171,7 +171,7 @@ export default function LoginPage() {
             </div>
           ) : (
             <div className="rounded-2xl border border-outline bg-surface-container-low px-4 py-3 text-sm leading-6 text-on-surface-variant">
-              O Atlas envia um link direto para o email informado. Ao abrir o link, voce entra no painel sem precisar lembrar a senha.
+              O BrandOps envia um link direto para o email informado. Ao abrir o link, voce entra no painel sem precisar lembrar a senha.
             </div>
           )}
 

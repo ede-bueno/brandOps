@@ -264,13 +264,6 @@ Referências:
 - [Billing settings in ChatGPT vs Platform](https://help.openai.com/en/articles/9039756-billing-settings-in-chatgpt-vs-platform)
 - [OpenAI API pricing](https://openai.com/api/pricing/)
 
-### Google Gemini
-
-`Gemini Flash-Lite` tende a ser uma opção de baixo custo para narrativas curtas e estruturadas.
-
-Referência:
-- [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing)
-
 ## Roadmap recomendado
 
 ### Fase 1

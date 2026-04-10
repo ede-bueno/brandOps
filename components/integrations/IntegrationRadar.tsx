@@ -35,9 +35,7 @@ export function IntegrationRadar({
       ? "Confirme conta, catálogo e só sincronize quando a fonte mudar."
       : activeProvider === "ga4"
         ? "Valide a propriedade e reidrate a leitura quando o funil pedir revisão."
-        : activeProvider === "gemini"
-          ? "A estratégia do Atlas fica em Configurações; aqui você só garante prontidão técnica."
-          : "Mantenha a rotina de upload limpa para preservar a origem comercial.";
+        : "Mantenha a rotina de upload limpa para preservar a origem comercial.";
 
   return (
     <div className={`atlas-component-stack-tight ${className ?? ""}`}>

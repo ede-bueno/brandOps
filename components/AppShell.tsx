@@ -13,7 +13,6 @@ import {
   Images,
   LayoutDashboard,
   Landmark,
-  Loader2,
   LogOut,
   Menu,
   PanelLeftClose,
@@ -32,16 +31,9 @@ import {
 
 import { useBrandOps } from "./BrandOpsProvider";
 import { ThemeToggle } from "./ThemeToggle";
-import { AtlasOrb } from "./AtlasOrb";
-import { AtlasMark } from "./AtlasMark";
-import { AtlasOrbRadarPanel, type AtlasOrbRadarTelemetry } from "./AtlasOrbRadarPanel";
 import { PeriodCommandMenu } from "./PeriodCommandMenu";
 import { BRANDING } from "@/lib/branding";
 import { useSanitizationPendingCount } from "@/hooks/use-sanitization-summary";
-import {
-  ATLAS_ORB_SYNC_LOADING_EVENT,
-  type AtlasOrbSyncLoadingDetail,
-} from "@/lib/brandops/orb-sync-loading";
 import { APP_ROUTES, type AppRoute } from "@/lib/brandops/routes";
 
 interface NavItem {
@@ -64,14 +56,21 @@ interface ShellAlert {
   tone: ShellAlertTone;
 }
 
-interface AtlasOrbContextTelemetry extends AtlasOrbRadarTelemetry {
-  hasMediaData: boolean;
+interface ShellContextTelemetry {
+  pendingSanitizationCount: number;
+  mediaIntegrationError: boolean;
+  ga4IntegrationError: boolean;
+  contributionAfterMedia: number | null;
+  netResult: number | null;
+  grossRoas: number | null;
 }
 
 const navigationGroups: NavGroup[] = [
   {
     label: "Controle",
-    items: [{ href: APP_ROUTES.dashboard, label: "Torre de Controle", icon: LayoutDashboard }],
+    items: [
+      { href: APP_ROUTES.dashboard, label: "Torre de Controle", icon: LayoutDashboard },
+    ],
   },
   {
     label: "Financeiro",
@@ -165,7 +164,7 @@ function getNavigationContext(pathname: string) {
 }
 
 function buildShellAlerts(
-  telemetry: AtlasOrbContextTelemetry,
+  telemetry: ShellContextTelemetry,
   activeBrandName: string,
 ): ShellAlert[] {
   const alerts: ShellAlert[] = [];
@@ -213,11 +212,11 @@ function buildShellAlerts(
   return alerts.slice(0, 3);
 }
 
-function getOrbCopy(pathname: string, brandName: string, periodLabel: string) {
+function getShellCopy(pathname: string, brandName: string, periodLabel: string) {
   if (pathname.startsWith(APP_ROUTES.dashboard)) {
     return {
       status: "monitorando a operação",
-      description: `Atlas acompanha a ${brandName} no recorte ${periodLabel.toLowerCase()} para puxar atenção só para o que realmente pede ação.`,
+      description: `${BRANDING.appName} acompanha a ${brandName} no recorte ${periodLabel.toLowerCase()} para puxar atenção só para o que realmente pede ação.`,
       hints: [
         "Use a Torre de Controle para decidir o próximo corte com base nos sinais do recorte.",
         "Quando a operação tensiona, comece por margem, resultado e mídia.",
@@ -234,7 +233,7 @@ function getOrbCopy(pathname: string, brandName: string, periodLabel: string) {
   ) {
     return {
       status: "lendo o financeiro",
-      description: `Atlas acompanha faturamento, custos, despesas e resultado da ${brandName} para manter o DRE consistente no período ativo.`,
+      description: `${BRANDING.appName} acompanha faturamento, custos, despesas e resultado da ${brandName} para manter o DRE consistente no período ativo.`,
       hints: [
         "Abra o DRE mensal para validar competência, margem e resultado.",
         "Use o livro de lançamentos para registrar ou corrigir despesas do mês.",
@@ -246,7 +245,7 @@ function getOrbCopy(pathname: string, brandName: string, periodLabel: string) {
   if (pathname.startsWith(APP_ROUTES.media)) {
     return {
       status: "observando a mídia",
-      description: `Atlas cruza gasto, retorno e sinais de performance da ${brandName} para decidir ajuste, revisão ou escala.`,
+      description: `${BRANDING.appName} cruza gasto, retorno e sinais de performance da ${brandName} para decidir ajuste, revisão ou escala.`,
       hints: [
         "O objetivo é decidir verba e criativo com rapidez.",
         "A leitura de mídia só vale quando o recorte estiver confiável.",
@@ -258,7 +257,7 @@ function getOrbCopy(pathname: string, brandName: string, periodLabel: string) {
   if (pathname.startsWith(APP_ROUTES.traffic)) {
     return {
       status: "lendo o funil",
-      description: `Atlas acompanha intenção, fricção e monetização da ${brandName} no período ativo.`,
+      description: `${BRANDING.appName} acompanha intenção, fricção e monetização da ${brandName} no período ativo.`,
       hints: [
         "A leitura de tráfego precisa apontar atrito e oportunidade.",
         "Use tráfego para encontrar a entrada que merece aprofundamento.",
@@ -270,7 +269,7 @@ function getOrbCopy(pathname: string, brandName: string, periodLabel: string) {
   if (pathname.startsWith(APP_ROUTES.integrations) || pathname.startsWith(APP_ROUTES.settings)) {
     return {
       status: "sincronizando a plataforma",
-      description: `Atlas organiza integrações, parâmetros e prontidão operacional da ${brandName}.`,
+      description: `${BRANDING.appName} organiza integrações, parâmetros e prontidão operacional da ${brandName}.`,
       hints: [
         "Mostre primeiro o estado da integração e o próximo passo da operação.",
         "Sempre mostre impacto e próximo passo quando algo falhar.",
@@ -281,11 +280,11 @@ function getOrbCopy(pathname: string, brandName: string, periodLabel: string) {
 
   return {
     status: "escutando o sistema",
-    description: `Atlas acompanha a ${brandName} no recorte ${periodLabel.toLowerCase()} e mantém contexto sobre a área atual.`,
+    description: `${BRANDING.appName} acompanha a ${brandName} no recorte ${periodLabel.toLowerCase()} e mantém contexto sobre a área atual.`,
     hints: [
       "Abra primeiro a área que responde a dúvida operacional do momento.",
       "Use marca e recorte no header para manter todo o sistema no mesmo contexto.",
-      "O Atlas entra para orientar decisão ou execução, não para competir com o dado.",
+      "O sistema deve orientar decisão e execução sem competir com o dado.",
     ],
   };
 }
@@ -348,7 +347,7 @@ function ShellAccountMenu({
         </span>
         <span className="atlas-user-copy">
           <span className="atlas-user-label">Conta</span>
-          <span className="atlas-user-name">{fullName ?? "Conta Atlas"}</span>
+          <span className="atlas-user-name">{fullName ?? "Conta BrandOps"}</span>
         </span>
         <ChevronDown size={14} className={`atlas-user-chevron ${open ? "rotate-180" : ""}`} />
       </button>
@@ -356,7 +355,7 @@ function ShellAccountMenu({
       {open ? (
         <div className="atlas-user-menu">
           <div className="atlas-user-menu-head">
-            <p className="atlas-user-menu-name">{fullName ?? "Conta Atlas"}</p>
+            <p className="atlas-user-menu-name">{fullName ?? "Conta BrandOps"}</p>
             <p className="atlas-user-menu-email">{email ?? "Sessão ativa"}</p>
           </div>
 
@@ -484,24 +483,16 @@ function SidebarGroup({
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname() ?? "/";
-  const showFloatingOrb = false;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window === "undefined") {
       return false;
     }
 
-    return window.localStorage.getItem("atlas.sidebar.collapsed") === "true";
+    return window.localStorage.getItem("brandops.sidebar.collapsed") === "true";
   });
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
-  const [isMobileViewport, setIsMobileViewport] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.innerWidth < 1024;
-  });
-  const [orbSyncLoading, setOrbSyncLoading] = useState<AtlasOrbSyncLoadingDetail>({
-    active: false,
-  });
 
   const {
     activeBrand,
@@ -509,7 +500,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     brands,
     customDateRange,
     errorMessage,
-    filteredBrand,
     financialReportFiltered,
     profile,
     selectedPeriod,
@@ -534,42 +524,29 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const navigationContext = useMemo(() => getNavigationContext(pathname), [pathname]);
 
-  const atlasOrbTelemetry = useMemo<AtlasOrbContextTelemetry>(() => {
+  const shellTelemetry = useMemo<ShellContextTelemetry>(() => {
     const mediaIntegration = activeBrand?.integrations.find((integration) => integration.provider === "meta");
     const ga4Integration = activeBrand?.integrations.find((integration) => integration.provider === "ga4");
-    const geminiIntegration = activeBrand?.integrations.find((integration) => integration.provider === "gemini");
 
     return {
       pendingSanitizationCount,
-      hasGa4Data: Boolean(filteredBrand?.ga4DailyPerformance.length),
-      hasMediaData: Boolean(filteredBrand?.media.length),
-      hasCatalogData: Boolean(activeBrand?.catalog.length),
       mediaIntegrationError: mediaIntegration?.lastSyncStatus === "error",
       ga4IntegrationError: ga4Integration?.lastSyncStatus === "error",
-      geminiEnabled: geminiIntegration?.mode === "api",
       contributionAfterMedia: financialReportFiltered?.total.contributionAfterMedia ?? null,
       netResult: financialReportFiltered?.total.netResult ?? null,
-      variableCostShare: financialReportFiltered?.analysis.shares.variableCostShare ?? null,
       grossRoas: financialReportFiltered?.total.grossRoas ?? null,
     };
-  }, [activeBrand, filteredBrand, financialReportFiltered, pendingSanitizationCount]);
+  }, [activeBrand, financialReportFiltered, pendingSanitizationCount]);
 
   const shellAlerts = useMemo(
-    () => buildShellAlerts(atlasOrbTelemetry, selectedBrandName),
-    [atlasOrbTelemetry, selectedBrandName],
+    () => buildShellAlerts(shellTelemetry, selectedBrandName),
+    [selectedBrandName, shellTelemetry],
   );
 
-  const orbCopy = useMemo(
-    () => getOrbCopy(pathname, selectedBrandName, selectedPeriodLabel),
+  const shellCopy = useMemo(
+    () => getShellCopy(pathname, selectedBrandName, selectedPeriodLabel),
     [pathname, selectedBrandName, selectedPeriodLabel],
   );
-
-  const orbAttentionLevel =
-    shellAlerts.some((alert) => alert.tone === "negative" || alert.tone === "warning")
-      ? "alert"
-      : shellAlerts.some((alert) => alert.tone === "info")
-        ? "notice"
-        : "idle";
 
   function handleShellNavigate(href: AppRoute) {
     setIsMobileMenuOpen(false);
@@ -586,55 +563,23 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia("(max-width: 1023px)");
-    const syncViewport = (event?: MediaQueryListEvent) => {
-      setIsMobileViewport(event ? event.matches : mediaQuery.matches);
-    };
-
-    syncViewport();
-    mediaQuery.addEventListener("change", syncViewport);
-    return () => mediaQuery.removeEventListener("change", syncViewport);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
       return;
     }
 
-    window.localStorage.setItem("atlas.sidebar.collapsed", String(isSidebarCollapsed));
+    window.localStorage.setItem("brandops.sidebar.collapsed", String(isSidebarCollapsed));
   }, [isSidebarCollapsed]);
-
-  useEffect(() => {
-    function handleOrbSyncLoading(event: Event) {
-      const customEvent = event as CustomEvent<AtlasOrbSyncLoadingDetail>;
-      setOrbSyncLoading(customEvent.detail ?? { active: false });
-    }
-
-    window.addEventListener(
-      ATLAS_ORB_SYNC_LOADING_EVENT,
-      handleOrbSyncLoading as EventListener,
-    );
-
-    return () => {
-      window.removeEventListener(
-        ATLAS_ORB_SYNC_LOADING_EVENT,
-        handleOrbSyncLoading as EventListener,
-      );
-    };
-  }, []);
 
   if (isLoading && !session) {
     return (
       <div className="atlas-workspace-loading">
         <div className="atlas-workspace-loading-card">
-          <AtlasOrb size="lg" />
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-outline bg-surface-container-high text-lg font-semibold text-primary">
+            BO
+          </div>
           <div className="space-y-2 text-center">
             <p className="eyebrow">Workspace</p>
             <h2 className="font-headline text-xl font-semibold tracking-tight text-on-surface">
-              Carregando Atlas
+              Carregando workspace
             </h2>
             <p className="text-sm leading-6 text-on-surface-variant">
               Preparando dados, permissões e contexto operacional.
@@ -660,7 +605,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             Escolha a operação que deseja abrir
           </h1>
           <p className="text-base leading-7 text-on-surface-variant">
-            O Atlas trabalha por marca ativa. Entre no workspace certo e siga a leitura com o recorte adequado.
+            O BrandOps trabalha por marca ativa. Entre no workspace certo e siga a leitura com o recorte adequado.
           </p>
         </div>
 
@@ -702,7 +647,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <div className="atlas-sidebar-brand">
             <div className="atlas-sidebar-brandmark">
-              <AtlasMark />
+              <span className="flex h-full w-full items-center justify-center text-[11px] font-semibold tracking-[0.2em] text-primary">
+                BO
+              </span>
             </div>
             <div className="min-w-0">
               <p className="atlas-sidebar-brandtitle">{BRANDING.appName}</p>
@@ -760,8 +707,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                   >
                     {isMobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
                   </button>
-                  <div className="atlas-topbar-mobile-brandmark">
-                    <AtlasMark size="sm" />
+                  <div className="atlas-topbar-mobile-brandmark text-[10px] font-semibold tracking-[0.2em] text-primary">
+                    BO
                   </div>
                 </div>
 
@@ -775,7 +722,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <span className="atlas-topbar-meta-divider" />
                     <span className="atlas-topbar-meta-text">{selectedPeriodLabel}</span>
                   </div>
-                  <p className="atlas-topbar-description">{orbCopy.description}</p>
+                  {shellCopy.description ? (
+                    <p className="atlas-topbar-description">{shellCopy.description}</p>
+                  ) : null}
                 </div>
               </div>
 
@@ -902,7 +851,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <aside className="atlas-mobile-drawer-panel">
             <div className="atlas-sidebar-brand border-b border-outline/70">
               <div className="atlas-sidebar-brandmark">
-                <AtlasMark />
+                <span className="flex h-full w-full items-center justify-center text-[11px] font-semibold tracking-[0.2em] text-primary">
+                  BO
+                </span>
               </div>
               <div className="min-w-0">
                 <p className="atlas-sidebar-brandtitle">{BRANDING.appName}</p>
@@ -947,74 +898,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               ))}
             </div>
           </aside>
-        </div>
-      ) : null}
-
-      {showFloatingOrb ? (
-        <AtlasOrb
-          key={`atlas-orb-${pathname}`}
-          floating
-          size={isMobileViewport ? "sm" : "md"}
-          title="Atlas"
-          status={orbCopy.status}
-          description={orbCopy.description}
-          panelAlign="left"
-          hints={orbCopy.hints}
-          storageKey={isMobileViewport ? "atlas.orb.position.mobile" : "atlas.orb.position"}
-          attentionLevel={orbAttentionLevel}
-          hoverAlert={shellAlerts[0]?.label ?? orbCopy.description}
-          hoverActions={
-            shellAlerts.length
-              ? shellAlerts.map((alert) => ({ label: "Abrir", href: alert.href }))
-              : [
-                  { label: "Ir para Integrações", href: APP_ROUTES.integrations },
-                  { label: "Abrir Configurações", href: APP_ROUTES.settings },
-                ]
-          }
-          panelVariant="custom"
-          panelContent={
-            <AtlasOrbRadarPanel
-              telemetry={atlasOrbTelemetry}
-              status={orbCopy.status}
-              hoverAlert={shellAlerts[0]?.label ?? orbCopy.description}
-            />
-          }
-        />
-      ) : null}
-
-      {orbSyncLoading.active ? (
-        <div className="atlas-sync-overlay fixed inset-0 z-[120] flex items-center justify-center">
-          <div className="atlas-sync-stage atlas-tech-grid relative w-[min(92vw,30rem)] px-8 py-10 text-center">
-            <div className="atlas-sync-grid" />
-            <div className="atlas-sync-rings" />
-            <div className="atlas-sync-scanline" />
-            <div className="mx-auto flex w-full max-w-[15rem] flex-col items-center gap-5">
-              <AtlasOrb
-                size="lg"
-                interactive={false}
-                title="Atlas"
-                status="sincronizando"
-                description="Coordenando a leitura da fonte antes de devolver o workspace."
-                attentionLevel="notice"
-                className="atlas-sync-orb"
-              />
-              <div className="space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
-                  Sincronização global
-                </p>
-                <h3 className="font-headline text-xl font-semibold tracking-tight text-on-surface">
-                  {orbSyncLoading.label ?? "Sincronizando dados"}
-                </h3>
-                <p className="text-sm leading-6 text-on-surface-variant">
-                  O Atlas está consolidando a fonte para devolver a tela no estado certo.
-                </p>
-              </div>
-              <div className="atlas-sync-pill inline-flex items-center gap-2 px-3 py-1.5 text-[11px] font-medium text-on-surface-variant">
-                <Loader2 size={14} className="animate-spin text-primary" />
-                Processando e reconciliando sinais
-              </div>
-            </div>
-          </div>
         </div>
       ) : null}
     </div>

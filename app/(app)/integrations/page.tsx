@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
-  BrainCircuit,
   CheckCircle2,
   Database,
   Link2,
@@ -25,10 +24,7 @@ import type {
   IntegrationMode,
   IntegrationProvider,
 } from "@/lib/brandops/types";
-import { ATLAS_GEMINI_DEFAULT_MODEL } from "@/lib/brandops/ai/model-policy";
 import { getIntegrationTutorial } from "@/lib/brandops/integration-tutorials";
-import { setAtlasOrbSyncLoading } from "@/lib/brandops/orb-sync-loading";
-import { APP_ROUTES } from "@/lib/brandops/routes";
 
 type IntegrationFormState = Record<
   IntegrationProvider,
@@ -40,7 +36,6 @@ type IntegrationFormState = Record<
     catalogId: string;
     manualFallback: boolean;
     syncWindowDays: string;
-    model: string;
     credentialSource: "brand_key";
     hasApiKey: boolean;
     apiKeyHint: string;
@@ -50,7 +45,7 @@ type IntegrationFormState = Record<
 type IntegrationSection = "overview" | "config" | "sync" | "rules";
 
 function isIntegrationProvider(value: string | null): value is IntegrationProvider {
-  return value === "ink" || value === "meta" || value === "ga4" || value === "gemini";
+  return value === "ink" || value === "meta" || value === "ga4";
 }
 
 function isIntegrationSection(value: string | null): value is IntegrationSection {
@@ -61,28 +56,24 @@ const providerLabels: Record<IntegrationProvider, string> = {
   ink: "INK / INCI",
   meta: "Meta Ads",
   ga4: "Google Analytics 4",
-  gemini: "Atlas Analyst / Gemini",
 };
 
 const providerDescriptions: Record<IntegrationProvider, string> = {
   ink: "CSV comercial da operação.",
   meta: "Mídia, catálogo e contingência.",
   ga4: "Tráfego, funil e propriedade.",
-  gemini: "Camada Atlas da marca.",
 };
 
 const providerEyebrows: Record<IntegrationProvider, string> = {
   ink: "Origem comercial",
   meta: "Aquisição",
   ga4: "Analytics",
-  gemini: "Inteligência",
 };
 
 const providerIcons: Record<IntegrationProvider, typeof Database> = {
   ink: Database,
   meta: PlugZap,
   ga4: Radar,
-  gemini: BrainCircuit,
 };
 
 const emptyIntegrationForm: IntegrationFormState = {
@@ -94,7 +85,6 @@ const emptyIntegrationForm: IntegrationFormState = {
     catalogId: "",
     manualFallback: true,
     syncWindowDays: "30",
-    model: ATLAS_GEMINI_DEFAULT_MODEL,
     credentialSource: "brand_key",
     hasApiKey: false,
     apiKeyHint: "",
@@ -107,7 +97,6 @@ const emptyIntegrationForm: IntegrationFormState = {
     catalogId: "",
     manualFallback: true,
     syncWindowDays: "30",
-    model: ATLAS_GEMINI_DEFAULT_MODEL,
     credentialSource: "brand_key",
     hasApiKey: false,
     apiKeyHint: "",
@@ -120,20 +109,6 @@ const emptyIntegrationForm: IntegrationFormState = {
     catalogId: "",
     manualFallback: false,
     syncWindowDays: "30",
-    model: ATLAS_GEMINI_DEFAULT_MODEL,
-    credentialSource: "brand_key",
-    hasApiKey: false,
-    apiKeyHint: "",
-  },
-  gemini: {
-    mode: "disabled",
-    propertyId: "",
-    timezone: "America/Sao_Paulo",
-    adAccountId: "",
-    catalogId: "",
-    manualFallback: false,
-    syncWindowDays: "30",
-    model: ATLAS_GEMINI_DEFAULT_MODEL,
     credentialSource: "brand_key",
     hasApiKey: false,
     apiKeyHint: "",
@@ -153,7 +128,6 @@ function toFormState(integrations: BrandIntegrationConfig[]): IntegrationFormSta
       manualFallback:
         integration.settings.manualFallback ?? integration.provider !== "ga4",
       syncWindowDays: String(integration.settings.syncWindowDays ?? 30),
-      model: integration.settings.model ?? ATLAS_GEMINI_DEFAULT_MODEL,
       credentialSource: "brand_key",
       hasApiKey: Boolean(integration.settings.hasApiKey),
       apiKeyHint: integration.settings.apiKeyHint ?? "",
@@ -212,19 +186,6 @@ function getModeOptions(provider: IntegrationProvider) {
     ] as const;
   }
 
-  if (provider === "gemini") {
-    return [
-      {
-        value: "disabled",
-        label: "Desabilitado",
-      },
-      {
-        value: "api",
-        label: "API",
-      },
-    ] as const;
-  }
-
   return [
     {
       value: "manual_csv",
@@ -246,13 +207,7 @@ function resolveProviderHealth(
   integration: BrandIntegrationConfig | undefined,
   governance: BrandGovernance,
 ) {
-  if (provider === "gemini" && !governance.featureFlags.atlasAi) {
-    return {
-      label: "Bloqueado pelo plano",
-      description: "A camada Atlas IA ainda nao foi liberada para a marca.",
-      tone: "warning" as const,
-    };
-  }
+  void governance;
 
   if (!integration) {
     return {
@@ -316,7 +271,7 @@ function resolveSuggestedWorkspace(
   formState: IntegrationFormState,
   governance: BrandGovernance,
 ) {
-  const priorityOrder: IntegrationProvider[] = ["meta", "ga4", "gemini", "ink"];
+  const priorityOrder: IntegrationProvider[] = ["meta", "ga4", "ink"];
 
   for (const provider of priorityOrder) {
     const integration = integrations.get(provider);
@@ -340,9 +295,6 @@ function resolveSuggestedWorkspace(
       return { provider: "ga4" as const, section: "config" as const };
     }
 
-    if (provider === "gemini" && governance.featureFlags.atlasAi && integration?.mode !== "api") {
-      return { provider: "gemini" as const, section: "config" as const };
-    }
   }
 
   const firstOperationalProvider =
@@ -373,15 +325,12 @@ export default function IntegrationsPage() {
   const [formState, setFormState] = useState<IntegrationFormState>(emptyIntegrationForm);
   const [metaApiKey, setMetaApiKey] = useState("");
   const [ga4ApiKey, setGa4ApiKey] = useState("");
-  const [geminiApiKey, setGeminiApiKey] = useState("");
   const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [savingMetaCredential, setSavingMetaCredential] = useState(false);
   const [savingGa4Credential, setSavingGa4Credential] = useState(false);
-  const [savingGemini, setSavingGemini] = useState(false);
   const [clearingMetaKey, setClearingMetaKey] = useState(false);
   const [clearingGa4Key, setClearingGa4Key] = useState(false);
-  const [clearingGeminiKey, setClearingGeminiKey] = useState(false);
   const [syncingGa4, setSyncingGa4] = useState(false);
   const [syncingMeta, setSyncingMeta] = useState(false);
   const [syncingCatalog, setSyncingCatalog] = useState(false);
@@ -431,7 +380,6 @@ export default function IntegrationsPage() {
     setFormState(toFormState(nextIntegrations));
     setMetaApiKey("");
     setGa4ApiKey("");
-    setGeminiApiKey("");
     setNotice(null);
   }, [activeBrand?.id, activeBrand?.integrations]);
 
@@ -562,11 +510,7 @@ export default function IntegrationsPage() {
     );
   }
 
-  const geminiFeatureEnabled = activeBrand.governance.featureFlags.atlasAi;
-
   const canManageIntegrations = profile?.role === "SUPER_ADMIN";
-  const canManageCurrentProvider =
-    profile?.role === "SUPER_ADMIN" || activeProvider === "gemini";
 
   const current = integrationsMap.get(activeProvider);
   const currentState = formState[activeProvider];
@@ -603,20 +547,6 @@ export default function IntegrationsPage() {
           : `A marca ${activeBrand.name} ainda não possui Property ID informado.`,
       cta: currentState.propertyId ? "/traffic" : null,
     },
-    gemini: {
-      title: "Atlas da marca",
-      body:
-        !geminiFeatureEnabled
-          ? `O plano atual de ${activeBrand.name} ainda não libera a camada Atlas IA.`
-          : currentState.mode === "api"
-          ? `O Atlas Analyst está habilitado para ${activeBrand.name}.${currentState.hasApiKey ? ` Chave da loja salva em ${currentState.apiKeyHint}.` : ""}`
-          : `O Atlas Analyst da marca ${activeBrand.name} ainda está desabilitado.`,
-      cta: !geminiFeatureEnabled
-        ? "/admin/stores"
-        : currentState.mode === "api"
-          ? "/settings#atlas-ai-settings"
-          : null,
-    },
   }[activeProvider];
   const providerNextAction = {
     ink: {
@@ -646,14 +576,6 @@ export default function IntegrationsPage() {
       tone:
         currentState.mode === "api" && !currentState.propertyId ? ("warning" as const) : ("default" as const),
     },
-    gemini: {
-      title: "Próximo movimento",
-      description:
-        currentState.hasApiKey
-          ? "Manter a chave ativa e ajustar o comportamento do Atlas em Configurações."
-          : "Salvar a chave Gemini para habilitar Analyst e aprendizado.",
-      tone: currentState.hasApiKey ? ("positive" as const) : ("warning" as const),
-    },
   }[activeProvider];
   const providerTutorial = getIntegrationTutorial(activeProvider);
   const tutorialHref = providerTutorial?.route ?? "/integrations/tutorials";
@@ -662,9 +584,7 @@ export default function IntegrationsPage() {
       ? "Abrir tutorial Meta"
       : activeProvider === "ga4"
         ? "Abrir tutorial GA4"
-        : activeProvider === "gemini"
-          ? "Abrir tutorial Gemini"
-          : "Abrir tutoriais";
+        : "Abrir tutoriais";
   const metaCredentialReady = formState.meta.hasApiKey;
   const ga4CredentialReady = formState.ga4.hasApiKey;
   const noticeText = notice?.text ?? "";
@@ -681,8 +601,6 @@ export default function IntegrationsPage() {
       noticeText.includes("META_ACCESS_TOKEN não configurada"));
   const isGa4MissingCredentialNotice =
     activeProvider === "ga4" && noticeText.includes("Nenhuma credencial própria do GA4");
-  const isGeminiMissingCredentialNotice =
-    activeProvider === "gemini" && noticeText.includes("Nenhuma chave própria do Gemini");
   const displayNoticeText =
     notice?.kind === "error" &&
     !isInternalPlatformViewer &&
@@ -762,7 +680,7 @@ export default function IntegrationsPage() {
         };
       }
 
-      if (isGa4MissingCredentialNotice || isGeminiMissingCredentialNotice) {
+      if (isGa4MissingCredentialNotice) {
         return {
           tone: "info" as const,
           icon: <Radar size={18} />,
@@ -788,40 +706,13 @@ export default function IntegrationsPage() {
       };
     }
 
-    if (activeProvider === "gemini" && !geminiFeatureEnabled) {
-      return {
-        tone: "warning" as const,
-        icon: <AlertCircle size={18} />,
-        content: (
-          <div className="atlas-component-stack-tight">
-            <p className="font-semibold">O plano atual desta marca ainda não libera o Atlas IA.</p>
-            <p className="text-on-surface-variant">
-              Primeiro ajuste a governança em{" "}
-              <Link
-                href={APP_ROUTES.adminStores}
-                prefetch={false}
-                className="font-semibold text-primary underline underline-offset-4"
-              >
-                Acessos
-              </Link>
-              . Depois disso, a configuração técnica do Gemini volta a ficar operacional.
-            </p>
-          </div>
-        ),
-      };
-    }
-
     if (!canManageIntegrations) {
       return {
         tone: "info" as const,
         icon: <ShieldCheck size={18} />,
         content: (
           <span>
-            {activeProvider === "gemini"
-              ? geminiFeatureEnabled
-                ? "Você pode configurar a credencial Gemini da sua própria loja sem expor a chave na interface."
-                : "A credencial Gemini continua isolada por loja, mas esta marca ainda não tem a camada Atlas IA liberada."
-              : "Você pode acompanhar o status e executar as sincronizações da sua loja. Alterações de configuração seguem restritas ao superadmin."}
+            Você pode acompanhar o status e executar as sincronizações da sua loja. Alterações de configuração seguem restritas ao superadmin.
           </span>
         ),
       };
@@ -832,45 +723,6 @@ export default function IntegrationsPage() {
   const activeHealth = resolveProviderHealth(activeProvider, current, activeBrand.governance);
   const ActiveProviderIcon = providerIcons[activeProvider];
   function renderHeaderActions() {
-    if (activeProvider === "gemini") {
-      return (
-        <div className="atlas-action-cluster">
-          {formState.gemini.hasApiKey ? (
-            <button
-              type="button"
-              onClick={handleClearGeminiKey}
-              disabled={!canManageCurrentProvider || !geminiFeatureEnabled || clearingGeminiKey}
-              className="brandops-button brandops-button-ghost"
-            >
-              {clearingGeminiKey ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Removendo chave
-                </>
-              ) : (
-                "Remover chave"
-              )}
-            </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={handleGeminiSave}
-            disabled={!canManageCurrentProvider || !geminiFeatureEnabled || savingGemini}
-            className="brandops-button brandops-button-primary"
-          >
-            {savingGemini ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Salvando Gemini
-              </>
-            ) : (
-              "Salvar Gemini"
-            )}
-          </button>
-        </div>
-      );
-    }
-
     if (activeProvider === "meta") {
       return (
         <div className="atlas-action-cluster">
@@ -1076,141 +928,6 @@ export default function IntegrationsPage() {
       });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleGeminiSave = async () => {
-    if (!session?.access_token) {
-      setNotice({ kind: "error", text: "Sessão inválida para atualizar o Gemini." });
-      return;
-    }
-
-    if (!geminiFeatureEnabled) {
-      setNotice({
-        kind: "error",
-        text: "O plano atual desta marca ainda nao libera o Atlas IA. Ajuste a governanca da marca em Acessos antes de salvar o Gemini.",
-      });
-      return;
-    }
-
-    if (
-      formState.gemini.mode === "api" &&
-      formState.gemini.credentialSource === "brand_key" &&
-      !formState.gemini.hasApiKey &&
-      !geminiApiKey.trim()
-    ) {
-      setNotice({
-        kind: "error",
-        text: "Salve uma chave própria do Gemini antes de ativar o modo API por loja.",
-      });
-      return;
-    }
-
-    try {
-      setSavingGemini(true);
-      setNotice(null);
-
-      const response = await fetch(`/api/admin/brands/${activeBrand.id}/integrations/gemini`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          mode: formState.gemini.mode,
-          settings: {
-            credentialSource: formState.gemini.credentialSource,
-          },
-          apiKey: geminiApiKey.trim() || undefined,
-        }),
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Falha ao salvar a integração Gemini.");
-      }
-
-      if (payload.integration) {
-        patchSingleIntegration(payload.integration);
-      }
-      await refreshActiveBrand();
-      setGeminiApiKey("");
-      setNotice({
-        kind: "success",
-        text: "Integração Gemini atualizada para esta loja.",
-      });
-    } catch (error) {
-      setNotice({
-        kind: "error",
-        text:
-          error instanceof Error
-            ? error.message
-            : "Falha ao salvar a integração Gemini.",
-      });
-    } finally {
-      setSavingGemini(false);
-    }
-  };
-
-  const handleClearGeminiKey = async () => {
-    if (!session?.access_token) {
-      setNotice({ kind: "error", text: "Sessão inválida para remover a chave do Gemini." });
-      return;
-    }
-
-    if (!geminiFeatureEnabled) {
-      setNotice({
-        kind: "error",
-        text: "O plano atual desta marca ainda nao libera o Atlas IA. Ajuste a governanca da marca em Acessos antes de operar o Gemini.",
-      });
-      return;
-    }
-
-    try {
-      setClearingGeminiKey(true);
-      setNotice(null);
-
-      const nextCredentialSource = "brand_key" as const;
-
-      const response = await fetch(`/api/admin/brands/${activeBrand.id}/integrations/gemini`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          mode: formState.gemini.mode,
-          settings: {
-            credentialSource: nextCredentialSource,
-          },
-          clearApiKey: true,
-        }),
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Falha ao remover a chave do Gemini.");
-      }
-
-      if (payload.integration) {
-        patchSingleIntegration(payload.integration);
-      }
-      await refreshActiveBrand();
-      setGeminiApiKey("");
-      setNotice({
-        kind: "success",
-        text: "Chave própria do Gemini removida desta loja.",
-      });
-    } catch (error) {
-      setNotice({
-        kind: "error",
-        text:
-          error instanceof Error
-            ? error.message
-            : "Falha ao remover a chave do Gemini.",
-      });
-    } finally {
-      setClearingGeminiKey(false);
     }
   };
 
@@ -1472,7 +1189,6 @@ export default function IntegrationsPage() {
 
     try {
       setSyncingGa4(true);
-      setAtlasOrbSyncLoading({ active: true, label: "Sincronizando GA4" });
       setNotice(null);
 
       const response = await fetch(`/api/admin/brands/${activeBrand.id}/integrations/ga4/sync`, {
@@ -1499,7 +1215,6 @@ export default function IntegrationsPage() {
       });
     } finally {
       setSyncingGa4(false);
-      setAtlasOrbSyncLoading({ active: false });
     }
   };
 
@@ -1511,7 +1226,6 @@ export default function IntegrationsPage() {
 
     try {
       setSyncingMeta(true);
-      setAtlasOrbSyncLoading({ active: true, label: "Sincronizando Meta Ads" });
       setNotice(null);
 
       const response = await fetch(`/api/admin/brands/${activeBrand.id}/integrations/meta/sync`, {
@@ -1538,7 +1252,6 @@ export default function IntegrationsPage() {
       });
     } finally {
       setSyncingMeta(false);
-      setAtlasOrbSyncLoading({ active: false });
     }
   };
 
@@ -1550,7 +1263,6 @@ export default function IntegrationsPage() {
 
     try {
       setSyncingCatalog(true);
-      setAtlasOrbSyncLoading({ active: true, label: "Sincronizando catálogo Meta" });
       setNotice(null);
 
       const response = await fetch(`/api/admin/brands/${activeBrand.id}/integrations/meta/catalog-sync`, {
@@ -1577,7 +1289,6 @@ export default function IntegrationsPage() {
       });
     } finally {
       setSyncingCatalog(false);
-      setAtlasOrbSyncLoading({ active: false });
     }
   };
 
@@ -1617,7 +1328,7 @@ export default function IntegrationsPage() {
             activateWorkspace={activateWorkspace}
             headerActions={renderHeaderActions()}
             formatSyncLabel={formatSyncLabel}
-            providerTabs={(["ink", "meta", "ga4", "gemini"] as const).map((provider) => ({
+            providerTabs={(["ink", "meta", "ga4"] as const).map((provider) => ({
               key: `integration-provider-${provider}`,
               label: providerLabels[provider],
               active: activeProvider === provider,
@@ -1843,55 +1554,6 @@ export default function IntegrationsPage() {
                   </>
                 ) : null}
 
-                {activeProvider === "gemini" ? (
-                  <>
-                    <FormField label="Credencial ativa" className="text-sm">
-                      <div className="atlas-soft-subcard px-4 py-3 text-sm leading-6 text-on-surface">
-                        Chave da própria loja. Só este Atlas usa essa credencial.
-                      </div>
-                    </FormField>
-                    <FormField label="Central estratégica do Atlas" className="text-sm">
-                      <div className="atlas-soft-subcard px-4 py-3 text-sm leading-6 text-on-surface">
-                        Modelo, skill, janela e guia da marca ficam na{" "}
-                        <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="text-secondary hover:underline">
-                          Central de Configurações
-                        </Link>
-                        .
-                      </div>
-                    </FormField>
-                    <FormField label="Nova chave Gemini da loja" className="text-sm lg:col-span-2">
-                      <div className="atlas-component-stack-compact">
-                        <input
-                          type="password"
-                          value={geminiApiKey}
-                          onChange={(event) => setGeminiApiKey(event.target.value)}
-                          className="brandops-input w-full"
-                          placeholder={
-                            currentState.hasApiKey
-                              ? `Chave salva (${currentState.apiKeyHint || "oculta"})`
-                              : "Cole aqui a chave da API Gemini"
-                          }
-                          disabled={!canManageCurrentProvider}
-                        />
-                        <div className="atlas-soft-subcard px-4 py-3 text-xs leading-5 text-on-surface-variant">
-                          {currentState.hasApiKey ? (
-                            <p>
-                              Chave salva para esta loja em{" "}
-                              <span className="font-semibold text-on-surface">
-                                {currentState.apiKeyHint}
-                              </span>
-                              . Preencha acima para substituir.
-                            </p>
-                          ) : (
-                            <p>
-                              A chave digitada aqui fica protegida no backend e nunca volta em texto aberto para a interface.
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </FormField>
-                  </>
-                ) : null}
               </div>
             </div>
             ) : null}
@@ -1908,13 +1570,9 @@ export default function IntegrationsPage() {
                       <div>
                         <p className="font-medium text-on-surface">Estado da integração</p>
                         <p className="mt-1">
-                          {activeProvider === "gemini"
-                            ? currentState.hasApiKey
-                              ? `Chave própria salva em ${currentState.apiKeyHint}.`
-                              : "Nenhuma chave própria salva para esta loja."
-                            : currentState.hasApiKey
-                              ? `${activeProvider === "meta" ? "Token" : "Credencial"} própria salva em ${currentState.apiKeyHint}.`
-                              : `Nenhuma ${activeProvider === "meta" ? "token" : "credencial"} própria salva para esta loja.`}
+                          {currentState.hasApiKey
+                            ? `${activeProvider === "meta" ? "Token" : "Credencial"} própria salva em ${currentState.apiKeyHint}.`
+                            : `Nenhuma ${activeProvider === "meta" ? "token" : "credencial"} própria salva para esta loja.`}
                         </p>
                       </div>
                       <span className="atlas-inline-metric">{current?.lastSyncStatus ?? "idle"}</span>
@@ -1951,9 +1609,7 @@ export default function IntegrationsPage() {
                   <div className="atlas-soft-subcard px-4 py-3 lg:col-span-2">
                     <p className="font-medium text-on-surface">Executar agora</p>
                     <p className="mt-1 leading-6">
-                      {activeProvider === "gemini"
-                        ? "O comportamento do agente fica em Configurações. Aqui você só garante que a chave da loja está pronta."
-                        : "Rode sync quando a fonte externa mudar ou quando a leitura da marca precisar ser atualizada."}
+                      Rode sync quando a fonte externa mudar ou quando a leitura da marca precisar ser atualizada.
                     </p>
                     <div className="brandops-toolbar-actions pt-4">
                       {activeProvider === "meta" ? (
@@ -2022,17 +1678,7 @@ export default function IntegrationsPage() {
                           )}
                         </button>
                       ) : null}
-                      {activeProvider === "gemini" ? (
-                        <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="brandops-button brandops-button-primary">
-                          Abrir Configurações do Atlas
-                        </Link>
-                      ) : null}
                     </div>
-                    {activeProvider === "gemini" ? (
-                      <p className="mt-4 text-[11px] leading-5 text-on-surface-variant">
-                        Modelo, skill e janela padrão ficam na Central Estratégica.
-                      </p>
-                    ) : null}
                   </div>
                 </div>
               </div>
@@ -2057,9 +1703,7 @@ export default function IntegrationsPage() {
                       description={
                         activeProvider === "ink"
                           ? "Quando a operação comercial subir um novo CSV ou quando o histórico pedir conferência."
-                          : activeProvider === "gemini"
-                            ? "Só para garantir prontidão técnica da chave. Estratégia do agente fica em Configurações."
-                            : "Quando a fonte mudar, falhar ou precisar reidratar a leitura da marca."
+                          : "Quando a fonte mudar, falhar ou precisar reidratar a leitura da marca."
                       }
                       aside="uso"
                       tone="info"
@@ -2071,9 +1715,7 @@ export default function IntegrationsPage() {
                           ? "Volte para Mídia e Performance depois do sync."
                           : activeProvider === "ga4"
                             ? "Volte para Tráfego Digital após validar propriedade e coleta."
-                            : activeProvider === "gemini"
-                              ? "Ajuste modelo, skill e aprendizado na Central Estratégica."
-                              : "Retome ETL e leituras comerciais assim que o upload fechar."
+                            : "Retome ETL e leituras comerciais assim que o upload fechar."
                       }
                       aside="seguir"
                       tone="default"

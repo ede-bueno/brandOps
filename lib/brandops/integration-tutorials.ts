@@ -1,6 +1,6 @@
 import type { IntegrationProvider } from "@/lib/brandops/types";
 
-export type GuidedIntegrationProvider = Extract<IntegrationProvider, "meta" | "ga4" | "gemini">;
+export type GuidedIntegrationProvider = Extract<IntegrationProvider, "meta" | "ga4">;
 
 export type TutorialExternalLink = {
   label: string;
@@ -46,7 +46,7 @@ export const INTEGRATION_TUTORIALS: Record<GuidedIntegrationProvider, Integratio
     prerequisites: [
       "Ter acesso à conta de anúncios correta da marca.",
       "Ter acesso ao Business Manager que controla a conta e o catálogo.",
-      "Saber qual conta de anúncios será usada no Atlas.",
+      "Saber qual conta de anúncios será usada no BrandOps.",
       "Ter um token válido da Meta gerado a partir do app e do usuário corretos.",
     ],
     steps: [
@@ -57,12 +57,12 @@ export const INTEGRATION_TUTORIALS: Record<GuidedIntegrationProvider, Integratio
           "Abra o Business Settings e confirme se o catálogo correto está vinculado à operação.",
           "Anote o `ID da conta` e, se houver catálogo, anote também o `ID do catálogo`.",
         ],
-        outcome: "Você sai desta etapa com os IDs corretos antes de preencher o Atlas.",
+        outcome: "Você sai desta etapa com os IDs corretos antes de preencher o BrandOps.",
       },
       {
-        title: "2. Configurar o modo da integração no Atlas",
+        title: "2. Configurar o modo da integração no BrandOps",
         items: [
-          "Abra `Integrações` no Atlas.",
+          "Abra `Integrações` no BrandOps.",
           "Selecione `Meta Ads`.",
           "Defina o modo `API + fallback manual` se quiser integração viva com contingência.",
           "Preencha `ID da conta de anúncios` e `ID do catálogo da Meta` quando existir.",
@@ -76,16 +76,16 @@ export const INTEGRATION_TUTORIALS: Record<GuidedIntegrationProvider, Integratio
         items: [
           "Ainda em `Meta Ads`, cole o token da Meta no campo de credencial.",
           "Clique em `Salvar credencial Meta`.",
-          "Confirme se o Atlas passou a exibir que a marca tem token salvo.",
+          "Confirme se o BrandOps passou a exibir que a marca tem token salvo.",
         ],
-        outcome: "O Atlas passa a operar com o segredo da própria loja, e não com uma credencial global.",
+        outcome: "O BrandOps passa a operar com o segredo da própria loja, e não com uma credencial global.",
       },
       {
         title: "4. Executar a sincronização",
         items: [
           "Clique em `Sincronizar Meta agora` para trazer mídia e campanhas.",
           "Se a loja usa catálogo da Meta, execute também `Sincronizar catálogo`.",
-          "Revise a data da última sincronização e o status retornado pelo Atlas.",
+          "Revise a data da última sincronização e o status retornado pelo BrandOps.",
         ],
         outcome: "Os dados de mídia e, quando aplicável, o catálogo ficam disponíveis para leitura operacional.",
       },
@@ -127,10 +127,10 @@ export const INTEGRATION_TUTORIALS: Record<GuidedIntegrationProvider, Integratio
       },
       {
         title: "Catálogo não sincroniza",
-        explanation: "O Atlas só consegue sincronizar catálogo quando o `ID do catálogo` está correto.",
+        explanation: "O BrandOps só consegue sincronizar catálogo quando o `ID do catálogo` está correto.",
         actions: [
           "Confirmar o ID do catálogo no Business Settings.",
-          "Salvar o ID no Atlas antes de rodar a sincronização.",
+          "Salvar o ID no BrandOps antes de rodar a sincronização.",
         ],
       },
     ],
@@ -157,7 +157,7 @@ export const INTEGRATION_TUTORIALS: Record<GuidedIntegrationProvider, Integratio
     title: "Tutorial Google Analytics 4",
     eyebrow: "Analytics",
     summary:
-      "Configure a propriedade GA4 da loja, salve o JSON certo e valide a leitura de tráfego no Atlas.",
+      "Configure a propriedade GA4 da loja, salve o JSON certo e valide a leitura de tráfego no BrandOps.",
     audience: "Gestor da marca ou operador responsável por analytics.",
     route: "/integrations/tutorials/ga4",
     prerequisites: [
@@ -172,7 +172,7 @@ export const INTEGRATION_TUTORIALS: Record<GuidedIntegrationProvider, Integratio
         items: [
           "Abra o painel do Google Analytics e confirme a propriedade correta da loja.",
           "Abra o Admin da propriedade e valide se a conta tem acesso ao ativo certo.",
-          "Confirme a `Property ID` que será usada no Atlas.",
+      "Confirme a `Property ID` que será usada no BrandOps.",
         ],
         outcome: "Você evita conectar uma propriedade errada ou sem acesso suficiente.",
       },
@@ -186,9 +186,9 @@ export const INTEGRATION_TUTORIALS: Record<GuidedIntegrationProvider, Integratio
         outcome: "A credencial fica pronta para leitura da propriedade da loja.",
       },
       {
-        title: "3. Configurar o conector no Atlas",
+        title: "3. Configurar o conector no BrandOps",
         items: [
-          "Abra `Integrações` no Atlas.",
+          "Abra `Integrações` no BrandOps.",
           "Selecione `Google Analytics 4`.",
           "Defina o modo `API`.",
           "Preencha a `Property ID` e a `Timezone` da propriedade.",
@@ -201,7 +201,7 @@ export const INTEGRATION_TUTORIALS: Record<GuidedIntegrationProvider, Integratio
         items: [
           "Cole o JSON completo da service account no campo do GA4.",
           "Clique em `Salvar credencial GA4`.",
-          "Confirme se o Atlas passou a mostrar a credencial como salva.",
+          "Confirme se o BrandOps passou a mostrar a credencial como salva.",
         ],
         outcome: "A credencial passa a ser tratada como segredo da própria marca.",
       },
@@ -210,15 +210,15 @@ export const INTEGRATION_TUTORIALS: Record<GuidedIntegrationProvider, Integratio
         items: [
           "Clique em `Sincronizar GA4 agora`.",
           "Aguarde o retorno com período e quantidade de linhas consolidadas.",
-          "Abra `Tráfego Digital` para conferir se os dados apareceram no Atlas.",
+          "Abra `Tráfego Digital` para conferir se os dados apareceram no BrandOps.",
         ],
         outcome: "A leitura de tráfego fica operacional no produto.",
       },
     ],
     validation: [
       "A integração aparece em modo API.",
-      "O Atlas registra sincronização do GA4 com sucesso.",
-      "A camada de tráfego deixa de aparecer como ausente no Orb.",
+      "O BrandOps registra sincronização do GA4 com sucesso.",
+      "Dados de tráfego passam a aparecer na leitura operacional.",
       "Dados de sessões, eventos e conversão aparecem na leitura de tráfego.",
     ],
     commonErrors: [
@@ -228,13 +228,13 @@ export const INTEGRATION_TUTORIALS: Record<GuidedIntegrationProvider, Integratio
           "A integração pode salvar, mas a leitura vai falhar ou puxar dados da propriedade errada.",
         actions: [
           "Revisar a propriedade diretamente no painel do GA4.",
-          "Corrigir a `Property ID` no Atlas e sincronizar de novo.",
+          "Corrigir a `Property ID` no BrandOps e sincronizar de novo.",
         ],
       },
       {
         title: "JSON incompleto ou inválido",
         explanation:
-          "O Atlas precisa do JSON completo da service account para autenticar corretamente.",
+          "O BrandOps precisa do JSON completo da service account para autenticar corretamente.",
         actions: [
           "Gerar o JSON no Google Cloud.",
           "Conferir se `client_email` e `private_key` estão presentes.",
@@ -268,119 +268,10 @@ export const INTEGRATION_TUTORIALS: Record<GuidedIntegrationProvider, Integratio
       },
     ],
   },
-  gemini: {
-    provider: "gemini",
-    title: "Tutorial Atlas Analyst com Gemini",
-    eyebrow: "Inteligência",
-    summary:
-      "Ative o Atlas IA para a marca, salve a chave da loja e configure o comportamento do agente no lugar certo.",
-    audience: "Gestor da marca ou operador responsável pela camada de IA.",
-    route: "/integrations/tutorials/gemini",
-    prerequisites: [
-      "A marca precisa ter o recurso Atlas IA liberado no plano.",
-      "A loja precisa ter uma chave válida da API Gemini.",
-      "O responsável precisa saber qual modelo deseja usar como padrão.",
-    ],
-    steps: [
-      {
-        title: "1. Confirmar se a marca pode usar IA",
-        items: [
-          "Abra a marca no Atlas.",
-          "Confirme se o plano atual libera Atlas IA.",
-          "Se o recurso estiver bloqueado, peça liberação antes de continuar.",
-        ],
-        outcome: "Você evita configurar o Gemini em uma marca que ainda não pode operar com IA.",
-      },
-      {
-        title: "2. Ativar a integração Gemini",
-        items: [
-          "Abra `Integrações`.",
-          "Selecione `Atlas Analyst / Gemini`.",
-          "Defina o modo `API`.",
-          "Salve a configuração da integração.",
-        ],
-        outcome: "A marca fica tecnicamente pronta para receber a chave da loja.",
-      },
-      {
-        title: "3. Salvar a chave da própria loja",
-        items: [
-          "Cole a chave Gemini da marca no campo da integração.",
-          "Clique em `Salvar Gemini`.",
-          "Confirme se o Atlas passou a indicar que a marca possui chave salva.",
-        ],
-        outcome: "O Atlas IA passa a operar com a credencial da própria loja.",
-      },
-      {
-        title: "4. Configurar o comportamento do agente",
-        items: [
-          "Abra `Configurações`.",
-          "Ajuste modelo, temperatura, janela padrão, skill base e guia operacional.",
-          "Se o plano permitir, escolha o modelo da lista do Gemini disponível para a marca.",
-        ],
-        outcome: "O Atlas deixa de estar apenas conectado e passa a agir de forma aderente ao negócio.",
-      },
-      {
-        title: "5. Validar no uso real",
-        items: [
-          "Abra a Torre de Controle.",
-          "Faça uma pergunta operacional ao Atlas.",
-          "Confirme se a resposta respeita o contexto da marca e o período esperado.",
-        ],
-        outcome: "A camada de IA fica validada em contexto real de operação.",
-      },
-    ],
-    validation: [
-      "A integração Gemini aparece ativa para a marca.",
-      "A chave da loja foi salva com sucesso.",
-      "O painel de Configurações permite ajustar modelo, temperatura e skill.",
-      "A Torre com IA e o Orb passam a operar sem pedir nova configuração técnica.",
-    ],
-    commonErrors: [
-      {
-        title: "Plano sem liberação",
-        explanation:
-          "A marca ainda não possui o recurso Atlas IA liberado na governança.",
-        actions: [
-          "Revisar o plano da marca.",
-          "Liberar Atlas IA antes de tentar operar o Gemini.",
-        ],
-      },
-      {
-        title: "Chave não salva",
-        explanation:
-          "A integração foi ativada, mas a marca ainda não tem uma chave válida salva.",
-        actions: [
-          "Salvar a chave da própria loja.",
-          "Testar novamente a camada Atlas IA.",
-        ],
-      },
-      {
-        title: "Modelo não aparece na lista",
-        explanation:
-          "A marca pode estar sem catálogo de modelos liberado no plano ou a chave ainda não está pronta.",
-        actions: [
-          "Confirmar a liberação do recurso no plano.",
-          "Conferir se a chave Gemini da loja foi salva corretamente.",
-        ],
-      },
-    ],
-    externalLinks: [
-      {
-        label: "Google AI Studio - API Keys",
-        href: "https://aistudio.google.com/apikey",
-        helper: "Use para criar ou revisar a chave Gemini da loja.",
-      },
-      {
-        label: "Google AI for Developers",
-        href: "https://ai.google.dev/api",
-        helper: "Use para consultar a referência oficial da API Gemini.",
-      },
-    ],
-  },
 };
 
 export function getIntegrationTutorial(provider: string) {
-  if (provider === "meta" || provider === "ga4" || provider === "gemini") {
+  if (provider === "meta" || provider === "ga4") {
     return INTEGRATION_TUTORIALS[provider];
   }
 

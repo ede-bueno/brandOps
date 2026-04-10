@@ -54,7 +54,7 @@ const EMPTY_TRAFFIC_REPORT: TrafficReport = {
   campaigns: [],
   landingPages: [],
   story: "Ainda não há sessões suficientes no período para localizar com confiança onde o tráfego está performando melhor.",
-  frictionSignal: "Quando houver volume suficiente, o Atlas passa a apontar onde o funil perde força entre sessão, carrinho, checkout e compra.",
+  frictionSignal: "Quando houver volume suficiente, o BrandOps passa a apontar onde o funil perde força entre sessão, carrinho, checkout e compra.",
   highlights: {
     topSource: null,
     topCampaign: null,
@@ -198,7 +198,7 @@ function PlaybookColumn({
           </article>
         )) : (
           <div className="panel-muted p-3.5 text-sm text-on-surface-variant">
-            O Atlas ainda não encontrou entradas suficientes nesta zona do playbook.
+            O tráfego ainda não encontrou entradas suficientes nesta zona do playbook.
           </div>
         )}
       </div>

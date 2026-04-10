@@ -13,7 +13,7 @@ const targetFlow = [
     description: "Cruzar o post com o que já performa em Meta Ads, evitando criar peça desconectada da operação real.",
   },
   {
-    title: "Insight do Atlas",
+    title: "Sinal operacional",
     description: "Usar os sinais do recorte para sugerir ângulo, prioridade, CTA, público e objetivo da peça.",
   },
   {
@@ -25,7 +25,7 @@ const targetFlow = [
 const requiredInputs = [
   "Catálogo da marca com produto, imagem, preço, disponibilidade e link.",
   "Anúncios e campanhas da Meta com criativo, desempenho e intenção de escala ou revisão.",
-  "Contexto operacional do Atlas para dizer por que a peça existe agora.",
+  "Contexto operacional do recorte para dizer por que a peça existe agora.",
   "Destino final claro: Instagram feed, Instagram story, Facebook feed ou criativo para Meta Ads.",
 ];
 
@@ -44,7 +44,7 @@ export default function CreativeOpsPlanningPage() {
       <PageHeader
         eyebrow="Operação"
         title="Conteúdo social em replanejamento"
-        description="Esta área saiu da operação para ser redesenhada do jeito certo: produto, anúncio e insight do Atlas primeiro; editor e publicação depois."
+        description="Esta área saiu da operação para ser redesenhada do jeito certo: produto, anúncio e sinal operacional primeiro; editor e publicação depois."
         actions={
           <div className="flex min-w-0 flex-wrap items-center gap-2.5">
             <span className="atlas-inline-metric">{activeBrand?.name ?? "Loja"}</span>

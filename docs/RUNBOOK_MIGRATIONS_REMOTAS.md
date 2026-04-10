@@ -4,17 +4,15 @@
 
 Aplicar no projeto Supabase remoto as migrations locais que ainda não foram executadas.
 
-No estado atual do Atlas, as migrations pendentes são:
+No estado atual do BrandOps, as migrations pendentes são:
 
-- `20260404190001_brandops_atlas_brand_learning.sql`
 - `20260404200001_brandops_brand_governance.sql`
-- `20260404213001_brandops_atlas_learning_feedback.sql`
+- `20260410163001_brandops_remove_ai_experiment.sql`
 
 ## O que essas migrations habilitam
 
-- `20260404190001`: cria a base persistente do modo `Aprender negócio`, com histórico de execuções e snapshots aprendidos por marca.
 - `20260404200001`: adiciona governança SaaS por marca em `public.brands`, com `plan_tier` e `feature_flags`.
-- `20260404213001`: adiciona feedback humano sobre snapshots de aprendizado para validar se o Atlas entendeu corretamente o negócio.
+- `20260410163001`: remove tabelas, integrações e flags do experimento de agente conversacional que foi descontinuado.
 
 ## Pré-requisito
 
@@ -52,12 +50,11 @@ npx supabase migration list
 
 O esperado é que `Local` e `Remote` mostrem também:
 
-- `20260404190001`
 - `20260404200001`
-- `20260404213001`
+- `20260410163001`
 
 ## Observações operacionais
 
 - O projeto remoto já está vinculado ao ref `nuhznrxzfslqepmqjgoo`.
 - O bloqueio atual não é de código nem de vínculo com a Supabase; é apenas a ausência da `SUPABASE_DB_PASSWORD` nesta sessão local.
-- Sem essas migrations remotas, o código novo já existe, mas os recursos de aprendizado do negócio, feedback humano e governança SaaS não ficam totalmente ativos no banco de produção.
+- Sem essas migrations remotas, o código novo já existe, mas a governança SaaS e a limpeza definitiva do experimento antigo não ficam refletidas no banco remoto.

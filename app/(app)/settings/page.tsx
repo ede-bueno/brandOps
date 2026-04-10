@@ -3,16 +3,12 @@
 import Link from "next/link";
 import {
   ArrowUpRight,
-  BrainCircuit,
   BookOpen,
   CircleHelp,
   PlugZap,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
-import { AtlasBusinessLearningPanel } from "@/components/AtlasBusinessLearningPanel";
-import { AtlasAnalystSettingsPanel } from "@/components/AtlasAnalystSettingsPanel";
-import { AtlasContextWorkspace } from "@/components/AtlasContextWorkspace";
 import { EmptyState } from "@/components/EmptyState";
 import { IntegrationAutomationSettingsPanel } from "@/components/IntegrationAutomationSettingsPanel";
 import { useBrandOps } from "@/components/BrandOpsProvider";
@@ -97,15 +93,11 @@ export default function SettingsPage() {
     activeBrand.integrations.find((integration) => integration.provider === "meta") ?? null;
   const ga4Integration =
     activeBrand.integrations.find((integration) => integration.provider === "ga4") ?? null;
-  const geminiIntegration =
-    activeBrand.integrations.find((integration) => integration.provider === "gemini") ?? null;
 
-  const healthyIntegrations = [metaIntegration, ga4Integration, geminiIntegration].filter(
+  const healthyIntegrations = [metaIntegration, ga4Integration].filter(
     (integration) => integration?.lastSyncStatus === "success" || integration?.mode === "api",
   ).length;
   const governance = activeBrand.governance;
-  const atlasEnabled = governance.featureFlags.atlasAi;
-  const atlasReady = atlasEnabled && geminiIntegration?.mode === "api";
   const strategicFocus =
     metaIntegration?.lastSyncStatus === "error"
       ? {
@@ -123,29 +115,13 @@ export default function SettingsPage() {
             cta: "Abrir GA4",
             tone: "warning" as const,
           }
-        : !atlasEnabled
-          ? {
-              title: "Atlas IA bloqueado",
-              description: "O plano atual ainda não libera a camada inteligente da marca.",
-              href: APP_ROUTES.settingsGovernance,
-              cta: "Rever governança",
-              tone: "default" as const,
-            }
-          : !atlasReady
-            ? {
-                title: "Atlas pronto para ativação",
-                description: "A governança já libera IA. Falta concluir a conexão Gemini desta loja.",
-                href: `${APP_ROUTES.integrations}?provider=gemini&section=config`,
-                cta: "Ativar Gemini",
-                tone: "info" as const,
-              }
-            : {
-                title: "Base pronta para evoluir",
-                description: "As frentes principais estão conectadas. Agora vale refinar comportamento e aprendizado.",
-                href: APP_ROUTES.settingsAtlasAi,
-                cta: "Ajustar Atlas",
-                tone: "positive" as const,
-              };
+        : {
+            title: "Base pronta para operar",
+            description: "As fontes principais estão conectadas. Agora vale refinar governança, automação e rotina operacional.",
+            href: APP_ROUTES.settingsGovernance,
+            cta: "Abrir governança",
+            tone: "positive" as const,
+          };
 
   const modules: SettingsModule[] = [
     {
@@ -194,17 +170,6 @@ export default function SettingsPage() {
       icon: BookOpen,
       aside: "Passo a passo",
     },
-    {
-      href: APP_ROUTES.settingsAtlasAi,
-      label: "Atlas IA",
-      description:
-        geminiIntegration?.mode === "api"
-          ? "Modelo, skill e aprendizado."
-          : "Preparar a camada analítica.",
-      icon: BrainCircuit,
-      tone: geminiIntegration?.mode === "api" ? "info" : "default",
-      aside: geminiIntegration?.mode === "api" ? "Estratégia" : "Opcional",
-    },
   ];
 
   return (
@@ -212,7 +177,7 @@ export default function SettingsPage() {
       <PageHeader
         eyebrow="Configurações"
         title="Central estratégica"
-        description="Governança, IA, fontes e equipe da marca."
+        description="Governança, fontes e equipe da marca."
         actions={
           <div className="flex flex-wrap gap-2">
             <span className="atlas-inline-metric">{selectedBrandName}</span>
@@ -291,20 +256,17 @@ export default function SettingsPage() {
 
           <div className="mt-4 atlas-status-cluster">
             <span className="atlas-status-chip" data-tone="accent">
-              {healthyIntegrations}/3 frentes prontas
+              {healthyIntegrations}/2 frentes prontas
             </span>
             <span className="atlas-status-chip">
               {BRAND_PLAN_LABELS[governance.planTier]}
-            </span>
-            <span className="atlas-status-chip">
-              {governance.featureFlags.atlasAi ? "Atlas IA liberado" : "Atlas IA bloqueado"}
             </span>
           </div>
 
           <div className="mt-4 atlas-component-stack-compact">
             <StackItem
               title="Plano"
-              description={atlasEnabled ? "Atlas IA já pode operar nesta marca." : "A camada Atlas ainda depende do plano."}
+              description="Plano ativo desta marca e recursos comerciais liberados."
               aside={
                 <Link
                   href={APP_ROUTES.settingsGovernance}
@@ -314,7 +276,7 @@ export default function SettingsPage() {
                   Abrir governança
                 </Link>
               }
-              tone={atlasEnabled ? "positive" : "default"}
+              tone="default"
             />
             <StackItem
               title="Meta"
@@ -327,32 +289,6 @@ export default function SettingsPage() {
               description={ga4Integration?.lastSyncError || "Tráfego e propriedade da marca."}
               aside={getIntegrationStateLabel(ga4Integration?.lastSyncStatus)}
               tone={getIntegrationTone(ga4Integration?.lastSyncStatus)}
-            />
-            <StackItem
-              title="Atlas"
-              description={
-                !atlasEnabled
-                  ? "IA ainda bloqueada pelo plano."
-                  : atlasReady
-                    ? "Pronto para leitura e aprendizado."
-                    : "Ligação Gemini ainda pendente."
-              }
-              aside={!atlasEnabled ? "Bloqueado" : atlasReady ? "Ativo" : "Pendente"}
-              tone={!atlasEnabled ? "warning" : atlasReady ? "positive" : "info"}
-            />
-            <StackItem
-              title="Aprendizado"
-              description={
-                governance.featureFlags.brandLearning
-                  ? "Memória e comportamento do Atlas podem evoluir nesta marca."
-                  : "O aprendizado do negócio ainda depende da governança."
-              }
-              aside={
-                <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="relative z-10 text-secondary hover:underline">
-                  Abrir Atlas
-                </Link>
-              }
-              tone={governance.featureFlags.brandLearning ? "info" : "default"}
             />
           </div>
         </SurfaceCard>
@@ -371,9 +307,6 @@ export default function SettingsPage() {
               {BRAND_PLAN_LABELS[governance.planTier]}
             </span>
             <span className="atlas-status-chip">
-              IA por plano
-            </span>
-            <span className="atlas-status-chip">
               grupos e marcas
             </span>
           </div>
@@ -381,27 +314,9 @@ export default function SettingsPage() {
           <div className="mt-4 atlas-component-stack-compact">
             <StackItem
               title="Plano"
-              description="Camada que libera IA, aprendizado e catálogo de modelos."
+              description="Camada que libera recursos, limites e governança da marca."
               aside={BRAND_PLAN_LABELS[governance.planTier]}
               tone="info"
-            />
-            <StackItem
-              title="Atlas IA"
-              description={governance.featureFlags.atlasAi ? "Camada inteligente liberada." : "Camada inteligente ainda bloqueada."}
-              aside={governance.featureFlags.atlasAi ? "Ligado" : "Bloqueado"}
-              tone={governance.featureFlags.atlasAi ? "positive" : "warning"}
-            />
-            <StackItem
-              title="Aprender negócio"
-              description={governance.featureFlags.brandLearning ? "Marca pode consolidar histórico e memória." : "Modo de aprendizagem ainda indisponível."}
-              aside={governance.featureFlags.brandLearning ? "Liberado" : "Off"}
-              tone={governance.featureFlags.brandLearning ? "positive" : "default"}
-            />
-            <StackItem
-              title="Catálogo Gemini"
-              description={governance.featureFlags.geminiModelCatalog ? "A marca pode escolher modelos suportados." : "Modelo fixado pela plataforma."}
-              aside={governance.featureFlags.geminiModelCatalog ? "Catálogo on" : "Catálogo off"}
-              tone="default"
             />
           </div>
         </SurfaceCard>
@@ -420,7 +335,7 @@ export default function SettingsPage() {
           <div className="mt-4 atlas-component-stack-compact">
             <StackItem
               title="Tutoriais"
-              description="Passos guiados para Meta, GA4 e Gemini."
+              description="Passos guiados para Meta e GA4."
               aside={
                 <Link href={APP_ROUTES.integrationsTutorials} prefetch={false} className="relative z-10 text-secondary hover:underline">
                   Abrir
@@ -454,20 +369,6 @@ export default function SettingsPage() {
 
       <SurfaceCard>
         <IntegrationAutomationSettingsPanel />
-      </SurfaceCard>
-
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
-        <SurfaceCard>
-          <AtlasAnalystSettingsPanel />
-        </SurfaceCard>
-
-        <SurfaceCard>
-          <AtlasContextWorkspace mode="settings" limit={8} />
-        </SurfaceCard>
-      </section>
-
-      <SurfaceCard>
-        <AtlasBusinessLearningPanel />
       </SurfaceCard>
     </div>
   );

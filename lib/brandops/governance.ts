@@ -31,28 +31,16 @@ export const BRAND_PLAN_LABELS: Record<BrandPlanTier, string> = {
 
 const DEFAULT_FEATURES_BY_PLAN: Record<BrandPlanTier, BrandFeatureFlags> = {
   starter: {
-    atlasAi: false,
-    atlasCommandCenter: false,
     brandLearning: false,
-    geminiModelCatalog: false,
   },
   growth: {
-    atlasAi: true,
-    atlasCommandCenter: false,
     brandLearning: true,
-    geminiModelCatalog: true,
   },
   scale: {
-    atlasAi: true,
-    atlasCommandCenter: true,
     brandLearning: true,
-    geminiModelCatalog: true,
   },
   enterprise: {
-    atlasAi: true,
-    atlasCommandCenter: true,
     brandLearning: true,
-    geminiModelCatalog: true,
   },
 };
 
@@ -150,22 +138,10 @@ export function normalizeBrandGovernance(input?: {
   return {
     planTier,
     featureFlags: {
-      atlasAi:
-        typeof featureFlags.atlasAi === "boolean"
-          ? featureFlags.atlasAi
-          : defaults.atlasAi,
-      atlasCommandCenter:
-        typeof featureFlags.atlasCommandCenter === "boolean"
-          ? featureFlags.atlasCommandCenter
-          : defaults.atlasCommandCenter,
       brandLearning:
         typeof featureFlags.brandLearning === "boolean"
           ? featureFlags.brandLearning
           : defaults.brandLearning,
-      geminiModelCatalog:
-        typeof featureFlags.geminiModelCatalog === "boolean"
-          ? featureFlags.geminiModelCatalog
-          : defaults.geminiModelCatalog,
     },
   };
 }

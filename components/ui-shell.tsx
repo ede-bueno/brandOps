@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useId, useState, type CSSProperties, type FocusEvent, type ReactNode } from "react";
 import { ArrowUpRight, Info } from "lucide-react";
-import { AtlasOrb } from "./AtlasOrb";
 
 export function PageHeader({
   eyebrow,
@@ -247,7 +246,9 @@ export function ProcessingOverlay({
         <div className="atlas-sync-rings" />
         <div className="atlas-sync-scanline" />
         <div className="mx-auto flex items-center justify-center">
-          <AtlasOrb size="lg" className="atlas-sync-orb" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-full border border-primary/35 bg-primary/10 text-xs font-semibold tracking-[0.2em] text-primary shadow-[0_0_42px_rgba(37,99,235,0.22)]">
+            BO
+          </div>
         </div>
         <h3 className="mt-4 font-headline text-xl font-semibold tracking-tight text-on-surface">
           {title}
@@ -258,7 +259,7 @@ export function ProcessingOverlay({
   );
 }
 
-export function AtlasModal({
+export function BrandOpsModal({
   open,
   title,
   description,

@@ -25,8 +25,8 @@ export type CmvMatchType = "SKU" | "PRODUCT" | "TYPE";
 export type SanitizationDecision = "PENDING" | "KEPT" | "IGNORED";
 export type SanitizationReviewAction = "PENDING" | "KEPT" | "IGNORED";
 
-export type IntegrationProvider = "ink" | "meta" | "ga4" | "gemini";
-export type CreativeTaskSource = "manual" | "media" | "traffic" | "product_insights" | "atlas_ai";
+export type IntegrationProvider = "ink" | "meta" | "ga4";
+export type CreativeTaskSource = "manual" | "media" | "traffic" | "product_insights";
 export type CreativeTaskType = "ad" | "social_post" | "creative" | "copy_test";
 export type CreativeTaskPriority = "low" | "normal" | "high" | "critical";
 export type CreativeTaskChannel =
@@ -58,13 +58,6 @@ export type CreativeExecutionJobStatus =
   | "canceled";
 
 export type IntegrationMode = "manual_csv" | "api" | "disabled";
-export type AtlasAnalystBehaviorSkill =
-  | "auto"
-  | "executive_operator"
-  | "marketing_performance"
-  | "revenue_operator"
-  | "pod_strategist";
-
 export type IntegrationSyncStatus = "idle" | "running" | "success" | "error";
 export type MediaDataSource = "manual_csv" | "api";
 export type CatalogDataSource = "manual_feed" | "meta_catalog";
@@ -105,10 +98,7 @@ export interface UserProfile {
 }
 
 export interface BrandFeatureFlags {
-  atlasAi: boolean;
-  atlasCommandCenter: boolean;
   brandLearning: boolean;
-  geminiModelCatalog: boolean;
 }
 
 export interface BrandGovernance {
@@ -304,14 +294,8 @@ export interface BrandIntegrationConfig {
     catalogSyncStatus?: string | null;
     catalogSyncError?: string | null;
     catalogProductCount?: number;
-    model?: string;
-    temperature?: number;
-    credentialSource?: "brand_key";
     hasApiKey?: boolean;
     apiKeyHint?: string | null;
-    analysisWindowDays?: number;
-    defaultSkill?: AtlasAnalystBehaviorSkill;
-    operatorGuidance?: string | null;
   };
   lastSyncAt?: string | null;
   lastSyncStatus: IntegrationSyncStatus;
@@ -378,15 +362,6 @@ export interface CreativeOpsTask {
   createdAt: string;
   updatedAt: string;
   events: CreativeOpsTaskEvent[];
-}
-
-export interface GeminiAvailableModel {
-  id: string;
-  displayName: string;
-  description: string | null;
-  inputTokenLimit: number | null;
-  outputTokenLimit: number | null;
-  supportsGenerateContent: boolean;
 }
 
 export interface Ga4DailyPerformanceRow {

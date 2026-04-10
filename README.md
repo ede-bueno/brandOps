@@ -76,14 +76,15 @@ npm run build
 
 ## Produto
 
-Fonte viva do produto atual em [docs/ATLAS_PRD_VIVO.md](C:\BrandOps\BrandOps-new\docs\ATLAS_PRD_VIVO.md).
+A referencia principal do estado atual do projeto esta em [docs/ESTADO_OFICIAL_BRANDOPS.md](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\docs\ESTADO_OFICIAL_BRANDOPS.md).
 
-Fluxo SDD do Atlas em:
+Documentacao complementar:
 
-- [docs/sdd/README.md](C:\BrandOps\BrandOps-new\docs\sdd\README.md)
-- [docs/sdd/ATLAS_CONSTITUTION.md](C:\BrandOps\BrandOps-new\docs\sdd\ATLAS_CONSTITUTION.md)
-- [docs/specs/README.md](C:\BrandOps\BrandOps-new\docs\specs\README.md)
+- [docs/BRANDOPS_HANDOFF_ATUAL.md](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\docs\BRANDOPS_HANDOFF_ATUAL.md)
+- [docs/PRODUCT_DECISION_ENGINE.md](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\docs\PRODUCT_DECISION_ENGINE.md)
+- [docs/RUNBOOK_MIGRATIONS_REMOTAS.md](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\docs\RUNBOOK_MIGRATIONS_REMOTAS.md)
+- [docs/specs/README.md](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\docs\specs\README.md)
 
 ## Deploy
 
-Guia objetivo em [docs/DEPLOY_VERCEL.md](C:\BrandOps\BrandOps-new\docs\DEPLOY_VERCEL.md).
+Guia objetivo em [docs/DEPLOY_VERCEL.md](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\docs\DEPLOY_VERCEL.md).

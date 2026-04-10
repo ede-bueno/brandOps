@@ -276,7 +276,7 @@ export function ProductInsightsWorkspace({
   }
 
   if (!report.rows.length) {
-    return <EmptyState title="Ainda não há sinais de produto" description="Sincronize o GA4 de itens para que o Atlas consiga cruzar intenção, compra e venda real." ctaHref={APP_ROUTES.integrations} ctaLabel="Abrir integrações" />;
+    return <EmptyState title="Ainda não há sinais de produto" description="Sincronize o GA4 de itens para cruzar intenção, compra e venda real." ctaHref={APP_ROUTES.integrations} ctaLabel="Abrir integrações" />;
   }
 
   return (

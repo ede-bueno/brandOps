@@ -392,7 +392,7 @@ export default function ImportPage() {
                 Arraste os CSVs da operação
               </h2>
               <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-on-surface-variant">
-                O Atlas identifica o tipo pelo cabeçalho, consolida janelas sobrepostas e evita duplicidade.
+                O importador identifica o tipo pelo cabeçalho, consolida janelas sobrepostas e evita duplicidade.
               </p>
             </div>
 

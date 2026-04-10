@@ -118,7 +118,7 @@ function PlaybookColumn({
           ))
         ) : (
           <div className="panel-muted p-3.5 text-sm text-on-surface-variant">
-            O Atlas ainda não encontrou itens suficientes nesta faixa do playbook.
+            O catálogo ainda não encontrou itens suficientes nesta faixa do playbook.
           </div>
         )}
       </div>
@@ -487,7 +487,7 @@ export default function FeedPage() {
           <SectionHeading title="Próximos passos" description="Abra só o que pede ação agora." />
           <details className="atlas-disclosure mt-5" open={!report.analysis.nextActions.length}>
             <summary>
-              <span>Ações sugeridas pelo Atlas</span>
+              <span>Ações sugeridas pelo BrandOps</span>
               <span>{report.analysis.nextActions.length || 0}</span>
             </summary>
             <div className="mt-4 grid gap-3 md:grid-cols-3">

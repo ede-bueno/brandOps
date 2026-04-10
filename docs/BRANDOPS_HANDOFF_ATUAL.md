@@ -1,15 +1,15 @@
-# BrandOps - Handoff Atual e Roadmap
+# BrandOps - Handoff Atual
 
 ## Objetivo do sistema
 
-`BrandOps` e um sistema interno multi-marca para operacao e analise financeira de lojas `print on demand`.
+`BrandOps` e um software operacional multi-marca para operacao, leitura gerencial e tomada de decisao em lojas `print on demand`.
 
 Hoje o sistema atende, principalmente:
 
 - `Oh My Dog`
 - `Bateu o Pace`
 
-O modelo de uso e:
+O modelo de acesso e:
 
 - `SUPER_ADMIN` enxerga todas as marcas
 - membros da marca enxergam apenas a propria operacao
@@ -32,7 +32,7 @@ Uso correto:
 - `Lista de Itens.csv`: pecas reais, detalhe de itens e aplicacao de `CMV`
 - `Pedidos Pagos.csv`: apoio operacional e rateios
 
-### Meta Ads
+### Meta
 
 Hoje o sistema suporta:
 
@@ -134,9 +134,9 @@ Observacao importante:
 - fluxo de criacao de usuarios com senha
 - convite por email nao e mais obrigatorio
 
-### Operacao financeira
+### Operacao e leitura
 
-- `Dashboard`
+- `Torre de Controle`
 - `Vendas`
 - `Midia`
 - `DRE`
@@ -157,7 +157,7 @@ Observacao importante:
 
 - `Feed de Produtos`
 
-### Admin
+### Admin e operacao de plataforma
 
 - `Lojas e Pessoas`
 - `Integracoes`
@@ -181,18 +181,19 @@ Observacao importante:
 
 Arquivos e areas principais:
 
-- [app](C:\BrandOps\BrandOps-new\app)
-- [components](C:\BrandOps\BrandOps-new\components)
-- [lib/brandops](C:\BrandOps\BrandOps-new\lib\brandops)
-- [lib/integrations](C:\BrandOps\BrandOps-new\lib\integrations)
-- [supabase/migrations](C:\BrandOps\BrandOps-new\supabase\migrations)
+- [app](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\app)
+- [components](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\components)
+- [lib/brandops](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\lib\brandops)
+- [lib/integrations](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\lib\integrations)
+- [supabase/migrations](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\supabase\migrations)
 
 Arquivos de referencia importantes:
 
-- [README_DRE_CMV_METRICAS_OMD.md](C:\BrandOps\BrandOps-new\README_DRE_CMV_METRICAS_OMD.md)
-- [AUDITORIA_CSV_OMD_E_REGUA_COMERCIAL.md](C:\BrandOps\BrandOps-new\docs\AUDITORIA_CSV_OMD_E_REGUA_COMERCIAL.md)
-- [BACKLOG_NAVEGACAO_E_AREAS_ANALITICAS.md](C:\BrandOps\BrandOps-new\docs\BACKLOG_NAVEGACAO_E_AREAS_ANALITICAS.md)
-- [DEPLOY_VERCEL.md](C:\BrandOps\BrandOps-new\docs\DEPLOY_VERCEL.md)
+- [ESTADO_OFICIAL_BRANDOPS.md](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\docs\ESTADO_OFICIAL_BRANDOPS.md)
+- [README_DRE_CMV_METRICAS_OMD.md](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\README_DRE_CMV_METRICAS_OMD.md)
+- [AUDITORIA_CSV_OMD_E_REGUA_COMERCIAL.md](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\docs\AUDITORIA_CSV_OMD_E_REGUA_COMERCIAL.md)
+- [BACKLOG_NAVEGACAO_E_AREAS_ANALITICAS.md](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\docs\BACKLOG_NAVEGACAO_E_AREAS_ANALITICAS.md)
+- [DEPLOY_VERCEL.md](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\docs\DEPLOY_VERCEL.md)
 
 ## Skills proprias criadas para continuidade
 
@@ -208,10 +209,11 @@ Uso recomendado:
 - `brandops-import-audit` para conciliacao entre CSV, banco e dashboard
 - `brandops-integrations` para GA4, Meta, fallback manual e configuracao por loja
 
-## Roadmap consolidado
+## Proximos passos recomendados
 
 ### Prioridade alta
 
+- reconstruir a `Torre de Controle` como painel de tomada de decisao factual
 - revisar `Ponto de Equilibrio`, porque ha sinais de formula ou criterio inadequado em periodos curtos
 - revisar persistencia perene do historico de saneamento
 - evoluir `Meta Ads` para modo `API` com fallback manual real
@@ -219,6 +221,7 @@ Uso recomendado:
 
 ### Prioridade media
 
+- fechar a revisao de proporcao interna e distribuicao visual das telas principais
 - melhorar `Feed de Produtos` com agrupamento por categoria e grupo
 - enriquecer mockups e imagens adicionais
 - transformar `Ajuda` em experiencia por abas
@@ -226,8 +229,17 @@ Uso recomendado:
 
 ### Prioridade baixa
 
-- skill futura de `brandops-ui-patterns`
 - refinamentos extras de design nas areas analiticas
+
+## O que saiu do projeto
+
+Foi descontinuado e removido:
+
+- `Atlas` como agente conversacional
+- integracao `Gemini`
+- canvas, orb e superficies cognitivas ligadas ao experimento de IA no front
+
+O produto segue com objetivo de inteligencia operacional, mas a proxima fase sera baseada em regras, historico e consolidacao factual.
 
 ## Diretriz de Git daqui para frente
 
@@ -242,11 +254,12 @@ Fluxo recomendado:
 Se este projeto for aberto em outra IDE ou agente:
 
 1. ler este arquivo
-2. ler [README_DRE_CMV_METRICAS_OMD.md](C:\BrandOps\BrandOps-new\README_DRE_CMV_METRICAS_OMD.md)
-3. ler [AUDITORIA_CSV_OMD_E_REGUA_COMERCIAL.md](C:\BrandOps\BrandOps-new\docs\AUDITORIA_CSV_OMD_E_REGUA_COMERCIAL.md)
-4. ler [BACKLOG_NAVEGACAO_E_AREAS_ANALITICAS.md](C:\BrandOps\BrandOps-new\docs\BACKLOG_NAVEGACAO_E_AREAS_ANALITICAS.md)
-5. validar as variaveis da `Vercel`
-6. verificar o status do `Supabase` e das migrations mais recentes
+2. ler [ESTADO_OFICIAL_BRANDOPS.md](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\docs\ESTADO_OFICIAL_BRANDOPS.md)
+3. ler [README_DRE_CMV_METRICAS_OMD.md](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\README_DRE_CMV_METRICAS_OMD.md)
+4. ler [AUDITORIA_CSV_OMD_E_REGUA_COMERCIAL.md](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\docs\AUDITORIA_CSV_OMD_E_REGUA_COMERCIAL.md)
+5. ler [BACKLOG_NAVEGACAO_E_AREAS_ANALITICAS.md](C:\Users\edebu\.codex\worktrees\af6d\BrandOps-new\docs\BACKLOG_NAVEGACAO_E_AREAS_ANALITICAS.md)
+6. validar as variaveis da `Vercel`
+7. verificar o status do `Supabase` e das migrations mais recentes
 
 ## Criterio de leitura correta
 

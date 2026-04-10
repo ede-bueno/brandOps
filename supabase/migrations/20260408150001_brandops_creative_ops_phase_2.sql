@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS public.creative_ops_tasks (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   CONSTRAINT creative_ops_tasks_source_check
-    CHECK (source IN ('manual', 'media', 'traffic', 'product_insights', 'atlas_ai')),
+    CHECK (source IN ('manual', 'media', 'traffic', 'product_insights')),
   CONSTRAINT creative_ops_tasks_type_check
     CHECK (task_type IN ('ad', 'social_post', 'creative', 'copy_test')),
   CONSTRAINT creative_ops_tasks_priority_check

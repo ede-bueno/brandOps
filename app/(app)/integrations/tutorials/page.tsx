@@ -14,7 +14,7 @@ export default function IntegrationTutorialsPage() {
         description="Escolha o provedor certo e siga um passo a passo curto, direto e validável."
       />
 
-      <OperationalMetricStrip baseColumns={1} desktopColumns={3}>
+      <OperationalMetricStrip baseColumns={1} desktopColumns={2}>
         <OperationalMetric
           label="Provedores"
           value={String(tutorials.length)}
@@ -59,7 +59,7 @@ export default function IntegrationTutorialsPage() {
             description="Cada tutorial foi escrito para ação, validação e tratamento de erro."
           />
 
-        <div className="mt-5 grid gap-4 xl:grid-cols-3">
+        <div className="mt-5 grid gap-4 xl:grid-cols-2">
           {tutorials.map((tutorial) => (
             <article key={tutorial.provider} className="atlas-soft-subcard flex h-full flex-col">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
@@ -118,14 +118,6 @@ export default function IntegrationTutorialsPage() {
             </p>
             <p className="mt-2 text-sm leading-6 text-on-surface-variant">
               Property ID, timezone e JSON da service account com acesso de leitura.
-            </p>
-          </article>
-          <article className="panel-muted p-3.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-on-surface-variant">
-              Gemini
-            </p>
-            <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-              Chave da loja, modelo ativo e prontidão do Atlas Analyst para operar.
             </p>
           </article>
         </div>

@@ -3,4 +3,4 @@ ALTER TABLE public.brand_integration_secrets
 
 ALTER TABLE public.brand_integration_secrets
   ADD CONSTRAINT brand_integration_secrets_provider_check
-  CHECK (provider IN ('meta', 'ga4', 'gemini'));
+  CHECK (provider IN ('meta', 'ga4'));

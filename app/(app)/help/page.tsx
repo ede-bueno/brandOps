@@ -69,7 +69,7 @@ const integrationCards = [
     items: [
       "INK segue por CSV manual.",
       "Meta pode operar em API ou fallback manual.",
-      "GA4 e Gemini só ficam ativos quando a credencial da própria loja foi salva.",
+      "GA4 só fica ativo quando a credencial da própria loja foi salva.",
     ],
   },
   {
@@ -116,7 +116,7 @@ const securityCards = [
     icon: ShieldCheck,
     items: [
       "Backend manda; frontend só renderiza e opera.",
-      "Cada loja deve usar a própria credencial para Meta, GA4 e Gemini.",
+      "Cada loja deve usar a própria credencial para Meta e GA4.",
       "Cálculo canônico não deve nascer no navegador.",
     ],
   },
@@ -136,16 +136,16 @@ const configurationCards = [
     title: "Configurações",
     icon: ShieldCheck,
     items: [
-      "Modelo, temperatura, skill, janela e playbook da marca ficam aqui.",
-      "Aprendizado do Atlas e contexto do negócio devem sair da Torre e ser mantidos nesta central.",
-      "Use esta área para comportamento do agente, não para conexão técnica.",
+      "Plano, governança e rotina operacional da marca ficam aqui.",
+      "Contexto do negócio deve ficar documentado fora da Torre de Controle.",
+      "Use esta área para regras da operação, não para conexão técnica.",
     ],
   },
   {
     title: "Integrações",
     icon: Link2,
     items: [
-      "Meta, GA4 e Gemini devem receber credencial própria de cada loja.",
+      "Meta e GA4 devem receber credencial própria de cada loja.",
       "Salve primeiro o modo e os IDs operacionais; salve a credencial depois.",
       "A aba de integrações cuida de conexão, sync e saúde do conector.",
     ],
@@ -154,7 +154,7 @@ const configurationCards = [
     title: "Governança SaaS",
     icon: DatabaseZap,
     items: [
-      "Plano da marca e liberações como Atlas IA, learning e catálogo de modelos pertencem à governança.",
+      "Plano da marca, limites e liberações pertencem à governança.",
       "Esse controle deve ficar com o superadmin e não com a operação do dia a dia.",
       "A marca pode enxergar recursos bloqueados, mas a liberação nasce em Admin > Lojas.",
     ],
@@ -198,16 +198,6 @@ const providerTutorials = [
       "A service account precisa ter acesso de leitura à propriedade GA4.",
     ],
   },
-  {
-    title: "Gemini",
-    eyebrow: "Passo a passo",
-    items: [
-      "Ative o modo API e escolha o modelo padrão da loja.",
-      "Salve a configuração e depois salve a chave Gemini da própria marca.",
-      "Sem chave própria salva, o Atlas Analyst deve permanecer desabilitado.",
-      "A chave da loja fica criptografada no backend e não retorna em texto aberto.",
-    ],
-  },
 ];
 
 function cardDescription(title: string) {
@@ -222,7 +212,7 @@ function cardDescription(title: string) {
   if (title === "Preparo da plataforma") return "Quando a loja configurou tudo certo e ainda falha, o problema pode estar na camada técnica da plataforma.";
   if (title === "Boas práticas") return "Backend manda; frontend só opera e apresenta.";
   if (title === "Diagnóstico rápido") return "Separar erro de infraestrutura de erro real do provedor reduz retrabalho.";
-  if (title === "Configurações") return "Central estratégica para comportamento do Atlas e contexto da marca.";
+  if (title === "Configurações") return "Central estratégica para governança e contexto da marca.";
   if (title === "Integrações") return "Conexão técnica, credenciais por loja e sincronizações.";
   if (title === "Governança SaaS") return "Planos, limites e liberações por marca.";
   if (title === "Ambiente") return "Infraestrutura, envs e migrações que sustentam a plataforma.";
@@ -270,7 +260,7 @@ export default function HelpPage() {
     <div className="atlas-page-stack-compact">
       <PageHeader
         eyebrow="Central de ajuda"
-        title="Atlas em operação"
+        title="BrandOps em operação"
         description="Guias curtos para operação, integrações, configurações e segurança."
         actions={
           <WorkspaceTabs
@@ -294,7 +284,7 @@ export default function HelpPage() {
         <OperationalMetric
           label="Integração"
           value="Por loja"
-          helper="Meta, GA4 e Gemini usam credencial própria de cada marca."
+          helper="Meta e GA4 usam credencial própria de cada marca."
         />
         <OperationalMetric
           label="Confiança"
@@ -319,7 +309,7 @@ export default function HelpPage() {
             <Link href={APP_ROUTES.settings} className="atlas-soft-subcard p-4 transition hover:border-secondary/30">
               <p className="atlas-analytics-eyebrow">Configurações</p>
               <p className="mt-1.5 text-[0.95rem] font-semibold text-on-surface">Central estratégica</p>
-              <p className="mt-2 text-sm leading-6 text-on-surface-variant">Governança, comportamento do Atlas e contexto da marca.</p>
+              <p className="mt-2 text-sm leading-6 text-on-surface-variant">Governança, contexto e regras operacionais da marca.</p>
             </Link>
             <Link href={APP_ROUTES.integrations} className="atlas-soft-subcard p-4 transition hover:border-secondary/30">
               <p className="atlas-analytics-eyebrow">Conexão técnica</p>
@@ -451,9 +441,6 @@ export default function HelpPage() {
                   <Link href={APP_ROUTES.integrationsTutorialGa4} prefetch={false} className="brandops-button brandops-button-ghost">
                     Tutorial GA4
                   </Link>
-                  <Link href={APP_ROUTES.integrationsTutorialGemini} prefetch={false} className="brandops-button brandops-button-ghost">
-                    Tutorial Gemini
-                  </Link>
                 </div>
               </section>
             </div>
@@ -493,10 +480,9 @@ export default function HelpPage() {
                   <h2 className="text-lg font-semibold text-on-surface">
                     Onde cada decisão deve morar
                   </h2>
-                  <p className="text-sm leading-6 text-on-surface-variant">
-                    Manter conexão, comportamento, governança e resultado em lugares separados
-                    reduz ruído e deixa o Atlas mais pronto para escalar como SaaS.
-                  </p>
+        <p className="text-sm leading-6 text-on-surface-variant">
+          Manter conexão, governança e resultado em lugares separados reduz ruído e deixa o BrandOps mais pronto para escalar como SaaS.
+        </p>
                 </div>
 
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -512,9 +498,9 @@ export default function HelpPage() {
                     <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
                       Configurações
                     </span>
-                    <p className="mt-1 text-on-surface-variant">
-                      Definir modelo, temperatura, skill, aprendizado e contexto do Atlas.
-                    </p>
+        <p className="mt-1 text-on-surface-variant">
+          Definir plano, limites e contexto operacional da marca.
+        </p>
                   </div>
                   <div className="rounded-2xl border border-outline bg-surface px-4 py-3 text-sm leading-6 text-on-surface">
                     <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">

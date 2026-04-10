@@ -19,16 +19,13 @@ comment on column public.brands.plan_tier is
   'Plano contratado da marca para governar recursos do SaaS.';
 
 comment on column public.brands.feature_flags is
-  'Overrides de capacidade por marca. Campos esperados: atlasAi, atlasCommandCenter, brandLearning, geminiModelCatalog.';
+  'Overrides de capacidade por marca. Campo esperado: brandLearning.';
 
 update public.brands
 set
   plan_tier = 'enterprise',
   feature_flags = jsonb_build_object(
-    'atlasAi', true,
-    'atlasCommandCenter', true,
-    'brandLearning', true,
-    'geminiModelCatalog', true
+    'brandLearning', true
   )
 where id in (
   '5e04ebfe-8443-4c11-940a-9bacb7f4af15', -- Oh My Dog
