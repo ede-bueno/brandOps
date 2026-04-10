@@ -1,0 +1,1394 @@
+
+> brandops@0.1.0 dev
+> node scripts/run-next-dev.js --hostname 0.0.0.0 --port 3009
+
+   ▲ Next.js 15.1.12
+   - Local:        http://localhost:3009
+   - Network:      http://0.0.0.0:3009
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1835ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 7.7s (745 modules)
+ GET /dre 404 in 8157ms
+ ○ Compiling /dre ...
+ ✓ Compiled /dre in 4.6s (1813 modules)
+ GET /dre 200 in 5361ms
+ GET /dre 200 in 36ms
+ ○ Compiling /icon.svg ...
+ ✓ Compiled /icon.svg in 1532ms (1843 modules)
+ GET /icon.svg?f49182f445215aea 200 in 1350ms
+ GET /login 200 in 1800ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/financial ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/financial in 1535ms (1911 modules)
+ GET /dashboard 200 in 1890ms
+ GET /dashboard 200 in 45ms
+ ✓ Compiled /api/admin/brands/[brandId]/reports/sanitization in 497ms (1915 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 3969ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial 200 in 4574ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial 200 in 4462ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 5854ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 5985ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 6440ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 4219ms
+ ○ Compiling /integrations ...
+ ✓ Compiled /integrations in 2.8s (1983 modules)
+ GET /integrations 200 in 3336ms
+ GET /media 200 in 3435ms
+ ○ Compiling /traffic ...
+ ✓ Compiled /traffic in 830ms (1994 modules)
+ GET /traffic 200 in 1519ms
+ ○ Compiling /product-insights ...
+ ✓ Compiled /product-insights in 853ms (2019 modules)
+ GET /product-insights 200 in 1465ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 1996ms
+ GET /login 200 in 27ms
+ GET /dashboard 200 in 37ms
+ GET /api/admin/brands/a166d816-660e-40d2-bb09-8b73fe8de7a8/reports/sanitization 200 in 1265ms
+ GET /api/admin/brands/a166d816-660e-40d2-bb09-8b73fe8de7a8/reports/financial 200 in 844ms
+ GET /api/admin/brands/a166d816-660e-40d2-bb09-8b73fe8de7a8/reports/sanitization 200 in 1115ms
+ GET /api/admin/brands/a166d816-660e-40d2-bb09-8b73fe8de7a8/reports/financial 200 in 1072ms
+ GET /api/admin/brands/a166d816-660e-40d2-bb09-8b73fe8de7a8/reports/financial?from=2026-03-09&to=2026-04-07 200 in 1045ms
+ GET /api/admin/brands/a166d816-660e-40d2-bb09-8b73fe8de7a8/reports/financial?from=2026-04-01&to=2026-04-07 200 in 1055ms
+ GET /integrations 200 in 21ms
+ ○ Compiling /api/admin/brands/[brandId]/integrations ...
+ ✓ Compiled /api/admin/brands/[brandId]/integrations in 3.3s (1528 modules)
+ GET /api/admin/brands/a166d816-660e-40d2-bb09-8b73fe8de7a8/reports/financial?from=2026-04-01&to=2026-04-07 200 in 6088ms
+ GET /integrations?provider=meta&section=config 200 in 5961ms
+ GET /integrations?provider=ink&section=overview 200 in 3009ms
+ GET /integrations?provider=meta&section=overview 200 in 176ms
+ GET /integrations?provider=meta&section=config 200 in 35ms
+ GET /api/admin/brands/a166d816-660e-40d2-bb09-8b73fe8de7a8/integrations 200 in 9403ms
+ GET /api/admin/brands/a166d816-660e-40d2-bb09-8b73fe8de7a8/integrations 200 in 9754ms
+ ✓ Compiled in 1140ms (1515 modules)
+ GET /integrations?provider=meta&section=overview 200 in 109ms
+ ○ Compiling /settings ...
+ ✓ Compiled /settings in 2.4s (1550 modules)
+ GET /settings 200 in 2891ms
+ GET /dashboard 200 in 1301ms
+ GET /settings 200 in 25ms
+ ○ Compiling /api/admin/brands/[brandId]/atlas-learning ...
+ ✓ Compiled /api/admin/brands/[brandId]/atlas-learning in 2.4s (1711 modules)
+ GET /settings 200 in 592ms
+ ○ Compiling /dre ...
+ ✓ Compiled /dre in 1303ms (1214 modules)
+ GET /dre 200 in 1477ms
+ GET /api/admin/brands/a166d816-660e-40d2-bb09-8b73fe8de7a8/atlas-learning 200 in 5504ms
+ GET /api/admin/brands/a166d816-660e-40d2-bb09-8b73fe8de7a8/atlas-learning 200 in 5517ms
+ ○ Compiling /help ...
+ ✓ Compiled /help in 1411ms (2200 modules)
+ GET /help 200 in 1552ms
+ GET /help 200 in 22ms
+ ○ Compiling /sales ...
+ ✓ Compiled /sales in 851ms (2209 modules)
+ GET /sales 200 in 1026ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/sales ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/sales in 709ms (2212 modules)
+ GET /sales 200 in 67ms
+ GET /api/admin/brands/a166d816-660e-40d2-bb09-8b73fe8de7a8/reports/sales?from=2026-04-01&to=2026-04-07 200 in 3134ms
+ GET /api/admin/brands/a166d816-660e-40d2-bb09-8b73fe8de7a8/reports/sales?from=2026-04-01&to=2026-04-07 200 in 2901ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/sanitization ...
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sales 200 in 1249ms
+ ✓ Compiled /api/admin/brands/[brandId]/reports/sanitization in 1003ms (1249 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial 200 in 2303ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial 200 in 2715ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-04-01&to=2026-04-07 200 in 2202ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sales?from=2026-04-01&to=2026-04-07 200 in 2349ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 6318ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-04-01&to=2026-04-07 200 in 798ms
+ ✓ Compiled in 555ms (981 modules)
+ ✓ Compiled in 440ms (981 modules)
+ GET /sales 200 in 206ms
+ GET /sales 200 in 22ms
+ GET /dashboard 200 in 45ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-04-01&to=2026-04-07 200 in 1826ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 5323ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 5145ms
+ ✓ Compiled in 559ms (981 modules)
+ GET /dashboard 200 in 21ms
+ ✓ Compiled in 1563ms (2042 modules)
+ GET /dashboard 200 in 154ms
+ ✓ Compiled in 1824ms (2042 modules)
+ GET /dashboard 200 in 81ms
+ GET /dre 200 in 41ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-04-01&to=2026-04-07 200 in 1851ms
+ ✓ Compiled in 1367ms (2038 modules)
+ GET /dre 200 in 115ms
+ ✓ Compiled in 1052ms (2038 modules)
+ GET /dre 200 in 95ms
+ GET /integrations 200 in 410ms
+ ○ Compiling /media ...
+ ✓ Compiled /media in 1769ms (1072 modules)
+ ✓ Compiled in 1ms (1078 modules)
+ ✓ Compiled in 0ms (1078 modules)
+ ✓ Compiled in 1ms (1078 modules)
+ GET /product-insights 200 in 4137ms
+ GET /dre 200 in 3195ms
+ GET /media 200 in 5344ms
+ GET /dre 200 in 19ms
+ ✓ Compiled in 1287ms (1978 modules)
+ GET /dre 200 in 158ms
+ ✓ Compiled in 1513ms (1978 modules)
+ GET /dre 200 in 93ms
+ GET /sales 200 in 468ms
+ GET /dashboard 200 in 66ms
+ GET /dre 200 in 59ms
+ ○ Compiling /icon.svg ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/sanitization in 1223ms (1006 modules)
+ ✓ Compiled /api/admin/brands/[brandId]/reports/financial in 1ms (1068 modules)
+ ✓ Compiled in 1ms (1072 modules)
+ ✓ Compiled in 0ms (1072 modules)
+ GET /login 200 in 2811ms
+ ✓ Compiled in 0ms (1072 modules)
+ GET /icon.svg?f49182f445215aea 200 in 3218ms
+ ✓ Compiled in 1ms (1072 modules)
+ GET /login 200 in 1012ms
+ GET /dashboard 200 in 66ms
+ GET /dashboard 200 in 49ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 3316ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial 200 in 3839ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial 200 in 4156ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 7883ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 4963ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 5087ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 5317ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 5573ms
+ GET /dre 200 in 33ms
+ GET /sales 200 in 32ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/sales ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/sales in 699ms (1075 modules)
+ GET /dre 200 in 48ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sales?from=2026-03-09&to=2026-04-07 200 in 2622ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sales?from=2026-03-09&to=2026-04-07 200 in 2374ms
+ GET /integrations 200 in 26ms
+ ✓ Compiled /api/admin/brands/[brandId]/integrations in 462ms (1091 modules)
+ GET /integrations?provider=meta&section=config 200 in 1013ms
+ GET /integrations?provider=meta&section=config 200 in 21ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 2115ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/integrations 200 in 2830ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/integrations 200 in 2845ms
+ GET /dre 200 in 32ms
+ ✓ Compiled in 1577ms (2052 modules)
+ GET /dre 200 in 127ms
+ ✓ Compiled in 1502ms (1976 modules)
+ GET /dre 200 in 148ms
+ ✓ Compiled in 1489ms (1976 modules)
+ GET /dre 200 in 207ms
+ GET /sales 200 in 709ms
+ GET /integrations 200 in 155ms
+ GET /dashboard 200 in 157ms
+ ✓ Compiled /api/admin/brands/[brandId]/reports/financial in 316ms (1056 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 1911ms
+ ✓ Compiled /help in 440ms (1064 modules)
+ GET /help 200 in 682ms
+ GET /help 200 in 21ms
+ ✓ Compiled in 1136ms (2044 modules)
+ GET /help 200 in 74ms
+ GET /dashboard 200 in 42ms
+ ✓ Compiled /api/admin/brands/[brandId]/reports/sanitization in 332ms (1068 modules)
+ ○ Compiling /api/admin/brands/[brandId]/atlas-analyst ...
+ ✓ Compiled /api/admin/brands/[brandId]/atlas-analyst in 1689ms (2201 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 6677ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 7217ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/atlas-analyst 200 in 4659ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/atlas-analyst 200 in 4893ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 6339ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 6304ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-04-01&to=2026-04-07 200 in 1363ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/atlas-analyst 200 in 1683ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/atlas-analyst 200 in 1688ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 4743ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 4810ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-04-01&to=2026-04-07 200 in 860ms
+ ✓ Compiled in 1273ms (2207 modules)
+ GET /dashboard 200 in 121ms
+ GET /dashboard 200 in 215ms
+ GET /dre 200 in 46ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-04-01&to=2026-04-07 200 in 1487ms
+ ✓ Compiled /help in 390ms (1064 modules)
+ GET /help 200 in 526ms
+ GET /help 200 in 16ms
+ GET /dashboard 200 in 26ms
+ ✓ Compiled /api/admin/brands/[brandId]/reports/sanitization in 288ms (1068 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 5096ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 5647ms
+ ✓ Compiled in 1016ms (980 modules)
+ GET /dashboard 200 in 80ms
+ ✓ Compiled in 1754ms (2037 modules)
+ GET /dashboard 200 in 79ms
+ ✓ Compiled in 1451ms (2033 modules)
+ GET /dashboard 200 in 80ms
+ GET /dashboard 200 in 356ms
+ ○ Compiling /media ...
+ ✓ Compiled /media in 1667ms (1001 modules)
+ ✓ Compiled in 2ms (1007 modules)
+ ✓ Compiled in 0ms (1007 modules)
+ ✓ Compiled in 1ms (1007 modules)
+ GET /login 200 in 3759ms
+ ✓ Compiled in 0ms (1007 modules)
+ GET /dashboard 200 in 2790ms
+ GET /media 200 in 4850ms
+ ✓ Compiled in 1ms (1007 modules)
+ ✓ Compiled in 0ms (1007 modules)
+ ✓ Compiled in 0ms (1007 modules)
+ GET /dashboard 200 in 1617ms
+ GET /login 200 in 37ms
+ ○ Compiling /traffic ...
+ ✓ Compiled /traffic in 1030ms (1014 modules)
+ GET /traffic 200 in 1793ms
+ GET /dashboard 200 in 682ms
+ GET /login 200 in 20ms
+ ○ Compiling /product-insights ...
+ ✓ Compiled /product-insights in 598ms (1028 modules)
+ GET /product-insights 200 in 1285ms
+ GET /dashboard 200 in 682ms
+ GET /login 200 in 16ms
+ ✓ Compiled in 1946ms (1986 modules)
+ GET /login 200 in 113ms
+ GET /dashboard 200 in 34ms
+ ✓ Compiled in 1323ms (1986 modules)
+ GET /login 200 in 115ms
+ GET /dashboard 200 in 139ms
+ ✓ Compiled in 3.3s (1986 modules)
+ GET /login 200 in 132ms
+ GET /dashboard 200 in 168ms
+ ✓ Compiled in 2.2s (1959 modules)
+ GET /login 200 in 109ms
+ GET /dashboard 200 in 142ms
+ ✓ Compiled in 7.1s (1959 modules)
+ GET /dashboard 200 in 240ms
+ GET /login 200 in 251ms
+ ✓ Compiled in 2s (1959 modules)
+ GET /login 200 in 172ms
+ ✓ Compiled in 1312ms (1959 modules)
+ GET /login 200 in 116ms
+ ✓ Compiled in 1378ms (1959 modules)
+ GET /login 200 in 76ms
+ ✓ Compiled in 1599ms (1959 modules)
+ GET /login 200 in 47ms
+ ✓ Compiled in 1342ms (980 modules)
+ GET /login 200 in 22ms
+ ✓ Compiled in 1385ms (1959 modules)
+ GET /login 200 in 85ms
+ ✓ Compiled in 692ms (980 modules)
+ GET /login 200 in 28ms
+ ✓ Compiled in 1329ms (1959 modules)
+ GET /login 200 in 73ms
+ ✓ Compiled in 747ms (980 modules)
+ GET /login 200 in 20ms
+ ✓ Compiled in 1223ms (1959 modules)
+ GET /login 200 in 76ms
+ ✓ Compiled in 1872ms (1959 modules)
+ GET /login 200 in 54ms
+ ✓ Compiled in 1903ms (1959 modules)
+ GET /login 200 in 77ms
+ GET /dashboard 200 in 317ms
+ ○ Compiling /media ...
+ ✓ Compiled /media in 1170ms (986 modules)
+ ✓ Compiled in 1ms (1020 modules)
+ ✓ Compiled in 1ms (1020 modules)
+ ✓ Compiled in 0ms (1020 modules)
+ GET /traffic 200 in 3942ms
+ GET /login 200 in 3370ms
+ GET /product-insights 200 in 4897ms
+ GET /integrations 200 in 4898ms
+ GET /media 200 in 4879ms
+ GET /login 200 in 18ms
+ ✓ Compiled in 1637ms (2000 modules)
+ GET /login 200 in 121ms
+ ✓ Compiled in 1161ms (2000 modules)
+ GET /login 200 in 42ms
+ GET /dashboard 200 in 176ms
+ GET /media 200 in 176ms
+ GET /traffic 200 in 43ms
+ GET /product-insights 200 in 52ms
+ GET /integrations 200 in 68ms
+ ✓ Compiled in 1222ms (2000 modules)
+ GET /login 200 in 64ms
+ ✓ Compiled in 1316ms (2000 modules)
+ GET /login 200 in 60ms
+ ✓ Compiled in 1092ms (2000 modules)
+ GET /login 200 in 38ms
+ GET /media 200 in 260ms
+ GET /dashboard 200 in 63ms
+ GET /traffic 200 in 48ms
+ GET /product-insights 200 in 52ms
+ GET /integrations 200 in 35ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/sanitization ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/financial in 1020ms (1039 modules)
+ ✓ Compiled (1043 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-04-01&to=2026-04-07 200 in 3712ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial 200 in 3713ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 9559ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 9264ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-04-01&to=2026-04-07 200 in 2001ms
+ ✓ Compiled in 3.9s (1959 modules)
+ GET /login 200 in 221ms
+ ✓ Compiled in 603ms (980 modules)
+ GET /login 200 in 24ms
+ ✓ Compiled in 1984ms (1959 modules)
+ GET /login 200 in 126ms
+ GET /sales 200 in 507ms
+ ○ Compiling /integrations ...
+ ✓ Compiled /integrations in 2.3s (993 modules)
+ GET /integrations 200 in 2551ms
+ GET /login 200 in 269ms
+ GET /dashboard 200 in 49ms
+ GET /dashboard 200 in 43ms
+ GET /login 200 in 23ms
+ ○ Compiling /icon.svg ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/sanitization in 1643ms (994 modules)
+ ✓ Compiled /api/admin/brands/[brandId]/reports/financial in 1ms (1041 modules)
+ ✓ Compiled in 0ms (1045 modules)
+ ✓ Compiled in 0ms (1045 modules)
+ GET /icon.svg?f49182f445215aea 200 in 3373ms
+ ✓ Compiled in 0ms (1045 modules)
+ GET /dashboard 200 in 2366ms
+ ✓ Compiled in 0ms (1045 modules)
+ ✓ Compiled in 1ms (1045 modules)
+ ✓ Compiled in 0ms (1045 modules)
+ GET /icon.svg?f49182f445215aea 200 in 1598ms
+ GET /dashboard 200 in 87ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial 200 in 4412ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial 200 in 4445ms
+ GET /dashboard 200 in 18ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 805ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 3241ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial 200 in 809ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 7859ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 8089ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 4212ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 4083ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 4702ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 4260ms
+ GET /dashboard 200 in 208ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 206ms
+ GET /icon.svg?f49182f445215aea 200 in 9ms
+ GET /login 200 in 26ms
+ GET /dashboard 200 in 23ms
+ GET /dashboard 200 in 19ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial 200 in 2040ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial 200 in 2961ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 1995ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 9321ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 10439ms
+ ✓ Compiled in 2.1s (2025 modules)
+ GET /dashboard 200 in 223ms
+ ✓ Compiled in 762ms (980 modules)
+ GET /dashboard 200 in 29ms
+ GET /dashboard 200 in 169ms
+ ○ Compiling /product-insights ...
+ ✓ Compiled /product-insights in 941ms (994 modules)
+ GET /product-insights 200 in 1420ms
+ GET /dashboard 200 in 482ms
+ ✓ Compiled in 1192ms (1959 modules)
+ ✓ Compiled in 514ms (980 modules)
+ GET /dashboard 200 in 188ms
+ GET /dashboard 200 in 13ms
+ GET /dre 200 in 72ms
+ ✓ Compiled /api/admin/brands/[brandId]/reports/financial in 430ms (1039 modules)
+ GET /dashboard 200 in 280ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 2634ms
+ ○ Compiling /media ...
+ ✓ Compiled /media in 872ms (1045 modules)
+ GET /media 200 in 1162ms
+ GET /dre 200 in 287ms
+ ✓ Compiled /traffic in 430ms (1052 modules)
+ GET /traffic 200 in 807ms
+ GET /dre 200 in 363ms
+ ○ Compiling /product-insights ...
+ ✓ Compiled /product-insights in 859ms (1066 modules)
+ GET /product-insights 200 in 1156ms
+ GET /dre 200 in 291ms
+ GET /sales 200 in 47ms
+ GET /sales 200 in 19ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/sales ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/sales in 1189ms (1069 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sales?from=2026-03-09&to=2026-04-07 200 in 2675ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sales?from=2026-03-09&to=2026-04-07 200 in 1805ms
+ GET /dre 200 in 68ms
+ ○ Compiling /cost-center ...
+ ✓ Compiled /cost-center in 1322ms (2050 modules)
+ GET /cost-center 200 in 1411ms
+ GET /cost-center 200 in 12ms
+ GET /sales 200 in 20ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sales?from=2026-03-09&to=2026-04-07 200 in 1100ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sales?from=2026-03-09&to=2026-04-07 200 in 993ms
+ GET /dre 200 in 25ms
+ GET /sales 200 in 15ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sales?from=2026-03-09&to=2026-04-07 200 in 1330ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sales?from=2026-03-09&to=2026-04-07 200 in 1178ms
+ ✓ Compiled in 952ms (2034 modules)
+ GET /sales 200 in 65ms
+ ✓ Compiled in 1372ms (2025 modules)
+ GET /sales 200 in 87ms
+ ✓ Compiled in 597ms (986 modules)
+ GET /sales 200 in 43ms
+ ✓ Compiled in 473ms (986 modules)
+ GET /sales 200 in 17ms
+ ✓ Compiled in 469ms (986 modules)
+ GET /sales 200 in 17ms
+ ✓ Compiled in 1228ms (2025 modules)
+ GET /sales 200 in 75ms
+ ✓ Compiled in 545ms (986 modules)
+ GET /sales 200 in 19ms
+ GET /dashboard 200 in 193ms
+ ✓ Compiled /media in 370ms (1045 modules)
+ GET /media 200 in 729ms
+ GET /sales 200 in 29ms
+ GET /dashboard 200 in 25ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/financial ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/sanitization in 916ms (1048 modules)
+ ✓ Compiled /traffic in 0ms (1052 modules)
+ ✓ Compiled in 1ms (1059 modules)
+ ✓ Compiled in 1ms (1059 modules)
+ ✓ Compiled in 1ms (1059 modules)
+ GET /dre 200 in 1795ms
+ ✓ Compiled in 1ms (1059 modules)
+ GET /traffic 200 in 2529ms
+ GET /dre 200 in 1247ms
+ ✓ Compiled /product-insights in 418ms (1070 modules)
+ GET /dashboard 200 in 463ms
+ GET /product-insights 200 in 734ms
+ GET /dashboard 200 in 18ms
+ GET /dre 200 in 57ms
+ GET /sales 200 in 110ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 11224ms
+ ○ Compiling /integrations ...
+ ✓ Compiled /integrations in 1097ms (1086 modules)
+ GET /integrations 200 in 1388ms
+ GET /dre 200 in 256ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 15089ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 15653ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 7930ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 7355ms
+ ○ Compiling /help ...
+ ✓ Compiled /help in 617ms (1093 modules)
+ GET /help 200 in 710ms
+ GET /dashboard 200 in 23ms
+ ○ Compiling /api/admin/brands/[brandId]/atlas-analyst ...
+ ✓ Compiled /api/admin/brands/[brandId]/atlas-analyst in 537ms (1254 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/atlas-analyst 200 in 2814ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/atlas-analyst 200 in 2815ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 5194ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 5914ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 6648ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 5760ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 1753ms
+ ✓ Compiled in 3.9s (1966 modules)
+ GET /dashboard 200 in 141ms
+ ✓ Compiled in 2.6s (1966 modules)
+ GET /dashboard 200 in 129ms
+ ✓ Compiled in 1482ms (1966 modules)
+ GET /dashboard 200 in 76ms
+ ✓ Compiled in 1159ms (1966 modules)
+ GET /dashboard 200 in 66ms
+ ✓ Compiled in 1241ms (1966 modules)
+ GET /dashboard 200 in 76ms
+ GET /dashboard 200 in 221ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/financial ...
+ ✓ Compiled /media in 1204ms (1040 modules)
+ ✓ Compiled (1046 modules)
+ GET /media 200 in 3045ms
+ GET /dashboard 200 in 53ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 5395ms
+ ✓ Compiled /traffic in 393ms (1053 modules)
+ GET /traffic 200 in 838ms
+ GET /dashboard 200 in 444ms
+ ○ Compiling /product-insights ...
+ ✓ Compiled /product-insights in 1142ms (1067 modules)
+ GET /product-insights 200 in 1577ms
+ GET /dashboard 200 in 409ms
+ GET /sales 200 in 64ms
+ ○ Compiling /integrations ...
+ ✓ Compiled /integrations in 1727ms (1081 modules)
+ GET /integrations 200 in 1957ms
+ GET /dashboard 200 in 198ms
+ ✓ Compiled in 3.2s (1966 modules)
+ GET /dashboard 200 in 211ms
+ ✓ Compiled in 665ms (986 modules)
+ GET /dashboard 200 in 29ms
+ GET /dashboard 200 in 260ms
+ ○ Compiling /dashboard/contribution-margin ...
+ ✓ Compiled /dashboard/contribution-margin in 3.8s (1965 modules)
+ GET /dashboard/contribution-margin 200 in 4471ms
+ GET /dre 200 in 96ms
+ ○ Compiling /cmv ...
+ ✓ Compiled /cmv in 1469ms (1977 modules)
+ GET /cmv 200 in 1684ms
+ GET /cost-center 200 in 53ms
+ ○ Compiling /feed ...
+ ✓ Compiled /feed in 2.5s (2021 modules)
+ GET /feed 200 in 2837ms
+ ○ Compiling /import ...
+ ✓ Compiled /import in 1689ms (2060 modules)
+ GET /import 200 in 1924ms
+ ○ Compiling /sanitization ...
+ ✓ Compiled /sanitization in 921ms (2073 modules)
+ GET /sanitization 200 in 1113ms
+ ○ Compiling /settings ...
+ ✓ Compiled /settings in 1097ms (1070 modules)
+ GET /settings 200 in 1342ms
+ GET /dashboard 200 in 251ms
+ ○ Compiling /media ...
+ ✓ Compiled /media in 1722ms (1076 modules)
+ GET /media 200 in 2132ms
+ ○ Compiling /traffic ...
+ ✓ Compiled /traffic in 8.3s (2121 modules)
+ GET /traffic 200 in 8897ms
+ GET /dashboard 200 in 577ms
+ ○ Compiling /product-insights ...
+ ✓ Compiled /product-insights in 693ms (1097 modules)
+ GET /product-insights 200 in 1298ms
+ ○ Compiling /integrations ...
+ ✓ Compiled /integrations in 1442ms (1108 modules)
+ GET /integrations 200 in 1676ms
+ ○ Compiling /integrations/tutorials ...
+ ✓ Compiled /integrations/tutorials in 1716ms (2148 modules)
+ GET /integrations/tutorials 200 in 1914ms
+ GET /help 200 in 62ms
+ ○ Compiling /admin/stores ...
+ ✓ Compiled /admin/stores in 2.5s (2165 modules)
+ GET /admin/stores 200 in 2681ms
+ ✓ Compiled in 844ms (1046 modules)
+ GET /dashboard 200 in 43ms
+ ✓ Compiled in 4.4s (2026 modules)
+ GET /dashboard 200 in 143ms
+ GET /dashboard 200 in 204ms
+ GET /dre 200 in 283ms
+ ○ Compiling /cmv ...
+ ✓ Compiled /cmv in 1917ms (988 modules)
+ GET /cmv 200 in 2132ms
+ GET /dashboard 200 in 23ms
+ GET /cost-center 200 in 35ms
+ ○ Compiling /feed ...
+ ✓ Compiled /feed in 1055ms (1012 modules)
+ GET /feed 200 in 1393ms
+ GET /dashboard 200 in 324ms
+ ✓ Compiled /import in 340ms (1033 modules)
+ GET /import 200 in 616ms
+ GET /dashboard 200 in 259ms
+ ○ Compiling /sanitization ...
+ ✓ Compiled /sanitization in 924ms (1041 modules)
+ GET /sanitization 200 in 1088ms
+ GET /dashboard 200 in 145ms
+ ○ Compiling /media ...
+ ✓ Compiled /media in 949ms (1047 modules)
+ GET /media 200 in 1348ms
+ GET /dashboard 200 in 370ms
+ ✓ Compiled /traffic in 437ms (1054 modules)
+ GET /traffic 200 in 723ms
+ GET /dashboard 200 in 260ms
+ ○ Compiling /product-insights ...
+ ✓ Compiled /product-insights in 597ms (1068 modules)
+ GET /product-insights 200 in 965ms
+ GET /dashboard 200 in 335ms
+ ○ Compiling /integrations ...
+ ✓ Compiled /integrations in 1073ms (1081 modules)
+ GET /integrations 200 in 1285ms
+ GET /dashboard 200 in 179ms
+ ○ Compiling /settings ...
+ ✓ Compiled /settings in 1222ms (1100 modules)
+ GET /settings 200 in 1442ms
+ GET /dashboard 200 in 188ms
+ GET /help 200 in 39ms
+ ○ Compiling /admin/stores ...
+ ✓ Compiled /admin/stores in 1326ms (1110 modules)
+ GET /admin/stores 200 in 1560ms
+ GET /dashboard 200 in 207ms
+ ○ Compiling /integrations/tutorials ...
+ ✓ Compiled /integrations/tutorials in 3s (1125 modules)
+ GET /integrations/tutorials 200 in 3462ms
+ GET /dashboard 200 in 205ms
+ ✓ Compiled in 4.8s (2164 modules)
+ GET /dashboard 200 in 130ms
+ ○ Compiling /api/admin/brands/[brandId]/atlas-analyst ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/sanitization in 2.7s (1203 modules)
+ ✓ Compiled (1211 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 5364ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/atlas-analyst 200 in 11126ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial 200 in 6429ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 11820ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/atlas-analyst 200 in 8381ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/atlas-analyst 200 in 7397ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 20518ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 20898ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 21321ms
+ GET /dre 200 in 161ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 10765ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 5237ms
+ ✓ Compiled in 6.7s (2253 modules)
+ ✓ Compiled in 834ms (1046 modules)
+ GET /dre 200 in 379ms
+ GET /dre 200 in 19ms
+ GET /dashboard 200 in 663ms
+ GET /dre 200 in 274ms
+ ○ Compiling /cmv ...
+ ✓ Compiled /cmv in 2.5s (988 modules)
+ GET /cmv 200 in 3039ms
+ GET /cost-center 200 in 46ms
+ ○ Compiling /feed ...
+ ✓ Compiled /feed in 2.2s (1012 modules)
+ GET /feed 200 in 2581ms
+ ○ Compiling /import ...
+ ✓ Compiled /import in 1305ms (1033 modules)
+ GET /import 200 in 1628ms
+ ○ Compiling /sanitization ...
+ ✓ Compiled /sanitization in 1147ms (1041 modules)
+ GET /sanitization 200 in 1451ms
+ ○ Compiling /settings ...
+ ✓ Compiled /settings in 1228ms (1062 modules)
+ GET /settings 200 in 1521ms
+ ○ Compiling /media ...
+ ✓ Compiled /media in 2.5s (1068 modules)
+ GET /media 200 in 2970ms
+ ○ Compiling /traffic ...
+ ✓ Compiled /traffic in 2s (1075 modules)
+ GET /traffic 200 in 2469ms
+ ○ Compiling /product-insights ...
+ ✓ Compiled /product-insights in 1422ms (1089 modules)
+ GET /product-insights 200 in 1796ms
+ ○ Compiling /integrations ...
+ ✓ Compiled /integrations in 1904ms (1100 modules)
+ GET /integrations 200 in 2195ms
+ GET /help 200 in 58ms
+ ○ Compiling /admin/stores ...
+ ✓ Compiled /admin/stores in 601ms (1110 modules)
+ GET /admin/stores 200 in 833ms
+ ✓ Compiled in 2.3s (2077 modules)
+ GET /dre 200 in 170ms
+ GET /dashboard 200 in 53ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/financial ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/sanitization in 2.3s (1040 modules)
+ ✓ Compiled (1044 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 5786ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 7905ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 7952ms
+ ○ Compiling /media ...
+ ✓ Compiled /media in 1062ms (1050 modules)
+ GET /media 200 in 1233ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/media ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/media in 1305ms (2085 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-03-09&to=2026-04-07 200 in 1583ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-03-09&to=2026-04-07 200 in 3373ms
+ ○ Compiling /media/visao-executiva ...
+ ✓ Compiled /media/visao-executiva in 2.1s (2081 modules)
+ GET /media/visao-executiva 200 in 2261ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-03-09&to=2026-04-07 200 in 976ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-03-09&to=2026-04-07 200 in 1277ms
+ GET /media 200 in 24ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-03-09&to=2026-04-07 200 in 803ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-03-09&to=2026-04-07 200 in 772ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-03-09&to=2026-04-07 200 in 2978ms
+ GET /media/visao-executiva 200 in 16ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-03-09&to=2026-04-07 200 in 1122ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-03-09&to=2026-04-07 200 in 959ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-01-01&to=2026-04-07 200 in 1333ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-01-01&to=2026-04-07 200 in 1095ms
+ ✓ Compiled in 6.7s (2019 modules)
+ GET /media/visao-executiva 200 in 198ms
+ ✓ Compiled in 962ms (2019 modules)
+ GET /media/visao-executiva 200 in 109ms
+ ✓ Compiled in 753ms (2019 modules)
+ GET /media/visao-executiva 200 in 52ms
+ ✓ Compiled in 759ms (2019 modules)
+ GET /media/visao-executiva 200 in 81ms
+ ✓ Compiled in 741ms (2019 modules)
+ GET /media/visao-executiva 200 in 58ms
+ ✓ Compiled in 752ms (2019 modules)
+ GET /media/visao-executiva 200 in 629ms
+ ✓ Compiled in 1345ms (1047 modules)
+ GET /media/visao-executiva 200 in 576ms
+ ✓ Compiled in 605ms (1047 modules)
+ GET /media/visao-executiva 200 in 28ms
+ ✓ Compiled in 548ms (1047 modules)
+ GET /media/visao-executiva 200 in 21ms
+ ✓ Compiled in 1289ms (1047 modules)
+ GET /media/visao-executiva 200 in 19ms
+ ✓ Compiled in 534ms (1047 modules)
+ GET /media/visao-executiva 200 in 22ms
+ ✓ Compiled in 1353ms (1047 modules)
+ GET /media/visao-executiva 200 in 19ms
+ ✓ Compiled in 1324ms (1047 modules)
+ GET /media/visao-executiva 200 in 22ms
+ ✓ Compiled in 3.3s (2019 modules)
+ GET /media/visao-executiva 200 in 125ms
+ ○ Compiling /settings ...
+ ✓ Compiled /settings in 3.3s (994 modules)
+ GET /settings 200 in 3610ms
+ ○ Compiling /integrations ...
+ ✓ Compiled /integrations in 1932ms (1005 modules)
+ GET /integrations 200 in 2212ms
+ GET /dashboard 200 in 42ms
+ ✓ Compiled /product-insights in 431ms (1022 modules)
+ GET /product-insights 200 in 827ms
+ ✓ Compiled /traffic in 367ms (1028 modules)
+ GET /traffic 200 in 749ms
+ ✓ Compiled in 1126ms (2075 modules)
+ GET /media/visao-executiva 200 in 69ms
+ GET /settings 200 in 145ms
+ GET /integrations 200 in 36ms
+ GET /dashboard 200 in 34ms
+ GET /media 200 in 111ms
+ GET /product-insights 200 in 74ms
+ GET /traffic 200 in 36ms
+ ✓ Compiled in 2.1s (2075 modules)
+ GET /media/visao-executiva 200 in 58ms
+ ○ Compiling /dre ...
+ ✓ Compiled /dre in 773ms (1035 modules)
+ GET /dre 200 in 1083ms
+ GET /help 200 in 46ms
+ GET /integrations 200 in 61ms
+ GET /settings 200 in 57ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/financial ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/financial in 3.8s (1032 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-01-01&to=2026-04-07 200 in 6714ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/sanitization ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/financial in 1905ms (1032 modules)
+ ✓ Compiled (1036 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-01-01&to=2026-04-07 200 in 3821ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial 200 in 3834ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 8880ms
+ ✓ Compiled in 1749ms (2083 modules)
+ GET /media/visao-executiva 200 in 412ms
+ ✓ Compiled in 544ms (1047 modules)
+ GET /media/visao-executiva 200 in 17ms
+ ✓ Compiled in 874ms (2083 modules)
+ GET /media/visao-executiva 200 in 63ms
+ ✓ Compiled in 1939ms (1047 modules)
+ GET /media/visao-executiva 200 in 18ms
+ ✓ Compiled in 1236ms (1047 modules)
+ GET /media/visao-executiva 200 in 20ms
+ ○ Compiling /settings ...
+ ✓ Compiled /settings in 5.2s (994 modules)
+ GET /settings 200 in 5641ms
+ GET /media/visao-executiva 200 in 415ms
+ ○ Compiling /integrations ...
+ ✓ Compiled /integrations in 1920ms (1005 modules)
+ GET /integrations 200 in 2167ms
+ GET /media/visao-executiva 200 in 230ms
+ GET /media 200 in 1189ms
+ ○ Compiling /traffic ...
+ ✓ Compiled /traffic in 3.8s (1014 modules)
+ GET /traffic 200 in 4228ms
+ GET /media/visao-executiva 200 in 29ms
+ ✓ Compiled /product-insights in 313ms (1028 modules)
+ GET /product-insights 200 in 582ms
+ GET /media/visao-executiva 200 in 259ms
+ ○ Compiling /media/radar ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/financial in 5.9s (2081 modules)
+ GET /dashboard 200 in 4304ms
+ GET /media/radar 200 in 6228ms
+ GET /dashboard 200 in 20ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/sanitization ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/sanitization in 1082ms (1038 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-01-01&to=2026-04-07 200 in 7079ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 5445ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 6230ms
+ ○ Compiling /dashboard/contribution-margin ...
+ ✓ Compiled /dashboard/contribution-margin in 2s (1050 modules)
+ GET /dashboard/contribution-margin 200 in 2199ms
+ GET /dashboard/contribution-margin 200 in 17ms
+ ○ Compiling /dre ...
+ ✓ Compiled /dre in 1907ms (1049 modules)
+ GET /dre 200 in 2392ms
+ GET /dre 200 in 15ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-01-01&to=2026-04-07 200 in 4284ms
+ ○ Compiling /sales ...
+ ✓ Compiled /sales in 1978ms (1055 modules)
+ GET /sales 200 in 2069ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/sales ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/sales in 2s (1058 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sales?from=2026-01-01&to=2026-04-07 200 in 2272ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sales?from=2026-01-01&to=2026-04-07 200 in 3235ms
+ ○ Compiling /cost-center ...
+ ✓ Compiled /cost-center in 2.8s (1038 modules)
+ GET /cost-center 200 in 2883ms
+ GET /cost-center 200 in 15ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-01-01&to=2026-04-07 200 in 2029ms
+ ✓ Compiled in 2.5s (2019 modules)
+ ✓ Compiled in 420ms (1047 modules)
+ GET /cost-center 200 in 150ms
+ GET /cost-center 200 in 13ms
+ ✓ Compiled /media in 246ms (975 modules)
+ GET /media 200 in 379ms
+ GET /media 200 in 16ms
+ ✓ Compiled /api/admin/brands/[brandId]/reports/media in 393ms (1035 modules)
+ ✓ Compiled (1038 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-01-01&to=2026-04-07 200 in 3978ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-01-01&to=2026-04-07 200 in 3778ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-01-01&to=2026-04-07 200 in 4170ms
+ ✓ Compiled in 10.9s (2081 modules)
+ GET /media 200 in 92ms
+ GET /media 200 in 469ms
+ ○ Compiling /traffic ...
+ ✓ Compiled /traffic in 4.8s (1041 modules)
+ GET /traffic 200 in 5312ms
+ GET /media 200 in 467ms
+ ○ Compiling /product-insights ...
+ ✓ Compiled /product-insights in 564ms (1055 modules)
+ GET /product-insights 200 in 896ms
+ GET /media 200 in 308ms
+ ○ Compiling /media/visao-executiva ...
+ ✓ Compiled /media/visao-executiva in 2.3s (1035 modules)
+ GET /media/visao-executiva 200 in 2529ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-01-01&to=2026-04-07 200 in 3219ms
+ ✓ Compiled /api/admin/brands/[brandId]/reports/media in 286ms (1038 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-01-01&to=2026-04-07 200 in 1325ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-01-01&to=2026-04-07 200 in 1340ms
+ ○ Compiling /media/radar ...
+ ✓ Compiled /media/radar in 2.2s (1032 modules)
+ GET /media/radar 200 in 2375ms
+ GET /media/radar 200 in 16ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-01-01&to=2026-04-07 200 in 1049ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-01-01&to=2026-04-07 200 in 894ms
+ ○ Compiling /media/campanhas ...
+ ✓ Compiled /media/campanhas in 1567ms (2058 modules)
+ GET /media/campanhas 200 in 1676ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-01-01&to=2026-04-07 200 in 1137ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/media?from=2026-01-01&to=2026-04-07 200 in 1036ms
+ ○ Compiling /traffic ...
+ ✓ Compiled /traffic in 4.4s (965 modules)
+ GET /traffic 200 in 4746ms
+ ○ Compiling /feed ...
+ ✓ Compiled /feed in 3.4s (989 modules)
+ GET /feed 200 in 3565ms
+ GET /feed 200 in 20ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/catalog ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/catalog in 1606ms (2081 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/catalog?from=2026-01-01&to=2026-04-07&status=all&productType=all&collection=all 200 in 4378ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/catalog?from=2026-01-01&to=2026-04-07&status=all&productType=all&collection=all 200 in 4185ms
+ ○ Compiling /product-insights ...
+ ✓ Compiled /product-insights in 524ms (1053 modules)
+ GET /product-insights 200 in 736ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/product-insights ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/product-insights in 1697ms (2090 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/product-insights?from=2026-01-01&to=2026-04-07&decision=all&classification=all&productType=all&sort=priority 200 in 4038ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/product-insights?from=2026-01-01&to=2026-04-07&decision=all&classification=all&productType=all&sort=priority 200 in 4678ms
+ ✓ Compiled in 1429ms (2101 modules)
+ GET /product-insights 200 in 87ms
+ GET /feed 200 in 25ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/catalog?from=2026-01-01&to=2026-04-07&status=all&productType=all&collection=all 200 in 2239ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/catalog?from=2026-01-01&to=2026-04-07&status=all&productType=all&collection=all 200 in 2437ms
+ ✓ Compiled in 3.3s (2101 modules)
+ GET /feed 200 in 80ms
+ ✓ Compiled in 4.9s (2095 modules)
+ GET /feed 200 in 63ms
+ ✓ Compiled in 2.2s (2095 modules)
+ GET /feed 200 in 66ms
+ ○ Compiling /media ...
+ ✓ Compiled /media in 2.4s (998 modules)
+ ✓ Compiled in 1ms (1007 modules)
+ ✓ Compiled in 1ms (1007 modules)
+ ✓ Compiled in 1ms (1007 modules)
+ GET /dashboard 200 in 5190ms
+ GET /product-insights 200 in 5130ms
+ GET /feed 200 in 3730ms
+ GET /media 200 in 6160ms
+ GET /traffic 200 in 6162ms
+ GET /feed 200 in 19ms
+ ✓ Compiled in 3.2s (2054 modules)
+ GET /feed 200 in 46ms
+ ✓ Compiled in 1763ms (1047 modules)
+ GET /feed 200 in 24ms
+ ✓ Compiled in 1822ms (1047 modules)
+ GET /feed 200 in 20ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /integrations in 3.4s (991 modules)
+ ✓ Compiled in 0ms (1020 modules)
+ ✓ Compiled in 1ms (1020 modules)
+ ✓ Compiled in 0ms (1020 modules)
+ GET /sales 200 in 6727ms
+ GET /feed 200 in 3830ms
+ GET /integrations 200 in 7433ms
+ GET /dashboard 200 in 7485ms
+ GET /feed 200 in 24ms
+ ✓ Compiled in 3.1s (1047 modules)
+ GET /feed 200 in 31ms
+ ✓ Compiled in 1071ms (1047 modules)
+ GET /feed 200 in 27ms
+ ✓ Compiled in 4.5s (2032 modules)
+ GET /feed 200 in 142ms
+ ✓ Compiled in 737ms (1047 modules)
+ GET /feed 200 in 25ms
+ ✓ Compiled in 769ms (1047 modules)
+ GET /feed 200 in 26ms
+ ✓ Compiled in 693ms (1047 modules)
+ GET /feed 200 in 21ms
+ ✓ Compiled in 798ms (1047 modules)
+ GET /feed 200 in 26ms
+ ✓ Compiled in 865ms (1047 modules)
+ GET /feed 200 in 26ms
+ ○ Compiling /help ...
+ ✓ Compiled /admin/stores in 9.8s (996 modules)
+ ✓ Compiled (1058 modules)
+ GET /feed 200 in 14069ms
+ GET /sanitization 200 in 23444ms
+ GET /feed 200 in 24827ms
+ GET /import 200 in 23429ms
+ GET /cmv 200 in 23630ms
+ GET /dre 200 in 23630ms
+ GET /help 200 in 25030ms
+ GET /admin/stores 200 in 23451ms
+ GET /dashboard/contribution-margin 200 in 24808ms
+ GET /feed 200 in 1161ms
+ ✓ Compiled in 5s (2105 modules)
+ GET /feed 200 in 148ms
+ ✓ Compiled in 2.1s (1047 modules)
+ GET /feed 200 in 27ms
+ ○ Compiling /cost-center ...
+ GET /cmv 200 in 1652ms
+ ✓ Compiled /cost-center in 5.8s (1067 modules)
+ GET /cost-center 200 in 6306ms
+ GET /feed 200 in 53ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/financial ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/financial in 1782ms (1062 modules)
+ ○ Compiling /help ...
+ ✓ Compiled /help in 1602ms (1073 modules)
+ GET /help 200 in 2484ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-01-01&to=2026-04-07 200 in 5972ms
+ ✓ Compiled in 3.9s (1047 modules)
+ GET /help 200 in 23ms
+ ✓ Compiled in 2.5s (2041 modules)
+ GET /help 200 in 172ms
+ ○ Compiling /admin/stores ...
+ ✓ Compiled /cost-center in 4.7s (1005 modules)
+ ✓ Compiled (1014 modules)
+ GET /cost-center 200 in 5003ms
+ GET /admin/stores 200 in 5328ms
+ ✓ Compiled in 4.1s (2041 modules)
+ GET /help 200 in 117ms
+ ○ Compiling /integrations ...
+ ✓ Compiled /dashboard in 6.4s (1009 modules)
+ ✓ Compiled in 0ms (1023 modules)
+ ✓ Compiled in 1ms (1023 modules)
+ ✓ Compiled in 0ms (1023 modules)
+ GET /integrations 200 in 11546ms
+ GET /dashboard 200 in 13156ms
+ GET /media 200 in 13185ms
+ GET /help 200 in 6630ms
+ GET /help 200 in 28ms
+ ○ Compiling /api/admin/brands/[brandId]/reports/financial ...
+ ✓ Compiled /api/admin/brands/[brandId]/reports/sanitization in 4.5s (1054 modules)
+ ✓ Compiled (1058 modules)
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-01-01&to=2026-04-07 200 in 6271ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial?from=2026-01-01&to=2026-04-07 200 in 3146ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/sanitization 200 in 3147ms
+ GET /api/admin/brands/5e04ebfe-8443-4c11-940a-9bacb7f4af15/reports/financial 200 in 3146ms
+ GET /help 200 in 6301ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 2.3s (1059 modules)
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 5.4s (2348 modules)
+ GET /_next/static/css/app/layout.css?v=1775596034032 500 in 12159ms
+ GET /_next/static/chunks/webpack.js?v=1775596034032 500 in 12145ms
+ GET /_next/static/chunks/main-app.js?v=1775596034032 404 in 284ms
+ GET /_next/static/chunks/app/error.js 404 in 276ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 279ms
+ GET /_next/static/chunks/app/not-found.js 404 in 90ms
+ GET /_next/static/chunks/app/(app)/layout.js 404 in 87ms
+ GET /_next/static/css/app/layout.css?v=1775596046595 404 in 80ms
+ GET /_next/static/chunks/app/(app)/help/page.js 404 in 78ms
+ GET /_next/static/chunks/app/global-error.js 404 in 78ms
+ GET /_next/static/css/app/layout.css?v=1775596046598 404 in 73ms
+ GET /_next/static/css/app/layout.css?v=1775596046829 404 in 85ms
+ GET /_next/static/css/app/layout.css?v=1775596046804 404 in 90ms
+ GET /_next/static/css/app/layout.css?v=1775596046831 404 in 85ms
+ GET /_next/static/css/app/layout.css?v=1775596046830 404 in 87ms
+ GET /_next/static/css/app/layout.css?v=1775596046805 404 in 89ms
+ GET /_next/static/css/app/layout.css?v=1775596047062 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596047088 404 in 17ms
+ ○ Compiling /icon.svg ...
+ ✓ Compiled /icon.svg in 1498ms (1106 modules)
+ GET /_next/static/css/app/layout.css?v=1775596047089 404 in 1891ms
+ GET /_next/static/css/app/layout.css?v=1775596047090 404 in 1892ms
+ GET /icon.svg?f49182f445215aea 200 in 1924ms
+ GET /_next/static/css/app/layout.css?v=1775596047431 404 in 779ms
+ GET /_next/static/css/app/layout.css?v=1775596047410 404 in 785ms
+ GET /_next/static/css/app/layout.css?v=1775596049246 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596049341 404 in 25ms
+ GET /_next/static/css/app/layout.css?v=1775596049247 404 in 27ms
+ GET /_next/static/css/app/layout.css?v=1775596049342 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596049378 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596049656 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596049685 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596049705 404 in 18ms
+ GET /_next/static/css/app/layout.css?v=1775596049686 404 in 20ms
+ GET /_next/static/css/app/layout.css?v=1775596050001 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596050017 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596050018 404 in 18ms
+ GET /_next/static/css/app/layout.css?v=1775596050038 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596050329 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596050345 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596050365 404 in 26ms
+ GET /_next/static/css/app/layout.css?v=1775596050346 404 in 31ms
+ GET /_next/static/css/app/layout.css?v=1775596050653 404 in 27ms
+ GET /_next/static/css/app/layout.css?v=1775596050675 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596050676 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596050703 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596051013 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596051032 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596051337 404 in 22ms
+ GET /_next/static/css/app/layout.css?v=1775596051353 404 in 21ms
+ GET /_next/static/css/app/layout.css?v=1775596051667 404 in 20ms
+ GET /_next/static/css/app/layout.css?v=1775596051849 404 in 33ms
+ GET /_next/static/css/app/layout.css?v=1775596051690 404 in 38ms
+ GET /_next/static/css/app/layout.css?v=1775596051882 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596051881 404 in 18ms
+ GET /_next/static/css/app/layout.css?v=1775596052231 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596052478 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596052573 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596052810 404 in 44ms
+ GET /_next/static/css/app/layout.css?v=1775596052904 404 in 17ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1689ms (2365 modules)
+ GET /_next/static/css/app/layout.css?v=1775596053131 404 in 1634ms
+ GET / 307 in 1989ms
+ GET /_next/static/css/app/layout.css?v=1775596055101 404 in 20ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 4.7s (1129 modules)
+ GET /_next/static/css/app/layout.css?v=1775596055250 404 in 4244ms
+ GET /login 200 in 5708ms
+ GET /_next/static/css/app/layout.css?v=1775596060920 404 in 44ms
+ GET /_next/static/css/app/layout.css?v=1775596061014 404 in 22ms
+ GET /_next/static/css/app/layout.css?v=1775596061322 404 in 74ms
+ GET /_next/static/chunks/main-app.js?v=1775596060920 404 in 81ms
+ GET /_next/static/chunks/app/error.js 404 in 77ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 83ms
+ GET /_next/static/css/app/layout.css?v=1775596061381 404 in 52ms
+ GET /_next/static/css/app/layout.css?v=1775596061382 404 in 45ms
+ GET /_next/static/chunks/app/not-found.js 404 in 53ms
+ GET /_next/static/css/app/layout.css?v=1775596061384 404 in 18ms
+ GET /_next/static/css/app/layout.css?v=1775596061383 404 in 20ms
+ GET /_next/static/css/app/layout.css?v=1775596061489 404 in 53ms
+ GET /_next/static/css/app/layout.css?v=1775596061491 404 in 46ms
+ GET /_next/static/css/app/layout.css?v=1775596061541 404 in 56ms
+ GET /_next/static/css/app/layout.css?v=1775596061490 404 in 60ms
+ GET /_next/static/chunks/app/login/page.js 404 in 52ms
+ GET /_next/static/css/app/layout.css?v=1775596061622 404 in 27ms
+ GET /_next/static/chunks/app/global-error.js 404 in 55ms
+ GET /_next/static/css/app/layout.css?v=1775596061715 404 in 49ms
+ GET /_next/static/css/app/layout.css?v=1775596061661 404 in 54ms
+ GET /_next/static/css/app/layout.css?v=1775596061659 404 in 62ms
+ GET /_next/static/css/app/layout.css?v=1775596061772 404 in 26ms
+ GET /_next/static/css/app/layout.css?v=1775596061716 404 in 44ms
+ GET /_next/static/css/app/layout.css?v=1775596061798 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596061797 404 in 64ms
+ GET /_next/static/css/app/layout.css?v=1775596061846 404 in 64ms
+ GET /_next/static/css/app/layout.css?v=1775596061848 404 in 62ms
+ GET /_next/static/css/app/layout.css?v=1775596061847 404 in 65ms
+ GET /_next/static/css/app/layout.css?v=1775596061895 404 in 27ms
+ GET /_next/static/css/app/layout.css?v=1775596061894 404 in 31ms
+ GET /_next/static/css/app/layout.css?v=1775596062135 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596062200 404 in 34ms
+ GET /_next/static/css/app/layout.css?v=1775596062226 404 in 32ms
+ GET /_next/static/css/app/layout.css?v=1775596062225 404 in 34ms
+ GET /_next/static/css/app/layout.css?v=1775596062227 404 in 19ms
+ GET /_next/static/css/app/layout.css?v=1775596062272 404 in 18ms
+ GET /_next/static/css/app/layout.css?v=1775596062273 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596062576 404 in 28ms
+ GET /_next/static/css/app/layout.css?v=1775596062575 404 in 30ms
+ GET /_next/static/css/app/layout.css?v=1775596062535 404 in 33ms
+ GET /_next/static/css/app/layout.css?v=1775596062577 404 in 27ms
+ GET /_next/static/css/app/layout.css?v=1775596062612 404 in 25ms
+ GET /_next/static/css/app/layout.css?v=1775596062613 404 in 22ms
+ GET /_next/static/css/app/layout.css?v=1775596062860 404 in 37ms
+ GET /_next/static/css/app/layout.css?v=1775596062915 404 in 39ms
+ GET /_next/static/css/app/layout.css?v=1775596062914 404 in 42ms
+ GET /_next/static/css/app/layout.css?v=1775596062953 404 in 24ms
+ GET /_next/static/css/app/layout.css?v=1775596062916 404 in 27ms
+ GET /_next/static/css/app/layout.css?v=1775596062954 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596063259 404 in 36ms
+ GET /_next/static/css/app/layout.css?v=1775596063258 404 in 39ms
+ GET /_next/static/css/app/layout.css?v=1775596063192 404 in 42ms
+ GET /_next/static/css/app/layout.css?v=1775596063305 404 in 49ms
+ GET /_next/static/css/app/layout.css?v=1775596063260 404 in 53ms
+ GET /_next/static/css/app/layout.css?v=1775596063520 404 in 18ms
+ GET /_next/static/css/app/layout.css?v=1775596063608 404 in 36ms
+ GET /_next/static/css/app/layout.css?v=1775596063607 404 in 39ms
+ GET /_next/static/css/app/layout.css?v=1775596063606 404 in 43ms
+ GET /_next/static/css/app/layout.css?v=1775596063654 404 in 24ms
+ GET /_next/static/css/app/layout.css?v=1775596063653 404 in 28ms
+ GET /_next/static/css/app/layout.css?v=1775596063851 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596063973 404 in 30ms
+ GET /_next/static/css/app/layout.css?v=1775596063974 404 in 29ms
+ GET /_next/static/css/app/layout.css?v=1775596064019 404 in 40ms
+ GET /_next/static/css/app/layout.css?v=1775596064173 404 in 37ms
+ GET /_next/static/css/app/layout.css?v=1775596064020 404 in 39ms
+ GET /_next/static/css/app/layout.css?v=1775596064321 404 in 52ms
+ GET /_next/static/css/app/layout.css?v=1775596064356 404 in 45ms
+ GET /_next/static/css/app/layout.css?v=1775596064355 404 in 47ms
+ GET /_next/static/css/app/layout.css?v=1775596064564 404 in 28ms
+ GET /_next/static/css/app/layout.css?v=1775596064565 404 in 26ms
+ GET /_next/static/css/app/layout.css?v=1775596064566 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596064618 404 in 28ms
+ GET /_next/static/css/app/layout.css?v=1775596064617 404 in 32ms
+ GET /_next/static/css/app/layout.css?v=1775596064910 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596064962 404 in 19ms
+ GET /_next/static/css/app/layout.css?v=1775596064961 404 in 22ms
+ GET /_next/static/css/app/layout.css?v=1775596065237 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596065304 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596065564 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596065626 404 in 20ms
+ GET /_next/static/css/app/layout.css?v=1775596065893 404 in 19ms
+ GET /_next/static/css/app/layout.css?v=1775596065956 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596066226 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596066287 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596066551 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596066611 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596066878 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596066943 404 in 18ms
+ GET /_next/static/css/app/layout.css?v=1775596067208 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596067266 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596067537 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596067598 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596067860 404 in 19ms
+ GET /_next/static/css/app/layout.css?v=1775596067924 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596068193 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596068254 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596068518 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596068579 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596068850 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596068912 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596069174 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596069238 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596069506 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596069571 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596069835 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596069894 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596070161 404 in 20ms
+ GET /_next/static/css/app/layout.css?v=1775596070225 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596070498 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596070552 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596070819 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596070882 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596071149 404 in 20ms
+ GET /_next/static/css/app/layout.css?v=1775596071214 404 in 19ms
+ GET /_next/static/css/app/layout.css?v=1775596071482 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596071544 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596071806 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596071868 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596072134 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596072194 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596072460 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596072486 404 in 36ms
+ GET /_next/static/css/app/layout.css?v=1775596072523 404 in 42ms
+ GET /_next/static/css/app/layout.css?v=1775596072816 404 in 61ms
+ GET /_next/static/css/app/layout.css?v=1775596072817 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596072868 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596073163 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596073225 404 in 18ms
+ GET /_next/static/css/app/layout.css?v=1775596073488 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596073551 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596073811 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596073876 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596074141 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596074205 404 in 20ms
+ GET /_next/static/css/app/layout.css?v=1775596074471 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596074541 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596074800 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596074861 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596075124 404 in 9ms
+ GET /_next/static/css/app/layout.css?v=1775596075188 404 in 9ms
+ GET /_next/static/css/app/layout.css?v=1775596075454 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596075504 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596075780 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596075826 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596076109 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596076157 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596076437 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596076485 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596076767 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596076813 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596077094 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596077141 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596077422 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596077470 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596077750 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596077797 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596078075 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596078123 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596078404 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596078450 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596078732 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596078780 404 in 9ms
+ GET /_next/static/css/app/layout.css?v=1775596079047 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596079109 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596079375 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596079438 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596079702 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596079765 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596080028 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596080082 404 in 11ms
+ ✓ Compiled in 7.5s (2281 modules)
+ ✓ Compiled in 895ms (1243 modules)
+ ✓ Compiled in 3.1s (1243 modules)
+ ○ Compiling /traffic ...
+ ✓ Compiled /dashboard/contribution-margin in 4.1s (1044 modules)
+ ✓ Compiled (1057 modules)
+ GET /traffic 200 in 11869ms
+ GET /media 200 in 11855ms
+ GET /dashboard/contribution-margin 200 in 11686ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 1653ms (1046 modules)
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 3.4s (2291 modules)
+ GET /login 500 in 6265ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 2.3s (1050 modules)
+ GET /_next/static/chunks/fallback/webpack.js 404 in 2496ms
+ GET /_next/static/chunks/fallback/pages/_error.js 404 in 1448ms
+ GET /_next/static/chunks/fallback/pages/_app.js 404 in 1449ms
+ GET /_next/static/chunks/fallback/main.js 404 in 2491ms
+ GET /_next/static/chunks/fallback/react-refresh.js 404 in 2488ms
+ GET /_next/static/css/app/layout.css?v=1775596367818 404 in 31ms
+ GET /_next/static/css/app/layout.css?v=1775596367821 404 in 29ms
+ GET /_next/static/css/app/layout.css?v=1775596367820 404 in 28ms
+ GET /_next/static/css/app/layout.css?v=1775596367961 404 in 35ms
+ GET /_next/static/css/app/layout.css?v=1775596367962 404 in 34ms
+ GET /_next/static/css/app/layout.css?v=1775596367963 404 in 34ms
+ GET /_next/static/css/app/layout.css?v=1775596368009 404 in 20ms
+ GET /_next/static/css/app/layout.css?v=1775596368008 404 in 22ms
+ GET /_next/static/css/app/layout.css?v=1775596368054 404 in 27ms
+ GET /_next/static/css/app/layout.css?v=1775596368053 404 in 32ms
+ GET /_next/static/css/app/layout.css?v=1775596368123 404 in 24ms
+ GET /_next/static/css/app/layout.css?v=1775596368124 404 in 22ms
+ GET /_next/static/css/app/layout.css?v=1775596368159 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596368183 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596368500 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596368764 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596368826 404 in 80ms
+ GET /_next/static/css/app/layout.css?v=1775596369092 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596369177 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596369500 404 in 9ms
+ GET /_next/static/css/app/layout.css?v=1775596369758 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596369828 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596370080 404 in 9ms
+ GET /_next/static/css/app/layout.css?v=1775596370167 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596370456 404 in 9ms
+ GET /_next/static/css/app/layout.css?v=1775596370486 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596370785 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596370815 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596371111 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596371145 404 in 9ms
+ GET /_next/static/css/app/layout.css?v=1775596371441 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596371471 404 in 9ms
+ GET /_next/static/css/app/layout.css?v=1775596371769 404 in 9ms
+ GET /_next/static/css/app/layout.css?v=1775596371800 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596372097 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596372129 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596372423 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596372454 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596372474 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596372751 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596372797 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596373069 404 in 9ms
+ GET /_next/static/css/app/layout.css?v=1775596373115 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596373394 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596373456 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596373784 404 in 43ms
+ GET /_next/static/css/app/layout.css?v=1775596374033 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596374112 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596374360 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596374437 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596374690 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596374768 404 in 9ms
+ GET /_next/static/css/app/layout.css?v=1775596375017 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596375093 404 in 9ms
+ GET /_next/static/css/app/layout.css?v=1775596375343 404 in 9ms
+ GET /_next/static/css/app/layout.css?v=1775596375423 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596375666 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596375749 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596375989 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596376084 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596376315 404 in 18ms
+ GET /_next/static/css/app/layout.css?v=1775596376409 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596376644 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596376739 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596376973 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596377067 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596377299 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596377393 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596377627 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596377718 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596377954 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596378048 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596378284 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596378379 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596378612 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596378707 404 in 28ms
+ GET /_next/static/css/app/layout.css?v=1775596378795 404 in 19ms
+ GET /_next/static/css/app/layout.css?v=1775596378833 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596378864 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596378942 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596379189 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596379266 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596379332 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596379513 404 in 18ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 19ms
+ GET /_next/static/css/app/layout.css?v=1775596379557 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596379861 404 in 21ms
+ GET /_next/static/css/app/layout.css?v=1775596379885 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596379914 404 in 30ms
+ GET /_next/static/css/app/layout.css?v=1775596379950 404 in 20ms
+ GET /_next/static/css/app/layout.css?v=1775596379983 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596380309 404 in 19ms
+ GET /_next/static/css/app/layout.css?v=1775596380569 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596380644 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596380892 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596380968 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596381217 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596381295 404 in 19ms
+ GET /_next/static/css/app/layout.css?v=1775596381546 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596381625 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596381885 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596381948 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596382214 404 in 26ms
+ GET /_next/static/css/app/layout.css?v=1775596382289 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596382542 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596382619 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596382864 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596382948 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596383199 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596383279 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596383531 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596383610 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596383859 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596383939 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596383973 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596384191 404 in 13ms
+ GET /_next/static/css/app/layout.css?v=1775596384298 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596384518 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596384627 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596384849 404 in 10ms
+ GET /_next/static/css/app/layout.css?v=1775596384959 404 in 11ms
+ GET /_next/static/css/app/layout.css?v=1775596385178 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596385288 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596385506 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596385615 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596385825 404 in 21ms
+ GET /_next/static/css/app/layout.css?v=1775596385943 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596386148 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596386269 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596386471 404 in 23ms
+ GET /_next/static/css/app/layout.css?v=1775596386605 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596386795 404 in 24ms
+ GET /_next/static/css/app/layout.css?v=1775596386941 404 in 14ms
+ GET /_next/static/css/app/layout.css?v=1775596387129 404 in 18ms
+ GET /_next/static/css/app/layout.css?v=1775596387272 404 in 19ms
+ GET /_next/static/css/app/layout.css?v=1775596387462 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596387600 404 in 12ms
+ GET /_next/static/css/app/layout.css?v=1775596387785 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596387930 404 in 15ms
+ GET /_next/static/css/app/layout.css?v=1775596388116 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596388260 404 in 19ms
+ GET /_next/static/css/app/layout.css?v=1775596388447 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596388583 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596388773 404 in 16ms
+ GET /_next/static/css/app/layout.css?v=1775596388913 404 in 17ms
+ GET /_next/static/css/app/layout.css?v=1775596389099 404 in 15ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 6.9s (1062 modules)
+ GET /dashboard 200 in 7678ms
+[?25h
