@@ -35,7 +35,36 @@ type DiagnosticItem = {
   description: string;
   tone: DiagnosticTone;
   href: string;
+  actionLabel?: string;
 };
+
+function getDiagnosticActionLabel(href: string) {
+  if (href === APP_ROUTES.dashboardContributionMargin) {
+    return "Abrir margem";
+  }
+
+  if (href === APP_ROUTES.dre) {
+    return "Abrir DRE";
+  }
+
+  if (href === APP_ROUTES.sanitization) {
+    return "Abrir saneamento";
+  }
+
+  if (href === APP_ROUTES.integrations) {
+    return "Revisar fontes";
+  }
+
+  if (href === APP_ROUTES.media) {
+    return "Abrir mídia";
+  }
+
+  if (href === APP_ROUTES.productInsights) {
+    return "Abrir produtos";
+  }
+
+  return "Abrir";
+}
 
 export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState<DashboardSection>("overview");
@@ -166,6 +195,7 @@ export default function DashboardPage() {
             ? "negative"
             : alert.tone,
       href: alert.href,
+      actionLabel: getDiagnosticActionLabel(alert.href),
     })) satisfies DiagnosticItem[];
 
     if (items.length === 1 && items[0]?.tone === "positive") {
@@ -176,6 +206,7 @@ export default function DashboardPage() {
           "Com a base estável, o próximo ganho tende a vir do mix entre catálogo, aquisição e conversão.",
         tone: "info",
         href: "/product-insights",
+        actionLabel: "Abrir produtos",
       });
     }
 
@@ -194,7 +225,7 @@ export default function DashboardPage() {
     ? {
         title: "Atlas IA pronto",
         description: "Mesa do Atlas liberada para esta marca no recorte atual.",
-        aside: "abrir",
+        aside: "abrir mesa",
         tone: "positive" as const,
         href: `${APP_ROUTES.dashboard}#atlas-ai-home`,
       }
@@ -205,7 +236,8 @@ export default function DashboardPage() {
             geminiIntegration?.mode === "api"
               ? "A marca já tem Gemini, mas a mesa do Atlas ainda não foi liberada na governança."
               : "Falta ativar o Gemini por API para liberar a leitura assistida na Torre.",
-          aside: "ajustar",
+          aside:
+            geminiIntegration?.mode === "api" ? "rever governança" : "ativar Gemini",
           tone: "warning" as const,
           href:
             geminiIntegration?.mode === "api"
@@ -216,7 +248,7 @@ export default function DashboardPage() {
           title: "Atlas IA bloqueado pelo plano",
           description:
             "A leitura assistida ainda não foi liberada para esta marca. Ajuste a governança antes da ativação técnica.",
-          aside: "governança",
+          aside: "liberar plano",
           tone: "info" as const,
           href: APP_ROUTES.adminStores,
         };
@@ -330,7 +362,7 @@ export default function DashboardPage() {
                     }
                     tone={primaryDiagnostic?.tone ?? "default"}
                     href={primaryDiagnostic?.href ?? "/dashboard"}
-                    actionLabel="Abrir"
+                    actionLabel={primaryDiagnostic?.actionLabel ?? "Abrir"}
                     footer={selectedPeriodLabel}
                   />
 

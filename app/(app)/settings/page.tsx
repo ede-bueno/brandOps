@@ -228,6 +228,7 @@ export default function SettingsPage() {
           title={strategicFocus.title}
           description={strategicFocus.description}
           href={strategicFocus.href}
+          actionLabel={strategicFocus.cta}
           tone={strategicFocus.tone}
         />
         <AnalyticsCalloutCard
@@ -235,6 +236,7 @@ export default function SettingsPage() {
           title={BRAND_PLAN_LABELS[governance.planTier]}
           description={atlasEnabled ? "Atlas IA liberado nesta marca." : "IA ainda bloqueada para esta marca."}
           href={APP_ROUTES.settingsGovernance}
+          actionLabel="Abrir governança"
           tone={atlasEnabled ? "positive" : "default"}
         />
         <AnalyticsCalloutCard
@@ -242,6 +244,7 @@ export default function SettingsPage() {
           title={governance.featureFlags.brandLearning ? "Aprender negócio liberado" : "Aprender negócio bloqueado"}
           description="Memória, contexto curado e comportamento do Atlas ficam aqui."
           href={APP_ROUTES.settingsAtlasAi}
+          actionLabel="Abrir Atlas"
           tone={governance.featureFlags.brandLearning ? "info" : "default"}
         />
       </section>

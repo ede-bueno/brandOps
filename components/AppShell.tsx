@@ -882,7 +882,21 @@ export function AppShell({ children }: { children: ReactNode }) {
           hoverAlert={shellAlerts[0]?.label ?? orbCopy.description}
           hoverActions={
             shellAlerts.length
-              ? shellAlerts.map((alert) => ({ label: "Abrir", href: alert.href }))
+              ? shellAlerts.map((alert) => ({
+                  label:
+                    alert.href === APP_ROUTES.dre
+                      ? "Abrir DRE"
+                      : alert.href === APP_ROUTES.dashboardContributionMargin
+                        ? "Abrir margem"
+                        : alert.href === APP_ROUTES.integrations
+                          ? "Revisar fontes"
+                          : alert.href === APP_ROUTES.sanitization
+                            ? "Abrir saneamento"
+                            : alert.href === APP_ROUTES.media
+                              ? "Abrir mídia"
+                              : "Abrir",
+                  href: alert.href,
+                }))
               : [
                   { label: "Ir para Integrações", href: APP_ROUTES.integrations },
                   { label: "Abrir Configurações", href: APP_ROUTES.settings },

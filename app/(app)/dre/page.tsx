@@ -166,7 +166,9 @@ export default function DrePage() {
           title={nextDiveTitle}
           description={nextDiveDescription}
           href={report.total.contributionMargin < 0 ? "/dashboard/contribution-margin" : undefined}
-          actionLabel="Abrir"
+          actionLabel={
+            report.total.contributionMargin < 0 ? "Abrir margem" : "Ver matriz"
+          }
           tone="info"
         />
       </section>

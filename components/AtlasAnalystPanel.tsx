@@ -124,25 +124,25 @@ function DisabledNotice({
     <div className="atlas-soft-subcard border-warning/25 bg-warning/10 px-3 py-3 text-[11px] leading-5 text-on-surface-variant">
       <p className="font-semibold text-on-surface">
         {hasPlanAccess
-          ? "Gemini ainda não habilitado para esta loja."
-          : "Atlas IA bloqueado pelo plano desta marca."}
+          ? "Falta ativar o Gemini desta loja para liberar o Atlas."
+          : "O plano desta marca ainda não libera o Atlas IA."}
       </p>
       <p className="mt-1">
         {hasPlanAccess ? (
           <>
-            Ative a integração no painel de{" "}
+            Conecte a chave da loja no painel de{" "}
             <Link href={APP_ROUTES.integrations} prefetch={false} className="text-secondary hover:underline">
               Integrações
             </Link>{" "}
-            para usar o Atlas com a chave própria desta loja.
+            para usar o Atlas com a credencial própria da marca.
           </>
         ) : (
           <>
-            A capacidade precisa ser liberada em{" "}
+            Libere o recurso em{" "}
             <Link href={APP_ROUTES.adminStores} prefetch={false} className="text-secondary hover:underline">
               Acessos
             </Link>{" "}
-            antes da configuração técnica.
+            antes de tentar a configuração técnica.
           </>
         )}
       </p>
