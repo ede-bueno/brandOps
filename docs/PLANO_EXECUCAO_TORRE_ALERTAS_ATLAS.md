@@ -34,7 +34,7 @@ Entrega aplicada em:
 
 ### Lote 2 - Navegação e descoberta
 
-Status: `próximo`
+Status: `feito`
 
 - corrigir semântica da navegação mobile para não usar grupo como destino
 - revisar descoberta do Atlas quando a marca ainda não estiver pronta
@@ -48,23 +48,63 @@ Por que vem agora:
 
 ### Lote 3 - Governança do Atlas IA
 
-Status: `na fila`
+Status: `feito parcial`
 
 - explicitar melhor quando o Atlas está usando recorte ativo vs janela padrão
 - melhorar comunicação de bloqueio por plano, credencial ou integração
 - consolidar uma régua mais clara de confiança, evidência mínima e silêncio do Atlas
 
-Por que ainda não entrou:
+O que entrou:
 
-- depende do núcleo já consistente para não mascarar problema com UX
+- diferenciação mais clara entre bloqueio por plano/governança e falta de integração Gemini
+- comunicação mais explícita do uso do recorte ativo vs janela padrão do Atlas
+
+O que ainda fica pendente:
+
+- consolidar uma régua canônica de confiança e silêncio do Atlas por contexto
+- formalizar evidência mínima por tipo de resposta
 
 ### Lote 4 - Hardening para release
 
-Status: `na fila`
+Status: `feito parcial`
 
 - revisar rotas e CTAs cruzados entre Torre, DRE, mídia, saneamento e configurações
 - validar comportamento com marcas sem GA4, sem catálogo e sem Atlas IA
 - confirmar build, start local e preview sem drift de versão
+
+O que entrou:
+
+- revisão de CTAs cruzados entre Torre, DRE, Configurações, Ajuda e Orb
+- fluxo local validado com `npm run check`, `npm run build` e `start` em standalone
+- smoke tests locais para `dashboard`, `help`, `dre`, `settings` e `integrations`
+
+O que ainda depende de ambiente externo:
+
+- abrir preview remota da branch na Vercel
+- revisar manualmente a URL publicada antes do merge
+
+## Estado atual
+
+Status geral: `release candidate`
+
+Já consolidado:
+
+- alertas canônicos compartilhados entre Torre, shell e Orb
+- Atlas respeitando o recorte ativo quando já existe filtro manual
+- navegação mobile com destinos semânticos
+- ajuda com âncoras e abertura contextual
+- CTAs menos genéricos e mais orientados a ação
+- build local estável após limpeza de artefatos e parada prévia do servidor standalone
+
+Últimas validações concluídas:
+
+- `npm run check`
+- `npm run build`
+- `http://127.0.0.1:3009/dashboard`
+- `http://127.0.0.1:3009/help`
+- `http://127.0.0.1:3009/dre`
+- `http://127.0.0.1:3009/settings`
+- `http://127.0.0.1:3009/integrations`
 
 ## Critério de aceite desta frente
 
