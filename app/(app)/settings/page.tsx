@@ -414,7 +414,7 @@ export default function SettingsPage() {
               description="Passos guiados para Meta, GA4 e Gemini."
               aside={
                 <Link href={APP_ROUTES.integrationsTutorials} prefetch={false} className="relative z-10 text-secondary hover:underline">
-                  Abrir
+                  Abrir tutoriais
                 </Link>
               }
               tone="info"
@@ -424,7 +424,7 @@ export default function SettingsPage() {
               description="Guias rápidos de operação e segurança."
               aside={
                 <Link href={APP_ROUTES.help} prefetch={false} className="relative z-10 text-secondary hover:underline">
-                  Abrir
+                  Abrir ajuda
                 </Link>
               }
               tone="default"
@@ -434,7 +434,7 @@ export default function SettingsPage() {
               description="Convidar pessoas e revisar o alcance da marca."
               aside={
                 <Link href={APP_ROUTES.adminStores} prefetch={false} className="relative z-10 text-secondary hover:underline">
-                  Abrir
+                  Abrir acessos
                 </Link>
               }
               tone="default"

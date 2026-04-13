@@ -638,10 +638,17 @@ export default function IntegrationsPage() {
     gemini: {
       title: "Próximo movimento",
       description:
-        currentState.hasApiKey
-          ? "Manter a chave ativa e ajustar o comportamento do Atlas em Configurações."
-          : "Salvar a chave Gemini para habilitar Analyst e aprendizado.",
-      tone: currentState.hasApiKey ? ("positive" as const) : ("warning" as const),
+        !geminiFeatureEnabled
+          ? "Liberar Atlas IA na governança da marca antes de seguir para a configuração técnica."
+          : currentState.hasApiKey
+            ? "Manter a chave ativa e ajustar o comportamento do Atlas em Configurações."
+            : "Salvar a chave Gemini da loja para habilitar análise e aprendizado.",
+      tone:
+        !geminiFeatureEnabled
+          ? ("warning" as const)
+          : currentState.hasApiKey
+            ? ("positive" as const)
+            : ("warning" as const),
     },
   }[activeProvider];
   const providerTutorial = getIntegrationTutorial(activeProvider);
