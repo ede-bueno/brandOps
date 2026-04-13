@@ -12,6 +12,7 @@ import { ContributionTrendPanel, mapContributionTrendPoints } from "@/components
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { EntityChip, PageHeader, SectionHeading, SurfaceCard, WorkspaceTabs } from "@/components/ui-shell";
 import { currencyFormatter, percentFormatter } from "@/lib/brandops/format";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 import { cn } from "@/lib/utils";
 
 export default function DrePage() {
@@ -130,7 +131,7 @@ export default function DrePage() {
             <Link href="/cost-center" className="brandops-button brandops-button-secondary">
               Lançar despesas
             </Link>
-            <Link href="/help#dre" className="brandops-button brandops-button-ghost">
+            <Link href={APP_ROUTES.helpDre} className="brandops-button brandops-button-ghost">
               Entender cálculos
             </Link>
             <div className="flex flex-wrap gap-2">

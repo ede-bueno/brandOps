@@ -17,6 +17,7 @@ import { useBrandOps } from "@/components/BrandOpsProvider";
 import { InlineNotice, PageHeader, SectionHeading, SurfaceCard, WorkspaceTabs } from "@/components/ui-shell";
 import { fetchSalesDetailReport } from "@/lib/brandops/database";
 import { currencyFormatter, formatCompactDate, integerFormatter } from "@/lib/brandops/format";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 import type { SalesDetailReport } from "@/lib/brandops/types";
 
 const EMPTY_SALES_DETAIL: SalesDetailReport = {
@@ -202,7 +203,7 @@ export default function SalesPage() {
           <div className="flex min-w-0 flex-wrap items-center gap-2.5">
             <span className="atlas-inline-metric">{selectedBrandName}</span>
             <span className="atlas-inline-metric">{selectedPeriodLabel}</span>
-            <Link href="/help#dashboard" className="brandops-button brandops-button-ghost">
+            <Link href={APP_ROUTES.helpTower} className="brandops-button brandops-button-ghost">
               Entender cálculos
             </Link>
           </div>

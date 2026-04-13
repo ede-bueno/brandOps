@@ -17,6 +17,7 @@ import {
   integerFormatter,
   percentFormatter,
 } from "@/lib/brandops/format";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 
 type DashboardSection = "overview" | "diagnostics" | "atlas";
 
@@ -189,6 +190,36 @@ export default function DashboardPage() {
   const topExpense = analysis.topExpenseCategory;
   const breakEvenValue =
     metrics.breakEvenDisplay !== null ? currencyFormatter.format(metrics.breakEvenDisplay) : "N/A";
+  const atlasStatus = canUseAtlasTab
+    ? {
+        title: "Atlas IA pronto",
+        description: "Mesa do Atlas liberada para esta marca no recorte atual.",
+        aside: "abrir",
+        tone: "positive" as const,
+        href: `${APP_ROUTES.dashboard}#atlas-ai-home`,
+      }
+    : activeBrand?.governance.featureFlags.atlasAi ?? false
+      ? {
+          title: "Atlas IA ainda incompleto",
+          description:
+            geminiIntegration?.mode === "api"
+              ? "A marca já tem Gemini, mas a mesa do Atlas ainda não foi liberada na governança."
+              : "Falta ativar o Gemini por API para liberar a leitura assistida na Torre.",
+          aside: "ajustar",
+          tone: "warning" as const,
+          href:
+            geminiIntegration?.mode === "api"
+              ? APP_ROUTES.adminStores
+              : APP_ROUTES.integrations,
+        }
+      : {
+          title: "Atlas IA bloqueado pelo plano",
+          description:
+            "A leitura assistida ainda não foi liberada para esta marca. Ajuste a governança antes da ativação técnica.",
+          aside: "governança",
+          tone: "info" as const,
+          href: APP_ROUTES.adminStores,
+        };
 
   return (
     <div className="atlas-page-stack-compact">
@@ -379,6 +410,15 @@ export default function DashboardPage() {
                   aside={topExpense ? currencyFormatter.format(topExpense.total) : "-"}
                   tone="default"
                 />
+                <Link href={atlasStatus.href} prefetch={false} className="block">
+                  <StackItem
+                    title={atlasStatus.title}
+                    description={atlasStatus.description}
+                    aside={atlasStatus.aside}
+                    tone={atlasStatus.tone}
+                    className="transition hover:border-primary/20"
+                  />
+                </Link>
               </div>
             </SurfaceCard>
           </section>

@@ -30,6 +30,13 @@ export const APP_ROUTES = {
   integrationsTutorialGemini: "/integrations/tutorials/gemini",
   adminStores: "/admin/stores",
   help: "/help",
+  helpTower: "/help#dashboard",
+  helpDre: "/help#dre",
+  helpSanitization: "/help#sanitization",
+  helpCmv: "/help#cmv",
+  helpIntegrations: "/help#integrations",
+  helpSettings: "/help#settings",
+  helpSecurity: "/help#security",
 } as const;
 
 export type AppRoute = (typeof APP_ROUTES)[keyof typeof APP_ROUTES];

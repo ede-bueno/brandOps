@@ -126,14 +126,13 @@ const navigationGroups: NavGroup[] = [
   },
 ];
 
-const mobilePrimaryNav = navigationGroups.map((group) => {
-  const firstItem = group.items[0];
-  return {
-    href: firstItem?.href ?? APP_ROUTES.dashboard,
-    label: group.label,
-    icon: firstItem?.icon ?? LayoutDashboard,
-  };
-});
+const mobilePrimaryNav = [
+  { href: APP_ROUTES.dashboard, label: "Torre", icon: LayoutDashboard },
+  { href: APP_ROUTES.dre, label: "DRE", icon: Receipt },
+  { href: APP_ROUTES.media, label: "Mídia", icon: TrendingUp },
+  { href: APP_ROUTES.feed, label: "Catálogo", icon: Images },
+  { href: APP_ROUTES.settings, label: "Central", icon: Settings2 },
+];
 
 function isRouteActive(pathname: string, href: AppRoute) {
   return pathname === href || pathname.startsWith(`${href}/`);

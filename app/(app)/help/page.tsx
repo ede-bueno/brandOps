@@ -1,7 +1,7 @@
 "use client";
 
 import type { ElementType } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, DatabaseZap, KeyRound, Link2, ShieldCheck, Sparkles } from "lucide-react";
 import {
@@ -19,6 +19,20 @@ const helpTabs: Array<{ key: HelpTab; label: string }> = [
   { key: "configurations", label: "Configurações" },
   { key: "security", label: "Segurança" },
 ];
+
+const helpHashTargets: Record<
+  string,
+  { tab: HelpTab; sectionId?: string }
+> = {
+  "#dashboard": { tab: "operation", sectionId: "help-dashboard" },
+  "#torre-de-controle": { tab: "operation", sectionId: "help-dashboard" },
+  "#dre": { tab: "operation", sectionId: "help-dre" },
+  "#sanitization": { tab: "operation", sectionId: "help-sanitization" },
+  "#cmv": { tab: "operation", sectionId: "help-cmv" },
+  "#integrations": { tab: "integrations", sectionId: "help-integrations" },
+  "#settings": { tab: "configurations", sectionId: "help-settings" },
+  "#security": { tab: "security", sectionId: "help-security" },
+};
 
 const operationCards = [
   {
@@ -227,46 +241,78 @@ function cardDescription(title: string) {
 }
 
 function HelpCallout({
+  id,
   title,
   icon: Icon,
   items,
 }: {
+  id?: string;
   title: string;
   icon: ElementType;
   items: string[];
 }) {
   return (
-    <AnalyticsCalloutCard
-      eyebrow={title}
-      title={cardDescription(title)}
-      description={
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-secondary-container/70 text-secondary">
-            <Icon size={16} />
-          </span>
-          <ul className="atlas-component-stack-tight text-[13px] leading-6 text-on-surface-variant">
-            {items.map((item) => (
-              <li key={item} className="flex gap-2">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary/80" />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      }
-      tone="default"
-    />
+    <div id={id}>
+      <AnalyticsCalloutCard
+        eyebrow={title}
+        title={cardDescription(title)}
+        description={
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-secondary-container/70 text-secondary">
+              <Icon size={16} />
+            </span>
+            <ul className="atlas-component-stack-tight text-[13px] leading-6 text-on-surface-variant">
+              {items.map((item) => (
+                <li key={item} className="flex gap-2">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary/80" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        }
+        tone="default"
+      />
+    </div>
   );
 }
 
 export default function HelpPage() {
   const [activeTab, setActiveTab] = useState<HelpTab>("operation");
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const syncFromHash = () => {
+      const target = helpHashTargets[window.location.hash.toLowerCase()];
+      if (!target) {
+        return;
+      }
+
+      setActiveTab(target.tab);
+      if (target.sectionId) {
+        const sectionId = target.sectionId;
+        window.setTimeout(() => {
+          document.getElementById(sectionId)?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 40);
+      }
+    };
+
+    syncFromHash();
+    window.addEventListener("hashchange", syncFromHash);
+    return () => window.removeEventListener("hashchange", syncFromHash);
+  }, []);
+
   return (
     <div className="atlas-page-stack-compact">
       <PageHeader
         eyebrow="Central de ajuda"
-        title="Atlas em operação"
+        title="Ajuda operacional"
         description="Abra rápido o guia certo sem precisar vasculhar o sistema."
       />
 
@@ -337,6 +383,17 @@ export default function HelpPage() {
               {operationCards.map((card) => (
                 <HelpCallout
                   key={card.title}
+                  id={
+                    card.title === "Torre de Controle"
+                      ? "help-dashboard"
+                      : card.title === "DRE consolidado"
+                        ? "help-dre"
+                        : card.title === "Saneamento"
+                          ? "help-sanitization"
+                          : card.title === "CMV e lançamentos"
+                            ? "help-cmv"
+                            : undefined
+                  }
                   title={card.title}
                   icon={card.icon}
                   items={card.items}
@@ -351,6 +408,7 @@ export default function HelpPage() {
                 {integrationCards.map((card) => (
                   <HelpCallout
                     key={card.title}
+                    id={card.title === "Origem por loja" ? "help-integrations" : undefined}
                     title={card.title}
                     icon={card.icon}
                     items={card.items}
@@ -440,13 +498,14 @@ export default function HelpPage() {
           )}
 
           {activeTab === "security" && (
-            <section className="grid gap-4 xl:grid-cols-2">
-              {securityCards.map((card) => (
-                <HelpCallout
-                  key={card.title}
-                  title={card.title}
-                  icon={card.icon}
-                  items={card.items}
+              <section className="grid gap-4 xl:grid-cols-2">
+                {securityCards.map((card) => (
+                  <HelpCallout
+                    key={card.title}
+                    id={card.title === "Preparo da plataforma" ? "help-security" : undefined}
+                    title={card.title}
+                    icon={card.icon}
+                    items={card.items}
                 />
               ))}
             </section>
@@ -458,6 +517,7 @@ export default function HelpPage() {
                 {configurationCards.map((card) => (
                   <HelpCallout
                     key={card.title}
+                    id={card.title === "Configurações" ? "help-settings" : undefined}
                     title={card.title}
                     icon={card.icon}
                     items={card.items}
