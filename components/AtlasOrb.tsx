@@ -16,9 +16,9 @@ import { AtlasMark } from "./AtlasMark";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_HINTS = [
-  "Atlas está observando margem, mídia e catálogo em tempo real.",
-  "Em breve, o orbe vai antecipar desvios e sugerir ações antes da queda.",
-  "Clique quando quiser abrir a camada proativa de inteligência.",
+  "Atlas acompanha margem, mídia e catálogo no recorte atual.",
+  "Use o Orb para abrir atalhos e sinais sem perder contexto.",
+  "Clique quando quiser abrir a leitura assistida do Atlas.",
 ];
 
 export interface AtlasOrbHoverAction {
@@ -33,9 +33,9 @@ export function AtlasOrb({
   className,
   icon = true,
   interactive = true,
-  title = "Atlas Intelligence",
-  status = "Entidade ativa",
-  description = "Núcleo analítico do Atlas. Essa entidade vai evoluir para operar insights, alertas e recomendações proativas.",
+  title = "Atlas IA",
+  status = "Leitura ativa",
+  description = "Camada de apoio à decisão do BrandOps. O Atlas organiza sinais, alertas e próximos passos sem substituir a base factual.",
   hints = DEFAULT_HINTS,
   panelAlign = "right",
   floating = false,
@@ -466,10 +466,10 @@ export function AtlasOrb({
 
                 <div className="mt-4 flex items-center justify-between border-t border-outline/70 pt-3">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-                    Camada proativa
+                    Leitura assistida
                   </span>
                   <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
-                    aberta por voce
+                    aberta por você
                   </span>
                 </div>
               </>

@@ -16,6 +16,8 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
+import { buildControlAlerts } from "@/lib/brandops/control-alerts";
+import { APP_ROUTES } from "@/lib/brandops/routes";
 import { cn } from "@/lib/utils";
 
 export interface AtlasOrbRadarTelemetry {
@@ -56,104 +58,64 @@ type RadarShortcut = {
 };
 
 function buildRadarAlerts(pathname: string, telemetry: AtlasOrbRadarTelemetry): RadarAlert[] {
-  const alerts: RadarAlert[] = [];
+  const alerts: RadarAlert[] = buildControlAlerts({
+    pendingSanitizationCount: telemetry.pendingSanitizationCount,
+    mediaIntegrationError: telemetry.mediaIntegrationError,
+    ga4IntegrationError: telemetry.ga4IntegrationError,
+    contributionAfterMedia: telemetry.contributionAfterMedia,
+    netResult: telemetry.netResult,
+    variableCostShare: telemetry.variableCostShare,
+    grossRoas: telemetry.grossRoas,
+  }).map((alert) => ({
+    id: alert.id,
+    title: alert.title,
+    description: alert.description,
+    href: alert.href,
+    tone: alert.tone === "negative" || alert.tone === "warning" ? "alert" : "notice",
+  }));
 
-  if (telemetry.pendingSanitizationCount > 0) {
-    alerts.push({
-      id: "sanitization",
-      title: "Base pede saneamento",
-      description: `${telemetry.pendingSanitizationCount} pendência(s) ainda podem distorcer a leitura do período.`,
-      href: "/sanitization",
-      tone: "alert",
-    });
-  }
-
-  if (telemetry.mediaIntegrationError || telemetry.ga4IntegrationError) {
-    alerts.push({
-      id: "integration",
-      title: "Fonte com erro recente",
-      description: "Meta ou GA4 reportou falha recente. Vale revisar a saúde das integrações antes de confiar no corte.",
-      href: "/integrations",
-      tone: "alert",
-    });
-  }
-
-  if (telemetry.contributionAfterMedia !== null && telemetry.contributionAfterMedia < 0) {
-    alerts.push({
-      id: "contribution",
-      title: "Margem pós-mídia negativa",
-      description: "A contribuição depois de mídia virou no recorte atual e pede leitura prioritária.",
-      href: pathname.startsWith("/dashboard") ? "/dashboard/contribution-margin" : "/dashboard",
-      tone: "alert",
-    });
-  }
-
-  if (telemetry.netResult !== null && telemetry.netResult < 0) {
-    alerts.push({
-      id: "net-result",
-      title: "Resultado operacional negativo",
-      description: "O período fechou no vermelho. A prioridade agora é localizar o driver que está corroendo o caixa.",
-      href: "/dre",
-      tone: "alert",
-    });
-  }
-
-  if (telemetry.variableCostShare !== null && telemetry.variableCostShare > 0.7) {
-    alerts.push({
-      id: "variable-cost",
-      title: "Custo variável pressionando a receita",
-      description: "CMV + mídia estão consumindo uma fatia alta da RLD disponível.",
-      href: "/dre",
-      tone: "notice",
-    });
-  }
-
-  if (telemetry.grossRoas !== null && telemetry.grossRoas > 0 && telemetry.grossRoas < 2) {
-    alerts.push({
-      id: "roas",
-      title: "Mídia com retorno curto",
-      description: "O ROAS bruto do período está baixo para sustentar expansão sem revisão.",
-      href: "/media",
-      tone: "notice",
-    });
-  }
-
-  if (!telemetry.hasGa4Data && pathname.startsWith("/traffic")) {
+  if (!telemetry.hasGa4Data && pathname.startsWith(APP_ROUTES.traffic)) {
     alerts.push({
       id: "traffic-data",
       title: "Tráfego ainda incompleto",
       description: "Não há dados suficientes de GA4 neste recorte para uma leitura robusta.",
-      href: "/integrations",
+      href: APP_ROUTES.integrations,
       tone: "notice",
     });
   }
 
-  if (!telemetry.hasGa4Data && pathname.startsWith("/dashboard")) {
+  if (!telemetry.hasGa4Data && pathname.startsWith(APP_ROUTES.dashboard)) {
     alerts.push({
       id: "dashboard-funnel-gap",
       title: "Leitura de funil ainda incompleta",
       description: "Sem GA4 suficiente, a explicação entre sessão, checkout e compra fica parcial neste corte.",
-      href: "/integrations",
+      href: APP_ROUTES.integrations,
       tone: "notice",
     });
   }
 
-  if (!telemetry.hasCatalogData && (pathname.startsWith("/feed") || pathname.startsWith("/product-insights"))) {
+  if (
+    !telemetry.hasCatalogData &&
+    (pathname.startsWith(APP_ROUTES.feed) || pathname.startsWith(APP_ROUTES.productInsights))
+  ) {
     alerts.push({
       id: "catalog-data",
       title: "Catálogo ainda raso",
       description: "O Atlas ainda não enxerga massa suficiente para levantar sinais de cobertura e escala.",
-      href: "/feed",
+      href: APP_ROUTES.feed,
       tone: "idle",
     });
   }
 
-  if (!telemetry.geminiEnabled && (pathname.startsWith("/dashboard") || pathname.startsWith("/settings"))) {
+  if (
+    !telemetry.geminiEnabled &&
+    (pathname.startsWith(APP_ROUTES.dashboard) || pathname.startsWith(APP_ROUTES.settings))
+  ) {
     alerts.push({
       id: "atlas-disabled",
-      title: "Camada Atlas IA ainda opcional",
-      description: "A marca segue operando sem a leitura inteligente ativada nesta camada.",
-      href: "/settings#atlas-ai-settings",
+      title: "Atlas IA ainda não ativado",
+      description: "Ative Gemini e a governança da marca para usar a leitura assistida do Atlas.",
+      href: APP_ROUTES.settingsAtlasAi,
       tone: "idle",
     });
   }
@@ -253,8 +215,8 @@ function buildRadarShortcuts(pathname: string, telemetry: AtlasOrbRadarTelemetry
   } else {
     shortcuts.push({
       id: "atlas-home",
-      title: "Abrir casa do Atlas",
-      description: "Entrar na base nativa de diagnóstico e decisão na Torre.",
+      title: "Abrir mesa do Atlas",
+      description: "Entrar na mesa de diagnóstico e decisão do Atlas dentro da Torre.",
       href: "/dashboard#atlas-ai-home",
       tone: "atlas",
     });
@@ -492,8 +454,8 @@ export function AtlasOrbRadarPanel({
     if (telemetry.geminiEnabled) {
       items.unshift({
         href: "/dashboard#atlas-ai-home",
-        label: "Casa do Atlas IA",
-        description: "Abra a base fixa do Atlas na Torre de Controle.",
+        label: "Mesa do Atlas",
+        description: "Abra a mesa fixa do Atlas dentro da Torre de Controle.",
         kind: "atlas",
         keywords: ["atlas ia", "analyst", "diagnostico", "ia", "orb"],
       });

@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, StackItem, SurfaceCard, WorkspaceTabs } from "@/components/ui-shell";
 import { useSanitizationPendingCount } from "@/hooks/use-sanitization-summary";
+import { buildControlAlerts } from "@/lib/brandops/control-alerts";
 import {
   currencyFormatter,
   integerFormatter,
@@ -19,7 +20,13 @@ import {
 
 type DashboardSection = "overview" | "diagnostics" | "atlas";
 
-type DiagnosticTone = "default" | "secondary" | "warning" | "info";
+type DiagnosticTone =
+  | "default"
+  | "secondary"
+  | "warning"
+  | "info"
+  | "negative"
+  | "positive";
 
 type DiagnosticItem = {
   eyebrow: string;
@@ -87,7 +94,7 @@ export default function DashboardPage() {
     return (
 <div className="atlas-component-stack">
         <PageHeader
-          eyebrow="Control Tower"
+          eyebrow="Torre de Controle"
           title={selectedBrandName}
           description="Carregando a leitura executiva da operação."
         />
@@ -106,9 +113,9 @@ export default function DashboardPage() {
 
   if (!activeBrandId && !activeBrand) {
     return (
-      <EmptyState
+        <EmptyState
         title="Nenhuma marca em foco"
-        description="Selecione uma marca para abrir a torre de controle."
+        description="Selecione uma marca para abrir a Torre de Controle."
       />
     );
   }
@@ -136,75 +143,39 @@ export default function DashboardPage() {
   const expenseBreakdown = financialReportFiltered.expenseBreakdown.slice(0, 4);
   const variableCostShare = analysis.shares.variableCostShare;
   const diagnostics: DiagnosticItem[] = (() => {
-    const items: DiagnosticItem[] = [];
+    const items = buildControlAlerts(
+      {
+        pendingSanitizationCount,
+        mediaIntegrationError: mediaIntegration?.lastSyncStatus === "error",
+        ga4IntegrationError: ga4Integration?.lastSyncStatus === "error",
+        contributionAfterMedia: metrics.contributionAfterMedia,
+        netResult: metrics.netResult,
+        variableCostShare,
+        grossRoas: metrics.grossRoas,
+      },
+      { includeStableFallback: true },
+    ).map((alert) => ({
+      eyebrow: alert.eyebrow,
+      title: alert.title,
+      description: alert.description,
+      tone:
+        alert.tone === "positive"
+          ? "positive"
+          : alert.tone === "negative"
+            ? "negative"
+            : alert.tone,
+      href: alert.href,
+    })) satisfies DiagnosticItem[];
 
-    if (metrics.contributionAfterMedia < 0) {
+    if (items.length === 1 && items[0]?.tone === "positive") {
       items.push({
-        eyebrow: "Margem",
-        title: "Contribuição depois de mídia negativa",
-        description: "A operação já perdeu sustentação depois do investimento. Abra a margem histórica antes de insistir em escala.",
-        tone: "warning",
-        href: "/dashboard/contribution-margin",
-      });
-    }
-
-    if (metrics.netResult < 0) {
-      items.push({
-        eyebrow: "Resultado",
-        title: "Resultado operacional no vermelho",
-        description: "O DRE consolidado é o próximo corte para localizar a principal pressão estrutural.",
-        tone: "warning",
-        href: "/dre",
-      });
-    }
-
-    if (pendingSanitizationCount > 0) {
-      items.push({
-        eyebrow: "Base",
-        title: "A leitura ainda sofre com ruído operacional",
-        description: `${pendingSanitizationCount} pendência(s) de saneamento ainda podem distorcer comparação, margem e ranking.`,
-        tone: "warning",
-        href: "/sanitization",
-      });
-    }
-
-    if (mediaIntegration?.lastSyncStatus === "error" || ga4Integration?.lastSyncStatus === "error") {
-      items.push({
-        eyebrow: "Fonte",
-        title: "Há integração com erro recente",
-        description: "Antes de agir, confirme que Meta e GA4 entregaram o recorte certo para a marca.",
+        eyebrow: "Próximo passo",
+        title: "Cruze produto, mídia e funil antes de escalar",
+        description:
+          "Com a base estável, o próximo ganho tende a vir do mix entre catálogo, aquisição e conversão.",
         tone: "info",
-        href: "/integrations",
+        href: "/product-insights",
       });
-    }
-
-    if (metrics.grossRoas > 0 && metrics.grossRoas < 2) {
-      items.push({
-        eyebrow: "Mídia",
-        title: "Retorno curto para sustentar escala",
-        description: "A aquisição ainda pede revisão de verba, criativo ou segmentação antes de expansão.",
-        tone: "info",
-        href: "/media",
-      });
-    }
-
-    if (!items.length) {
-      items.push(
-        {
-          eyebrow: "Operação",
-          title: "Sem alerta estrutural crítico no corte",
-          description: "A operação está estável o suficiente para perseguir eficiência e oportunidades de escala com mais calma.",
-          tone: "default",
-          href: "/dashboard",
-        },
-        {
-          eyebrow: "Catálogo",
-          title: "O próximo ganho tende a vir de produto e tráfego",
-          description: "Cruze catálogo, mídia e product insights para decidir o próximo empurrão comercial.",
-          tone: "info",
-          href: "/product-insights",
-        },
-      );
     }
 
     return items.slice(0, 4);
@@ -222,9 +193,9 @@ export default function DashboardPage() {
   return (
     <div className="atlas-page-stack-compact">
       <PageHeader
-        eyebrow="Control Tower"
+        eyebrow="Torre de Controle"
         title="Painel executivo"
-        description="Leitura condensada para decidir margem, base e aquisição sem perder tempo com blocos cenográficos."
+        description="Leitura rápida para decidir margem, base e aquisição no recorte ativo."
         actions={
           <WorkspaceTabs
             items={[

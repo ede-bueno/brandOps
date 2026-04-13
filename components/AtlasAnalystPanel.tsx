@@ -182,22 +182,37 @@ export function AtlasAnalystPanel({
   const defaultSkill = geminiIntegration?.settings.defaultSkill ?? "executive_operator";
   const defaultSkillLabel =
     defaultSkill === "auto" ? "Especialista dinâmico" : getSkillLabel(defaultSkill);
+  const hasSelectedRange = Boolean(periodRange?.start || periodRange?.end);
   const atlasPeriod = useMemo(() => {
-    if (!activeBrand || !isAgentConfigured) {
+    if (!activeBrand || !isAgentConfigured || hasSelectedRange) {
       return {
         label: selectedPeriodLabel,
         from: periodRange?.start ?? null,
         to: periodRange?.end ?? null,
+        source: hasSelectedRange ? "workspace" : "fallback",
+        helper: hasSelectedRange
+          ? "Usando o mesmo recorte ativo da tela."
+          : "Sem janela dedicada do Atlas enquanto a integração estiver indisponível.",
       };
     }
 
     const referenceDate = getLatestDatasetDate(activeBrand) ?? new Date();
     return {
-      label: `Atlas ${analysisWindowDays} dias`,
+      label: `Janela padrão do Atlas (${analysisWindowDays} dias)`,
       from: formatIsoDate(subtractDays(referenceDate, analysisWindowDays)),
       to: formatIsoDate(referenceDate),
+      source: "default",
+      helper: `Sem recorte manual ativo. Atlas usa a janela padrão de ${analysisWindowDays} dias.`,
     };
-  }, [activeBrand, analysisWindowDays, isAgentConfigured, periodRange?.end, periodRange?.start, selectedPeriodLabel]);
+  }, [
+    activeBrand,
+    analysisWindowDays,
+    hasSelectedRange,
+    isAgentConfigured,
+    periodRange?.end,
+    periodRange?.start,
+    selectedPeriodLabel,
+  ]);
 
   useEffect(() => {
     const accessToken = session?.access_token;
@@ -323,9 +338,9 @@ export function AtlasAnalystPanel({
         <div className="rounded-2xl border border-outline bg-background px-3 py-3">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">Atlas em casa</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">Atlas na Torre</p>
               <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
-                A Torre abriga a base nativa do Atlas IA. O Orb fica com atalhos e contexto rápido.
+                A Torre concentra a conversa com o Atlas. O Orb fica com atalhos e contexto rápido.
               </p>
             </div>
             <AtlasMark size="md" className="text-primary" />
@@ -348,9 +363,9 @@ export function AtlasAnalystPanel({
                 </p>
               </div>
               <div className="mt-3 flex items-center justify-between gap-3">
-                <p className="text-[10px] leading-4 text-ink-muted">Abra a base fixa do Atlas abaixo para conversar com o agente.</p>
+                <p className="text-[10px] leading-4 text-ink-muted">Abra a mesa do Atlas abaixo para conversar com o agente.</p>
                 <Link href={`${APP_ROUTES.dashboard}#atlas-ai-home`} prefetch={false} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-primary/25 bg-primary px-3 py-1.5 text-[11px] font-semibold text-on-primary transition hover:brightness-105">
-                  Abrir base do Atlas
+                  Abrir mesa do Atlas
                 </Link>
               </div>
             </>
@@ -418,6 +433,7 @@ export function AtlasAnalystPanel({
                   {latestEntry ? <span className="atlas-inline-metric">{latestEntry.confidence}</span> : null}
                 </div>
               </div>
+              <p className="mt-3 text-[10px] leading-4 text-ink-muted">{atlasPeriod.helper}</p>
 
               <div className="mt-3 grid gap-3 md:grid-cols-3">
                 <article className="atlas-decision-card" data-tone="primary">

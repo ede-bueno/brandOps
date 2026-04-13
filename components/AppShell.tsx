@@ -39,6 +39,7 @@ import {
   ATLAS_ORB_SYNC_LOADING_EVENT,
   type AtlasOrbSyncLoadingDetail,
 } from "@/lib/brandops/orb-sync-loading";
+import { buildControlAlerts, summarizeControlAlert } from "@/lib/brandops/control-alerts";
 import { APP_ROUTES, type AppRoute } from "@/lib/brandops/routes";
 
 interface NavItem {
@@ -164,107 +165,83 @@ function buildShellAlerts(
   telemetry: AtlasOrbContextTelemetry,
   activeBrandName: string,
 ): ShellAlert[] {
-  const alerts: ShellAlert[] = [];
-
-  if (telemetry.pendingSanitizationCount > 0) {
-    alerts.push({
-      href: APP_ROUTES.sanitization,
-      label: `${telemetry.pendingSanitizationCount} pendência(s) de saneamento em ${activeBrandName}`,
-      tone: "warning",
-    });
-  }
-
-  if (telemetry.mediaIntegrationError || telemetry.ga4IntegrationError) {
-    alerts.push({
-      href: APP_ROUTES.integrations,
-      label: "Há integração com erro recente. Revise as fontes antes de confiar no recorte.",
-      tone: "warning",
-    });
-  }
-
-  if (telemetry.netResult !== null && telemetry.netResult < 0) {
-    alerts.push({
-      href: APP_ROUTES.dre,
-      label: "O resultado operacional do período está negativo.",
-      tone: "negative",
-    });
-  }
-
-  if (telemetry.contributionAfterMedia !== null && telemetry.contributionAfterMedia < 0) {
-    alerts.push({
-      href: APP_ROUTES.dashboardContributionMargin,
-      label: "A contribuição depois de mídia virou negativa neste corte.",
-      tone: "negative",
-    });
-  }
-
-  if (telemetry.grossRoas !== null && telemetry.grossRoas > 0 && telemetry.grossRoas < 2) {
-    alerts.push({
-      href: APP_ROUTES.media,
-      label: "O retorno de mídia ainda está curto para escalar com conforto.",
-      tone: "info",
-    });
-  }
-
-  return alerts.slice(0, 3);
+  return buildControlAlerts({
+    pendingSanitizationCount: telemetry.pendingSanitizationCount,
+    mediaIntegrationError: telemetry.mediaIntegrationError,
+    ga4IntegrationError: telemetry.ga4IntegrationError,
+    contributionAfterMedia: telemetry.contributionAfterMedia,
+    netResult: telemetry.netResult,
+    variableCostShare: telemetry.variableCostShare,
+    grossRoas: telemetry.grossRoas,
+  }).map((alert) => ({
+    href: alert.href,
+    label:
+      alert.id === "sanitization"
+        ? `${summarizeControlAlert(alert)} em ${activeBrandName}`
+        : summarizeControlAlert(alert),
+    tone:
+      alert.tone === "positive"
+        ? "info"
+        : alert.tone,
+  })).slice(0, 3);
 }
 
 function getOrbCopy(pathname: string, brandName: string, periodLabel: string) {
   if (pathname.startsWith(APP_ROUTES.dashboard)) {
-    return {
-      status: "monitorando a operação",
-      description: `Atlas acompanha a ${brandName} no recorte ${periodLabel.toLowerCase()} para puxar atenção só para o que realmente pede ação.`,
-      hints: [
-        "Use a Torre de Controle para decidir o próximo corte, não para admirar o layout.",
-        "A prioridade da tela é orientar clique e sequência de análise.",
-        "Quando a operação tensiona, o Atlas chama primeiro a margem, o resultado e a base.",
-      ],
-    };
+      return {
+        status: "monitorando a operação",
+        description: `Atlas acompanha a ${brandName} no recorte ${periodLabel.toLowerCase()} para puxar atenção só para o que realmente pede ação.`,
+        hints: [
+        "Comece pelo alerta dominante e só depois aprofunde o restante.",
+        "Quando a operação tensiona, Atlas puxa primeiro margem, resultado e base.",
+        "Se o recorte estiver estável, avance para produto, mídia e conversão.",
+        ],
+      };
   }
 
   if (pathname.startsWith(APP_ROUTES.media)) {
-    return {
-      status: "observando a mídia",
-      description: `Atlas cruza gasto, retorno e sinais de performance da ${brandName} para decidir ajuste, revisão ou escala.`,
-      hints: [
-        "O objetivo é decidir verba e criativo com rapidez.",
-        "A leitura de mídia só vale quando o recorte estiver confiável.",
-        "A próxima camada é sair de campanha para anúncio sem perder legibilidade.",
-      ],
-    };
+      return {
+        status: "observando a mídia",
+        description: `Atlas cruza gasto, retorno e sinais de performance da ${brandName} para decidir ajuste, revisão ou escala.`,
+        hints: [
+        "O foco aqui é decidir verba, criativo e prioridade de campanha.",
+        "Confirme a saúde da fonte antes de tomar decisão de escala.",
+        "Saia do agregado só quando o sinal já estiver claro.",
+        ],
+      };
   }
 
   if (pathname.startsWith(APP_ROUTES.traffic)) {
-    return {
-      status: "lendo o funil",
-      description: `Atlas acompanha intenção, fricção e monetização da ${brandName} no período ativo.`,
-      hints: [
-        "A leitura de tráfego precisa apontar atrito e oportunidade.",
-        "A navegação deve levar rápido da visão executiva ao detalhe útil.",
-        "A meta aqui não é replicar GA4, e sim traduzir em decisão.",
-      ],
-    };
+      return {
+        status: "lendo o funil",
+        description: `Atlas acompanha intenção, fricção e monetização da ${brandName} no período ativo.`,
+        hints: [
+        "Procure primeiro onde o funil trava ou perde monetização.",
+        "Vá da leitura executiva ao detalhe só quando houver sinal de atrito.",
+        "O objetivo não é replicar GA4, e sim traduzir em decisão.",
+        ],
+      };
   }
 
   if (pathname.startsWith(APP_ROUTES.integrations) || pathname.startsWith(APP_ROUTES.settings)) {
-    return {
-      status: "sincronizando a plataforma",
-      description: `Atlas organiza integrações, parâmetros e prontidão operacional da ${brandName}.`,
-      hints: [
-        "Configuração deve parecer infraestrutura de operação, não tela técnica solta.",
-        "Sempre mostre impacto e próximo passo quando algo falhar.",
-        "Fontes saudáveis vêm antes de qualquer recomendação bonita.",
-      ],
-    };
+      return {
+        status: "sincronizando a plataforma",
+        description: `Atlas organiza integrações, parâmetros e prontidão operacional da ${brandName}.`,
+        hints: [
+        "Toda configuração precisa deixar claro impacto e próximo passo.",
+        "Fonte saudável vem antes de qualquer recomendação.",
+        "Corrija o bloqueio operacional antes de voltar para a análise.",
+        ],
+      };
   }
 
   return {
     status: "escutando o sistema",
     description: `Atlas acompanha a ${brandName} no recorte ${periodLabel.toLowerCase()} e mantém contexto sobre a área atual.`,
     hints: [
-      "A shell existe para orientar e acelerar, não para competir com o dado.",
-      "A camada flutuante do Atlas deve ser discreta e útil.",
-      "Navegação, filtro e leitura precisam trabalhar como um mesmo sistema.",
+      "Use o Orb para abrir o próximo caminho, não para substituir a tela atual.",
+      "Alertas, navegação e período precisam contar a mesma história.",
+      "Se o contexto não estiver claro, volte para a Torre de Controle.",
     ],
   };
 }

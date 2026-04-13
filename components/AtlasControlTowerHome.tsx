@@ -1,123 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ArrowUpRight, Radar } from "lucide-react";
 import { useBrandOps } from "./BrandOpsProvider";
 import { AtlasMark } from "./AtlasMark";
 import { AtlasAnalystPanel } from "./AtlasAnalystPanel";
 import { SectionHeading, StackItem, SurfaceCard, WorkspaceTabs } from "./ui-shell";
 import { useSanitizationPendingCount } from "@/hooks/use-sanitization-summary";
-import { currencyFormatter, percentFormatter } from "@/lib/brandops/format";
+import { buildControlAlerts } from "@/lib/brandops/control-alerts";
 import { APP_ROUTES } from "@/lib/brandops/routes";
-
-type TowerSignal = {
-  id: string;
-  title: string;
-  description: string;
-  href: string;
-  aside?: string;
-  tone: "default" | "positive" | "warning" | "negative" | "info";
-};
-
-function buildTowerSignals({
-  pendingSanitizationCount,
-  mediaIntegrationError,
-  ga4IntegrationError,
-  contributionAfterMedia,
-  netResult,
-  variableCostShare,
-  grossRoas,
-}: {
-  pendingSanitizationCount: number;
-  mediaIntegrationError: boolean;
-  ga4IntegrationError: boolean;
-  contributionAfterMedia: number | null;
-  netResult: number | null;
-  variableCostShare: number | null;
-  grossRoas: number | null;
-}) {
-  const signals: TowerSignal[] = [];
-
-  if (contributionAfterMedia !== null && contributionAfterMedia < 0) {
-    signals.push({
-      id: "contribution",
-      title: "Margem depois de mídia negativa",
-      description: "A mídia já consome mais do que a operação sustenta neste corte.",
-      href: APP_ROUTES.dashboardContributionMargin,
-      aside: currencyFormatter.format(contributionAfterMedia),
-      tone: "negative",
-    });
-  }
-
-  if (netResult !== null && netResult < 0) {
-    signals.push({
-      id: "net-result",
-      title: "Resultado operacional no vermelho",
-      description: "A leitura financeira virou prioridade imediata no período.",
-      href: APP_ROUTES.dre,
-      aside: currencyFormatter.format(netResult),
-      tone: "negative",
-    });
-  }
-
-  if (pendingSanitizationCount > 0) {
-    signals.push({
-      id: "sanitization",
-      title: "Base ainda pede saneamento",
-      description: "Há ruído em aberto que ainda pode distorcer a leitura.",
-      href: APP_ROUTES.sanitization,
-      aside: `${pendingSanitizationCount} pendência(s)`,
-      tone: "warning",
-    });
-  }
-
-  if (mediaIntegrationError || ga4IntegrationError) {
-    signals.push({
-      id: "integrations",
-      title: "Fonte com erro recente",
-      description: "Meta ou GA4 falhou. Valide a fonte antes de decidir em cima do dado.",
-      href: APP_ROUTES.integrations,
-      aside: "Revisar",
-      tone: "warning",
-    });
-  }
-
-  if (variableCostShare !== null && variableCostShare > 0.7) {
-    signals.push({
-      id: "variable-cost",
-      title: "Custo variável em pressão alta",
-      description: "CMV e mídia estão comprimindo a receita líquida disponível.",
-      href: APP_ROUTES.dre,
-      aside: percentFormatter.format(variableCostShare),
-      tone: "warning",
-    });
-  }
-
-  if (grossRoas !== null && grossRoas > 0 && grossRoas < 2) {
-    signals.push({
-      id: "roas",
-      title: "Retorno de mídia curto para escalar",
-      description: "Revise campanha e criativo antes de aumentar orçamento.",
-      href: APP_ROUTES.media,
-      aside: `${grossRoas.toFixed(2)}x`,
-      tone: "info",
-    });
-  }
-
-  if (!signals.length) {
-    signals.push({
-      id: "stable",
-      title: "Sem alertas críticos no corte atual",
-      description: "A operação está estável o suficiente para aprofundar sem pressão imediata.",
-      href: APP_ROUTES.dashboard,
-      aside: "Estável",
-      tone: "positive",
-    });
-  }
-
-  return signals.slice(0, 3);
-}
 
 export function AtlasControlTowerHome() {
   const [activeView, setActiveView] = useState<"mesa" | "radar">("mesa");
@@ -143,26 +35,17 @@ export function AtlasControlTowerHome() {
     session?.access_token,
   );
 
-  const signals = useMemo(
-    () =>
-      buildTowerSignals({
-        pendingSanitizationCount,
-        mediaIntegrationError: mediaIntegration?.lastSyncStatus === "error",
-        ga4IntegrationError: ga4Integration?.lastSyncStatus === "error",
-        contributionAfterMedia: financialReportFiltered?.total.contributionAfterMedia ?? null,
-        netResult: financialReportFiltered?.total.netResult ?? null,
-        variableCostShare: financialReportFiltered?.analysis.shares.variableCostShare ?? null,
-        grossRoas: financialReportFiltered?.total.grossRoas ?? null,
-      }),
-    [
+  const signals = buildControlAlerts(
+    {
       pendingSanitizationCount,
-      mediaIntegration?.lastSyncStatus,
-      ga4Integration?.lastSyncStatus,
-      financialReportFiltered?.total.contributionAfterMedia,
-      financialReportFiltered?.total.netResult,
-      financialReportFiltered?.analysis.shares.variableCostShare,
-      financialReportFiltered?.total.grossRoas,
-    ],
+      mediaIntegrationError: mediaIntegration?.lastSyncStatus === "error",
+      ga4IntegrationError: ga4Integration?.lastSyncStatus === "error",
+      contributionAfterMedia: financialReportFiltered?.total.contributionAfterMedia ?? null,
+      netResult: financialReportFiltered?.total.netResult ?? null,
+      variableCostShare: financialReportFiltered?.analysis.shares.variableCostShare ?? null,
+      grossRoas: financialReportFiltered?.total.grossRoas ?? null,
+    },
+    { includeStableFallback: true },
   );
 
   if (!activeBrand || !isAtlasAiEnabled || !canUseAtlasCommandCenter) {
@@ -187,7 +70,7 @@ export function AtlasControlTowerHome() {
               Mesa do Atlas
             </h2>
             <p className="mt-2 text-[12px] leading-6 text-on-surface-variant">
-              IA separada da operação factual. Use a mesa para priorizar, abrir sinais e decidir o próximo clique.
+              Leitura assistida para priorizar sinais e decidir o próximo passo sem perder a base factual.
             </p>
           </div>
 
@@ -211,7 +94,7 @@ export function AtlasControlTowerHome() {
             />
             <div className="flex flex-wrap gap-2">
               <span className="atlas-inline-metric">{selectedPeriodLabel}</span>
-              <span className="atlas-inline-metric">Atlas separado da base factual</span>
+              <span className="atlas-inline-metric">IA em apoio à decisão</span>
             </div>
           </div>
         </div>
@@ -235,7 +118,7 @@ export function AtlasControlTowerHome() {
                         description={primarySignal.description}
                         aside={
                           <span className="inline-flex items-center gap-1.5">
-                            {primarySignal.aside}
+                            {primarySignal.badge}
                             <ArrowUpRight size={12} />
                           </span>
                         }
@@ -250,7 +133,7 @@ export function AtlasControlTowerHome() {
               <SurfaceCard>
                 <SectionHeading
                   title="Ajustes fora da mesa"
-                  description="Configuração e ensino ficam fora do cockpit."
+                  description="Configuração, contexto e fontes ficam fora da mesa de decisão."
                 />
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="brandops-button brandops-button-ghost">
@@ -281,7 +164,7 @@ export function AtlasControlTowerHome() {
                       description={signal.description}
                       aside={
                         <span className="inline-flex items-center gap-1.5">
-                          {signal.aside}
+                          {signal.badge}
                           <ArrowUpRight size={12} />
                         </span>
                       }
