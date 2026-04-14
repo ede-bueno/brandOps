@@ -38,6 +38,10 @@ type IntegrationFormState = Record<
     catalogId: string;
     manualFallback: boolean;
     syncWindowDays: string;
+    model: string;
+    credentialSource: "platform_key" | "brand_key";
+    hasApiKey: boolean;
+    apiKeyHint: string;
   }
 >;
 
@@ -45,18 +49,21 @@ const providerLabels: Record<IntegrationProvider, string> = {
   ink: "INK / INCI",
   meta: "Meta Ads",
   ga4: "Google Analytics 4",
+  gemini: "Atlas Analyst / Gemini",
 };
 
 const providerDescriptions: Record<IntegrationProvider, string> = {
   ink: "Base comercial por CSV.",
   meta: "Mídia paga com fallback manual.",
   ga4: "Tráfego e eventos da propriedade.",
+  gemini: "Motor de IA analítica por marca.",
 };
 
 const providerEyebrows: Record<IntegrationProvider, string> = {
   ink: "Origem comercial",
   meta: "Aquisição",
   ga4: "Analytics",
+  gemini: "Inteligência",
 };
 
 const emptyIntegrationForm: IntegrationFormState = {
@@ -68,6 +75,10 @@ const emptyIntegrationForm: IntegrationFormState = {
     catalogId: "",
     manualFallback: true,
     syncWindowDays: "30",
+    model: "gemini-2.5-flash",
+    credentialSource: "platform_key",
+    hasApiKey: false,
+    apiKeyHint: "",
   },
   meta: {
     mode: "manual_csv",
@@ -77,6 +88,10 @@ const emptyIntegrationForm: IntegrationFormState = {
     catalogId: "",
     manualFallback: true,
     syncWindowDays: "30",
+    model: "gemini-2.5-flash",
+    credentialSource: "platform_key",
+    hasApiKey: false,
+    apiKeyHint: "",
   },
   ga4: {
     mode: "disabled",
@@ -86,6 +101,23 @@ const emptyIntegrationForm: IntegrationFormState = {
     catalogId: "",
     manualFallback: false,
     syncWindowDays: "30",
+    model: "gemini-2.5-flash",
+    credentialSource: "platform_key",
+    hasApiKey: false,
+    apiKeyHint: "",
+  },
+  gemini: {
+    mode: "disabled",
+    propertyId: "",
+    timezone: "America/Sao_Paulo",
+    adAccountId: "",
+    catalogId: "",
+    manualFallback: false,
+    syncWindowDays: "30",
+    model: "gemini-2.5-flash",
+    credentialSource: "platform_key",
+    hasApiKey: false,
+    apiKeyHint: "",
   },
 };
 
@@ -102,6 +134,10 @@ function toFormState(integrations: BrandIntegrationConfig[]): IntegrationFormSta
       manualFallback:
         integration.settings.manualFallback ?? integration.provider !== "ga4",
       syncWindowDays: String(integration.settings.syncWindowDays ?? 30),
+      model: integration.settings.model ?? "gemini-2.5-flash",
+      credentialSource: integration.settings.credentialSource ?? "platform_key",
+      hasApiKey: Boolean(integration.settings.hasApiKey),
+      apiKeyHint: integration.settings.apiKeyHint ?? "",
     };
   });
 
@@ -157,6 +193,19 @@ function getModeOptions(provider: IntegrationProvider) {
     ] as const;
   }
 
+  if (provider === "gemini") {
+    return [
+      {
+        value: "disabled",
+        label: "Desabilitado",
+      },
+      {
+        value: "api",
+        label: "API",
+      },
+    ] as const;
+  }
+
   return [
     {
       value: "manual_csv",
@@ -176,8 +225,11 @@ function getModeOptions(provider: IntegrationProvider) {
 export default function IntegrationsPage() {
   const { activeBrand, profile, refreshActiveBrand, session } = useBrandOps();
   const [formState, setFormState] = useState<IntegrationFormState>(emptyIntegrationForm);
+  const [geminiApiKey, setGeminiApiKey] = useState("");
   const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [savingGemini, setSavingGemini] = useState(false);
+  const [clearingGeminiKey, setClearingGeminiKey] = useState(false);
   const [syncingGa4, setSyncingGa4] = useState(false);
   const [syncingMeta, setSyncingMeta] = useState(false);
   const [syncingCatalog, setSyncingCatalog] = useState(false);
@@ -186,6 +238,7 @@ export default function IntegrationsPage() {
 
   useEffect(() => {
     setFormState(toFormState(activeBrand?.integrations ?? []));
+    setGeminiApiKey("");
     setNotice(null);
   }, [activeBrand?.id, activeBrand?.integrations]);
 
@@ -210,6 +263,8 @@ export default function IntegrationsPage() {
   }
 
   const canManageIntegrations = profile?.role === "SUPER_ADMIN";
+  const canManageCurrentProvider =
+    profile?.role === "SUPER_ADMIN" || activeProvider === "gemini";
 
   const current = integrationsMap.get(activeProvider);
   const currentState = formState[activeProvider];
@@ -235,6 +290,14 @@ export default function IntegrationsPage() {
           ? `A propriedade ${currentState.propertyId} está associada à marca ${activeBrand.name}.`
           : `A marca ${activeBrand.name} ainda não possui Property ID informado para o GA4.`,
       cta: currentState.propertyId ? "/traffic" : null,
+    },
+    gemini: {
+      title: "Especialista analítico da marca",
+      body:
+        currentState.mode === "api"
+          ? `O Atlas Analyst está habilitado para ${activeBrand.name} usando o modelo ${currentState.model} com credencial ${currentState.credentialSource === "brand_key" ? "da própria loja" : "da plataforma"}.${currentState.hasApiKey ? ` Chave da loja salva em ${currentState.apiKeyHint}.` : ""}`
+          : `O Atlas Analyst da marca ${activeBrand.name} ainda está desabilitado no painel de integrações.`,
+      cta: currentState.mode === "api" ? "/dashboard" : null,
     },
   }[activeProvider];
 
@@ -295,6 +358,145 @@ export default function IntegrationsPage() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleGeminiSave = async () => {
+    if (!session?.access_token) {
+      setNotice({ kind: "error", text: "Sessão inválida para atualizar o Gemini." });
+      return;
+    }
+
+    if (
+      formState.gemini.mode === "api" &&
+      formState.gemini.credentialSource === "brand_key" &&
+      !formState.gemini.hasApiKey &&
+      !geminiApiKey.trim()
+    ) {
+      setNotice({
+        kind: "error",
+        text: "Salve uma chave própria do Gemini antes de ativar o modo API por loja.",
+      });
+      return;
+    }
+
+    try {
+      setSavingGemini(true);
+      setNotice(null);
+
+      const response = await fetch(`/api/admin/brands/${activeBrand.id}/integrations/gemini`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          mode: formState.gemini.mode,
+          settings: {
+            model: formState.gemini.model,
+            credentialSource: formState.gemini.credentialSource,
+          },
+          apiKey: geminiApiKey.trim() || undefined,
+        }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Falha ao salvar a integração Gemini.");
+      }
+
+      await refreshActiveBrand();
+      setGeminiApiKey("");
+      setFormState((previous) => ({
+        ...previous,
+        gemini: {
+          ...previous.gemini,
+          mode: payload.integration.mode,
+          model: payload.integration.settings.model ?? previous.gemini.model,
+          credentialSource:
+            payload.integration.settings.credentialSource ?? previous.gemini.credentialSource,
+          hasApiKey: Boolean(payload.integration.settings.hasApiKey),
+          apiKeyHint: payload.integration.settings.apiKeyHint ?? "",
+        },
+      }));
+      setNotice({
+        kind: "success",
+        text: "Integração Gemini atualizada para esta loja.",
+      });
+    } catch (error) {
+      setNotice({
+        kind: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Falha ao salvar a integração Gemini.",
+      });
+    } finally {
+      setSavingGemini(false);
+    }
+  };
+
+  const handleClearGeminiKey = async () => {
+    if (!session?.access_token) {
+      setNotice({ kind: "error", text: "Sessão inválida para remover a chave do Gemini." });
+      return;
+    }
+
+    try {
+      setClearingGeminiKey(true);
+      setNotice(null);
+
+      const nextCredentialSource =
+        formState.gemini.credentialSource === "brand_key"
+          ? "platform_key"
+          : formState.gemini.credentialSource;
+
+      const response = await fetch(`/api/admin/brands/${activeBrand.id}/integrations/gemini`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          mode: formState.gemini.mode,
+          settings: {
+            model: formState.gemini.model,
+            credentialSource: nextCredentialSource,
+          },
+          clearApiKey: true,
+        }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Falha ao remover a chave do Gemini.");
+      }
+
+      await refreshActiveBrand();
+      setGeminiApiKey("");
+      setFormState((previous) => ({
+        ...previous,
+        gemini: {
+          ...previous.gemini,
+          credentialSource: nextCredentialSource,
+          hasApiKey: false,
+          apiKeyHint: "",
+        },
+      }));
+      setNotice({
+        kind: "success",
+        text: "Chave própria do Gemini removida desta loja.",
+      });
+    } catch (error) {
+      setNotice({
+        kind: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Falha ao remover a chave do Gemini.",
+      });
+    } finally {
+      setClearingGeminiKey(false);
     }
   };
 
@@ -417,7 +619,42 @@ export default function IntegrationsPage() {
         description="Defina a origem de cada dado por marca. O Atlas preserva o manual quando necessário e prepara a evolução para API sem quebrar a operação."
         badge={`Escopo atual: ${activeBrand.name}`}
         actions={
-          canManageIntegrations ? (
+          activeProvider === "gemini" ? (
+            <div className="flex flex-wrap gap-2">
+              {formState.gemini.hasApiKey ? (
+                <button
+                  type="button"
+                  onClick={handleClearGeminiKey}
+                  disabled={!canManageCurrentProvider || clearingGeminiKey}
+                  className="brandops-button brandops-button-ghost"
+                >
+                  {clearingGeminiKey ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Removendo chave
+                    </>
+                  ) : (
+                    "Remover chave própria"
+                  )}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={handleGeminiSave}
+                disabled={!canManageCurrentProvider || savingGemini}
+                className="brandops-button brandops-button-primary"
+              >
+                {savingGemini ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Salvando Gemini
+                  </>
+                ) : (
+                  "Salvar Gemini"
+                )}
+              </button>
+            </div>
+          ) : canManageIntegrations ? (
             <button
               onClick={handleSave}
               disabled={saving}
@@ -449,7 +686,9 @@ export default function IntegrationsPage() {
       {!canManageIntegrations ? (
         <InlineNotice tone="info" icon={<ShieldCheck size={18} />} className="text-sm text-on-surface">
           <span>
-            Você pode acompanhar o status e executar as sincronizações da sua loja. Alterações de configuração seguem restritas ao superadmin.
+            {activeProvider === "gemini"
+              ? "Você pode configurar a credencial Gemini da sua própria loja sem expor a chave na interface."
+              : "Você pode acompanhar o status e executar as sincronizações da sua loja. Alterações de configuração seguem restritas ao superadmin."}
           </span>
         </InlineNotice>
       ) : null}
@@ -487,7 +726,7 @@ export default function IntegrationsPage() {
           </div>
         </div>
         <div className="mt-4 brandops-subtabs overflow-x-auto">
-          {(["ink", "meta", "ga4"] as const).map((provider) => (
+          {(["ink", "meta", "ga4", "gemini"] as const).map((provider) => (
             <button
               key={provider}
               type="button"
@@ -681,12 +920,110 @@ export default function IntegrationsPage() {
                     </FormField>
                   </>
                 ) : null}
+
+                {activeProvider === "gemini" ? (
+                  <>
+                    <FormField label="Modelo padrão do Analyst" className="text-sm">
+                      <input
+                        value={currentState.model}
+                        onChange={(event) =>
+                          setFormState((previous) => ({
+                            ...previous,
+                            gemini: {
+                              ...previous.gemini,
+                              model: event.target.value,
+                            },
+                          }))
+                        }
+                        className="brandops-input w-full"
+                        placeholder="gemini-2.5-flash"
+                        disabled={!canManageCurrentProvider}
+                      />
+                    </FormField>
+                    <FormField label="Origem da credencial" className="text-sm">
+                      <select
+                        value={currentState.credentialSource}
+                        onChange={(event) =>
+                          setFormState((previous) => ({
+                            ...previous,
+                            gemini: {
+                              ...previous.gemini,
+                              credentialSource: event.target.value as "platform_key" | "brand_key",
+                            },
+                          }))
+                        }
+                        className="brandops-input w-full"
+                        disabled={!canManageCurrentProvider}
+                      >
+                        <option value="platform_key">Chave da plataforma</option>
+                        <option value="brand_key">Chave da própria loja</option>
+                      </select>
+                    </FormField>
+                    <FormField label="Nova chave Gemini da loja" className="text-sm lg:col-span-2">
+                      <div className="space-y-3">
+                        <input
+                          type="password"
+                          value={geminiApiKey}
+                          onChange={(event) => setGeminiApiKey(event.target.value)}
+                          className="brandops-input w-full"
+                          placeholder={
+                            currentState.hasApiKey
+                              ? `Chave salva (${currentState.apiKeyHint || "oculta"})`
+                              : "Cole aqui a chave da API Gemini"
+                          }
+                          disabled={!canManageCurrentProvider}
+                        />
+                        <div className="rounded-xl border border-outline bg-surface-container-low px-4 py-3 text-xs leading-5 text-on-surface-variant">
+                          {currentState.hasApiKey ? (
+                            <p>
+                              Chave própria salva para esta loja em{" "}
+                              <span className="font-semibold text-on-surface">
+                                {currentState.apiKeyHint}
+                              </span>
+                              . Se você preencher o campo acima, a chave atual será substituída.
+                            </p>
+                          ) : (
+                            <p>
+                              A chave digitada aqui é salva criptografada no backend e nunca volta em texto aberto para a interface.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </FormField>
+                  </>
+                ) : null}
               </div>
             </div>
             ) : null}
 
             {activeSection === "sync" ? (
             <div className="brandops-toolbar-panel text-sm text-on-surface-variant">
+              {activeProvider === "gemini" ? (
+                <>
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-on-surface">Status da credencial</p>
+                      <p className="mt-1">
+                        {currentState.credentialSource === "brand_key"
+                          ? currentState.hasApiKey
+                            ? `Chave própria salva em ${currentState.apiKeyHint}.`
+                            : "Nenhuma chave própria salva para esta loja."
+                          : "O Analyst usará a credencial global da plataforma quando disponível."}
+                      </p>
+                    </div>
+                    <span className="status-chip">
+                      {currentState.mode === "api" ? "agent ready" : "disabled"}
+                    </span>
+                  </div>
+                  <div className="mt-4 border-t border-outline pt-4">
+                    <p className="font-medium text-on-surface">Execução sob demanda</p>
+                    <p className="mt-1 leading-6">
+                      O Gemini não sincroniza dados em lote. Ele é consultado sob demanda pelo Atlas Analyst, sempre em cima dos relatórios internos já gravados no Atlas.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-medium text-on-surface">Última sincronização</p>
@@ -771,6 +1108,8 @@ export default function IntegrationsPage() {
                   </button>
                 ) : null}
               </div>
+                </>
+              )}
             </div>
             ) : null}
 
@@ -813,10 +1152,18 @@ export default function IntegrationsPage() {
             ) : null}
             <StackItem
               title="Segredos não ficam aqui"
-              description="Esta tela guarda apenas configuração não sensível por marca. Tokens e chaves devem ficar em ambiente seguro do backend."
+              description="Esta tela guarda apenas configuração não sensível por marca. Quando a loja usa chave própria do Gemini, o segredo é salvo criptografado no backend e não retorna em texto aberto para a UI."
               aside={<ShieldCheck size={16} className="text-secondary" />}
               tone="warning"
             />
+            {activeProvider === "gemini" ? (
+              <StackItem
+                title="Fallback por credencial"
+                description="Cada lojista pode operar com a própria chave Gemini ou cair no modo plataforma. O Atlas Analyst respeita essa escolha por marca antes de chamar o modelo."
+                aside={<RefreshCcw size={16} className="text-secondary" />}
+                tone="default"
+              />
+            ) : null}
             <StackItem
               title={providerContextCard.title}
               description={

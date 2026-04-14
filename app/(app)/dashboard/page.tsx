@@ -7,6 +7,7 @@ import {
   AnalyticsKpiCard,
   AnalyticsPanel,
 } from "@/components/analytics/AnalyticsPrimitives";
+import { AtlasControlTowerHome } from "@/components/AtlasControlTowerHome";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { PageHeader, SectionHeading, StackItem, SurfaceCard } from "@/components/ui-shell";
@@ -111,6 +112,8 @@ export default function DashboardPage() {
           </Link>
         }
       />
+
+      <AtlasControlTowerHome />
 
       <section className="grid gap-4 xl:grid-cols-3">
         <AnalyticsPanel

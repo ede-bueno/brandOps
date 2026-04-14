@@ -31,6 +31,7 @@ import type { PeriodFilter } from "@/lib/brandops/types";
 import { BRANDING } from "@/lib/branding";
 import { ThemeToggle } from "./ThemeToggle";
 import { AtlasOrb } from "./AtlasOrb";
+import { AtlasAnalystPanel } from "./AtlasAnalystPanel";
 
 /* -------------------------------------------------------
    Navigation Groups
@@ -78,7 +79,27 @@ const periodOptions: Array<{ value: PeriodFilter; label: string }> = [
   { value: "custom", label: "Período livre" },
 ];
 
-function getAtlasOrbContext(pathname: string, brandName: string, periodLabel: string) {
+interface AtlasOrbTelemetry {
+  hasFinancialReport: boolean;
+  pendingSanitizationCount: number;
+  hasGa4Data: boolean;
+  hasMediaData: boolean;
+  hasCatalogData: boolean;
+  mediaIntegrationError: boolean;
+  ga4IntegrationError: boolean;
+  geminiEnabled: boolean;
+  contributionAfterMedia: number | null;
+  netResult: number | null;
+  variableCostShare: number | null;
+  grossRoas: number | null;
+}
+
+function getAtlasOrbContext(
+  pathname: string,
+  brandName: string,
+  periodLabel: string,
+  telemetry: AtlasOrbTelemetry,
+) {
   const contexts = [
     {
       match: (value: string) => value.startsWith("/dashboard/contribution-margin"),
@@ -93,11 +114,11 @@ function getAtlasOrbContext(pathname: string, brandName: string, periodLabel: st
     {
       match: (value: string) => value.startsWith("/dashboard"),
       status: "centro de comando",
-      description: `Atlas está observando os sinais executivos da ${brandName} para destacar desvios, prioridades e oportunidades com clareza operacional.`,
+      description: `Atlas está em casa na Torre de Controle da ${brandName}, acompanhando os sinais executivos para destacar desvios, prioridades e oportunidades com clareza operacional.`,
       hints: [
+        "A base nativa do Atlas IA mora nesta tela; o Orb aqui funciona como atalho e contexto rápido.",
         "Priorize onde há compressão de margem, mídia acima do retorno e despesas dominando o período.",
         "Os próximos blocos devem apontar primeiro o que pede ação, não só o que mudou.",
-        "Esta camada tende a virar a sua mesa de comando rápida para abrir o detalhe certo.",
       ],
     },
     {
@@ -202,7 +223,110 @@ function getAtlasOrbContext(pathname: string, brandName: string, periodLabel: st
     },
   ];
 
-  return contexts.find((context) => context.match(pathname))!;
+  const matchedContext = contexts.find((context) => context.match(pathname))!;
+  const isDashboard = pathname.startsWith("/dashboard");
+  const isSanitization = pathname.startsWith("/sanitization");
+  const isMedia = pathname.startsWith("/media");
+  const isTraffic = pathname.startsWith("/traffic");
+  const isDre = pathname.startsWith("/dre");
+  const isFeed = pathname.startsWith("/feed");
+  const isIntegrations = pathname.startsWith("/integrations");
+
+  let attentionLevel: "idle" | "notice" | "alert" = "idle";
+
+  if (
+    telemetry.pendingSanitizationCount > 0 ||
+    telemetry.mediaIntegrationError ||
+    telemetry.ga4IntegrationError ||
+    (telemetry.netResult !== null && telemetry.netResult < 0) ||
+    (telemetry.contributionAfterMedia !== null && telemetry.contributionAfterMedia < 0)
+  ) {
+    attentionLevel = "alert";
+  } else if (
+    (telemetry.variableCostShare !== null && telemetry.variableCostShare > 0.7) ||
+    (telemetry.grossRoas !== null && telemetry.grossRoas > 0 && telemetry.grossRoas < 2) ||
+    isDashboard ||
+    isTraffic ||
+    isDre
+  ) {
+    attentionLevel = "notice";
+  }
+
+  let hoverAlert = `Atlas detectou contexto relacionado a ${matchedContext.status} na ${brandName}. Abra só se quiser aprofundar a leitura desta tela.`;
+
+  if (telemetry.pendingSanitizationCount > 0) {
+    hoverAlert = `${telemetry.pendingSanitizationCount} pendência(s) de saneamento ainda podem distorcer a leitura deste período.`;
+  } else if (telemetry.mediaIntegrationError && isMedia) {
+    hoverAlert = "A integração de mídia reportou erro recente. Vale revisar a saúde da fonte antes de confiar na leitura.";
+  } else if (telemetry.ga4IntegrationError && isTraffic) {
+    hoverAlert = "A integração do GA4 reportou erro recente. O tráfego pode estar incompleto neste recorte.";
+  } else if (telemetry.netResult !== null && telemetry.netResult < 0 && (isDashboard || isDre)) {
+    hoverAlert = "O resultado operacional do período está negativo. Há pressão real sobre a operação agora.";
+  } else if (
+    telemetry.contributionAfterMedia !== null &&
+    telemetry.contributionAfterMedia < 0 &&
+    (isDashboard || isMedia || isDre)
+  ) {
+    hoverAlert = "A contribuição depois de mídia ficou negativa neste recorte. O Atlas está chamando atenção para isso.";
+  } else if (
+    telemetry.variableCostShare !== null &&
+    telemetry.variableCostShare > 0.7 &&
+    (isDashboard || isDre)
+  ) {
+    hoverAlert = "Os custos variáveis estão consumindo uma fatia alta da receita líquida disponível.";
+  } else if (!telemetry.hasGa4Data && isTraffic) {
+    hoverAlert = "Ainda não há dados suficientes de GA4 neste recorte para uma leitura confiável de tráfego.";
+  } else if (!telemetry.hasCatalogData && isFeed) {
+    hoverAlert = "O catálogo ainda não tem massa suficiente para o Atlas chamar atenção sobre cobertura e escala.";
+  } else if (isDashboard) {
+    hoverAlert = telemetry.geminiEnabled
+      ? `A casa nativa do Atlas fica na Torre de Controle da ${brandName}. O Orb aqui só sinaliza foco e atalhos.`
+      : `Esta marca está usando a Torre de Controle sem IA ativa. O Orb segue discreto, só chamando atenção para contexto e próximos focos.`;
+  } else if (isIntegrations) {
+    hoverAlert = "O Atlas está acompanhando a saúde das fontes para não deixar o sistema operar em cima de dado quebrado.";
+  }
+
+  const hoverActions = [];
+
+  if (isDashboard) {
+    if (telemetry.geminiEnabled) {
+      hoverActions.push(
+        { label: "Ir para a casa do Atlas", action: "scroll" as const, targetId: "atlas-ai-home" },
+        { label: "Abrir Atlas Analyst", action: "open-panel" as const },
+      );
+    } else {
+      hoverActions.push(
+        { label: "Ver status desta tela", action: "open-panel" as const },
+        { label: "Como ativar a IA", href: "/integrations" },
+      );
+    }
+
+    if (telemetry.pendingSanitizationCount > 0) {
+      hoverActions.push({ label: "Revisar saneamento", href: "/sanitization" });
+    } else {
+      hoverActions.push({ label: `Ler sinais de ${periodLabel}`, action: "open-panel" as const });
+    }
+  } else {
+    if (telemetry.pendingSanitizationCount > 0 && !isSanitization) {
+      hoverActions.push({ label: "Revisar saneamento", href: "/sanitization" });
+    }
+
+    if ((telemetry.mediaIntegrationError || telemetry.ga4IntegrationError) && !isIntegrations) {
+      hoverActions.push({ label: "Ver integrações", href: "/integrations" });
+    }
+
+    hoverActions.push(
+      { label: "Ver alerta desta tela", action: "open-panel" as const },
+      { label: telemetry.geminiEnabled ? "Abrir Atlas Analyst" : "Ver leitura contextual", action: "open-panel" as const },
+    );
+  }
+
+  return {
+    ...matchedContext,
+    attentionLevel,
+    hoverAlert,
+    hoverActions: hoverActions.slice(0, 3),
+  };
 }
 
 /* -------------------------------------------------------
@@ -293,6 +417,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     brands,
     customDateRange,
     errorMessage,
+    filteredBrand,
+    financialReportFiltered,
     profile,
     selectedPeriod,
     selectedPeriodLabel,
@@ -307,9 +433,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     activeBrand?.name ??
     brands.find((brand) => brand.id === activeBrandId)?.name ??
     "Nenhuma marca";
+  const atlasOrbTelemetry = useMemo<AtlasOrbTelemetry>(() => {
+    const mediaIntegration = activeBrand?.integrations.find((integration) => integration.provider === "meta");
+    const ga4Integration = activeBrand?.integrations.find((integration) => integration.provider === "ga4");
+    const geminiIntegration = activeBrand?.integrations.find((integration) => integration.provider === "gemini");
+    const pendingSanitizationCount =
+      (filteredBrand?.media.filter((row) => row.sanitizationStatus === "PENDING").length ?? 0) +
+      (filteredBrand?.paidOrders.filter((order) => order.sanitizationStatus === "PENDING").length ?? 0);
+
+    return {
+      hasFinancialReport: Boolean(financialReportFiltered?.total),
+      pendingSanitizationCount,
+      hasGa4Data: Boolean(filteredBrand?.ga4DailyPerformance.length),
+      hasMediaData: Boolean(filteredBrand?.media.length),
+      hasCatalogData: Boolean(activeBrand?.catalog.length),
+      mediaIntegrationError: mediaIntegration?.lastSyncStatus === "error",
+      ga4IntegrationError: ga4Integration?.lastSyncStatus === "error",
+      geminiEnabled: geminiIntegration?.mode === "api",
+      contributionAfterMedia: financialReportFiltered?.total.contributionAfterMedia ?? null,
+      netResult: financialReportFiltered?.total.netResult ?? null,
+      variableCostShare: financialReportFiltered?.analysis.shares.variableCostShare ?? null,
+      grossRoas: financialReportFiltered?.total.grossRoas ?? null,
+    };
+  }, [activeBrand?.catalog.length, activeBrand?.integrations, filteredBrand?.ga4DailyPerformance, filteredBrand?.media, filteredBrand?.paidOrders, financialReportFiltered]);
   const atlasOrbContext = useMemo(
-    () => getAtlasOrbContext(pathname, selectedBrandName, selectedPeriodLabel),
-    [pathname, selectedBrandName, selectedPeriodLabel],
+    () => getAtlasOrbContext(pathname, selectedBrandName, selectedPeriodLabel, atlasOrbTelemetry),
+    [atlasOrbTelemetry, pathname, selectedBrandName, selectedPeriodLabel],
   );
 
   useEffect(() => {
@@ -667,6 +816,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         description={atlasOrbContext.description}
         panelAlign="left"
         hints={atlasOrbContext.hints}
+        attentionLevel={atlasOrbContext.attentionLevel}
+        hoverAlert={atlasOrbContext.hoverAlert}
+        hoverActions={atlasOrbContext.hoverActions}
+        panelContent={<AtlasAnalystPanel variant={pathname.startsWith("/dashboard") ? "dashboard-orb" : "orb"} />}
       />
 
       {isMobileMenuOpen ? (

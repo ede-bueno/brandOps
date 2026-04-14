@@ -1,14 +1,31 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import Link from "next/link";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FocusEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react";
 import { BrainCircuit, Sparkles, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_HINTS = [
   "Atlas está observando margem, mídia e catálogo em tempo real.",
   "Em breve, o orbe vai antecipar desvios e sugerir ações antes da queda.",
-  "Passe o mouse ou toque para abrir a camada proativa de inteligência.",
+  "Clique quando quiser abrir a camada proativa de inteligência.",
 ];
+
+export interface AtlasOrbHoverAction {
+  label: string;
+  action?: "open-panel" | "scroll";
+  targetId?: string;
+  href?: string;
+}
 
 export function AtlasOrb({
   size = "md",
@@ -22,6 +39,10 @@ export function AtlasOrb({
   panelAlign = "right",
   floating = false,
   storageKey = "atlas.orb.position",
+  hoverAlert,
+  hoverActions = [],
+  attentionLevel = "idle",
+  panelContent,
 }: {
   size?: "sm" | "md" | "lg";
   className?: string;
@@ -34,8 +55,13 @@ export function AtlasOrb({
   panelAlign?: "left" | "right";
   floating?: boolean;
   storageKey?: string;
+  hoverAlert?: string;
+  hoverActions?: AtlasOrbHoverAction[];
+  attentionLevel?: "idle" | "notice" | "alert";
+  panelContent?: ReactNode;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [viewportSize, setViewportSize] = useState(() => ({
     width: typeof window !== "undefined" ? window.innerWidth : 0,
@@ -74,6 +100,8 @@ export function AtlasOrb({
   const orbDimension = size === "sm" ? 40 : size === "lg" ? 74 : 56;
 
   const hintList = useMemo(() => hints.slice(0, 3), [hints]);
+  const previewActions = useMemo(() => hoverActions.slice(0, 3), [hoverActions]);
+  const hasPreview = Boolean(hoverAlert || previewActions.length);
 
   const floatingPanelMeta = useMemo(() => {
     if (!floating || !position || !viewportSize.width || !viewportSize.height) {
@@ -127,7 +155,8 @@ export function AtlasOrb({
       if (!orbRef.current) return;
       if (!orbRef.current.parentElement?.contains(event.target as Node)) {
         setIsPinned(false);
-        setIsOpen(false);
+        setIsPanelOpen(false);
+        setIsPreviewOpen(false);
       }
     }
 
@@ -169,19 +198,45 @@ export function AtlasOrb({
   }
 
   function handlePointerEnter() {
-    if (!interactive) return;
-    setIsOpen(true);
+    if (!interactive || isPinned || !hasPreview) return;
+    setIsPreviewOpen(true);
   }
 
   function handlePointerLeave() {
     if (!interactive || isPinned) return;
-    setIsOpen(false);
+    setIsPreviewOpen(false);
+  }
+
+  function handleBlur(event: FocusEvent<HTMLButtonElement>) {
+    if (!interactive || isPinned) return;
+    const nextTarget = event.relatedTarget;
+    if (nextTarget && orbRef.current?.parentElement?.contains(nextTarget as Node)) {
+      return;
+    }
+    setIsPreviewOpen(false);
   }
 
   function handleToggle() {
     if (!interactive) return;
-    setIsPinned((current) => !current);
-    setIsOpen(true);
+    const next = !isPinned;
+    setIsPinned(next);
+    setIsPanelOpen(next);
+    setIsPreviewOpen(false);
+  }
+
+  function handleHoverAction(action: AtlasOrbHoverAction) {
+    if (action.action === "scroll" && action.targetId && typeof document !== "undefined") {
+      const target = document.getElementById(action.targetId);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        setIsPreviewOpen(false);
+        return;
+      }
+    }
+
+    setIsPinned(true);
+    setIsPanelOpen(true);
+    setIsPreviewOpen(false);
   }
 
   function persistPosition(next: { x: number; y: number }) {
@@ -222,7 +277,8 @@ export function AtlasOrb({
     if (!drag.moved && (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4)) {
       drag.moved = true;
       setIsDragging(true);
-      setIsOpen(false);
+      setIsPreviewOpen(false);
+      setIsPanelOpen(false);
     }
     if (!drag.moved) return;
     setPosition(clampPosition(drag.originX + deltaX, drag.originY + deltaY));
@@ -242,36 +298,116 @@ export function AtlasOrb({
     handleToggle();
   }
 
+  const orbAttentionClass =
+    attentionLevel === "alert"
+      ? "border-warning/35 bg-warning text-warning shadow-[0_0_20px_rgba(245,158,11,0.35)]"
+      : attentionLevel === "notice"
+        ? "border-primary/35 bg-primary text-on-primary shadow-[0_0_20px_rgba(43,142,255,0.35)]"
+        : null;
+
   return (
     <span
       className={cn("atlas-orb-anchor", floating && "atlas-orb-floating", className)}
       style={floating && position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
+      onPointerLeave={handlePointerLeave}
     >
       <button
         ref={orbRef}
         type="button"
         aria-label={interactive ? "Abrir camada de inteligência do Atlas" : "Atlas"}
-        aria-expanded={interactive ? isOpen : undefined}
+        aria-expanded={interactive ? isPanelOpen : undefined}
         onFocus={handlePointerEnter}
-        onBlur={handlePointerLeave}
+        onBlur={handleBlur}
         onPointerEnter={handlePointerEnter}
-        onPointerLeave={handlePointerLeave}
+        onClick={!floating ? handleToggle : undefined}
         onPointerMove={floating ? handleFloatingPointerMove : handlePointerMove}
         onPointerDown={floating ? handleFloatingPointerDown : undefined}
         onPointerUp={floating ? handleFloatingPointerUp : undefined}
         className={cn("atlas-orb", sizeClass, interactive && "atlas-orb-interactive")}
       >
+        {orbAttentionClass ? (
+          <span className="pointer-events-none absolute -right-0.5 -top-0.5 z-[1] flex h-3.5 w-3.5 items-center justify-center">
+            <span className={cn("absolute inset-0 rounded-full animate-ping opacity-75", orbAttentionClass)} />
+            <span className={cn("relative h-3.5 w-3.5 rounded-full border", orbAttentionClass)} />
+          </span>
+        ) : null}
         <span className="atlas-orb-core">
           {icon ? <Sparkles size={iconSize} className="text-primary" /> : null}
         </span>
       </button>
 
+      {interactive && hasPreview ? (
+        <div
+          className={cn(
+            "atlas-orb-panel pointer-events-auto absolute z-40 w-[min(88vw,19rem)] transition duration-200",
+            panelMeta.className,
+            isPreviewOpen && !isPanelOpen && !isDragging ? "atlas-orb-panel-open opacity-100" : "atlas-orb-panel-closed pointer-events-none opacity-0",
+          )}
+          data-side-x={panelMeta.sideX}
+          data-side-y={panelMeta.sideY}
+          style={
+            {
+              "--atlas-orb-panel-shift-x": panelMeta.shiftX,
+              "--atlas-orb-panel-shift-y": panelMeta.shiftY,
+            } as CSSProperties
+          }
+        >
+          <div className="atlas-orb-panel-inner p-3.5">
+            <div className="flex items-start gap-3">
+              <div className="atlas-orb-panel-icon h-9 w-9">
+                <TrendingUp size={16} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-headline text-sm font-semibold tracking-tight text-on-surface">{title}</p>
+                  <span className="atlas-orb-status">{status}</span>
+                </div>
+                {hoverAlert ? (
+                  <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">{hoverAlert}</p>
+                ) : (
+                  <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">{description}</p>
+                )}
+              </div>
+            </div>
+
+            {previewActions.length ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {previewActions.map((action) =>
+                  action.href ? (
+                    <Link
+                      key={action.label}
+                      href={action.href}
+                      className="rounded-full border border-outline bg-surface-container-low px-3 py-1.5 text-[11px] font-semibold text-on-surface-variant transition hover:border-secondary/30 hover:text-on-surface"
+                    >
+                      {action.label}
+                    </Link>
+                  ) : (
+                    <button
+                      key={action.label}
+                      type="button"
+                      onClick={() => handleHoverAction(action)}
+                      className="rounded-full border border-outline bg-surface-container-low px-3 py-1.5 text-[11px] font-semibold text-on-surface-variant transition hover:border-secondary/30 hover:text-on-surface"
+                    >
+                      {action.label}
+                    </button>
+                  ),
+                )}
+              </div>
+            ) : null}
+
+            <div className="mt-3 border-t border-outline/70 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
+              O painel completo abre só no clique
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {interactive ? (
         <div
           className={cn(
-            "atlas-orb-panel pointer-events-none absolute z-40 w-[min(86vw,22rem)] transition duration-200",
+            "atlas-orb-panel pointer-events-auto absolute z-40 w-[min(92vw,24rem)] transition duration-200",
             panelMeta.className,
-            isOpen && !isDragging ? "atlas-orb-panel-open opacity-100" : "atlas-orb-panel-closed opacity-0",
+            isPanelOpen && !isDragging ? "atlas-orb-panel-open opacity-100" : "atlas-orb-panel-closed pointer-events-none opacity-0",
           )}
           data-side-x={panelMeta.sideX}
           data-side-y={panelMeta.sideY}
@@ -309,12 +445,14 @@ export function AtlasOrb({
               ))}
             </div>
 
+            {panelContent}
+
             <div className="mt-4 flex items-center justify-between border-t border-outline/70 pt-3">
               <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
                 Camada proativa
               </span>
               <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
-                aprendendo
+                aberta por voce
               </span>
             </div>
           </div>

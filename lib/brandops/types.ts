@@ -23,7 +23,7 @@ export type CmvMatchType = "SKU" | "PRODUCT" | "TYPE";
 export type SanitizationDecision = "PENDING" | "KEPT" | "IGNORED";
 export type SanitizationReviewAction = "PENDING" | "KEPT" | "IGNORED";
 
-export type IntegrationProvider = "ink" | "meta" | "ga4";
+export type IntegrationProvider = "ink" | "meta" | "ga4" | "gemini";
 
 export type IntegrationMode = "manual_csv" | "api" | "disabled";
 
@@ -234,18 +234,22 @@ export interface BrandIntegrationConfig {
   id: string;
   provider: IntegrationProvider;
   mode: IntegrationMode;
-    settings: {
-      propertyId?: string;
-      timezone?: string;
-      adAccountId?: string;
-      catalogId?: string;
-      manualFallback?: boolean;
-      syncWindowDays?: number;
-      catalogSyncAt?: string;
-      catalogSyncStatus?: string;
-      catalogSyncError?: string | null;
-      catalogProductCount?: number;
-    };
+  settings: {
+    propertyId?: string;
+    timezone?: string;
+    adAccountId?: string;
+    catalogId?: string;
+    manualFallback?: boolean;
+    syncWindowDays?: number;
+    catalogSyncAt?: string;
+    catalogSyncStatus?: string;
+    catalogSyncError?: string | null;
+    catalogProductCount?: number;
+    model?: string;
+    credentialSource?: "platform_key" | "brand_key";
+    hasApiKey?: boolean;
+    apiKeyHint?: string | null;
+  };
   lastSyncAt?: string | null;
   lastSyncStatus: IntegrationSyncStatus;
   lastSyncError?: string | null;
