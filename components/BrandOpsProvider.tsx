@@ -28,7 +28,9 @@ import {
 } from "@/lib/brandops/database";
 import {
   clearStoredActiveBrandId,
+  clearSessionBrandSelectionConfirmation,
   hydrateWorkspace,
+  markSessionBrandSelectionConfirmed,
   persistStoredActiveBrandId,
   type BrandWorkspaceOption,
 } from "@/lib/brandops/provider-workspace";
@@ -43,6 +45,7 @@ import type { AnnualDreReport } from "@/lib/brandops/types";
 import { supabase } from "@/lib/supabase";
 import type {
   BrandDataset,
+  BrandIntegrationConfig,
   CmvMatchType,
   CustomDateRange,
   PeriodFilter,
@@ -67,6 +70,7 @@ interface BrandOpsContextValue {
   selectedPeriod: PeriodFilter;
   selectedPeriodLabel: string;
   customDateRange: CustomDateRange;
+  requiresBrandSelection: boolean;
   setActiveBrandId: (brandId: string) => void;
   setSelectedPeriod: (period: PeriodFilter) => void;
   setCustomDateRange: (range: CustomDateRange) => void;
@@ -149,6 +153,7 @@ export function BrandOpsProvider({
     from: "",
     to: "",
   });
+  const [requiresBrandSelection, setRequiresBrandSelection] = useState(false);
   const sessionUserIdRef = useRef<string | null>(null);
   const activeBrandIdRef = useRef<string | null>(null);
   const brandLoadRequestRef = useRef(0);
@@ -192,16 +197,51 @@ export function BrandOpsProvider({
     [activeBrand, periodRange],
   );
 
+  const hydrateDatasetIntegrations = useCallback(
+    async (brandId: string, dataset: BrandDataset) => {
+      if (!accessToken) {
+        return dataset;
+      }
+
+      try {
+        const response = await fetch(`/api/admin/brands/${brandId}/integrations`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          cache: "no-store",
+        });
+
+        const payload = (await response.json()) as {
+          integrations?: BrandIntegrationConfig[];
+          error?: string;
+        };
+
+        if (!response.ok || !payload.integrations) {
+          return dataset;
+        }
+
+        return {
+          ...dataset,
+          integrations: payload.integrations,
+        };
+      } catch {
+        return dataset;
+      }
+    },
+    [accessToken],
+  );
+
   const refreshBrandResources = useCallback(async (
     brandId: string,
     scope: "core" | "full" = "core",
   ) => {
     const dataset = await fetchBrandDataset(brandId, { scope });
+    const hydratedDataset = await hydrateDatasetIntegrations(brandId, dataset);
     if (activeBrandIdRef.current === brandId) {
-      setActiveBrand(dataset);
+      setActiveBrand(hydratedDataset);
     }
-    return dataset;
-  }, []);
+    return hydratedDataset;
+  }, [hydrateDatasetIntegrations]);
 
   const cancelScheduledFullHydration = useCallback(() => {
     if (typeof window === "undefined") {
@@ -538,6 +578,7 @@ export function BrandOpsProvider({
         setBrands([]);
         setActiveBrandId(null);
         setActiveBrand(null);
+        setRequiresBrandSelection(false);
         setIsBrandHydrating(false);
         setFinancialReportFiltered(null);
         setFinancialReportHistorical(null);
@@ -558,6 +599,7 @@ export function BrandOpsProvider({
         setProfile(workspace.profile);
         setBrands(workspace.brands);
         setActiveBrandId(workspace.activeBrandId);
+        setRequiresBrandSelection(workspace.requiresBrandSelection);
         setErrorMessage(null);
       } catch (error) {
         console.warn("Failed to load workspace:", error);
@@ -565,6 +607,7 @@ export function BrandOpsProvider({
         setBrands([]);
         setActiveBrandId(null);
         setActiveBrand(null);
+        setRequiresBrandSelection(false);
         setFinancialReportFiltered(null);
         setFinancialReportHistorical(null);
         setErrorMessage(
@@ -597,9 +640,10 @@ export function BrandOpsProvider({
       setIsBrandHydrating(true);
       setFinancialReportFiltered(null);
       setFinancialReportHistorical(null);
+      setRequiresBrandSelection(false);
       setActiveBrandId(brandId);
       if (typeof window !== "undefined" && userId) {
-        persistStoredActiveBrandId(userId, brandId);
+        markSessionBrandSelectionConfirmed(userId, brandId);
       }
     },
     [userId],
@@ -712,6 +756,7 @@ export function BrandOpsProvider({
       selectedPeriod,
       selectedPeriodLabel: getPeriodLabel(selectedPeriod, customDateRange),
       customDateRange,
+      requiresBrandSelection,
       setActiveBrandId: handleSetActiveBrandId,
       setSelectedPeriod,
       setCustomDateRange,
@@ -740,6 +785,7 @@ export function BrandOpsProvider({
       signOut: async () => {
         if (typeof window !== "undefined" && userId) {
           clearStoredActiveBrandId(userId);
+          clearSessionBrandSelectionConfirmation(userId);
         }
         const { error } = await supabase.auth.signOut();
         if (error) {
@@ -756,6 +802,7 @@ export function BrandOpsProvider({
         const refreshedWorkspace = await hydrateWorkspace(userId, brandId);
         setBrands(refreshedWorkspace.brands);
         setActiveBrandId(brandId);
+        setRequiresBrandSelection(false);
         await refreshBrandResources(brandId, "full");
         await refreshSummaryResources(brandId, { includeHistorical: true });
         setErrorMessage(null);
@@ -906,6 +953,7 @@ export function BrandOpsProvider({
       isBrandHydrating,
       isLoading,
       profile,
+      requiresBrandSelection,
       customDateRange,
       selectedPeriod,
       session,

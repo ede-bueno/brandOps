@@ -13,6 +13,10 @@ export function getBrandContextStorageKey(userId: string) {
   return `brandops.active-brand.${userId}`;
 }
 
+export function getBrandSelectionSessionKey(userId: string) {
+  return `brandops.brand-selection-confirmed.${userId}`;
+}
+
 export function readStoredActiveBrandId(userId: string) {
   if (typeof window === "undefined") {
     return null;
@@ -37,6 +41,31 @@ export function clearStoredActiveBrandId(userId: string) {
   window.localStorage.removeItem(getBrandContextStorageKey(userId));
 }
 
+export function hasSessionBrandSelectionConfirmation(userId: string) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.sessionStorage.getItem(getBrandSelectionSessionKey(userId)) === "1";
+}
+
+export function markSessionBrandSelectionConfirmed(userId: string, brandId: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.setItem(getBrandSelectionSessionKey(userId), "1");
+  persistStoredActiveBrandId(userId, brandId);
+}
+
+export function clearSessionBrandSelectionConfirmation(userId: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.removeItem(getBrandSelectionSessionKey(userId));
+}
+
 export async function hydrateWorkspace(
   userId: string,
   currentBrandId: string | null,
@@ -44,19 +73,32 @@ export async function hydrateWorkspace(
   profile: UserProfile;
   brands: BrandWorkspaceOption[];
   activeBrandId: string | null;
+  requiresBrandSelection: boolean;
 }> {
-  const [profile, brands] = await Promise.all([fetchUserProfile(userId), fetchAccessibleBrands()]);
+  const profile = await fetchUserProfile(userId);
+  const brands = await fetchAccessibleBrands({
+    userId,
+    role: profile.role,
+  });
   const storedBrandId = readStoredActiveBrandId(userId);
+  const hasConfirmedSelection = hasSessionBrandSelectionConfirmation(userId);
+
+  const hasCurrentBrand =
+    Boolean(currentBrandId) && brands.some((brand) => brand.id === currentBrandId);
+  const hasStoredBrand =
+    Boolean(storedBrandId) && brands.some((brand) => brand.id === storedBrandId);
+  const requiresBrandSelection = brands.length > 1 && !hasCurrentBrand && !hasConfirmedSelection;
 
   const activeBrandId =
-    (currentBrandId && brands.some((brand) => brand.id === currentBrandId) && currentBrandId) ||
-    (storedBrandId && brands.some((brand) => brand.id === storedBrandId) && storedBrandId) ||
-    brands[0]?.id ||
+    (hasCurrentBrand && currentBrandId) ||
+    (!requiresBrandSelection && hasStoredBrand && storedBrandId) ||
+    (!requiresBrandSelection && brands[0]?.id) ||
     null;
 
   return {
     profile,
     brands,
     activeBrandId,
+    requiresBrandSelection,
   };
 }

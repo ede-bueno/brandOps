@@ -160,6 +160,40 @@ function getNavigationContext(pathname: string) {
   };
 }
 
+function getNavigationGroup(pathname: string) {
+  return (
+    navigationGroups.find((group) =>
+      flattenNavItems(group.items).some((item) => isRouteActive(pathname, item.href)),
+    ) ?? navigationGroups[0]
+  );
+}
+
+function getWorkspaceTabs(pathname: string) {
+  const group = getNavigationGroup(pathname);
+  const activeParent =
+    group.items.find(
+      (item) =>
+        isRouteActive(pathname, item.href) ||
+        (item.children ?? []).some((child) => isRouteActive(pathname, child.href)),
+    ) ?? null;
+
+  if (activeParent?.children?.length) {
+    return activeParent.children.map((child) => ({
+      href: child.href,
+      label: child.label,
+    }));
+  }
+
+  if (group.items.length > 1) {
+    return group.items.map((item) => ({
+      href: item.href,
+      label: item.label,
+    }));
+  }
+
+  return [];
+}
+
 function buildShellAlerts(
   telemetry: AtlasOrbContextTelemetry,
   activeBrandName: string,
@@ -336,10 +370,12 @@ function SidebarGroup({
   group,
   pathname,
   onNavigate,
+  collapsed = false,
 }: {
   group: NavGroup;
   pathname: string;
   onNavigate: (href: AppRoute) => void;
+  collapsed?: boolean;
 }) {
   const [openBranchHref, setOpenBranchHref] = useState<string | null>(null);
   const activeBranchHref =
@@ -349,7 +385,7 @@ function SidebarGroup({
 
   return (
     <section className="atlas-sidebar-block">
-      <p className="atlas-sidebar-heading">{group.label}</p>
+      {!collapsed ? <p className="atlas-sidebar-heading">{group.label}</p> : null}
       <div className="atlas-sidebar-links">
         {group.items.map((item) => {
           const Icon = item.icon;
@@ -372,13 +408,16 @@ function SidebarGroup({
                   className="atlas-sidebar-link brandops-navlink"
                   data-active={itemActive ? "true" : "false"}
                   data-context={hasActiveChild ? "true" : "false"}
+                  data-collapsed={collapsed ? "true" : "false"}
                   aria-current={itemActive ? "page" : undefined}
+                  aria-label={item.label}
+                  title={item.label}
                 >
                   <Icon size={15} />
-                  <span>{item.label}</span>
+                  {!collapsed ? <span>{item.label}</span> : null}
                 </Link>
 
-                {hasChildren ? (
+                {hasChildren && !collapsed ? (
                   <button
                     type="button"
                     className="atlas-sidebar-branch-trigger"
@@ -397,7 +436,7 @@ function SidebarGroup({
                 ) : null}
               </div>
 
-              {hasChildren && branchExpanded ? (
+              {hasChildren && branchExpanded && !collapsed ? (
                 <div className="atlas-sidebar-branch-children">
                   {item.children?.map((child) => {
                     const ChildIcon = child.icon;
@@ -437,6 +476,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("atlas.sidebar.collapsed") === "1";
+  });
   const [isMobileViewport, setIsMobileViewport] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.innerWidth < 1024;
@@ -462,6 +505,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setCustomDateRange,
     setSelectedPeriod,
     signOut,
+    requiresBrandSelection,
   } = useBrandOps();
 
   const selectedBrandName =
@@ -475,6 +519,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   const navigationContext = useMemo(() => getNavigationContext(pathname), [pathname]);
+  const workspaceTabs = useMemo(() => getWorkspaceTabs(pathname), [pathname]);
 
   const atlasOrbTelemetry = useMemo<AtlasOrbContextTelemetry>(() => {
     const mediaIntegration = activeBrand?.integrations.find((integration) => integration.provider === "meta");
@@ -542,6 +587,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem("atlas.sidebar.collapsed", isSidebarCollapsed ? "1" : "0");
+  }, [isSidebarCollapsed]);
+
+  useEffect(() => {
     function handleOrbSyncLoading(event: Event) {
       const customEvent = event as CustomEvent<AtlasOrbSyncLoadingDetail>;
       setOrbSyncLoading(customEvent.detail ?? { active: false });
@@ -583,9 +636,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     return null;
   }
 
-  const isSuperAdmin = profile?.role === "SUPER_ADMIN";
+  const shouldForceBrandSelection = requiresBrandSelection && !activeBrandId && brands.length > 1;
 
-  if (isSuperAdmin && !activeBrandId) {
+  if (shouldForceBrandSelection) {
     return (
       <div className="atlas-brand-picker">
         <div className="atlas-brand-picker-copy">
@@ -594,7 +647,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             Escolha a operação que deseja abrir
           </h1>
           <p className="text-base leading-7 text-on-surface-variant">
-            O Atlas trabalha por marca ativa. Entre no workspace certo e siga a leitura com o recorte adequado.
+            Você tem mais de uma marca disponível nesta conta. Escolha a operação certa antes de abrir a análise.
           </p>
         </div>
 
@@ -630,15 +683,29 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="brandops-shell min-h-[100svh] bg-background text-on-surface">
       <div className="atlas-shell-layout">
-        <aside className="atlas-sidebar-shell hidden lg:flex">
+        <aside
+          className="atlas-sidebar-shell hidden lg:flex"
+          data-collapsed={isSidebarCollapsed ? "true" : "false"}
+        >
           <div className="atlas-sidebar-brand">
             <div className="atlas-sidebar-brandmark">
               <AtlasMark />
             </div>
-            <div className="min-w-0">
-              <p className="atlas-sidebar-brandtitle">{BRANDING.appName}</p>
-              <p className="atlas-sidebar-brandmeta">Console operacional</p>
-            </div>
+            {!isSidebarCollapsed ? (
+              <div className="min-w-0">
+                <p className="atlas-sidebar-brandtitle">{BRANDING.appName}</p>
+                <p className="atlas-sidebar-brandmeta">Console operacional</p>
+              </div>
+            ) : null}
+            <button
+              type="button"
+              className="atlas-sidebar-collapse"
+              onClick={() => setIsSidebarCollapsed((current) => !current)}
+              aria-label={isSidebarCollapsed ? "Expandir navegação lateral" : "Recolher navegação lateral"}
+              title={isSidebarCollapsed ? "Expandir navegação lateral" : "Recolher navegação lateral"}
+            >
+              <ChevronDown size={14} className={isSidebarCollapsed ? "-rotate-90" : "rotate-90"} />
+            </button>
           </div>
 
           <div className="atlas-sidebar-nav">
@@ -648,11 +715,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                 group={group}
                 pathname={pathname}
                 onNavigate={handleShellNavigate}
+                collapsed={isSidebarCollapsed}
               />
             ))}
           </div>
 
-          <div className="atlas-sidebar-footer">
+          <div className="atlas-sidebar-footer" data-collapsed={isSidebarCollapsed ? "true" : "false"}>
             <div className="atlas-sidebar-footer-card" aria-label="Período ativo">
               <span className="atlas-sidebar-footer-label">Recorte</span>
               <span className="atlas-sidebar-footer-value">{selectedPeriodLabel}</span>
@@ -692,7 +760,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <span className="atlas-topbar-meta-divider" />
                     <span className="atlas-topbar-meta-text">{selectedPeriodLabel}</span>
                   </div>
-                  <p className="atlas-topbar-description">{orbCopy.description}</p>
                 </div>
               </div>
 
@@ -772,6 +839,26 @@ export function AppShell({ children }: { children: ReactNode }) {
             {errorMessage ? (
               <div className="atlas-topbar-error">
                 {errorMessage}
+              </div>
+            ) : null}
+
+            {workspaceTabs.length ? (
+              <div className="atlas-topbar-tabs" role="tablist" aria-label={`Navegação de ${navigationContext.groupLabel}`}>
+                {workspaceTabs.map((tab) => {
+                  const active = isRouteActive(pathname, tab.href);
+                  return (
+                    <Link
+                      key={tab.href}
+                      href={tab.href}
+                      prefetch={false}
+                      className="atlas-topbar-tab"
+                      data-active={active ? "true" : "false"}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      {tab.label}
+                    </Link>
+                  );
+                })}
               </div>
             ) : null}
           </header>

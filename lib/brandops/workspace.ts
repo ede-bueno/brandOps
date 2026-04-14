@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { UserProfile } from "./types";
+import type { UserProfile, UserRole } from "./types";
 import {
   isMissingBrandGovernanceSchemaError,
   resolveBrandGovernance,
@@ -57,7 +57,105 @@ export async function fetchUserProfile(userId: string) {
   } satisfies UserProfile;
 }
 
-export async function fetchAccessibleBrands() {
+export async function fetchAccessibleBrands(options: {
+  userId: string;
+  role: UserRole;
+}) {
+  if (options.role !== "SUPER_ADMIN") {
+    const { data, error } = await supabase
+      .from("brand_members")
+      .select(
+        `
+          brand_id,
+          brands (
+            id,
+            name,
+            created_at,
+            updated_at,
+            plan_tier,
+            feature_flags
+          )
+        `,
+      )
+      .eq("user_id", options.userId);
+
+    if (error) {
+      if (!isMissingBrandGovernanceSchemaError(error)) {
+        throw new Error(
+          getReadableErrorMessage(error, "Não foi possível carregar as marcas acessíveis."),
+        );
+      }
+
+      const fallback = await supabase
+        .from("brand_members")
+        .select(
+          `
+            brand_id,
+            brands (
+              id,
+              name,
+              created_at,
+              updated_at
+            )
+          `,
+        )
+        .eq("user_id", options.userId);
+
+      if (fallback.error) {
+        throw new Error(
+          getReadableErrorMessage(
+            fallback.error,
+            "Não foi possível carregar as marcas acessíveis.",
+          ),
+        );
+      }
+
+      return (fallback.data ?? [])
+        .map((membership) => {
+          const brand = Array.isArray(membership.brands)
+            ? membership.brands[0]
+            : membership.brands;
+
+          if (!brand) {
+            return null;
+          }
+
+          return {
+            ...brand,
+            governance: resolveBrandGovernance({
+              brandId: brand.id,
+              brandName: brand.name,
+            }),
+          };
+        })
+        .filter((brand): brand is NonNullable<typeof brand> => Boolean(brand))
+        .sort((left, right) => left.name.localeCompare(right.name, "pt-BR"));
+    }
+
+    return (data ?? [])
+      .map((membership) => {
+        const brand = Array.isArray(membership.brands)
+          ? membership.brands[0]
+          : membership.brands;
+
+        if (!brand) {
+          return null;
+        }
+
+        return {
+          ...brand,
+          governance: resolveBrandGovernance({
+            brandId: brand.id,
+            brandName: brand.name,
+            planTier: brand.plan_tier,
+            featureFlags: brand.feature_flags,
+          }),
+        };
+      })
+      .filter((brand): brand is NonNullable<typeof brand> => Boolean(brand))
+      .sort((left, right) => left.name.localeCompare(right.name, "pt-BR"));
+  }
+
   const { data, error } = await supabase
     .from("brands")
     .select("id, name, created_at, updated_at, plan_tier, feature_flags")

@@ -241,9 +241,29 @@ function getModeOptions(provider: IntegrationProvider) {
   ] as const;
 }
 
+function isProviderConfigurationReady(
+  provider: IntegrationProvider,
+  state: IntegrationFormState[IntegrationProvider],
+) {
+  if (provider === "meta") {
+    return state.mode === "api" && Boolean(state.hasApiKey && state.adAccountId);
+  }
+
+  if (provider === "ga4") {
+    return state.mode === "api" && Boolean(state.hasApiKey && state.propertyId);
+  }
+
+  if (provider === "gemini") {
+    return state.mode === "api" && Boolean(state.hasApiKey);
+  }
+
+  return true;
+}
+
 function resolveProviderHealth(
   provider: IntegrationProvider,
   integration: BrandIntegrationConfig | undefined,
+  state: IntegrationFormState[IntegrationProvider],
   governance: BrandGovernance,
 ) {
   if (provider === "gemini" && !governance.featureFlags.atlasAi) {
@@ -288,6 +308,22 @@ function resolveProviderHealth(
 
   const hasCredential = Boolean(integration.settings.hasApiKey);
 
+  if (provider === "meta" && integration.mode === "api" && !state.adAccountId) {
+    return {
+      label: "Conta pendente",
+      description: "A API está habilitada, mas falta informar a conta de anúncios da loja.",
+      tone: "warning" as const,
+    };
+  }
+
+  if (provider === "ga4" && integration.mode === "api" && !state.propertyId) {
+    return {
+      label: "Property pendente",
+      description: "A API está habilitada, mas falta informar o Property ID da loja.",
+      tone: "warning" as const,
+    };
+  }
+
   if (integration.mode === "api" && !hasCredential) {
     return {
       label: "Credencial pendente",
@@ -320,7 +356,7 @@ function resolveSuggestedWorkspace(
 
   for (const provider of priorityOrder) {
     const integration = integrations.get(provider);
-    const health = resolveProviderHealth(provider, integration, governance);
+    const health = resolveProviderHealth(provider, integration, formState[provider], governance);
 
     if (health.label === "Com erro") {
       return { provider, section: "sync" as const };
@@ -579,17 +615,19 @@ export default function IntegrationsPage() {
     meta: {
       title: "Fallback e contingência",
       body:
-        currentState.mode === "api"
+        isProviderConfigurationReady("meta", currentState)
           ? `A ${activeBrand.name} opera Meta por API${currentState.manualFallback ? " com contingência manual" : ""}${currentState.catalogId ? " e catálogo vinculado." : "."}`
-          : `A ${activeBrand.name} segue em fluxo manual da Meta.`,
+          : currentState.mode === "api"
+            ? `A ${activeBrand.name} ainda não está pronta para sincronizar Meta por API. Falta concluir a configuração da própria loja.`
+            : `A ${activeBrand.name} segue em fluxo manual da Meta.`,
       cta: null,
     },
     ga4: {
       title: "Propriedade configurada",
       body:
-        currentState.propertyId
+        isProviderConfigurationReady("ga4", currentState)
           ? `A propriedade ${currentState.propertyId} já está ligada à marca ${activeBrand.name}.`
-          : `A marca ${activeBrand.name} ainda não possui Property ID informado.`,
+          : `A marca ${activeBrand.name} ainda não está pronta para sincronizar o GA4. Revise Property ID e credencial da loja.`,
       cta: currentState.propertyId ? "/traffic" : null,
     },
     gemini: {
@@ -825,7 +863,12 @@ export default function IntegrationsPage() {
 
     return null;
   })();
-  const activeHealth = resolveProviderHealth(activeProvider, current, activeBrand.governance);
+  const activeHealth = resolveProviderHealth(
+    activeProvider,
+    current,
+    currentState,
+    activeBrand.governance,
+  );
   const ActiveProviderIcon = providerIcons[activeProvider];
   function renderHeaderActions() {
     if (activeProvider === "gemini") {
