@@ -11,40 +11,53 @@ import {
   Loader2,
   UploadCloud,
 } from "lucide-react";
+import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import { EmptyState } from "@/components/EmptyState";
+import { InlineNotice, PageHeader, SectionHeading, StackItem, SurfaceCard } from "@/components/ui-shell";
 import type { CsvFileKind, IntegrationMode, IntegrationProvider } from "@/lib/brandops/types";
 
 type ImportStatus = "idle" | "running" | "success" | "error";
+type ImportTab = "upload" | "checklist" | "history";
 
-const sourceDefinitions: Array<{
+type SourceInfo = {
   kind: CsvFileKind;
   label: string;
   description: string;
   provider?: IntegrationProvider;
-}> = [
+};
+
+type RecentImportRow = SourceInfo & {
+  totalRuns: number;
+  totalRows: number;
+  totalInserted: number;
+  lastImportedAt: string;
+  modeLabel: string;
+};
+
+const sourceDefinitions: SourceInfo[] = [
   {
     kind: "lista_pedidos",
     label: "Lista de Pedidos",
-    description: "Fonte principal da camada comercial da INK.",
+    description: "Base comercial principal da INK.",
     provider: "ink",
   },
   {
     kind: "lista_itens",
     label: "Lista de Itens",
-    description: "Base real de peças vendidas e aplicação de CMV.",
+    description: "Peças vendidas e custo histórico.",
     provider: "ink",
   },
   {
     kind: "pedidos_pagos",
     label: "Pedidos Pagos",
-    description: "Detalhamento operacional por linha/SKU.",
+    description: "Detalhe operacional por venda.",
     provider: "ink",
   },
   {
     kind: "meta",
     label: "Meta Export",
-    description: "Investimento e performance de mídia paga.",
+    description: "Investimento e desempenho de mídia.",
     provider: "meta",
   },
   {
@@ -54,13 +67,22 @@ const sourceDefinitions: Array<{
   },
 ];
 
+const importTabs: Array<{ key: ImportTab; label: string }> = [
+  { key: "upload", label: "Enviar" },
+  { key: "checklist", label: "Checklist" },
+  { key: "history", label: "Histórico" },
+];
+
 function formatDate(value?: string | null) {
-  if (!value) {
-    return "—";
-  }
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(`${value}T00:00:00`));
+}
+
+function formatDateTime(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
-  }).format(new Date(`${value}T00:00:00`));
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
 function getProviderMode(
@@ -79,6 +101,7 @@ export default function ImportPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [status, setStatus] = useState<ImportStatus>("idle");
   const [message, setMessage] = useState("");
+  const [activeTab, setActiveTab] = useState<ImportTab>("upload");
 
   const onDrop = (acceptedFiles: File[]) => {
     setFiles(acceptedFiles);
@@ -95,10 +118,10 @@ export default function ImportPage() {
   const handleImport = async () => {
     try {
       setStatus("running");
-      setMessage("Importando arquivos, cruzando duplicados e atualizando a base da marca...");
+      setMessage("Processando os CSVs e consolidando a base da marca...");
       await importFiles(activeBrand?.name || "", files);
       setStatus("success");
-      setMessage("Importação concluída com sucesso. Os CSVs duplicados foram consolidados pela chave de pedido/ocorrência.");
+      setMessage("Importação concluída. Duplicidades foram consolidadas pela chave correta.");
       setFiles([]);
     } catch (error) {
       setStatus("error");
@@ -150,290 +173,446 @@ export default function ImportPage() {
     [activeBrand?.files, sourceChecklist],
   );
 
-  const progressPercent = stats
-    ? Math.round((completedSources / sourceChecklist.length) * 100)
-    : 0;
+  const progressPercent = stats ? Math.round((completedSources / sourceChecklist.length) * 100) : 0;
+  const primaryAction = files.length
+    ? "Conferir fila e iniciar importação"
+    : progressPercent >= 100
+      ? "Base pronta para novas janelas"
+      : "Completar checklist da base";
+  const metaMode =
+    activeBrand && getProviderMode(activeBrand, "meta") === "api" ? "API + fallback" : "CSV manual";
+
+  const recentImports = useMemo<RecentImportRow[]>(() => {
+    if (!activeBrand) {
+      return [];
+    }
+
+    return sourceChecklist
+      .map((source) => {
+        const info = activeBrand.files[source.kind];
+        if (!info) {
+          return null;
+        }
+
+        return {
+          ...source,
+          totalRuns: info.totalRuns,
+          totalRows: info.totalRows,
+          totalInserted: info.totalInserted,
+          lastImportedAt: info.lastImportedAt,
+          modeLabel:
+            source.provider === "meta" && getProviderMode(activeBrand, source.provider) === "api"
+              ? "API + fallback"
+              : source.provider === "ga4" && getProviderMode(activeBrand, source.provider) === "api"
+                ? "API"
+                : source.provider === "meta" && getProviderMode(activeBrand, source.provider) === "disabled"
+                  ? "Desabilitado"
+                  : "CSV manual",
+        } satisfies RecentImportRow;
+      })
+      .filter((entry): entry is RecentImportRow => Boolean(entry))
+      .sort((left, right) => right.lastImportedAt.localeCompare(left.lastImportedAt));
+  }, [activeBrand, sourceChecklist]);
 
   if (activeBrand && isBrandHydrating && !Object.keys(activeBrand.files).length) {
     return (
-      <div className="space-y-6">
+      <div className="atlas-page-stack-compact">
         <PageHeader
           eyebrow="Integração de dados"
           title="Importação"
           description={`Carregando o histórico de importações da loja ${activeBrand.name}.`}
-          badge="Hidratando dados"
         />
-        <div className="space-y-6 animate-pulse">
-          <div className="h-52 rounded-3xl bg-surface-container" />
-          <div className="grid gap-4 xl:grid-cols-5">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-28 rounded-2xl bg-surface-container" />
-            ))}
+        <div className="atlas-page-stack animate-pulse">
+          <div className="h-40 rounded-3xl bg-surface-container" />
+          <div className="grid gap-4 xl:grid-cols-2">
+            <div className="h-[420px] rounded-3xl bg-surface-container" />
+            <div className="h-[420px] rounded-3xl bg-surface-container" />
           </div>
         </div>
       </div>
     );
   }
 
+  if (!activeBrand) {
+    return (
+      <EmptyState
+        title="Nenhuma marca selecionada"
+        description="Escolha uma loja para importar e consolidar os arquivos da operação."
+      />
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="atlas-page-stack-compact">
       <PageHeader
         eyebrow="Integração de dados"
-        title="Importação"
-        description="Suba os CSVs exportados por janela de tempo. O BrandOps consolida os arquivos por chave de pedido/ocorrência, evita duplicidade e mantém o histórico já saneado no banco."
+        title="Console de importação"
+        description="Envie arquivos, confira a fila e mantenha a base íntegra sem espalhar decisões pela operação."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <span className="atlas-inline-metric">{activeBrand.name}</span>
+            <span className="atlas-inline-metric">{progressPercent}% consolidado</span>
+          </div>
+        }
       />
 
-      {activeBrand && stats && (
-        <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <SurfaceCard className="p-0 overflow-hidden">
+        <div className="flex flex-col gap-4 border-b border-outline p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary-container text-secondary">
+              <DatabaseZap size={22} />
+            </div>
+            <div>
+              <p className="eyebrow">Base ativa</p>
+              <h2 className="font-headline text-lg font-semibold tracking-tight text-on-surface">
+                {activeBrand.name}
+              </h2>
+              <p className="mt-1 text-sm text-on-surface-variant">
+                {progressPercent}% do checklist padrão já consolidado.
+              </p>
+            </div>
+          </div>
+
+          <div className="min-w-[220px]">
+            <div className="mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+              <span>Saúde da base</span>
+              <span>{progressPercent}%</span>
+            </div>
+            <div className="h-2.5 overflow-hidden rounded-full bg-surface-container-high">
+              <div
+                className="h-full rounded-full bg-secondary transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4 pt-4">
+          <div className="brandops-subtabs">
+            {importTabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className="brandops-subtab"
+                data-active={activeTab === tab.key}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </SurfaceCard>
+
+      <section className="atlas-kpi-grid xl:grid-cols-4">
+        <AnalyticsKpiCard
+          label="Rodadas"
+          value={String(stats?.totalRuns ?? 0)}
+          description="Total de importações registradas pela marca."
+          tone="info"
+        />
+        <AnalyticsKpiCard
+          label="Linhas"
+          value={(stats?.totalRows ?? 0).toLocaleString("pt-BR")}
+          description="Volume total lido por CSV ao longo do histórico."
+          tone="default"
+        />
+        <AnalyticsKpiCard
+          label="Consolidação"
+          value={String(progressPercent)}
+          description="Percentual do checklist padrão já consolidado."
+          tone="positive"
+        />
+        <AnalyticsKpiCard
+          label="Período"
+          value={`${formatDate(stats?.firstOrderDate)} - ${formatDate(stats?.lastOrderDate)}`}
+          description="Janela comercial coberta pela base ativa."
+          tone="default"
+        />
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow="Próximo movimento"
+          title={primaryAction}
+          description="A melhor ação agora para manter a base íntegra e pronta para leitura."
+          tone="info"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Cobertura atual"
+          title={`${completedSources}/${sourceChecklist.length} fontes consolidadas`}
+          description="Quanto do checklist padrão já está coberto nesta marca."
+          tone={progressPercent >= 100 ? "positive" : "warning"}
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Modo Meta"
+          title={metaMode}
+          description="O canal Meta continua aceitando contingência por CSV quando necessário."
+          tone="default"
+        />
+      </section>
+
+      {activeTab === "upload" && (
+        <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
           <SurfaceCard className="p-0 overflow-hidden">
-            <div className="flex flex-col gap-5 border-b border-outline p-5 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary-container text-secondary">
-                  <DatabaseZap size={24} />
-                </div>
-                <div>
-                  <p className="eyebrow">Base ativa</p>
-                  <h2 className="font-headline text-2xl font-semibold tracking-tight text-on-surface">
-                    {activeBrand.name}
-                  </h2>
-                  <p className="mt-1 text-sm text-on-surface-variant">
-                    {progressPercent}% do checklist padrão já consolidado.
-                  </p>
-                </div>
+            <div
+              {...getRootProps()}
+              className={`cursor-pointer border-b border-outline px-5 py-8 text-center transition-all ${
+                isDragActive ? "bg-secondary-container/50" : "bg-surface-container-low hover:bg-surface-container"
+              }`}
+            >
+              <input {...getInputProps()} />
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-3xl bg-surface text-secondary shadow-sm">
+                <UploadCloud size={30} />
               </div>
-              <div className="min-w-[220px]">
-                <div className="mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  <span>Saúde da base</span>
-                  <span>{progressPercent}%</span>
-                </div>
-                <div className="h-2.5 overflow-hidden rounded-full bg-surface-container-high">
-                  <div
-                    className="h-full rounded-full bg-secondary transition-all duration-500"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-              </div>
+              <h2 className="mt-4 font-headline text-lg font-semibold tracking-tight text-on-surface">
+                Arraste os CSVs da operação
+              </h2>
+              <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-on-surface-variant">
+                O Atlas identifica o tipo pelo cabeçalho, consolida janelas sobrepostas e evita duplicidade.
+              </p>
             </div>
 
-            <div className="grid gap-3 p-5 sm:grid-cols-2 xl:grid-cols-4">
-              <article className="panel-muted p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Rodadas importadas
-                </p>
-                <p className="mt-2 font-headline text-2xl font-semibold text-on-surface">
-                  {stats.totalRuns}
-                </p>
-              </article>
-              <article className="panel-muted p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Linhas processadas
-                </p>
-                <p className="mt-2 font-headline text-2xl font-semibold text-on-surface">
-                  {stats.totalRows.toLocaleString("pt-BR")}
-                </p>
-              </article>
-              <article className="panel-muted p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Primeiro pedido
-                </p>
-                <p className="mt-2 text-lg font-semibold text-on-surface">
-                  {formatDate(stats.firstOrderDate)}
-                </p>
-              </article>
-              <article className="panel-muted p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Último pedido
-                </p>
-                <p className="mt-2 text-lg font-semibold text-on-surface">
-                  {formatDate(stats.lastOrderDate)}
-                </p>
-              </article>
+            <div className="p-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <SectionHeading
+                title="Fila"
+                description="Só o que está pronto para entrar agora."
+                aside={<span className="atlas-inline-metric">{files.length} arquivo(s)</span>}
+              />
+                <button
+                  onClick={handleImport}
+                  disabled={status === "running" || !files.length}
+                  className="brandops-button brandops-button-primary"
+                >
+                  {status === "running" ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Importando
+                    </>
+                  ) : (
+                    "Iniciar importação"
+                  )}
+                </button>
+              </div>
+
+              {files.length ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {files.map((file) => (
+                    <StackItem
+                      key={`${file.name}-${file.size}`}
+                      title={<span className="truncate">{file.name}</span>}
+                      description={`${(file.size / 1024).toFixed(1)} KB pronto para leitura`}
+                      aside={<FileCheck2 size={16} className="text-secondary" />}
+                      tone="info"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <InlineNotice tone="info" icon={<UploadCloud size={16} />}>
+                  <p className="text-sm leading-6">Nenhum arquivo selecionado ainda.</p>
+                </InlineNotice>
+              )}
+
+              {message && (
+                <InlineNotice
+                  className="mt-4"
+                  tone={status === "error" ? "error" : status === "success" ? "success" : "info"}
+                  icon={
+                    status === "running" ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : status === "success" ? (
+                      <CheckCircle2 size={18} />
+                    ) : (
+                      <AlertCircle size={18} />
+                    )
+                  }
+                >
+                  <p className="text-sm leading-6">{message}</p>
+                </InlineNotice>
+              )}
             </div>
           </SurfaceCard>
 
-          <SurfaceCard className="flex flex-col justify-between gap-4">
-              <SectionHeading
-                title="Regra operacional"
-                description="Você pode subir 2025 e 2026 em blocos. O sistema consolida por número do pedido e preserva saneamentos já registrados."
+          <SurfaceCard className="flex flex-col gap-4">
+            <SectionHeading
+              title="Guia rápido"
+              description="Regras curtas para importar sem ruído."
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <AnalyticsKpiCard
+                label="Checklist pronto"
+                value={`${completedSources}/${sourceChecklist.length}`}
+                description="Fontes já consolidadas na base ativa."
+                tone={progressPercent >= 100 ? "positive" : "info"}
               />
-              <div className="space-y-3 text-sm text-on-surface-variant">
-                <p>
-                  `Lista de Pedidos` é a fonte principal da camada comercial da INK.
-                </p>
-                <p>
-                  `Lista de Itens` é a base real de peças vendidas e do CMV histórico.
-                </p>
-                <p>
-                  `Meta Export` continua aceito como contingência mesmo quando a loja estiver em modo API.
-                </p>
+              <AnalyticsKpiCard
+                label="Janela coberta"
+                value={`${formatDate(stats?.firstOrderDate)} - ${formatDate(stats?.lastOrderDate)}`}
+                description="Faixa comercial já reconhecida na marca."
+                tone="default"
+              />
+            </div>
+            <details className="atlas-disclosure" open={!files.length}>
+              <summary>
+                <span>Abrir regras rápidas</span>
+                <span>3</span>
+              </summary>
+            <div className="mt-4 atlas-component-stack-compact text-sm text-on-surface-variant">
+                <p>`Lista de Pedidos` mantém a linha comercial principal da INK.</p>
+                <p>`Lista de Itens` alimenta peças vendidas e CMV histórico.</p>
+                <p>`Meta Export` segue como contingência quando a loja opera em API.</p>
               </div>
-            </SurfaceCard>
+            </details>
+          </SurfaceCard>
         </section>
       )}
 
-      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <SurfaceCard className="p-0 overflow-hidden">
-          <div
-            {...getRootProps()}
-            className={`cursor-pointer border-b border-outline px-6 py-10 text-center transition-all ${
-              isDragActive
-                ? "bg-secondary-container/50"
-                : "bg-surface-container-low hover:bg-surface-container"
-            }`}
-          >
-            <input {...getInputProps()} />
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-surface text-secondary shadow-sm">
-              <UploadCloud size={34} />
-            </div>
-            <h2 className="mt-5 font-headline text-2xl font-semibold tracking-tight text-on-surface">
-              Arraste os CSVs da operação
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-on-surface-variant">
-              Suba quantos arquivos forem necessários. O BrandOps identifica o tipo pelo cabeçalho, consolida janelas sobrepostas e evita duplicações no banco.
-            </p>
-          </div>
-
-          <div className="p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <SectionHeading
-                title="Fila pronta para processar"
-                description="Os arquivos enviados ficam aqui até o disparo da importação."
-              />
-              <button
-                onClick={handleImport}
-                disabled={status === "running" || !activeBrand || files.length === 0}
-                className="brandops-button brandops-button-primary"
-              >
-                {status === "running" ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Importando
-                  </>
-                ) : (
-                  "Iniciar importação"
-                )}
-              </button>
-            </div>
-
-            {files.length ? (
-              <div className="grid gap-3 md:grid-cols-2">
-                {files.map((file) => (
-                  <article
-                    key={`${file.name}-${file.size}`}
-                    className="panel-muted flex items-center gap-4 p-4"
-                  >
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary-container text-secondary">
-                      <FileCheck2 size={18} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-on-surface">{file.name}</p>
-                      <p className="mt-1 text-xs text-on-surface-variant">
-                        {(file.size / 1024).toFixed(1)} KB
-                      </p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-outline p-5 text-sm text-on-surface-variant">
-                Nenhum arquivo selecionado ainda.
-              </div>
-            )}
-
-            {message && (
-              <div
-                className={`mt-4 flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm ${
-                  status === "error"
-                    ? "border-error/20 bg-error-container/30 text-on-error-container"
-                    : "border-secondary/20 bg-secondary-container/30 text-on-secondary-container"
-                }`}
-              >
-                {status === "running" ? (
-                  <Loader2 size={18} className="mt-0.5 animate-spin" />
-                ) : status === "success" ? (
-                  <CheckCircle2 size={18} className="mt-0.5" />
-                ) : (
-                  <AlertCircle size={18} className="mt-0.5" />
-                )}
-                <span>{message}</span>
-              </div>
-            )}
-          </div>
-        </SurfaceCard>
-
-        <SurfaceCard className="p-0 overflow-hidden">
-          <div className="border-b border-outline p-6">
-            <SectionHeading
-              title="Checklist consolidado"
-              description="Soma de todas as importações bem-sucedidas por grupo de arquivo."
+      {activeTab === "checklist" && (
+        <section className="grid gap-4 xl:grid-cols-[1fr_1.05fr]">
+          <SurfaceCard className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
+            <AnalyticsKpiCard
+              label="Rodadas importadas"
+              value={String(stats?.totalRuns ?? 0)}
+              description="Total acumulado de execuções por fonte."
+              tone="info"
             />
-          </div>
+            <AnalyticsKpiCard
+              label="Linhas processadas"
+              value={(stats?.totalRows ?? 0).toLocaleString("pt-BR")}
+              description="Volume total lido e consolidado."
+              tone="default"
+            />
+            <AnalyticsKpiCard
+              label="Primeiro pedido"
+              value={formatDate(stats?.firstOrderDate)}
+              description="Início do histórico comercial."
+              tone="default"
+            />
+            <AnalyticsKpiCard
+              label="Último pedido"
+              value={formatDate(stats?.lastOrderDate)}
+              description="Fim da janela já reconhecida."
+              tone="default"
+            />
+          </SurfaceCard>
 
-          <div className="space-y-3 p-6">
-            {sourceChecklist.map((source) => {
-              const info = activeBrand?.files[source.kind];
-              const providerMode = getProviderMode(activeBrand, source.provider);
-              const modeHint =
-                source.provider === "meta" && providerMode === "api"
-                  ? "API ativa com fallback manual"
-                  : source.provider === "ga4" && providerMode === "api"
-                    ? "API ativa"
-                    : providerMode === "manual_csv"
-                      ? "Upload manual"
+          <SurfaceCard className="p-0 overflow-hidden">
+            <div className="border-b border-outline p-4">
+              <SectionHeading
+                title="Checklist consolidado"
+                description="Resumo por arquivo, já obedecendo o modo de cada integração."
+              />
+            </div>
+
+              <div className="atlas-component-stack-compact p-4">
+              {sourceChecklist.map((source) => {
+                const info = activeBrand.files[source.kind];
+                const providerMode = getProviderMode(activeBrand, source.provider);
+                const modeHint =
+                  source.provider === "meta" && providerMode === "api"
+                    ? "API ativa com fallback manual"
+                    : source.provider === "ga4" && providerMode === "api"
+                      ? "API ativa"
                       : providerMode === "disabled"
                         ? "Desabilitado"
-                        : null;
-              return (
-                <article
-                  key={source.kind}
-                  className={`rounded-2xl border p-4 ${
-                    info
-                      ? "border-secondary/20 bg-surface-container-low"
-                      : "border-dashed border-outline bg-transparent"
-                  }`}
-                >
-                  <div className="flex items-start gap-4">
-                    <div
-                      className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
-                        info
-                          ? "bg-secondary-container text-secondary"
-                          : "bg-surface-container-high text-on-surface-variant"
-                      }`}
-                    >
-                      {info ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <p className="font-semibold text-on-surface">{source.label}</p>
-                          <p className="mt-1 text-sm text-on-surface-variant">
-                            {source.description}
+                        : "CSV manual";
+
+                return (
+                  <StackItem
+                    key={source.kind}
+                    title={source.label}
+                    description={
+                      info ? (
+                        <div className="atlas-component-stack-tight">
+                          <p>{source.description}</p>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-secondary">
+                            {modeHint}
                           </p>
-                          {modeHint ? (
-                            <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-secondary">
-                              {modeHint}
-                            </p>
-                          ) : null}
+                          <div className="grid gap-1 pt-1 sm:grid-cols-3">
+                            <span>{info.totalRows.toLocaleString("pt-BR")} linhas lidas</span>
+                            <span>{info.totalInserted.toLocaleString("pt-BR")} consolidadas</span>
+                            <span>Última em {formatDateTime(info.lastImportedAt)}</span>
+                          </div>
                         </div>
-                        <span className="status-chip">
-                          {info ? `${info.totalRuns} rodada(s)` : "Pendente"}
-                        </span>
+                      ) : (
+                        <div className="atlas-component-stack-tight">
+                          <p>{source.description}</p>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
+                            {modeHint}
+                          </p>
+                        </div>
+                      )
+                    }
+                    aside={<span className="atlas-inline-metric">{info ? `${info.totalRuns} rodada(s)` : "Pendente"}</span>}
+                    tone={info ? "positive" : "warning"}
+                  />
+                );
+              })}
+            </div>
+          </SurfaceCard>
+        </section>
+      )}
+
+      {activeTab === "history" && (
+        <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+          <SurfaceCard className="p-0 overflow-hidden">
+            <div className="border-b border-outline p-4">
+              <SectionHeading
+                title="Últimas importações"
+                description="O que entrou por último na base, sem precisar abrir cada fonte."
+              />
+            </div>
+
+              <div className="atlas-component-stack-compact p-4">
+              {recentImports.length ? (
+                recentImports.map((row) => (
+                  <StackItem
+                    key={`${row.kind}-${row.lastImportedAt}`}
+                    title={row.label}
+                    description={
+                      <div className="atlas-component-stack-tight">
+                        <p>{row.description}</p>
+                        <div className="grid gap-1 pt-1 sm:grid-cols-3">
+                          <span>{row.totalRuns} rodada(s)</span>
+                          <span>{row.totalRows.toLocaleString("pt-BR")} linhas</span>
+                          <span>{formatDateTime(row.lastImportedAt)}</span>
+                        </div>
                       </div>
-                      {info ? (
-                        <div className="mt-3 grid gap-2 text-sm text-on-surface-variant sm:grid-cols-3">
-                          <p>{info.totalRows.toLocaleString("pt-BR")} linhas lidas</p>
-                          <p>{info.totalInserted.toLocaleString("pt-BR")} linhas consolidadas</p>
-                          <p>Última em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(info.lastImportedAt))}</p>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </SurfaceCard>
-      </section>
+                    }
+                    aside={<span className="atlas-inline-metric">{row.modeLabel}</span>}
+                    tone="info"
+                  />
+                ))
+              ) : (
+                <InlineNotice tone="info" icon={<Clock3 size={16} />}>
+                  <p className="text-sm leading-6">Nenhuma importação consolidada ainda para a marca atual.</p>
+                </InlineNotice>
+              )}
+            </div>
+          </SurfaceCard>
+
+          <SurfaceCard className="flex flex-col gap-4">
+            <SectionHeading
+              title="Leitura rápida"
+              description="Fontes já consideradas no cálculo operacional."
+            />
+            <div className="grid gap-3">
+              {sourceChecklist.map((source) => {
+                const info = activeBrand.files[source.kind];
+                return (
+                  <StackItem
+                    key={`${source.kind}-summary`}
+                    title={source.label}
+                    description={source.description}
+                    aside={<span className="atlas-inline-metric">{info ? "Ativo" : "Pendente"}</span>}
+                    tone={info ? "positive" : "warning"}
+                  />
+                );
+              })}
+            </div>
+          </SurfaceCard>
+        </section>
+      )}
     </div>
   );
 }

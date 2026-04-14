@@ -2,30 +2,30 @@ import { Bell, Search } from "lucide-react";
 
 export function Header() {
   return (
-    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
+    <header className="flex h-16 items-center justify-between border-b border-outline bg-surface px-6 text-on-surface">
       <div className="flex items-center gap-4 flex-1">
-        <div className="relative w-64">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+        <div className="brandops-input-with-icon w-64">
+          <Search className="h-4 w-4" />
           <input
             type="text"
             placeholder="Buscar..."
-            className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="brandops-input w-full text-sm"
           />
         </div>
       </div>
 
       <div className="flex items-center gap-4">
-        <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors relative">
+        <button className="relative rounded-full p-2 text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface">
           <Bell size={20} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-error"></span>
         </button>
 
-        <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
+        <div className="flex items-center gap-3 border-l border-outline pl-4">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium text-slate-900">Admin User</p>
-            <p className="text-xs text-slate-500">Super Admin</p>
+            <p className="text-sm font-medium text-on-surface">Admin User</p>
+            <p className="text-xs text-on-surface-variant">Super Admin</p>
           </div>
-          <div className="w-8 h-8 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container font-bold">
             A
           </div>
         </div>

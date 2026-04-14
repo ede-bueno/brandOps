@@ -34,7 +34,7 @@ export function Sidebar() {
               className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all hover:bg-surface-container-high text-on-surface-variant hover:text-primary font-medium group"
             >
               <LayoutDashboard size={18} className="text-ink-muted group-hover:text-primary transition-colors" />
-              <span className="text-sm">Control Tower</span>
+          <span className="text-sm">Torre de Controle</span>
             </Link>
           </div>
         </div>

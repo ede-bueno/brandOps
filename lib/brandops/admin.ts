@@ -1,4 +1,8 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  isMissingBrandGovernanceSchemaError,
+  resolveBrandGovernance,
+} from "@/lib/brandops/governance";
 
 function getBearerToken(request: Request) {
   const header = request.headers.get("authorization") ?? "";
@@ -52,10 +56,51 @@ export async function requireSuperAdmin(request: Request) {
 export async function requireBrandAccess(request: Request, brandId: string) {
   const context = await getAuthenticatedContext(request);
 
+  const loadBrandGovernance = async () => {
+    const { data: brand, error: brandError } = await context.supabase
+      .from("brands")
+      .select("id, name, plan_tier, feature_flags")
+      .eq("id", brandId)
+      .maybeSingle();
+
+    if (brandError) {
+      if (isMissingBrandGovernanceSchemaError(brandError)) {
+        const fallback = await context.supabase
+          .from("brands")
+          .select("id, name")
+          .eq("id", brandId)
+          .maybeSingle();
+
+        if (fallback.error || !fallback.data) {
+          throw new Error("Marca não encontrada.");
+        }
+
+        return resolveBrandGovernance({
+          brandId: fallback.data.id,
+          brandName: fallback.data.name,
+        });
+      }
+
+      throw new Error("Marca não encontrada.");
+    }
+
+    if (!brand) {
+      throw new Error("Marca não encontrada.");
+    }
+
+    return resolveBrandGovernance({
+      brandId: brand.id,
+      brandName: brand.name,
+      planTier: brand.plan_tier,
+      featureFlags: brand.feature_flags,
+    });
+  };
+
   if (context.profile.role === "SUPER_ADMIN") {
     return {
       ...context,
       canManageIntegrations: true,
+      brandGovernance: await loadBrandGovernance(),
     };
   }
 
@@ -73,5 +118,6 @@ export async function requireBrandAccess(request: Request, brandId: string) {
   return {
     ...context,
     canManageIntegrations: false,
+    brandGovernance: await loadBrandGovernance(),
   };
 }

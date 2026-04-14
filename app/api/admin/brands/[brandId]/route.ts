@@ -1,5 +1,17 @@
 import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/brandops/admin";
+import {
+  isMissingBrandGovernanceSchemaError,
+  normalizeBrandGovernance,
+  normalizeBrandPlanTier,
+  resolveBrandGovernance,
+} from "@/lib/brandops/governance";
+
+function stripGovernanceColumns<T extends Record<string, unknown>>(payload: T) {
+  return Object.fromEntries(
+    Object.entries(payload).filter(([key]) => key !== "plan_tier" && key !== "feature_flags"),
+  );
+}
 
 export async function PATCH(
   request: Request,
@@ -9,6 +21,17 @@ export async function PATCH(
     const { supabase } = await requireSuperAdmin(request);
     const { brandId } = await params;
     const body = await request.json();
+
+    const governancePayload =
+      body.featureFlags === undefined && body.planTier === undefined
+        ? {}
+        : {
+            plan_tier: normalizeBrandPlanTier(body.planTier),
+            feature_flags: normalizeBrandGovernance({
+              planTier: body.planTier,
+              featureFlags: body.featureFlags,
+            }).featureFlags,
+          };
 
     const payload = {
       name: body.name ? String(body.name).trim() : undefined,
@@ -25,20 +48,56 @@ export async function PATCH(
       postal_code: body.postalCode === undefined ? undefined : String(body.postalCode || "").trim() || null,
       tax_id: body.taxId === undefined ? undefined : String(body.taxId || "").trim() || null,
       notes: body.notes === undefined ? undefined : String(body.notes || "").trim() || null,
+      ...governancePayload,
     };
 
-    const { data, error } = await supabase
+    const response = await supabase
       .from("brands")
       .update(payload)
       .eq("id", brandId)
-      .select("id, name, updated_at")
+      .select("id, name, updated_at, plan_tier, feature_flags")
       .single();
+
+    let data = response.data;
+    let error = response.error;
+
+    if (error && isMissingBrandGovernanceSchemaError(error)) {
+      const fallbackPayload = stripGovernanceColumns(payload);
+      const fallbackResponse = await supabase
+        .from("brands")
+        .update(fallbackPayload)
+        .eq("id", brandId)
+        .select("id, name, updated_at")
+        .single();
+
+      if (fallbackResponse.error) {
+        error = fallbackResponse.error;
+        data = null;
+      } else {
+        error = null;
+        data = {
+          ...fallbackResponse.data,
+          plan_tier: null,
+          feature_flags: null,
+        };
+      }
+    }
 
     if (error || !data) {
       throw error ?? new Error("Não foi possível atualizar a loja.");
     }
 
-    return NextResponse.json({ brand: data });
+    return NextResponse.json({
+      brand: {
+        ...data,
+        governance: resolveBrandGovernance({
+          brandId: data.id,
+          brandName: data.name,
+          planTier: data.plan_tier,
+          featureFlags: data.feature_flags,
+        }),
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Falha ao atualizar loja." },

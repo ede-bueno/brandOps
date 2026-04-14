@@ -1,17 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   BarChart3,
-  ChevronsLeft,
-  ChevronsRight,
+  BookOpen,
+  ChevronDown,
+  CircleHelp,
   FileUp,
   Images,
   LayoutDashboard,
   Landmark,
+  Loader2,
   LogOut,
   Menu,
   PlugZap,
@@ -21,143 +23,436 @@ import {
   Sparkles,
   Tags,
   TrendingUp,
+  UserRound,
   X,
 } from "lucide-react";
-import { useBrandOps } from "./BrandOpsProvider";
-import type { PeriodFilter } from "@/lib/brandops/types";
 
-/* -------------------------------------------------------
-   Navigation Groups
-   ------------------------------------------------------- */
+import { useBrandOps } from "./BrandOpsProvider";
+import { ThemeToggle } from "./ThemeToggle";
+import { AtlasOrb } from "./AtlasOrb";
+import { AtlasMark } from "./AtlasMark";
+import { AtlasOrbRadarPanel, type AtlasOrbRadarTelemetry } from "./AtlasOrbRadarPanel";
+import { PeriodCommandMenu } from "./PeriodCommandMenu";
+import { BRANDING } from "@/lib/branding";
+import { useSanitizationPendingCount } from "@/hooks/use-sanitization-summary";
+import {
+  ATLAS_ORB_SYNC_LOADING_EVENT,
+  type AtlasOrbSyncLoadingDetail,
+} from "@/lib/brandops/orb-sync-loading";
+import { buildControlAlerts, summarizeControlAlert } from "@/lib/brandops/control-alerts";
+import { APP_ROUTES, type AppRoute } from "@/lib/brandops/routes";
 
 interface NavItem {
-  href: string;
+  href: AppRoute;
   label: string;
   icon: React.ElementType;
+  children?: NavItem[];
 }
 
-const operationsNav: NavItem[] = [
-  { href: "/dashboard", label: "Control Tower", icon: LayoutDashboard },
-  { href: "/dre", label: "DRE Consolidado", icon: Receipt },
-  { href: "/cost-center", label: "Lançamentos DRE", icon: Landmark },
-  { href: "/cmv", label: "Custos (CMV)", icon: Tags },
-  { href: "/sales", label: "Vendas", icon: BarChart3 },
-];
-
-const acquisitionNav: NavItem[] = [
-  { href: "/media", label: "Performance Mídia", icon: TrendingUp },
-  { href: "/traffic", label: "Tráfego Digital", icon: Activity },
-  { href: "/product-insights", label: "Insights Categorias", icon: Sparkles },
-];
-
-const catalogNav: NavItem[] = [
-  { href: "/feed", label: "Catálogo", icon: Images },
-  { href: "/import", label: "ETL / Importação", icon: FileUp },
-  { href: "/sanitization", label: "Saneamento", icon: ShieldAlert },
-];
-
-const adminNavigation: NavItem[] = [
-  { href: "/admin/stores", label: "Acessos", icon: Settings2 },
-  { href: "/integrations", label: "Integrações", icon: PlugZap },
-];
-
-const periodOptions: Array<{ value: PeriodFilter; label: string }> = [
-  { value: "today", label: "Hoje" },
-  { value: "7d", label: "7 dias" },
-  { value: "14d", label: "14 dias" },
-  { value: "30d", label: "30 dias" },
-  { value: "month", label: "Mês atual" },
-  { value: "lastMonth", label: "Mês passado" },
-  { value: "all", label: "Todo período" },
-  { value: "custom", label: "Período livre" },
-];
-
-/* -------------------------------------------------------
-   NavSection
-   ------------------------------------------------------- */
-
-function NavSection({
-  items,
-  pathname,
-  collapsed,
-  onNavigate,
-}: {
+interface NavGroup {
+  label: string;
   items: NavItem[];
-  pathname: string;
-  collapsed: boolean;
-  onNavigate?: () => void;
+}
+
+type ShellAlertTone = "negative" | "warning" | "info";
+
+interface ShellAlert {
+  href: AppRoute;
+  label: string;
+  tone: ShellAlertTone;
+}
+
+interface AtlasOrbContextTelemetry extends AtlasOrbRadarTelemetry {
+  hasMediaData: boolean;
+}
+
+const navigationGroups: NavGroup[] = [
+  {
+    label: "Controle",
+    items: [{ href: APP_ROUTES.dashboard, label: "Torre de Controle", icon: LayoutDashboard }],
+  },
+  {
+    label: "Financeiro",
+    items: [
+      { href: APP_ROUTES.dre, label: "DRE Consolidado", icon: Receipt },
+      { href: APP_ROUTES.sales, label: "Receita e Vendas", icon: BarChart3 },
+      { href: APP_ROUTES.costCenter, label: "Lançamentos DRE", icon: Landmark },
+      { href: APP_ROUTES.cmv, label: "Custos e CMV", icon: Tags },
+    ],
+  },
+  {
+    label: "Aquisição",
+    items: [
+      {
+        href: APP_ROUTES.media,
+        label: "Mídia e Performance",
+        icon: TrendingUp,
+        children: [
+          { href: APP_ROUTES.mediaExecutive, label: "Visão executiva", icon: TrendingUp },
+          { href: APP_ROUTES.mediaRadar, label: "Radar", icon: TrendingUp },
+          { href: APP_ROUTES.mediaCampaigns, label: "Campanhas", icon: TrendingUp },
+        ],
+      },
+      { href: APP_ROUTES.traffic, label: "Tráfego Digital", icon: Activity },
+      {
+        href: APP_ROUTES.productInsights,
+        label: "Produtos e Insights",
+        icon: Sparkles,
+        children: [
+          { href: APP_ROUTES.productInsightsExecutive, label: "Visão executiva", icon: Sparkles },
+          { href: APP_ROUTES.productInsightsRadar, label: "Radar", icon: Sparkles },
+          { href: APP_ROUTES.productInsightsDetail, label: "Detalhamento", icon: Sparkles },
+        ],
+      },
+    ],
+  },
+  {
+    label: "Operação",
+    items: [
+      { href: APP_ROUTES.feed, label: "Catálogo", icon: Images },
+      { href: APP_ROUTES.import, label: "ETL e Importação", icon: FileUp },
+      { href: APP_ROUTES.sanitization, label: "Saneamento", icon: ShieldAlert },
+    ],
+  },
+  {
+    label: "Plataforma",
+    items: [
+      { href: APP_ROUTES.integrations, label: "Integrações", icon: PlugZap },
+      { href: APP_ROUTES.settings, label: "Central Estratégica", icon: Settings2 },
+      { href: APP_ROUTES.integrationsTutorials, label: "Tutoriais", icon: BookOpen },
+      { href: APP_ROUTES.adminStores, label: "Acessos", icon: UserRound },
+      { href: APP_ROUTES.help, label: "Ajuda", icon: CircleHelp },
+    ],
+  },
+];
+
+const mobilePrimaryNav = [
+  { href: APP_ROUTES.dashboard, label: "Torre", icon: LayoutDashboard },
+  { href: APP_ROUTES.dre, label: "DRE", icon: Receipt },
+  { href: APP_ROUTES.media, label: "Mídia", icon: TrendingUp },
+  { href: APP_ROUTES.feed, label: "Catálogo", icon: Images },
+  { href: APP_ROUTES.settings, label: "Central", icon: Settings2 },
+];
+
+function isRouteActive(pathname: string, href: AppRoute) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function flattenNavItems(items: NavItem[]): NavItem[] {
+  return items.flatMap((item) => [item, ...(item.children ?? [])]);
+}
+
+function getNavigationContext(pathname: string) {
+  for (const group of navigationGroups) {
+    for (const item of flattenNavItems(group.items)) {
+      if (isRouteActive(pathname, item.href)) {
+        return {
+          groupLabel: group.label,
+          itemLabel: item.label,
+        };
+      }
+    }
+  }
+
+  return {
+    groupLabel: "Controle",
+    itemLabel: "Torre de Controle",
+  };
+}
+
+function buildShellAlerts(
+  telemetry: AtlasOrbContextTelemetry,
+  activeBrandName: string,
+): ShellAlert[] {
+  return buildControlAlerts({
+    pendingSanitizationCount: telemetry.pendingSanitizationCount,
+    mediaIntegrationError: telemetry.mediaIntegrationError,
+    ga4IntegrationError: telemetry.ga4IntegrationError,
+    contributionAfterMedia: telemetry.contributionAfterMedia,
+    netResult: telemetry.netResult,
+    variableCostShare: telemetry.variableCostShare,
+    grossRoas: telemetry.grossRoas,
+  }).map((alert) => ({
+    href: alert.href,
+    label:
+      alert.id === "sanitization"
+        ? `${summarizeControlAlert(alert)} em ${activeBrandName}`
+        : summarizeControlAlert(alert),
+    tone:
+      alert.tone === "positive"
+        ? "info"
+        : alert.tone,
+  })).slice(0, 3);
+}
+
+function getOrbCopy(pathname: string, brandName: string, periodLabel: string) {
+  if (pathname.startsWith(APP_ROUTES.dashboard)) {
+      return {
+        status: "monitorando a operação",
+        description: `Atlas acompanha a ${brandName} no recorte ${periodLabel.toLowerCase()} para puxar atenção só para o que realmente pede ação.`,
+        hints: [
+        "Comece pelo alerta dominante e só depois aprofunde o restante.",
+        "Quando a operação tensiona, Atlas puxa primeiro margem, resultado e base.",
+        "Se o recorte estiver estável, avance para produto, mídia e conversão.",
+        ],
+      };
+  }
+
+  if (pathname.startsWith(APP_ROUTES.media)) {
+      return {
+        status: "observando a mídia",
+        description: `Atlas cruza gasto, retorno e sinais de performance da ${brandName} para decidir ajuste, revisão ou escala.`,
+        hints: [
+        "O foco aqui é decidir verba, criativo e prioridade de campanha.",
+        "Confirme a saúde da fonte antes de tomar decisão de escala.",
+        "Saia do agregado só quando o sinal já estiver claro.",
+        ],
+      };
+  }
+
+  if (pathname.startsWith(APP_ROUTES.traffic)) {
+      return {
+        status: "lendo o funil",
+        description: `Atlas acompanha intenção, fricção e monetização da ${brandName} no período ativo.`,
+        hints: [
+        "Procure primeiro onde o funil trava ou perde monetização.",
+        "Vá da leitura executiva ao detalhe só quando houver sinal de atrito.",
+        "O objetivo não é replicar GA4, e sim traduzir em decisão.",
+        ],
+      };
+  }
+
+  if (pathname.startsWith(APP_ROUTES.integrations) || pathname.startsWith(APP_ROUTES.settings)) {
+      return {
+        status: "sincronizando a plataforma",
+        description: `Atlas organiza integrações, parâmetros e prontidão operacional da ${brandName}.`,
+        hints: [
+        "Toda configuração precisa deixar claro impacto e próximo passo.",
+        "Fonte saudável vem antes de qualquer recomendação.",
+        "Corrija o bloqueio operacional antes de voltar para a análise.",
+        ],
+      };
+  }
+
+  return {
+    status: "escutando o sistema",
+    description: `Atlas acompanha a ${brandName} no recorte ${periodLabel.toLowerCase()} e mantém contexto sobre a área atual.`,
+    hints: [
+      "Use o Orb para abrir o próximo caminho, não para substituir a tela atual.",
+      "Alertas, navegação e período precisam contar a mesma história.",
+      "Se o contexto não estiver claro, volte para a Torre de Controle.",
+    ],
+  };
+}
+
+function ShellAccountMenu({
+  open,
+  fullName,
+  email,
+  onToggle,
+  onClose,
+  onSignOut,
+  renderThemeToggle,
+}: {
+  open: boolean;
+  fullName?: string | null;
+  email?: string | null;
+  onToggle: () => void;
+  onClose: () => void;
+  onSignOut: () => void;
+  renderThemeToggle?: ReactNode;
 }) {
-  return (
-    <nav className="space-y-0.5">
-      {items.map((item) => {
-        const Icon = item.icon;
-        const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            title={collapsed ? item.label : undefined}
-            className={`brandops-navlink flex items-center rounded-md px-2 py-1.5 text-[13px] transition-all border border-transparent ${
-              collapsed ? "justify-center" : "gap-3"
-            } ${
-              isActive
-                ? "bg-surface-container-highest text-primary font-medium"
-                : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
-            }`}
-          >
-            <span
-              className={`inline-flex items-center justify-center ${
-                isActive ? "text-primary" : "text-on-surface-variant"
-              }`}
-            >
-              <Icon size={14} />
-            </span>
-            {!collapsed && <span className="truncate">{item.label}</span>}
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
-function NavGroupLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
-  if (collapsed) return <div className="my-1.5 h-px bg-outline mx-2" />;
-  return (
-    <p className="mb-1 mt-4 px-2 text-[9px] font-bold uppercase tracking-[0.2em] text-ink-muted first:mt-0">
-      {label}
-    </p>
-  );
-}
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
 
-function SidebarSkeleton() {
+    function handlePointerDown(event: PointerEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        onClose();
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose, open]);
+
   return (
-    <div className="space-y-1.5 p-2">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="skeleton h-7 w-full rounded-md" />
-      ))}
+    <div ref={menuRef} className="relative z-40">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="atlas-user-trigger"
+        aria-expanded={open}
+        aria-label="Abrir menu da conta"
+      >
+        <span className="atlas-user-avatar">
+          <UserRound size={14} />
+        </span>
+        <span className="atlas-user-copy">
+          <span className="atlas-user-label">Conta</span>
+          <span className="atlas-user-name">{fullName ?? "Conta Atlas"}</span>
+        </span>
+        <ChevronDown size={14} className={`atlas-user-chevron ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open ? (
+        <div className="atlas-user-menu">
+          <div className="atlas-user-menu-head">
+            <p className="atlas-user-menu-name">{fullName ?? "Conta Atlas"}</p>
+            <p className="atlas-user-menu-email">{email ?? "Sessão ativa"}</p>
+          </div>
+
+          {renderThemeToggle ? (
+            <div className="atlas-user-menu-row">
+              <span>Aparência</span>
+              {renderThemeToggle}
+            </div>
+          ) : null}
+
+          <button type="button" onClick={onSignOut} className="brandops-button brandops-button-secondary w-full justify-center">
+            <LogOut size={14} />
+            Sair
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
 
-/* -------------------------------------------------------
-   AppShell
-   ------------------------------------------------------- */
+function SidebarGroup({
+  group,
+  pathname,
+  onNavigate,
+}: {
+  group: NavGroup;
+  pathname: string;
+  onNavigate: (href: AppRoute) => void;
+}) {
+  const [openBranchHref, setOpenBranchHref] = useState<string | null>(null);
+  const activeBranchHref =
+    group.items.find((item) =>
+      (item.children ?? []).some((child) => isRouteActive(pathname, child.href)),
+    )?.href ?? null;
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <section className="atlas-sidebar-block">
+      <p className="atlas-sidebar-heading">{group.label}</p>
+      <div className="atlas-sidebar-links">
+        {group.items.map((item) => {
+          const Icon = item.icon;
+          const itemActive = isRouteActive(pathname, item.href);
+          const hasChildren = Boolean(item.children?.length);
+          const hasActiveChild = (item.children ?? []).some((child) => isRouteActive(pathname, child.href));
+          const branchExpanded =
+            hasChildren && ((openBranchHref ?? activeBranchHref) === item.href || hasActiveChild);
+
+          return (
+            <div key={item.href} className="atlas-sidebar-node">
+              <div className="atlas-sidebar-branch-row">
+                <Link
+                  href={item.href}
+                  prefetch={false}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onNavigate(item.href);
+                  }}
+                  className="atlas-sidebar-link brandops-navlink"
+                  data-active={itemActive ? "true" : "false"}
+                  data-context={hasActiveChild ? "true" : "false"}
+                  aria-current={itemActive ? "page" : undefined}
+                >
+                  <Icon size={15} />
+                  <span>{item.label}</span>
+                </Link>
+
+                {hasChildren ? (
+                  <button
+                    type="button"
+                    className="atlas-sidebar-branch-trigger"
+                    aria-expanded={branchExpanded}
+                    aria-label={
+                      branchExpanded
+                        ? `Recolher submenu de ${item.label}`
+                        : `Expandir submenu de ${item.label}`
+                    }
+                    onClick={() =>
+                      setOpenBranchHref((current) => (current === item.href ? null : item.href))
+                    }
+                  >
+                    <ChevronDown size={13} />
+                  </button>
+                ) : null}
+              </div>
+
+              {hasChildren && branchExpanded ? (
+                <div className="atlas-sidebar-branch-children">
+                  {item.children?.map((child) => {
+                    const ChildIcon = child.icon;
+                    const childActive = isRouteActive(pathname, child.href);
+                    return (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        prefetch={false}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          onNavigate(child.href);
+                        }}
+                        className="atlas-sidebar-link atlas-sidebar-sublink brandops-navlink"
+                        data-active={childActive ? "true" : "false"}
+                        aria-current={childActive ? "page" : undefined}
+                      >
+                        <ChildIcon size={12} />
+                        <span>{child.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname() ?? "/";
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("brandops.sidebar.collapsed") === "1";
-  });
+  const showFloatingOrb = false;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < 1024;
+  });
+  const [orbSyncLoading, setOrbSyncLoading] = useState<AtlasOrbSyncLoadingDetail>({
+    active: false,
+  });
+
   const {
     activeBrand,
     activeBrandId,
     brands,
     customDateRange,
     errorMessage,
+    filteredBrand,
+    financialReportFiltered,
     profile,
     selectedPeriod,
     selectedPeriodLabel,
@@ -168,10 +463,62 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setSelectedPeriod,
     signOut,
   } = useBrandOps();
+
   const selectedBrandName =
     activeBrand?.name ??
     brands.find((brand) => brand.id === activeBrandId)?.name ??
     "Nenhuma marca";
+
+  const pendingSanitizationCount = useSanitizationPendingCount(
+    activeBrandId,
+    session?.access_token,
+  );
+
+  const navigationContext = useMemo(() => getNavigationContext(pathname), [pathname]);
+
+  const atlasOrbTelemetry = useMemo<AtlasOrbContextTelemetry>(() => {
+    const mediaIntegration = activeBrand?.integrations.find((integration) => integration.provider === "meta");
+    const ga4Integration = activeBrand?.integrations.find((integration) => integration.provider === "ga4");
+    const geminiIntegration = activeBrand?.integrations.find((integration) => integration.provider === "gemini");
+
+    return {
+      pendingSanitizationCount,
+      hasGa4Data: Boolean(filteredBrand?.ga4DailyPerformance.length),
+      hasMediaData: Boolean(filteredBrand?.media.length),
+      hasCatalogData: Boolean(activeBrand?.catalog.length),
+      mediaIntegrationError: mediaIntegration?.lastSyncStatus === "error",
+      ga4IntegrationError: ga4Integration?.lastSyncStatus === "error",
+      geminiEnabled: geminiIntegration?.mode === "api",
+      contributionAfterMedia: financialReportFiltered?.total.contributionAfterMedia ?? null,
+      netResult: financialReportFiltered?.total.netResult ?? null,
+      variableCostShare: financialReportFiltered?.analysis.shares.variableCostShare ?? null,
+      grossRoas: financialReportFiltered?.total.grossRoas ?? null,
+    };
+  }, [activeBrand, filteredBrand, financialReportFiltered, pendingSanitizationCount]);
+
+  const shellAlerts = useMemo(
+    () => buildShellAlerts(atlasOrbTelemetry, selectedBrandName),
+    [atlasOrbTelemetry, selectedBrandName],
+  );
+
+  const orbCopy = useMemo(
+    () => getOrbCopy(pathname, selectedBrandName, selectedPeriodLabel),
+    [pathname, selectedBrandName, selectedPeriodLabel],
+  );
+
+  const orbAttentionLevel =
+    shellAlerts.some((alert) => alert.tone === "negative" || alert.tone === "warning")
+      ? "alert"
+      : shellAlerts.some((alert) => alert.tone === "info")
+        ? "notice"
+        : "idle";
+
+  function handleShellNavigate(href: AppRoute) {
+    setIsMobileMenuOpen(false);
+    setIsPeriodMenuOpen(false);
+    setIsUserMenuOpen(false);
+    router.push(href);
+  }
 
   useEffect(() => {
     if (!isLoading && !session) {
@@ -180,310 +527,427 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [isLoading, router, session]);
 
   useEffect(() => {
-    window.localStorage.setItem("brandops.sidebar.collapsed", isSidebarCollapsed ? "1" : "0");
-  }, [isSidebarCollapsed]);
+    if (typeof window === "undefined") {
+      return undefined;
+    }
 
-  const shouldBlockShell = isLoading && !session;
+    const mediaQuery = window.matchMedia("(max-width: 1023px)");
+    const syncViewport = (event?: MediaQueryListEvent) => {
+      setIsMobileViewport(event ? event.matches : mediaQuery.matches);
+    };
 
-  if (shouldBlockShell) {
+    syncViewport();
+    mediaQuery.addEventListener("change", syncViewport);
+    return () => mediaQuery.removeEventListener("change", syncViewport);
+  }, []);
+
+  useEffect(() => {
+    function handleOrbSyncLoading(event: Event) {
+      const customEvent = event as CustomEvent<AtlasOrbSyncLoadingDetail>;
+      setOrbSyncLoading(customEvent.detail ?? { active: false });
+    }
+
+    window.addEventListener(
+      ATLAS_ORB_SYNC_LOADING_EVENT,
+      handleOrbSyncLoading as EventListener,
+    );
+
+    return () => {
+      window.removeEventListener(
+        ATLAS_ORB_SYNC_LOADING_EVENT,
+        handleOrbSyncLoading as EventListener,
+      );
+    };
+  }, []);
+
+  if (isLoading && !session) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background relative overflow-hidden">
-        {/* Decorative blur elements for modern premium feel */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[80px]" />
-        
-        <div className="relative z-10 flex flex-col items-center gap-6 rounded-3xl border border-outline/50 bg-surface/60 backdrop-blur-xl px-10 py-12 shadow-2xl">
-          <div className="relative flex items-center justify-center w-16 h-16">
-            <div className="absolute inset-0 rounded-full border-[3px] border-primary/20" />
-            <div className="absolute inset-0 rounded-full border-[3px] border-primary border-t-transparent animate-spin" />
-            <Sparkles className="w-6 h-6 text-primary animate-pulse" />
-          </div>
-          
-          <div className="text-center space-y-2">
-            <h3 className="font-headline text-lg font-semibold tracking-tight text-on-surface">
-              Carregando Workspace
-            </h3>
-            <p className="text-[13px] font-medium text-ink-muted max-w-[240px] leading-relaxed">
-              Preparando seus dados financeiros, permissões e cache analítico.
+      <div className="atlas-workspace-loading">
+        <div className="atlas-workspace-loading-card">
+          <AtlasOrb size="lg" />
+          <div className="space-y-2 text-center">
+            <p className="eyebrow">Workspace</p>
+            <h2 className="font-headline text-xl font-semibold tracking-tight text-on-surface">
+              Carregando Atlas
+            </h2>
+            <p className="text-sm leading-6 text-on-surface-variant">
+              Preparando dados, permissões e contexto operacional.
             </p>
-          </div>
-
-          <div className="flex items-center gap-1.5 mt-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "0ms" }} />
-            <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "150ms" }} />
-            <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "300ms" }} />
           </div>
         </div>
       </div>
     );
   }
 
-  if (!session) return null;
+  if (!session) {
+    return null;
+  }
 
   const isSuperAdmin = profile?.role === "SUPER_ADMIN";
 
   if (isSuperAdmin && !activeBrandId) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
-        <div className="w-full max-w-4xl space-y-10">
-          <div className="text-center space-y-3">
-             <p className="eyebrow text-secondary uppercase tracking-[0.3em]">Seleção de Contexto</p>
-             <h1 className="font-headline text-4xl font-semibold tracking-tight text-on-surface lg:text-5xl">
-                Em qual operação deseja entrar hoje?
-             </h1>
-             <p className="text-on-surface-variant max-w-2xl mx-auto">
-                Como Superadmin, você tem acesso a todas as marcas do grupo. 
-                Selecione uma marca para abrir o dashboard e os fluxos de operação específicos.
-             </p>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {brands.map((brand) => (
-              <button
-                key={brand.id}
-                onClick={() => setActiveBrandId(brand.id)}
-                className="brandops-card group flex flex-col items-start p-6 text-left transition-all hover:-translate-y-1 hover:border-secondary/40 hover:bg-secondary/5"
-              >
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary/10 font-headline text-xl font-bold text-secondary transition-colors group-hover:bg-secondary group-hover:text-on-secondary">
-                  {brand.name.substring(0, 2).toUpperCase()}
-                </div>
-                <h3 className="text-lg font-bold text-on-surface">{brand.name}</h3>
-                <p className="mt-1 text-xs text-on-surface-variant font-medium opacity-60">ID: {brand.id.split("-")[0]}</p>
-                <div className="mt-6 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-secondary opacity-0 transition-opacity group-hover:opacity-100">
-                  Acessar Painel
-                  <ChevronsRight size={14} />
-                </div>
-              </button>
-            ))}
-          </div>
-
-          <div className="flex justify-center border-t border-outline pt-8">
-            <button
-              onClick={() => void signOut()}
-              className="brandops-button brandops-button-ghost text-xs uppercase tracking-widest"
-            >
-              <LogOut size={14} />
-              Sair desta conta
-            </button>
-          </div>
+      <div className="atlas-brand-picker">
+        <div className="atlas-brand-picker-copy">
+          <p className="eyebrow">Seleção de contexto</p>
+          <h1 className="font-headline text-4xl font-semibold tracking-tight text-on-surface">
+            Escolha a operação que deseja abrir
+          </h1>
+          <p className="text-base leading-7 text-on-surface-variant">
+            O Atlas trabalha por marca ativa. Entre no workspace certo e siga a leitura com o recorte adequado.
+          </p>
         </div>
+
+        <div className="atlas-brand-picker-grid">
+          {brands.map((brand) => (
+            <button
+              key={brand.id}
+              type="button"
+              onClick={() => setActiveBrandId(brand.id)}
+              className="brandops-card atlas-brand-picker-card"
+            >
+              <span className="atlas-brand-picker-mark">{brand.name.slice(0, 2).toUpperCase()}</span>
+              <div className="space-y-1">
+                <p className="text-base font-semibold text-on-surface">{brand.name}</p>
+                <p className="text-sm text-on-surface-variant">Abrir workspace desta marca</p>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => void signOut()}
+          className="brandops-button brandops-button-ghost mx-auto"
+        >
+          <LogOut size={14} />
+          Sair desta conta
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="brandops-shell min-h-screen bg-background text-on-surface brandops-selection">
-      <div className="flex min-h-screen gap-2 p-2 lg:gap-3 lg:p-3">
-
-        {/* ---- Desktop Sidebar ---- */}
-        <aside
-          className={`brandops-panel sticky top-3 hidden h-[calc(100vh-1.5rem)] shrink-0 flex-col overflow-hidden lg:flex transition-[width] duration-300 ease-in-out ${
-            isSidebarCollapsed ? "w-[64px]" : "w-[220px]"
-          }`}
-        >
-          {/* Header */}
-          <div
-            className={`flex shrink-0 items-center gap-2 border-b border-outline px-3 py-3 ${
-              isSidebarCollapsed ? "flex-col justify-center" : "justify-between"
-            }`}
-          >
-            <div className={`flex min-w-0 items-center gap-2 ${isSidebarCollapsed ? "flex-col" : ""}`}>
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-container text-primary">
-                <Sparkles size={16} />
-              </div>
-              {!isSidebarCollapsed && (
-                <div className="min-w-0">
-                  <p className="eyebrow text-primary">BrandOps</p>
-                  <p className="truncate text-[11px] font-medium text-on-surface-variant">
-                    Op. Multi-marca
-                  </p>
-                </div>
-              )}
+    <div className="brandops-shell min-h-[100svh] bg-background text-on-surface">
+      <div className="atlas-shell-layout">
+        <aside className="atlas-sidebar-shell hidden lg:flex">
+          <div className="atlas-sidebar-brand">
+            <div className="atlas-sidebar-brandmark">
+              <AtlasMark />
             </div>
-            <button
-              onClick={() => setIsSidebarCollapsed((c) => !c)}
-              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-            >
-              {isSidebarCollapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
-            </button>
+            <div className="min-w-0">
+              <p className="atlas-sidebar-brandtitle">{BRANDING.appName}</p>
+              <p className="atlas-sidebar-brandmeta">Console operacional</p>
+            </div>
           </div>
 
-          {/* Nav */}
-          <div className="flex-1 overflow-y-auto px-1.5 py-2">
-            {isLoading ? (
-              <SidebarSkeleton />
-            ) : (
-              <>
-                <NavGroupLabel label="Operação" collapsed={isSidebarCollapsed} />
-                <NavSection items={operationsNav} pathname={pathname} collapsed={isSidebarCollapsed} />
-
-                <NavGroupLabel label="Aquisição" collapsed={isSidebarCollapsed} />
-                <NavSection items={acquisitionNav} pathname={pathname} collapsed={isSidebarCollapsed} />
-
-                <NavGroupLabel label="Catálogo" collapsed={isSidebarCollapsed} />
-                <NavSection items={catalogNav} pathname={pathname} collapsed={isSidebarCollapsed} />
-
-                <NavGroupLabel label="Admin" collapsed={isSidebarCollapsed} />
-                <NavSection
-                  items={adminNavigation}
-                  pathname={pathname}
-                  collapsed={isSidebarCollapsed}
-                />
-              </>
-            )}
+          <div className="atlas-sidebar-nav">
+            {navigationGroups.map((group) => (
+              <SidebarGroup
+                key={group.label}
+                group={group}
+                pathname={pathname}
+                onNavigate={handleShellNavigate}
+              />
+            ))}
           </div>
 
-          {/* Footer */}
-          <div className="shrink-0 border-t border-outline p-2">
-            {!isSidebarCollapsed && (
-              <div className="mb-2 rounded-md bg-surface-container px-2 py-1.5">
-                <p className="truncate text-[11px] font-medium text-on-surface">
-                  {profile?.fullName ?? profile?.email ?? "Usuário"}
-                </p>
-              </div>
-            )}
-            <div className={`flex gap-1 ${isSidebarCollapsed ? "flex-col items-center" : "items-center"}`}>
-              <button
-                onClick={() => void signOut()}
-                className={`brandops-button-ghost flex flex-1 items-center justify-center rounded-md px-2 py-1.5 text-xs ${
-                  isSidebarCollapsed ? "w-8 p-0 h-8" : "gap-2"
-                }`}
-              >
-                <LogOut size={13} />
-                {!isSidebarCollapsed && "Sair"}
-              </button>
+          <div className="atlas-sidebar-footer">
+            <div className="atlas-sidebar-footer-card" aria-label="Período ativo">
+              <span className="atlas-sidebar-footer-label">Recorte</span>
+              <span className="atlas-sidebar-footer-value">{selectedPeriodLabel}</span>
             </div>
           </div>
         </aside>
 
-        {/* ---- Main Content ---- */}
-        <div className="min-w-0 flex-1">
-          {/* Header */}
-          <header className="brandops-panel sticky top-3 z-30 px-3 py-3 lg:px-4">
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsMobileMenuOpen((c) => !c)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-outline bg-surface-container text-on-surface lg:hidden"
-                >
-                  {isMobileMenuOpen ? <X size={15} /> : <Menu size={15} />}
-                </button>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="truncate font-headline text-lg font-semibold tracking-tight text-on-surface">
-                      {selectedBrandName}
-                    </h2>
-                    <span className="status-chip">{selectedPeriodLabel}</span>
+        <div className="atlas-main-stage">
+          <header className="atlas-topbar">
+            <div className="atlas-topbar-main">
+              <div className="atlas-topbar-context">
+                <div className="atlas-topbar-mobile-nav lg:hidden">
+                  <button
+                    type="button"
+                    className="atlas-topbar-menu"
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      setIsPeriodMenuOpen(false);
+                      setIsMobileMenuOpen((open) => !open);
+                    }}
+                    aria-label={isMobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+                  >
+                    {isMobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
+                  </button>
+                  <div className="atlas-topbar-mobile-brandmark">
+                    <AtlasMark size="sm" />
                   </div>
                 </div>
+
+                <div className="min-w-0">
+                  <p className="atlas-topbar-overline">{navigationContext.groupLabel}</p>
+                  <div className="atlas-topbar-title-row">
+                    <h1 className="atlas-topbar-title">{navigationContext.itemLabel}</h1>
+                  </div>
+                  <div className="atlas-topbar-meta">
+                    <span className="atlas-topbar-meta-chip">{selectedBrandName}</span>
+                    <span className="atlas-topbar-meta-divider" />
+                    <span className="atlas-topbar-meta-text">{selectedPeriodLabel}</span>
+                  </div>
+                  <p className="atlas-topbar-description">{orbCopy.description}</p>
+                </div>
+              </div>
+
+              <div className="atlas-topbar-tools">
+                <div className="atlas-topbar-commandbar">
+                  <div className="atlas-shell-select-wrap">
+                    <select
+                      value={activeBrandId ?? ""}
+                      onChange={(event) => {
+                        const nextBrandId = event.target.value;
+                        if (!nextBrandId) {
+                          return;
+                        }
+                        setActiveBrandId(nextBrandId);
+                      }}
+                      className="brandops-input atlas-shell-select"
+                      disabled={!brands.length}
+                      aria-label="Selecionar marca"
+                    >
+                      {!brands.length && <option value="">Nenhuma marca</option>}
+                      {brands.map((brand) => (
+                        <option key={brand.id} value={brand.id}>
+                          {brand.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="atlas-shell-period-wrap">
+                    <PeriodCommandMenu
+                      open={isPeriodMenuOpen}
+                      selectedPeriod={selectedPeriod}
+                      selectedPeriodLabel={selectedPeriodLabel}
+                      customDateRange={customDateRange}
+                      onToggle={() => {
+                        setIsUserMenuOpen(false);
+                        setIsPeriodMenuOpen((open) => !open);
+                      }}
+                      onClose={() => setIsPeriodMenuOpen(false)}
+                      onSelectPeriod={(period) => setSelectedPeriod(period)}
+                      onChangeCustomDateRange={setCustomDateRange}
+                    />
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <div className="brandops-input min-w-[160px]">
-                  <select
-                    value={activeBrandId ?? ""}
-                    onChange={(e) => {
-                      const newId = e.target.value;
-                      if (!newId) return;
-                      if (activeBrandId && newId !== activeBrandId) {
-                        if (window.confirm("Deseja trocar de marca? Os dados da tela atual serão atualizados.")) {
-                          setActiveBrandId(newId);
-                        }
-                      } else {
-                        setActiveBrandId(newId);
-                      }
-                    }}
-                    className="w-full bg-transparent text-xs p-1.5 outline-none font-bold"
-                    disabled={!brands.length}
-                  >
-                    {!brands.length && <option value="">Nenhuma marca...</option>}
-                    {brands.map((brand) => (
-                      <option key={brand.id} value={brand.id} className="bg-surface text-on-surface">
-                        {brand.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                </div>
+                <ShellAccountMenu
+                  open={isUserMenuOpen}
+                  fullName={profile?.fullName}
+                  email={profile?.email}
+                  onToggle={() => {
+                    setIsPeriodMenuOpen(false);
+                    setIsUserMenuOpen((open) => !open);
+                  }}
+                  onClose={() => setIsUserMenuOpen(false)}
+                  onSignOut={() => void signOut()}
+                  renderThemeToggle={<ThemeToggle variant="panel" size="sm" />}
+                />
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-outline pt-3">
-              <div className="brandops-filterbar">
-                {periodOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    data-active={selectedPeriod === opt.value}
-                    className="brandops-filter-pill"
-                    onClick={() => setSelectedPeriod(opt.value)}
+            {shellAlerts.length ? (
+              <div className="atlas-topbar-alerts">
+                {shellAlerts.map((alert) => (
+                  <Link
+                    key={`${alert.href}-${alert.label}`}
+                    href={alert.href}
+                    prefetch={false}
+                    className="atlas-topbar-alert"
+                    data-tone={alert.tone}
                   >
-                    {opt.label}
-                  </button>
+                    {alert.label}
+                  </Link>
                 ))}
               </div>
+            ) : null}
 
-              {selectedPeriod === "custom" && (
-                <div className="grid gap-2 sm:grid-cols-2 xl:max-w-[420px]">
-                  <label className="brandops-input flex items-center gap-2 px-3 py-2 text-xs">
-                    <span className="whitespace-nowrap font-semibold text-on-surface-variant">De</span>
-                    <input
-                      type="date"
-                      value={customDateRange.from}
-                      onChange={(event) =>
-                        setCustomDateRange({
-                          ...customDateRange,
-                          from: event.target.value,
-                        })
-                      }
-                      className="w-full bg-transparent outline-none"
-                    />
-                  </label>
-                  <label className="brandops-input flex items-center gap-2 px-3 py-2 text-xs">
-                    <span className="whitespace-nowrap font-semibold text-on-surface-variant">Até</span>
-                    <input
-                      type="date"
-                      value={customDateRange.to}
-                      onChange={(event) =>
-                        setCustomDateRange({
-                          ...customDateRange,
-                          to: event.target.value,
-                        })
-                      }
-                      className="w-full bg-transparent outline-none"
-                    />
-                  </label>
-                </div>
-              )}
-            </div>
-
-            {/* Mobile Nav */}
-            {isMobileMenuOpen && (
-              <div className="mt-2 rounded-lg border border-outline bg-surface-container-low p-2 lg:hidden">
-                <NavGroupLabel label="Operação" collapsed={false} />
-                <NavSection items={operationsNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
-                <NavGroupLabel label="Aquisição" collapsed={false} />
-                <NavSection items={acquisitionNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
-                <NavGroupLabel label="Catálogo" collapsed={false} />
-                <NavSection items={catalogNav} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
-                <NavGroupLabel label="Admin" collapsed={false} />
-                <NavSection items={adminNavigation} pathname={pathname} collapsed={false} onNavigate={() => setIsMobileMenuOpen(false)} />
-              </div>
-            )}
-
-            {errorMessage && (
-              <div className="mt-2 rounded-md border border-error/20 bg-error/10 px-3 py-2 text-xs text-error">
+            {errorMessage ? (
+              <div className="atlas-topbar-error">
                 {errorMessage}
               </div>
-            )}
+            ) : null}
           </header>
 
-          {/* Children Space */}
-          <main className="min-w-0 px-0.5 py-4 lg:py-5">
-            <div className="space-y-4">{children}</div>
+          <main className="atlas-content-scroll">
+            <div className="atlas-page-stack">{children}</div>
           </main>
         </div>
       </div>
+
+      <nav className="atlas-mobile-tabbar lg:hidden">
+        <div className="atlas-mobile-tabbar-grid">
+          {mobilePrimaryNav.map((item) => {
+            const Icon = item.icon;
+            const active = isRouteActive(pathname, item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                prefetch={false}
+                onClick={(event) => {
+                  event.preventDefault();
+                  handleShellNavigate(item.href);
+                }}
+                className="atlas-mobile-tab"
+                data-active={active ? "true" : "false"}
+              >
+                <Icon size={17} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
+      {isMobileMenuOpen ? (
+        <div className="atlas-mobile-drawer lg:hidden">
+          <button
+            type="button"
+            className="atlas-mobile-drawer-backdrop"
+            aria-label="Fechar menu"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
+          <aside className="atlas-mobile-drawer-panel">
+            <div className="atlas-sidebar-brand border-b border-outline/70">
+              <div className="atlas-sidebar-brandmark">
+                <AtlasMark />
+              </div>
+              <div className="min-w-0">
+                <p className="atlas-sidebar-brandtitle">{BRANDING.appName}</p>
+                <p className="atlas-sidebar-brandmeta">Console operacional</p>
+              </div>
+            </div>
+
+            <div className="border-b border-outline/70 px-4 py-4">
+              <label className="brandops-field-stack">
+                <span className="brandops-field-label">Operação</span>
+                <select
+                  value={activeBrandId ?? ""}
+                  onChange={(event) => {
+                    const nextBrandId = event.target.value;
+                    if (!nextBrandId) {
+                      return;
+                    }
+                    setActiveBrandId(nextBrandId);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="brandops-input atlas-shell-select"
+                  disabled={!brands.length}
+                >
+                  {!brands.length && <option value="">Nenhuma marca</option>}
+                  {brands.map((brand) => (
+                    <option key={brand.id} value={brand.id}>
+                      {brand.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="atlas-mobile-drawer-nav">
+              {navigationGroups.map((group) => (
+                <SidebarGroup
+                  key={group.label}
+                  group={group}
+                  pathname={pathname}
+                  onNavigate={handleShellNavigate}
+                />
+              ))}
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
+      {showFloatingOrb ? (
+        <AtlasOrb
+          key={`atlas-orb-${pathname}`}
+          floating
+          size={isMobileViewport ? "sm" : "md"}
+          title="Atlas"
+          status={orbCopy.status}
+          description={orbCopy.description}
+          panelAlign="left"
+          hints={orbCopy.hints}
+          storageKey={isMobileViewport ? "atlas.orb.position.mobile" : "atlas.orb.position"}
+          attentionLevel={orbAttentionLevel}
+          hoverAlert={shellAlerts[0]?.label ?? orbCopy.description}
+          hoverActions={
+            shellAlerts.length
+              ? shellAlerts.map((alert) => ({
+                  label:
+                    alert.href === APP_ROUTES.dre
+                      ? "Abrir DRE"
+                      : alert.href === APP_ROUTES.dashboardContributionMargin
+                        ? "Abrir margem"
+                        : alert.href === APP_ROUTES.integrations
+                          ? "Revisar fontes"
+                          : alert.href === APP_ROUTES.sanitization
+                            ? "Abrir saneamento"
+                            : alert.href === APP_ROUTES.media
+                              ? "Abrir mídia"
+                              : "Abrir",
+                  href: alert.href,
+                }))
+              : [
+                  { label: "Ir para Integrações", href: APP_ROUTES.integrations },
+                  { label: "Abrir Configurações", href: APP_ROUTES.settings },
+                ]
+          }
+          panelVariant="custom"
+          panelContent={
+            <AtlasOrbRadarPanel
+              telemetry={atlasOrbTelemetry}
+              status={orbCopy.status}
+              hoverAlert={shellAlerts[0]?.label ?? orbCopy.description}
+            />
+          }
+        />
+      ) : null}
+
+      {orbSyncLoading.active ? (
+        <div className="atlas-sync-overlay fixed inset-0 z-[120] flex items-center justify-center">
+          <div className="atlas-sync-stage atlas-tech-grid relative w-[min(92vw,30rem)] px-8 py-10 text-center">
+            <div className="atlas-sync-grid" />
+            <div className="atlas-sync-rings" />
+            <div className="atlas-sync-scanline" />
+            <div className="mx-auto flex w-full max-w-[15rem] flex-col items-center gap-5">
+              <AtlasOrb
+                size="lg"
+                interactive={false}
+                title="Atlas"
+                status="sincronizando"
+                description="Coordenando a leitura da fonte antes de devolver o workspace."
+                attentionLevel="notice"
+                className="atlas-sync-orb"
+              />
+              <div className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
+                  Sincronização global
+                </p>
+                <h3 className="font-headline text-xl font-semibold tracking-tight text-on-surface">
+                  {orbSyncLoading.label ?? "Sincronizando dados"}
+                </h3>
+                <p className="text-sm leading-6 text-on-surface-variant">
+                  O Atlas está consolidando a fonte para devolver a tela no estado certo.
+                </p>
+              </div>
+              <div className="atlas-sync-pill inline-flex items-center gap-2 px-3 py-1.5 text-[11px] font-medium text-on-surface-variant">
+                <Loader2 size={14} className="animate-spin text-primary" />
+                Processando e reconciliando sinais
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -27,6 +27,8 @@
 .playwright/
 .playwright-cli/
 /output/
+/public/_next/
+.next-*.log
 
 # debug
 npm-debug.log*
@@ -35,6 +37,8 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.vercel.pull
+.env.vercel.*
 brandops-ga4-*.json
 *service-account*.json
 

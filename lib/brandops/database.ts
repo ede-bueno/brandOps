@@ -1,11 +1,14 @@
 import { parseUploadedCsv } from "@/lib/brandops/csv";
 import { ingestMetaRaw } from "@/lib/brandops/canonical-ingest";
 import { supabase } from "@/lib/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  AnnualDreReport,
   BrandExpense,
   BrandDataset,
   BrandIntegrationConfig,
   CatalogProduct,
+  CatalogReport,
   CmvCheckpoint,
   CmvMatchType,
   CsvFileKind,
@@ -16,13 +19,24 @@ import type {
   ImportedFileInfo,
   MediaRow,
   MediaDataSource,
+  MediaReport,
   OrderItem,
   PaidOrder,
+  ProductDecisionAction,
+  ProductInsightClassification,
+  ProductInsightSort,
+  ProductInsightsReport,
+  SanitizationReport,
+  SalesDetailReport,
   SalesLine,
   SanitizationReview,
   SanitizationDecision,
-  UserProfile,
+  TrafficReport,
 } from "./types";
+import {
+  isMissingBrandGovernanceSchemaError,
+  resolveBrandGovernance,
+} from "./governance";
 
 const PAGE_SIZE = 1000;
 
@@ -77,6 +91,89 @@ export async function fetchDashboardKpis(
   return data as Record<string, number | null>;
 }
 
+async function getValidAccessToken() {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw sessionError;
+  }
+
+  let accessToken = session?.access_token ?? null;
+  if (!accessToken) {
+    throw new Error("Sessão ausente.");
+  }
+
+  const validateToken = async (token: string) => {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
+
+    return !error && Boolean(user);
+  };
+
+  if (await validateToken(accessToken)) {
+    return accessToken;
+  }
+
+  const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+  accessToken = refreshed.session?.access_token ?? null;
+
+  if (refreshError || !accessToken || !(await validateToken(accessToken))) {
+    await supabase.auth.signOut().catch(() => undefined);
+    throw new Error("Sessão inválida. Faça login novamente.");
+  }
+
+  return accessToken;
+}
+
+async function fetchBrandReportFromApi<T>(
+  brandId: string,
+  reportPath: string,
+  options?: {
+    from?: string | null;
+    to?: string | null;
+    extraParams?: Record<string, string | null | undefined>;
+    errorMessage?: string;
+  },
+): Promise<T> {
+  const accessToken = await getValidAccessToken();
+
+  const searchParams = new URLSearchParams();
+  if (options?.from) {
+    searchParams.set("from", options.from);
+  }
+  if (options?.to) {
+    searchParams.set("to", options.to);
+  }
+  Object.entries(options?.extraParams ?? {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, value);
+    }
+  });
+
+  const query = searchParams.toString();
+  const response = await fetch(
+    `/api/admin/brands/${encodeURIComponent(brandId)}/reports/${reportPath}${query ? `?${query}` : ""}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      cache: "no-store",
+    },
+  );
+
+  const payload = (await response.json()) as T & { error?: string };
+  if (!response.ok) {
+    throw new Error(payload.error || options?.errorMessage || "Não foi possível carregar o relatório.");
+  }
+
+  return payload;
+}
+
 export async function fetchDreMonthly(
   brandId: string,
   yearmonth?: string | null
@@ -87,6 +184,110 @@ export async function fetchDreMonthly(
   });
   if (error) throw error;
   return data || [];
+}
+
+export async function fetchFinancialReport(
+  brandId: string,
+  from?: string | null,
+  to?: string | null,
+): Promise<AnnualDreReport> {
+  return fetchBrandReportFromApi<AnnualDreReport>(brandId, "financial", {
+    from,
+    to,
+    errorMessage: "Não foi possível carregar o relatório financeiro.",
+  });
+}
+
+export async function fetchSalesDetailReport(
+  brandId: string,
+  from?: string | null,
+  to?: string | null,
+): Promise<SalesDetailReport> {
+  return fetchBrandReportFromApi<SalesDetailReport>(brandId, "sales", {
+    from,
+    to,
+    errorMessage: "Não foi possível carregar o relatório detalhado de vendas.",
+  });
+}
+
+export async function fetchMediaReport(
+  brandId: string,
+  from?: string | null,
+  to?: string | null,
+): Promise<MediaReport> {
+  return fetchBrandReportFromApi<MediaReport>(brandId, "media", {
+    from,
+    to,
+    errorMessage: "Não foi possível carregar o relatório de Performance Mídia.",
+  });
+}
+
+export async function fetchTrafficReport(
+  brandId: string,
+  from?: string | null,
+  to?: string | null,
+): Promise<TrafficReport> {
+  return fetchBrandReportFromApi<TrafficReport>(brandId, "traffic", {
+    from,
+    to,
+    errorMessage: "Não foi possível carregar o relatório de Tráfego Digital.",
+  });
+}
+
+export async function fetchProductInsightsReport(
+  brandId: string,
+  options?: {
+    from?: string | null;
+    to?: string | null;
+    decision?: ProductDecisionAction | "all";
+    classification?: ProductInsightClassification | "all";
+    productType?: string | "all";
+    sort?: ProductInsightSort;
+  },
+): Promise<ProductInsightsReport> {
+  return fetchBrandReportFromApi<ProductInsightsReport>(brandId, "product-insights", {
+    from: options?.from,
+    to: options?.to,
+    extraParams: {
+      decision: options?.decision ?? null,
+      classification: options?.classification ?? null,
+      productType: options?.productType ?? null,
+      sort: options?.sort ?? null,
+    },
+    errorMessage: "Não foi possível carregar os insights de produtos.",
+  });
+}
+
+export async function fetchCatalogReport(
+  brandId: string,
+  options?: {
+    from?: string | null;
+    to?: string | null;
+    search?: string;
+    status?: "all" | "sold" | "unsold";
+    productType?: string | "all";
+    collection?: string | "all";
+  },
+): Promise<CatalogReport> {
+  return fetchBrandReportFromApi<CatalogReport>(brandId, "catalog", {
+    from: options?.from,
+    to: options?.to,
+    extraParams: {
+      search: options?.search ?? null,
+      status: options?.status ?? null,
+      productType: options?.productType ?? null,
+      collection: options?.collection ?? null,
+    },
+    errorMessage: "Não foi possível carregar o catálogo da marca.",
+  });
+}
+
+export async function fetchSanitizationReport(
+  brandId: string,
+): Promise<SanitizationReport> {
+  return fetchBrandReportFromApi<SanitizationReport>(brandId, "sanitization", {
+    errorMessage: "Não foi possível carregar o relatório de saneamento.",
+  });
 }
 
 function toImportErrorMessage(error: unknown) {
@@ -207,36 +408,169 @@ function buildMediaMergeKey(row: Pick<MediaRow, "date" | "campaignName" | "adset
   ].join("::");
 }
 
-export async function fetchUserProfile(userId: string) {
-  const { data, error } = await supabase
-    .from("user_profiles")
-    .select("id, email, full_name, role")
-    .eq("id", userId)
-    .single();
+type CatalogSnapshot = Omit<CatalogProduct, "sourcePresence">;
 
-  if (error) {
-    throw error;
-  }
+type StoredCatalogAttributes = {
+  catalogSource?: "manual_feed" | "meta_catalog";
+  externalCatalogId?: string | null;
+  description?: string;
+  additionalImageUrls?: string[];
+  availability?: string;
+  condition?: string;
+  mpn?: string;
+  googleProductCategory?: string;
+  fbProductCategory?: string;
+  brand?: string;
+  productType?: string;
+  collections?: string[];
+  keywords?: string[];
+  color?: string;
+  gender?: string;
+  material?: string;
+  ageGroup?: string;
+  size?: string;
+  sourcePresence?: {
+    manualFeed?: boolean;
+    metaCatalog?: boolean;
+  };
+  sourceSnapshots?: {
+    manualFeed?: CatalogSnapshot;
+    metaCatalog?: CatalogSnapshot;
+  };
+};
 
+function normalizeCatalogSnapshot(
+  product: CatalogProduct,
+  source: "manual_feed" | "meta_catalog",
+): CatalogSnapshot {
   return {
-    id: data.id,
-    email: data.email,
-    fullName: data.full_name,
-    role: data.role,
-  } satisfies UserProfile;
+    id: String(product.id ?? "").trim(),
+    title: product.title?.trim() ?? "",
+    description: product.description?.trim() || undefined,
+    imageUrl: product.imageUrl?.trim() || undefined,
+    additionalImageUrls: (product.additionalImageUrls ?? [])
+      .map((value) => value.trim())
+      .filter(Boolean),
+    link: product.link?.trim() || undefined,
+    price: Number(product.price ?? 0),
+    salePrice:
+      product.salePrice === null || product.salePrice === undefined
+        ? null
+        : Number(product.salePrice ?? 0),
+    availability: product.availability?.trim() || undefined,
+    condition: product.condition?.trim() || undefined,
+    mpn: product.mpn?.trim() || undefined,
+    googleProductCategory: product.googleProductCategory?.trim() || undefined,
+    fbProductCategory: product.fbProductCategory?.trim() || undefined,
+    brand: product.brand?.trim() || undefined,
+    productType: product.productType?.trim() || undefined,
+    collections: (product.collections ?? []).map((value) => value.trim()).filter(Boolean),
+    keywords: (product.keywords ?? []).map((value) => value.trim()).filter(Boolean),
+    color: product.color?.trim() || undefined,
+    gender: product.gender?.trim() || undefined,
+    material: product.material?.trim() || undefined,
+    ageGroup: product.ageGroup?.trim() || undefined,
+    size: product.size?.trim() || undefined,
+    dataSource: source,
+    externalCatalogId: product.externalCatalogId?.trim() || null,
+  };
 }
 
-export async function fetchAccessibleBrands() {
-  const { data, error } = await supabase
-    .from("brands")
-    .select("id, name, created_at, updated_at")
-    .order("name");
+function serializeCatalogAttributes(
+  effectiveSnapshot: CatalogSnapshot,
+  sourcePresence: { manualFeed: boolean; metaCatalog: boolean },
+  sourceSnapshots: {
+    manualFeed?: CatalogSnapshot;
+    metaCatalog?: CatalogSnapshot;
+  },
+) {
+  return {
+    catalogSource: effectiveSnapshot.dataSource ?? "manual_feed",
+    externalCatalogId: effectiveSnapshot.externalCatalogId ?? null,
+    description: effectiveSnapshot.description,
+    additionalImageUrls: effectiveSnapshot.additionalImageUrls ?? [],
+    availability: effectiveSnapshot.availability,
+    condition: effectiveSnapshot.condition,
+    mpn: effectiveSnapshot.mpn,
+    googleProductCategory: effectiveSnapshot.googleProductCategory,
+    fbProductCategory: effectiveSnapshot.fbProductCategory,
+    brand: effectiveSnapshot.brand,
+    productType: effectiveSnapshot.productType,
+    collections: effectiveSnapshot.collections ?? [],
+    keywords: effectiveSnapshot.keywords ?? [],
+    color: effectiveSnapshot.color,
+    gender: effectiveSnapshot.gender,
+    material: effectiveSnapshot.material,
+    ageGroup: effectiveSnapshot.ageGroup,
+    size: effectiveSnapshot.size,
+    sourcePresence: {
+      manualFeed: sourcePresence.manualFeed,
+      metaCatalog: sourcePresence.metaCatalog,
+    },
+    sourceSnapshots,
+  } satisfies StoredCatalogAttributes;
+}
 
-  if (error) {
-    throw error;
+function parseStoredCatalogAttributes(attributes: unknown): StoredCatalogAttributes {
+  if (!attributes || typeof attributes !== "object" || Array.isArray(attributes)) {
+    return {};
   }
 
-  return data;
+  return attributes as StoredCatalogAttributes;
+}
+
+function pickEffectiveCatalogSnapshot(sourceSnapshots: {
+  manualFeed?: CatalogSnapshot;
+  metaCatalog?: CatalogSnapshot;
+}) {
+  return sourceSnapshots.metaCatalog ?? sourceSnapshots.manualFeed ?? null;
+}
+
+async function fetchCatalogRowsByBrand(
+  db: SupabaseClient,
+  brandId: string,
+) {
+  return fetchAllRows(async (from, to) =>
+    db
+      .from("products")
+      .select("brand_id, sku, title, price, sale_price, image_url, product_url, attributes")
+      .eq("brand_id", brandId)
+      .range(from, to),
+  );
+}
+
+async function fetchBrandHeader(brandId: string) {
+  const result = await supabase
+    .from("brands")
+    .select("id, name, created_at, updated_at, plan_tier, feature_flags")
+    .eq("id", brandId)
+    .single();
+
+  if (result.error && isMissingBrandGovernanceSchemaError(result.error)) {
+    const fallback = await supabase
+      .from("brands")
+      .select("id, name, created_at, updated_at")
+      .eq("id", brandId)
+      .single();
+
+    if (fallback.error) {
+      return {
+        data: null,
+        error: fallback.error,
+      };
+    }
+
+    return {
+      data: {
+        ...fallback.data,
+        plan_tier: null,
+        feature_flags: null,
+      },
+      error: null,
+    };
+  }
+
+  return result;
 }
 
 export async function fetchBrandDataset(
@@ -247,6 +581,7 @@ export async function fetchBrandDataset(
 ) {
   const scope = options?.scope ?? "full";
   const shouldLoadFull = scope === "full";
+  const shouldLoadOperational = shouldLoadFull;
   const [
     brandResult,
     productsResult,
@@ -263,12 +598,8 @@ export async function fetchBrandDataset(
     ga4ItemDailyPerformanceResult,
     importLogsResult,
     anomalyReviewsResult,
-  ] = await Promise.all([
-    supabase
-      .from("brands")
-      .select("id, name, created_at, updated_at")
-      .eq("id", brandId)
-      .single(),
+    ] = await Promise.all([
+    fetchBrandHeader(brandId),
     shouldLoadFull
       ? fetchAllRows(async (from, to) =>
           supabase
@@ -278,24 +609,28 @@ export async function fetchBrandDataset(
             .range(from, to),
         )
       : Promise.resolve([]),
-    fetchAllRows(async (from, to) =>
-      supabase
-        .from("orders")
-        .select(
-          "id, order_number, order_date, payment_method, payment_status, customer_name, items_in_order, gross_revenue, net_revenue, discount, commission_value, source, tracking_url, shipping_state, coupon_name, is_ignored, ignore_reason, ignored_by, ignored_at, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
+    shouldLoadOperational
+      ? fetchAllRows(async (from, to) =>
+          supabase
+            .from("orders")
+            .select(
+              "id, order_number, order_date, payment_method, payment_status, customer_name, items_in_order, gross_revenue, net_revenue, discount, commission_value, source, tracking_url, shipping_state, coupon_name, is_ignored, ignore_reason, ignored_by, ignored_at, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
+            )
+            .eq("brand_id", brandId)
+            .range(from, to),
         )
-        .eq("brand_id", brandId)
-        .range(from, to),
-    ),
-    fetchAllRows(async (from, to) =>
-      supabase
-        .from("order_items")
-        .select(
-          "id, order_number, order_date, customer_name, sku, product_name, product_specs, product_type, quantity, gross_value, unit_price, cmv_unit_applied, cmv_total_applied, cmv_rule_type, cmv_rule_label, is_ignored, ignore_reason",
+      : Promise.resolve([]),
+    shouldLoadOperational
+      ? fetchAllRows(async (from, to) =>
+          supabase
+            .from("order_items")
+            .select(
+              "id, order_number, order_date, customer_name, sku, product_name, product_specs, product_type, quantity, gross_value, unit_price, cmv_unit_applied, cmv_total_applied, cmv_rule_type, cmv_rule_label, is_ignored, ignore_reason",
+            )
+            .eq("brand_id", brandId)
+            .range(from, to),
         )
-        .eq("brand_id", brandId)
-        .range(from, to),
-    ),
+      : Promise.resolve([]),
     shouldLoadFull
       ? fetchAllRows(async (from, to) =>
           supabase
@@ -307,15 +642,17 @@ export async function fetchBrandDataset(
             .range(from, to),
         )
       : Promise.resolve([]),
-    fetchAllRows(async (from, to) =>
-      supabase
-        .from("media_performance")
-        .select(
-          "id, date, report_start, report_end, row_hash, campaign_name, adset_name, account_name, ad_name, platform, placement, device_platform, delivery, reach, impressions, clicks_all, spend, purchases, conversion_value, link_clicks, ctr_all, ctr_link, add_to_cart, is_ignored, ignore_reason, ignored_by, ignored_at, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
+    shouldLoadOperational
+      ? fetchAllRows(async (from, to) =>
+          supabase
+            .from("media_performance")
+            .select(
+              "id, date, report_start, report_end, row_hash, campaign_name, adset_name, account_name, ad_name, platform, placement, device_platform, delivery, reach, impressions, clicks_all, spend, purchases, conversion_value, link_clicks, ctr_all, ctr_link, add_to_cart, is_ignored, ignore_reason, ignored_by, ignored_at, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
+            )
+            .eq("brand_id", brandId)
+            .range(from, to),
         )
-        .eq("brand_id", brandId)
-        .range(from, to),
-    ),
+      : Promise.resolve([]),
     shouldLoadFull
       ? fetchAllRows(async (from, to) =>
           supabase
@@ -386,14 +723,16 @@ export async function fetchBrandDataset(
             .range(from, to),
         )
       : Promise.resolve([]),
-    fetchAllRows(async (from, to) =>
-      supabase
-        .from("anomaly_reviews")
-        .select("*")
-        .eq("brand_id", brandId)
-        .order("reviewed_at", { ascending: false })
-        .range(from, to),
-    ),
+    shouldLoadOperational
+      ? fetchAllRows(async (from, to) =>
+          supabase
+            .from("anomaly_reviews")
+            .select("*")
+            .eq("brand_id", brandId)
+            .order("reviewed_at", { ascending: false })
+            .range(from, to),
+        )
+      : Promise.resolve([]),
   ]);
 
   if (!brandResult.data) {
@@ -474,6 +813,19 @@ export async function fetchBrandDataset(
       material: row.attributes?.material,
       ageGroup: row.attributes?.ageGroup,
       size: row.attributes?.size,
+      dataSource: row.attributes?.catalogSource === "meta_catalog" ? "meta_catalog" : "manual_feed",
+      externalCatalogId:
+        typeof row.attributes?.externalCatalogId === "string"
+          ? row.attributes.externalCatalogId
+          : null,
+      sourcePresence: {
+        manualFeed: Boolean(
+          row.attributes?.sourcePresence?.manualFeed ?? row.attributes?.catalogSource !== "meta_catalog",
+        ),
+        metaCatalog: Boolean(
+          row.attributes?.sourcePresence?.metaCatalog ?? row.attributes?.catalogSource === "meta_catalog",
+        ),
+      },
     }));
 
   const paidOrders: PaidOrder[] =
@@ -690,6 +1042,12 @@ export async function fetchBrandDataset(
     name: brandResult.data.name,
     createdAt: brandResult.data.created_at,
     updatedAt: brandResult.data.updated_at,
+    governance: resolveBrandGovernance({
+      brandId: brandResult.data.id,
+      brandName: brandResult.data.name,
+      planTier: brandResult.data.plan_tier,
+      featureFlags: brandResult.data.feature_flags,
+    }),
     hydration: {
       catalogLoaded: shouldLoadFull,
       salesLinesLoaded: shouldLoadFull,
@@ -788,52 +1146,102 @@ async function runImportBlock(
   }
 }
 
-async function replaceProducts(
+export async function replaceCatalogProductsBySource(
+  db: SupabaseClient,
   brandId: string,
   catalog: CatalogProduct[],
+  source: "manual_feed" | "meta_catalog",
 ) {
-  const rows = dedupeByKey(
-    catalog.map((product) => ({
-      brand_id: brandId,
-      sku: product.id,
-      title: product.title,
-      price: product.price,
-      sale_price: product.salePrice,
-      image_url: product.imageUrl,
-      product_url: product.link,
-      attributes: {
-        description: product.description,
-        additionalImageUrls: product.additionalImageUrls ?? [],
-        availability: product.availability,
-        condition: product.condition,
-        mpn: product.mpn,
-        googleProductCategory: product.googleProductCategory,
-        fbProductCategory: product.fbProductCategory,
-        brand: product.brand,
-        productType: product.productType,
-        collections: product.collections ?? [],
-        keywords: product.keywords ?? [],
-        color: product.color,
-        gender: product.gender,
-        material: product.material,
-        ageGroup: product.ageGroup,
-        size: product.size,
-      },
-    })),
-    (row) => [row.brand_id, row.sku].join("::"),
-  );
+  const sourceKey = source === "meta_catalog" ? "metaCatalog" : "manualFeed";
+  const incomingMap = new Map<string, CatalogSnapshot>();
+  dedupeByKey(
+    catalog
+      .map((product) => normalizeCatalogSnapshot(product, source))
+      .filter((product) => product.id),
+    (row) => [brandId, row.id].join("::"),
+  ).forEach((product) => {
+    incomingMap.set(product.id, product);
+  });
 
-  const { error: deleteError } = await supabase
-    .from("products")
-    .delete()
-    .eq("brand_id", brandId);
-  if (deleteError) {
-    throw deleteError;
+  const existingRows = await fetchCatalogRowsByBrand(db, brandId);
+  const existingMap = new Map(existingRows.map((row) => [String(row.sku ?? "").trim(), row]));
+
+  const rowsToUpsert: Array<{
+    brand_id: string;
+    sku: string;
+    title: string;
+    price: number;
+    sale_price: number | null;
+    image_url: string | undefined;
+    product_url: string | undefined;
+    attributes: StoredCatalogAttributes;
+  }> = [];
+  const skusToDelete: string[] = [];
+
+  const allSkus = new Set<string>([...existingMap.keys(), ...incomingMap.keys()]);
+
+  allSkus.forEach((sku) => {
+    const incoming = incomingMap.get(sku);
+    const existing = existingMap.get(sku);
+    const existingAttributes = parseStoredCatalogAttributes(existing?.attributes);
+    const sourceSnapshots: {
+      manualFeed?: CatalogSnapshot;
+      metaCatalog?: CatalogSnapshot;
+    } = {
+      manualFeed: existingAttributes.sourceSnapshots?.manualFeed,
+      metaCatalog: existingAttributes.sourceSnapshots?.metaCatalog,
+    };
+
+    if (incoming) {
+      sourceSnapshots[sourceKey] = incoming;
+    } else {
+      delete sourceSnapshots[sourceKey];
+    }
+
+    const effectiveSnapshot = pickEffectiveCatalogSnapshot(sourceSnapshots);
+    if (!effectiveSnapshot) {
+      if (existing) {
+        skusToDelete.push(sku);
+      }
+      return;
+    }
+
+    rowsToUpsert.push({
+      brand_id: brandId,
+      sku,
+      title: effectiveSnapshot.title,
+      price: Number(effectiveSnapshot.price ?? 0),
+      sale_price:
+        effectiveSnapshot.salePrice === undefined ? null : effectiveSnapshot.salePrice,
+      image_url: effectiveSnapshot.imageUrl,
+      product_url: effectiveSnapshot.link,
+      attributes: serializeCatalogAttributes(
+        effectiveSnapshot,
+        {
+          manualFeed: Boolean(sourceSnapshots.manualFeed),
+          metaCatalog: Boolean(sourceSnapshots.metaCatalog),
+        },
+        sourceSnapshots,
+      ),
+    });
+  });
+
+  if (skusToDelete.length) {
+    for (const chunk of chunkArray(skusToDelete, 200)) {
+      const { error } = await db
+        .from("products")
+        .delete()
+        .eq("brand_id", brandId)
+        .in("sku", chunk);
+      if (error) {
+        throw error;
+      }
+    }
   }
 
-  if (rows.length) {
-    for (const chunk of chunkArray(rows)) {
-      const { error } = await supabase
+  if (rowsToUpsert.length) {
+    for (const chunk of chunkArray(rowsToUpsert)) {
+      const { error } = await db
         .from("products")
         .upsert(chunk, { onConflict: "brand_id,sku" });
       if (error) {
@@ -842,7 +1250,29 @@ async function replaceProducts(
     }
   }
 
-  return rows.length;
+  return {
+    total: rowsToUpsert.length,
+    inserted: rowsToUpsert.filter((row) => !existingMap.has(row.sku)).length,
+    updated: rowsToUpsert.filter((row) => existingMap.has(row.sku)).length,
+    deleted: skusToDelete.length,
+  };
+}
+
+async function replaceProducts(
+  brandId: string,
+  catalog: CatalogProduct[],
+) {
+  const result = await replaceCatalogProductsBySource(
+    supabase,
+    brandId,
+    catalog.map((product) => ({
+      ...product,
+      dataSource: "manual_feed",
+    })),
+    "manual_feed",
+  );
+
+  return result.total;
 }
 
 async function upsertOrders(

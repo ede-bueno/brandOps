@@ -1,4 +1,5 @@
 import Papa from "papaparse";
+import { normalizeBrandGovernance } from "./governance";
 import type {
   BrandDataset,
   CatalogProduct,
@@ -365,6 +366,7 @@ export function mergeBrandDataset(
     name: brandName,
     createdAt: current?.createdAt ?? now,
     updatedAt: now,
+    governance: current?.governance ?? normalizeBrandGovernance(),
     hydration: {
       catalogLoaded:
         payload.catalog !== undefined

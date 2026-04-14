@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { BRANDING } from "@/lib/branding";
 
 function isLocalhost() {
   if (typeof window === "undefined") {
@@ -22,22 +23,22 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html lang="pt-BR">
-      <body className="bg-[#f5f7fb] text-slate-900">
+    <html lang="pt-BR" className="light" suppressHydrationWarning>
+      <body className="bg-background text-on-background">
         <main className="flex min-h-screen items-center justify-center px-6 py-12">
-          <div className="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-[0_24px_60px_rgba(21,32,51,0.08)]">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">
-              BrandOps
+          <div className="brandops-panel atlas-tech-grid w-full max-w-xl p-8 text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
+              {BRANDING.appName}
             </p>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight">
+            <h1 className="mt-4 font-headline text-3xl font-semibold tracking-tight text-on-surface">
               O sistema ficou indisponível momentaneamente
             </h1>
-            <p className="mt-3 text-base leading-7 text-slate-500">
+            <p className="mt-3 text-base leading-7 text-on-surface-variant">
               Atualize a página ou tente novamente em alguns instantes.
             </p>
             {isLocalhost() ? (
-              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left text-xs text-slate-700">
-                <p className="font-semibold text-slate-900">Diagnóstico local</p>
+              <div className="mt-4 rounded-xl border border-tertiary/20 bg-tertiary-container/40 p-4 text-left text-xs text-on-tertiary-container">
+                <p className="font-semibold text-on-surface">Diagnóstico local</p>
                 <p className="mt-2 break-words">
                   <strong>Mensagem:</strong> {error.message || "(sem mensagem)"}
                 </p>
@@ -51,7 +52,7 @@ export default function GlobalError({
             <button
               type="button"
               onClick={reset}
-              className="mt-6 inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+              className="brandops-button brandops-button-primary mt-6 inline-flex items-center justify-center px-5 py-2.5 text-sm"
             >
               Recarregar
             </button>

@@ -1,24 +1,37 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { ComponentType } from "react";
 import {
-  Building2,
   CopyPlus,
-  Link2,
   MailPlus,
   MapPin,
   Search,
   Settings2,
-  Users2,
   Store,
   CheckCircle2,
   AlertCircle
 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
+import {
+  AnalyticsCalloutCard,
+  AnalyticsKpiCard,
+} from "@/components/analytics/AnalyticsPrimitives";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { formatLongDateTime } from "@/lib/brandops/format";
-import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import {
+  BRAND_PLAN_LABELS,
+  normalizeBrandGovernance,
+  resolveBrandGovernance,
+} from "@/lib/brandops/governance";
+import {
+  EntityChip,
+  FormField,
+  InlineNotice,
+  PageHeader,
+  SectionHeading,
+  SurfaceCard,
+} from "@/components/ui-shell";
+import type { BrandPlanTier } from "@/lib/brandops/types";
 
 type AdminBrand = {
   id: string;
@@ -36,6 +49,22 @@ type AdminBrand = {
   postal_code?: string | null;
   tax_id?: string | null;
   notes?: string | null;
+  plan_tier?: BrandPlanTier | null;
+  feature_flags?: {
+    atlasAi?: boolean;
+    atlasCommandCenter?: boolean;
+    brandLearning?: boolean;
+    geminiModelCatalog?: boolean;
+  } | null;
+  governance?: {
+    planTier: BrandPlanTier;
+    featureFlags: {
+      atlasAi: boolean;
+      atlasCommandCenter: boolean;
+      brandLearning: boolean;
+      geminiModelCatalog: boolean;
+    };
+  };
   created_at: string;
   updated_at: string;
   brand_members?: Array<{
@@ -63,7 +92,16 @@ type BrandFormState = {
   postalCode: string;
   taxId: string;
   notes: string;
+  planTier: BrandPlanTier;
+  atlasAi: boolean;
+  atlasCommandCenter: boolean;
+  brandLearning: boolean;
+  geminiModelCatalog: boolean;
 };
+
+type BrandTextFieldKey = {
+  [Key in keyof BrandFormState]: BrandFormState[Key] extends string ? Key : never;
+}[keyof BrandFormState];
 
 const emptyBrandForm: BrandFormState = {
   name: "",
@@ -80,9 +118,30 @@ const emptyBrandForm: BrandFormState = {
   postalCode: "",
   taxId: "",
   notes: "",
+  planTier: "starter",
+  atlasAi: false,
+  atlasCommandCenter: false,
+  brandLearning: false,
+  geminiModelCatalog: false,
 };
 
-const formSections = [
+function toBrandPayload(form: BrandFormState) {
+  return {
+    ...form,
+    planTier: form.planTier,
+    featureFlags: {
+      atlasAi: form.atlasAi,
+      atlasCommandCenter: form.atlasCommandCenter,
+      brandLearning: form.brandLearning,
+      geminiModelCatalog: form.geminiModelCatalog,
+    },
+  };
+}
+
+const formSections: ReadonlyArray<{
+  title: string;
+  fields: ReadonlyArray<readonly [BrandTextFieldKey, string, string]>;
+}> = [
   {
     title: "Identidade",
     fields: [
@@ -128,7 +187,37 @@ function toForm(brand: AdminBrand | null): BrandFormState {
     postalCode: brand?.postal_code ?? "",
     taxId: brand?.tax_id ?? "",
     notes: brand?.notes ?? "",
+    planTier: brand?.governance?.planTier ?? "starter",
+    atlasAi: brand?.governance?.featureFlags.atlasAi ?? false,
+    atlasCommandCenter:
+      brand?.governance?.featureFlags.atlasCommandCenter ?? false,
+    brandLearning: brand?.governance?.featureFlags.brandLearning ?? false,
+    geminiModelCatalog:
+      brand?.governance?.featureFlags.geminiModelCatalog ?? false,
   };
+}
+
+function countReleasedCapabilities(governance: AdminBrand["governance"] | null | undefined) {
+  if (!governance) {
+    return 0;
+  }
+
+  return Object.values(governance.featureFlags).filter(Boolean).length;
+}
+
+function describeGovernance(governance: AdminBrand["governance"] | null | undefined) {
+  if (!governance) {
+    return "Sem governanca estruturada.";
+  }
+
+  const labels: string[] = [];
+
+  if (governance.featureFlags.atlasAi) labels.push("Atlas IA");
+  if (governance.featureFlags.atlasCommandCenter) labels.push("Torre IA");
+  if (governance.featureFlags.brandLearning) labels.push("Aprender negocio");
+  if (governance.featureFlags.geminiModelCatalog) labels.push("Catalogo Gemini");
+
+  return labels.length ? labels.join(", ") : "Sem recursos inteligentes liberados.";
 }
 
 export default function AdminStoresPage() {
@@ -149,7 +238,7 @@ export default function AdminStoresPage() {
   const [saving, setSaving] = useState(false);
   const [creating, setCreating] = useState(false);
   const [sending, setSending] = useState(false);
-  const [activeTab, setActiveTab] = useState<"general" | "team">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "team" | "invite">("general");
   const [isCreating, setIsCreating] = useState(false);
 
   const selectedBrand = brands.find((brand) => brand.id === selectedBrandId) ?? null;
@@ -208,20 +297,28 @@ export default function AdminStoresPage() {
   const totalMembers = brands.reduce((count, brand) => count + (brand.brand_members?.length ?? 0), 0);
   const selectedMemberCount = selectedBrand?.brand_members?.length ?? 0;
   const selectedLocation = [selectedBrand?.city, selectedBrand?.state].filter(Boolean).join(", ");
+  const selectedGovernance =
+    selectedBrand?.governance ??
+    resolveBrandGovernance({
+      brandId: selectedBrand?.id,
+      brandName: selectedBrand?.name,
+      planTier: selectedBrand?.plan_tier,
+      featureFlags: selectedBrand?.feature_flags,
+    });
 
   return (
-    <div className="space-y-4">
+    <div className="atlas-page-stack-compact">
       <PageHeader
         eyebrow="Superadmin"
         title="Lojas e Convites"
-        description="Gerencie marcas, dados institucionais e acessos sem sair do workspace."
+        description="Gerencie marcas, planos e acessos sem depender de telas longas."
         actions={
           <button
             onClick={() => {
               setIsCreating(true);
               setNotice(null);
             }}
-            className="brandops-button brandops-button-primary flex items-center rounded-lg px-4 py-2"
+            className="brandops-button brandops-button-primary"
           >
             <CopyPlus size={16} className="mr-2" />
             Nova Loja
@@ -230,41 +327,76 @@ export default function AdminStoresPage() {
       />
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={Building2} label="Lojas Ativas" value={brands.length} hint="Cadastradas no workspace" />
-        <StatCard icon={Users2} label="Membros Totais" value={totalMembers} hint="Vínculos vigentes" />
-        <StatCard icon={Link2} label="Lojas Online" value={brands.filter((brand) => Boolean(brand.website_url)).length} hint="Com portal vinculado" />
-        <StatCard icon={MapPin} label="Georeferenciadas" value={brands.filter((brand) => Boolean(brand.address_line)).length} hint="Com endereço completo" />
+        <AnalyticsKpiCard
+          label="Lojas ativas"
+          value={String(brands.length)}
+          description="Marcas já cadastradas no workspace."
+        />
+        <AnalyticsKpiCard
+          label="Membros totais"
+          value={String(totalMembers)}
+          description="Vínculos ativos com acesso às lojas."
+        />
+        <AnalyticsKpiCard
+          label="Lojas online"
+          value={String(brands.filter((brand) => Boolean(brand.website_url)).length)}
+          description="Operações com portal vinculado."
+          tone="info"
+        />
+        <AnalyticsKpiCard
+          label="Georeferenciadas"
+          value={String(brands.filter((brand) => Boolean(brand.address_line)).length)}
+          description="Lojas com endereço comercial completo."
+        />
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-3">
+        <AnalyticsCalloutCard
+          eyebrow="Próximo movimento"
+          title={isCreating ? "Concluir cadastro da nova loja" : selectedBrand ? `Revisar ${selectedBrand.name}` : "Selecionar uma loja"}
+          description="O corte mais útil agora para manter a governança da plataforma em ordem."
+          tone="info"
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Plano em foco"
+          title={selectedBrand ? BRAND_PLAN_LABELS[selectedGovernance.planTier] : "Sem loja em foco"}
+          description={selectedBrand ? describeGovernance(selectedGovernance) : "Escolha uma marca para ver plano e capacidades."}
+          tone={selectedBrand?.governance?.featureFlags.atlasAi || selectedGovernance.featureFlags.atlasAi ? "positive" : "default"}
+        />
+        <AnalyticsCalloutCard
+          eyebrow="Acesso"
+          title={selectedBrand ? `${selectedMemberCount} membro(s)` : `${totalMembers} membro(s) no total`}
+          description="Use convites e revisão de time sem sair da área administrativa."
+          tone="default"
+        />
       </section>
 
       {notice ? (
-        <div
-          className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium ${
-            notice.kind === "success"
-              ? "border-secondary/20 bg-secondary/5 text-secondary"
-              : "border-tertiary/20 bg-tertiary/5 text-tertiary"
-          }`}
+        <InlineNotice
+          tone={notice.kind === "success" ? "success" : "error"}
+          icon={notice.kind === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+          className="text-sm font-medium"
         >
-          {notice.kind === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
           {notice.text}
-        </div>
+        </InlineNotice>
       ) : null}
 
       <section className="grid gap-4 xl:grid-cols-[300px_1fr]">
-        <aside className="space-y-4">
+<aside className="atlas-component-stack">
           <SurfaceCard className="flex max-h-[720px] flex-col p-3">
-            <div className="mb-3 relative">
-              <Search size={16} className="absolute left-4 top-3.5 text-on-surface-variant/50" />
+            <div className="mb-3 brandops-input-with-icon">
+              <Search size={16} />
               <input
                 value={filter}
                 onChange={(event) => setFilter(event.target.value)}
                 placeholder="Buscar por nome, slug..."
-                className="w-full rounded-lg border border-outline bg-surface-container/50 py-2.5 pl-10 pr-3 text-sm text-on-surface outline-none transition focus:border-secondary/50 focus:bg-surface-container"
+                className="brandops-input w-full"
               />
             </div>
 
-            <div className="space-y-2 overflow-y-auto pr-1 flex-1 custom-scrollbar">
+            <div className="atlas-component-stack-compact overflow-y-auto pr-1 flex-1 custom-scrollbar">
               {loading ? (
-                <div className="space-y-3">
+<div className="atlas-component-stack-compact">
                   <SkeletonCard />
                   <SkeletonCard />
                   <SkeletonCard />
@@ -272,6 +404,14 @@ export default function AdminStoresPage() {
               ) : visibleBrands.length ? (
                 visibleBrands.map((brand) => {
                   const isSelected = brand.id === selectedBrandId && !isCreating;
+                  const governance =
+                    brand.governance ??
+                    resolveBrandGovernance({
+                      brandId: brand.id,
+                      brandName: brand.name,
+                      planTier: brand.plan_tier,
+                      featureFlags: brand.feature_flags,
+                    });
                   return (
                     <button
                       key={brand.id}
@@ -281,7 +421,7 @@ export default function AdminStoresPage() {
                         setIsCreating(false);
                         setActiveTab("general");
                       }}
-                      className={`w-full group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all ${
+                      className={`w-full group flex items-center gap-3 atlas-list-row text-left transition-all ${
                         isSelected
                           ? "border-secondary/40 bg-secondary/5"
                           : "border-outline bg-transparent hover:border-secondary/30 hover:bg-surface-container/40"
@@ -297,7 +437,7 @@ export default function AdminStoresPage() {
                           <p className={`truncate text-sm font-semibold ${isSelected ? "text-secondary" : "text-on-surface"}`}>
                             {brand.name}
                           </p>
-                          <span className="status-chip shrink-0">
+                          <span className="atlas-inline-metric shrink-0">
                             {brand.brand_members?.length ?? 0}
                           </span>
                         </div>
@@ -306,12 +446,18 @@ export default function AdminStoresPage() {
                           {brand.website_url ? <span className="h-1 w-1 rounded-full bg-secondary/70" /> : null}
                           {brand.website_url ? <span className="truncate">site ativo</span> : null}
                         </div>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          <span className="atlas-inline-metric">{BRAND_PLAN_LABELS[governance.planTier]}</span>
+                          <span className="atlas-inline-metric">
+                            {governance.featureFlags.atlasAi ? "IA on" : "IA off"}
+                          </span>
+                        </div>
                       </div>
                     </button>
                   );
                 })
               ) : (
-                <div className="rounded-xl border border-dashed border-outline bg-surface-container/30 px-4 py-6 text-center text-sm font-medium text-on-surface-variant">
+                <div className="atlas-inline-notice justify-center text-center text-sm font-medium text-on-surface-variant">
                   Nenhuma loja encontrada.
                 </div>
               )}
@@ -325,7 +471,7 @@ export default function AdminStoresPage() {
               <div className="border-b border-outline bg-surface-container/20 px-5 py-4 sm:px-6">
                 <SectionHeading
                   title="Cadastrar nova loja"
-                  description="Preencha os dados principais da marca para liberar a operação e o cadastro de acessos."
+                  description="Preencha a ficha da marca para liberar operação, identidade e acessos iniciais."
                 />
               </div>
               <div className="px-5 py-5 sm:px-6">
@@ -343,7 +489,7 @@ export default function AdminStoresPage() {
                           "Content-Type": "application/json",
                           Authorization: `Bearer ${session.access_token}`,
                         },
-                        body: JSON.stringify(createForm),
+                        body: JSON.stringify(toBrandPayload(createForm)),
                       });
                       const payload = await response.json();
                       if (!response.ok) throw new Error(payload.error ?? "Falha ao criar loja.");
@@ -369,7 +515,7 @@ export default function AdminStoresPage() {
               </div>
             </SurfaceCard>
           ) : !selectedBrand ? (
-            <div className="flex h-full min-h-[360px] flex-col items-center justify-center rounded-2xl border border-dashed border-outline bg-surface-container/20 p-10 text-center text-on-surface-variant opacity-70">
+            <div className="atlas-empty-state flex h-full min-h-[360px] flex-col items-center justify-center p-10 text-center opacity-70">
                <Store size={40} className="mb-4 opacity-30" />
                <p className="mb-1 text-sm font-semibold uppercase tracking-widest">Nada selecionado</p>
                <p className="max-w-xs text-xs">Escolha uma loja na lista ao lado ou crie uma nova para visualizar seus detalhes.</p>
@@ -387,20 +533,31 @@ export default function AdminStoresPage() {
                         <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-secondary/80">
                           ID: {selectedBrand.id.split("-")[0]}
                         </p>
-                        {selectedBrand.slug ? <span className="status-chip">{selectedBrand.slug}</span> : null}
+                        {selectedBrand.slug ? <span className="atlas-inline-metric">{selectedBrand.slug}</span> : null}
                       </div>
                       <h2 className="mt-1 truncate text-2xl font-bold tracking-tight text-on-surface">
                         {selectedBrand.name}
                       </h2>
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-on-surface-variant">
-                        {selectedBrand.contact_email ? <MetaChip icon={MailPlus} text={selectedBrand.contact_email} /> : null}
-                        {selectedLocation ? <MetaChip icon={MapPin} text={selectedLocation} /> : null}
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] leading-5 text-on-surface-variant">
+                        <span className="atlas-inline-metric">{BRAND_PLAN_LABELS[selectedGovernance.planTier]}</span>
+                        <span className="atlas-inline-metric">
+                          {selectedGovernance.featureFlags.atlasAi ? "Atlas IA liberado" : "Atlas IA bloqueado"}
+                        </span>
+                        <span className="atlas-inline-metric">
+                          {countReleasedCapabilities(selectedGovernance)} capacidade(s)
+                        </span>
+                        {selectedBrand.contact_email ? (
+                          <EntityChip icon={<MailPlus size={13} />} text={selectedBrand.contact_email} />
+                        ) : null}
+                        {selectedLocation ? (
+                          <EntityChip icon={<MapPin size={13} />} text={selectedLocation} />
+                        ) : null}
                         {selectedBrand.website_url ? (
                           <a
                             href={selectedBrand.website_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 rounded-md border border-outline bg-background px-2 py-1 font-medium text-on-surface transition hover:border-secondary/40 hover:text-secondary"
+                            className="brandops-button brandops-button-secondary"
                           >
                             Site
                           </a>
@@ -409,119 +566,320 @@ export default function AdminStoresPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    <MiniStat label="Membros" value={selectedMemberCount.toString()} />
-                    <MiniStat label="Site" value={selectedBrand.website_url ? "ativo" : "pendente"} />
-                    <MiniStat label="Atualizado" value={formatLongDateTime(selectedBrand.updated_at)} className="col-span-2 sm:col-span-1" />
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
+                    <AnalyticsKpiCard
+                      label="Membros"
+                      value={selectedMemberCount.toString()}
+                      description="Usuários vinculados ao workspace da marca."
+                    />
+                    <AnalyticsKpiCard
+                      label="Site"
+                      value={selectedBrand.website_url ? "ativo" : "pendente"}
+                      description="Estado atual do canal público da loja."
+                      tone={selectedBrand.website_url ? "positive" : "warning"}
+                    />
+                    <AnalyticsKpiCard
+                      label="Atualizado"
+                      value={formatLongDateTime(selectedBrand.updated_at)}
+                      description="Última alteração institucional registrada."
+                    />
+                    <AnalyticsKpiCard
+                      label="Local"
+                      value={selectedLocation || "Sem endereço"}
+                      description="Referência comercial da operação."
+                    />
                   </div>
                 </div>
               </div>
 
               <div className="border-b border-outline bg-surface-container/10 px-5 py-3 sm:px-6">
-                <div className="brandops-tabs overflow-x-auto">
-                <button
-                  onClick={() => setActiveTab("general")}
-                  data-active={activeTab === "general"}
-                  className="brandops-tab"
-                >
-                  Configurações
-                </button>
-                <button
-                  onClick={() => setActiveTab("team")}
-                  data-active={activeTab === "team"}
-                  className="brandops-tab"
-                >
-                  Membros do Time
-                  <span className="rounded-full bg-surface-container-high px-2 py-0.5 text-[10px]">{selectedMemberCount}</span>
-                </button>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="brandops-tabs overflow-x-auto">
+                    <button
+                      onClick={() => setActiveTab("general")}
+                      data-active={activeTab === "general"}
+                      className="brandops-tab"
+                    >
+                      Configurações
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("team")}
+                      data-active={activeTab === "team"}
+                      className="brandops-tab"
+                    >
+                      Time
+                      <span className="rounded-full bg-surface-container-high px-2 py-0.5 text-[10px]">{selectedMemberCount}</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("invite")}
+                      data-active={activeTab === "invite"}
+                      className="brandops-tab"
+                    >
+                      Novo acesso
+                    </button>
+                  </div>
+                  <span className="atlas-inline-metric">Loja ativa</span>
                 </div>
               </div>
 
               <div className="px-5 py-5 sm:px-6">
                 {activeTab === "general" ? (
-                  <BrandForm
-                    form={selectedForm}
-                    onChange={setSelectedForm}
-                    onSubmit={async () => {
-                      if (!session?.access_token || !selectedBrandId) return;
-                      setSaving(true);
-                      setNotice(null);
-                      try {
-                        const response = await fetch(`/api/admin/brands/${selectedBrandId}`, {
-                          method: "PATCH",
-                          headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${session.access_token}`,
-                          },
-                          body: JSON.stringify(selectedForm),
-                        });
-                        const payload = await response.json();
-                        if (!response.ok) throw new Error(payload.error ?? "Falha ao atualizar loja.");
-                        setNotice({ kind: "success", text: `Painel de loja atualizado.` });
-                        await loadBrands(selectedBrandId);
-                        await refreshActiveBrand();
-                      } catch (error) {
-                        setNotice({
-                          kind: "error",
-                          text: error instanceof Error ? error.message : "Falha ao atualizar loja.",
-                        });
-                      } finally {
-                        setSaving(false);
-                      }
-                    }}
-                    submitLabel={saving ? "Salvando alterações..." : "Salvar configurações"}
-                    disabled={saving}
-                    mode="edit"
-                  />
+                  <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+                    <BrandForm
+                      form={selectedForm}
+                      onChange={setSelectedForm}
+                      onSubmit={async () => {
+                        if (!session?.access_token || !selectedBrandId) return;
+                        setSaving(true);
+                        setNotice(null);
+                        try {
+                          const response = await fetch(`/api/admin/brands/${selectedBrandId}`, {
+                            method: "PATCH",
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${session.access_token}`,
+                            },
+                            body: JSON.stringify(toBrandPayload(selectedForm)),
+                          });
+                          const payload = await response.json();
+                          if (!response.ok) throw new Error(payload.error ?? "Falha ao atualizar loja.");
+                          setNotice({ kind: "success", text: `Painel de loja atualizado.` });
+                          await loadBrands(selectedBrandId);
+                          await refreshActiveBrand();
+                        } catch (error) {
+                          setNotice({
+                            kind: "error",
+                            text: error instanceof Error ? error.message : "Falha ao atualizar loja.",
+                          });
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                      submitLabel={saving ? "Salvando alterações..." : "Salvar configurações"}
+                      disabled={saving}
+                      mode="edit"
+                    />
+<div className="atlas-component-stack-compact">
+                      <SectionHeading
+                        title="Leitura rápida da loja"
+                        description="Resumo executivo para não depender da tela inteira antes de agir."
+                      />
+                      <AnalyticsCalloutCard
+                        title={selectedBrand.slug ?? "Sem slug"}
+                        description="Identificador legível da marca no Atlas."
+                        eyebrow="Slug"
+                      />
+                      <AnalyticsCalloutCard
+                        eyebrow="Contato"
+                        title={selectedBrand.contact_email ?? "Sem email"}
+                        description="Canal principal para recuperação de acesso e operação."
+                      />
+                      <AnalyticsCalloutCard
+                        eyebrow="Convites"
+                        title={String(selectedMemberCount)}
+                        description="Quantidade de acessos ativos nesta marca."
+                      />
+                      <AnalyticsCalloutCard
+                        eyebrow="Plano e governanca"
+                        title={BRAND_PLAN_LABELS[selectedGovernance.planTier]}
+                        description={describeGovernance(selectedGovernance)}
+                        tone={selectedGovernance.featureFlags.atlasAi ? "positive" : "info"}
+                      />
+                      <div className="panel-muted atlas-component-stack-tight p-3.5">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
+                              Governança SaaS
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-on-surface">
+                              {BRAND_PLAN_LABELS[selectedForm.planTier]}
+                            </p>
+                          </div>
+                          <span className="atlas-inline-metric">Plano</span>
+                        </div>
+
+                        <FormField label="Plano da marca">
+                          <select
+                            value={selectedForm.planTier}
+                            onChange={(event) =>
+                              setSelectedForm((current) => {
+                                const governance = normalizeBrandGovernance({
+                                  planTier: event.target.value as BrandPlanTier,
+                                });
+
+                                return {
+                                  ...current,
+                                  planTier: governance.planTier,
+                                  atlasAi: governance.featureFlags.atlasAi,
+                                  atlasCommandCenter:
+                                    governance.featureFlags.atlasCommandCenter,
+                                  brandLearning:
+                                    governance.featureFlags.brandLearning,
+                                  geminiModelCatalog:
+                                    governance.featureFlags.geminiModelCatalog,
+                                };
+                              })
+                            }
+                            className="brandops-input w-full"
+                          >
+                            {Object.entries(BRAND_PLAN_LABELS).map(([value, label]) => (
+                              <option key={value} value={value}>
+                                {label}
+                              </option>
+                            ))}
+                          </select>
+                        </FormField>
+
+                        <div className="grid gap-2">
+                          <FeatureToggle
+                            label="Atlas IA"
+                            description="Libera uso do Atlas Analyst na marca."
+                            checked={selectedForm.atlasAi}
+                            onChange={(checked) =>
+                              setSelectedForm((current) => ({ ...current, atlasAi: checked }))
+                            }
+                          />
+                          <FeatureToggle
+                            label="Torre com IA"
+                            description="Permite a casa nativa do Atlas dentro da Torre de Controle."
+                            checked={selectedForm.atlasCommandCenter}
+                            onChange={(checked) =>
+                              setSelectedForm((current) => ({
+                                ...current,
+                                atlasCommandCenter: checked,
+                              }))
+                            }
+                          />
+                          <FeatureToggle
+                            label="Aprender negócio"
+                            description="Libera varredura histórica e snapshot de aprendizado da marca."
+                            checked={selectedForm.brandLearning}
+                            onChange={(checked) =>
+                              setSelectedForm((current) => ({
+                                ...current,
+                                brandLearning: checked,
+                              }))
+                            }
+                          />
+                          <FeatureToggle
+                            label="Catálogo de modelos Gemini"
+                            description="Permite listar os modelos disponíveis pela chave da própria loja."
+                            checked={selectedForm.geminiModelCatalog}
+                            onChange={(checked) =>
+                              setSelectedForm((current) => ({
+                                ...current,
+                                geminiModelCatalog: checked,
+                              }))
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : activeTab === "team" ? (
+                  <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+<div className="atlas-component-stack">
+                      <SectionHeading
+                        title="Time da loja"
+                        description="Pessoas com acesso ativo ao workspace desta marca."
+                      />
+                      {selectedBrand?.brand_members?.length ? (
+                        <div className="atlas-component-stack-tight">
+                          {selectedBrand.brand_members.map((member) => (
+                            <div key={`${selectedBrand.id}-${member.user_id}`} className="atlas-list-row group flex items-center justify-between transition-colors hover:border-secondary/30">
+                              <div className="flex items-center gap-4">
+                                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-container font-bold text-on-surface-variant transition-colors group-hover:bg-secondary/10 group-hover:text-secondary">
+                                    {(member.user_profiles?.full_name || member.user_profiles?.email || member.user_id).slice(0, 1).toUpperCase()}
+                                 </div>
+                                 <div className="min-w-0">
+                                   <p className="truncate text-sm font-semibold text-on-surface">
+                                     {member.user_profiles?.full_name || "Membro confirmado"}
+                                   </p>
+                                   <p className="mt-0.5 truncate text-[11px] font-medium leading-5 text-on-surface-variant">
+                                     {member.user_profiles?.email ?? "Email ocultado"}
+                                   </p>
+                                 </div>
+                              </div>
+                              <span className="atlas-inline-metric shrink-0">
+                                {member.user_profiles?.role === "SUPER_ADMIN" ? "S-ADMIN" : "MARCA"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="atlas-empty-state px-6 py-8 text-center">
+                          <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant/70">Workspace indefinido</p>
+                          <p className="mx-auto mt-1 max-w-[220px] text-[11px] leading-5 text-on-surface-variant/50">Ninguém possui acesso direto a este ambiente no momento.</p>
+                        </div>
+                      )}
+                    </div>
+<div className="atlas-component-stack-compact">
+                      <SectionHeading
+                        title="Resumo do time"
+                        description="Visão curta para decidir convite, ajuste ou revisão de acesso."
+                      />
+                      <AnalyticsKpiCard
+                        label="Membros ativos"
+                        value={selectedMemberCount.toString()}
+                        description="Usuários vinculados à marca."
+                      />
+                      <AnalyticsCalloutCard
+                        eyebrow="Próximo passo"
+                        title="Convidar ou revisar"
+                        description="Gere acesso, confirme o papel e valide o workspace na mesma sessão."
+                        tone="info"
+                      />
+                    </div>
+                  </div>
                 ) : (
-                  <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
-                    <div className="space-y-4">
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+<div className="atlas-component-stack">
                       <SectionHeading
                         title="Criar acesso"
                         description="Cadastre um responsável com senha definida. O acesso fica isolado apenas nesta marca."
                       />
                       {lastProvisionedAccess ? (
-                        <div className="rounded-xl border border-secondary/25 bg-secondary/6 p-4">
+                        <div className="panel-muted p-3.5">
                           <p className="text-[11px] font-bold uppercase tracking-widest text-secondary">
                             Credencial pronta
                           </p>
                           <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                            <div className="rounded-lg border border-outline bg-background px-3 py-2.5">
+                            <div className="brandops-command-slab px-3 py-3">
                               <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">Email</p>
                               <p className="mt-1 text-sm font-semibold text-on-surface">{lastProvisionedAccess.email}</p>
                             </div>
-                            <div className="rounded-lg border border-outline bg-background px-3 py-2.5">
+                            <div className="brandops-command-slab px-3 py-3">
                               <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">Senha inicial</p>
                               <p className="mt-1 text-sm font-semibold text-on-surface">{lastProvisionedAccess.password}</p>
                             </div>
                           </div>
-                          <p className="mt-3 text-xs text-on-surface-variant">
+                          <p className="mt-3 text-[11px] leading-5 text-on-surface-variant">
                             {lastProvisionedAccess.alreadyExisted
                               ? "O usuário já existia e a senha foi redefinida."
                               : "O usuário foi criado e já pode entrar com essa senha."}
                           </p>
                         </div>
                       ) : null}
-                      <div className="space-y-3 rounded-xl border border-outline bg-surface-container/20 p-4">
+                      <div className="brandops-toolbar-panel atlas-component-stack-tight">
                         <input
                           value={inviteForm.fullName}
                           onChange={(event) => setInviteForm((current) => ({ ...current, fullName: event.target.value }))}
                           placeholder="Nome completo..."
-                          className="w-full rounded-lg border border-outline bg-background px-3 py-2.5 text-sm text-on-surface outline-none transition focus:border-secondary/60 focus:bg-surface-container/50"
+                          className="brandops-input w-full"
                         />
                         <input
                           value={inviteForm.email}
                           onChange={(event) => setInviteForm((current) => ({ ...current, email: event.target.value }))}
                           placeholder="Email corporativo..."
-                          className="w-full rounded-lg border border-outline bg-background px-3 py-2.5 text-sm text-on-surface outline-none transition focus:border-secondary/60 focus:bg-surface-container/50"
+                          className="brandops-input w-full"
                         />
                         <input
                           value={inviteForm.password}
                           onChange={(event) => setInviteForm((current) => ({ ...current, password: event.target.value }))}
                           placeholder="Senha inicial (opcional)"
-                          className="w-full rounded-lg border border-outline bg-background px-3 py-2.5 text-sm text-on-surface outline-none transition focus:border-secondary/60 focus:bg-surface-container/50"
+                          className="brandops-input w-full"
                         />
-                        <div className="rounded-lg border border-outline bg-background px-3 py-2.5 text-sm text-on-surface-variant">
+                        <div className="brandops-command-slab px-3 py-3 text-sm text-on-surface-variant">
                           Perfil criado: <span className="font-semibold text-on-surface">acesso da marca</span>
                         </div>
                         <button
@@ -560,7 +918,7 @@ export default function AdminStoresPage() {
                               setSending(false);
                             }
                           }}
-                          className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold tracking-wide text-on-secondary transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="brandops-button brandops-button-primary mt-1 w-full"
                         >
                           <MailPlus size={16} />
                           {sending ? "Criando acesso..." : "Criar acesso"}
@@ -568,40 +926,22 @@ export default function AdminStoresPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-4">
+<div className="atlas-component-stack-compact">
                       <SectionHeading
-                        title="Time da loja"
-                        description="Pessoas com acesso ativo ao workspace desta marca."
+                        title="Resumo do time"
+                        description="Os dados resumidos ajudam a não alongar a área de convite."
                       />
-                      <div className="space-y-2">
-                        {selectedBrand?.brand_members?.length ? (
-                          selectedBrand.brand_members.map((member) => (
-                            <div key={`${selectedBrand.id}-${member.user_id}`} className="group flex items-center justify-between rounded-xl border border-outline bg-background px-4 py-3 transition-colors hover:border-secondary/40">
-                              <div className="flex items-center gap-4">
-                                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-container font-bold text-on-surface-variant transition-colors group-hover:bg-secondary/10 group-hover:text-secondary">
-                                    {(member.user_profiles?.full_name || member.user_profiles?.email || member.user_id).slice(0, 1).toUpperCase()}
-                                 </div>
-                                 <div className="min-w-0">
-                                   <p className="truncate text-sm font-semibold text-on-surface">
-                                     {member.user_profiles?.full_name || "Membro confirmado"}
-                                   </p>
-                                   <p className="mt-0.5 truncate text-xs font-medium text-on-surface-variant">
-                                     {member.user_profiles?.email ?? "Email ocultado"}
-                                   </p>
-                                 </div>
-                              </div>
-                              <span className="status-chip shrink-0">
-                                {member.user_profiles?.role === "SUPER_ADMIN" ? "S-ADMIN" : "MARCA"}
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="rounded-xl border border-dashed border-outline bg-surface-container/30 px-6 py-8 text-center">
-                            <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant/70">Workspace indefinido</p>
-                            <p className="mx-auto mt-1 max-w-[220px] text-xs text-on-surface-variant/50">Ninguém possui acesso direto a este ambiente no momento.</p>
-                          </div>
-                        )}
-                      </div>
+                      <article className="panel-muted p-3.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">Membros ativos</p>
+                        <p className="mt-2 text-3xl font-semibold text-on-surface">{selectedMemberCount}</p>
+                        <p className="mt-1 text-sm text-on-surface-variant">Usuários vinculados à marca.</p>
+                      </article>
+                      <article className="panel-muted p-3.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">Próximo passo</p>
+                        <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                          Gere o acesso, copie a credencial e valide o papel atribuído na mesma sessão.
+                        </p>
+                      </article>
                     </div>
                   </div>
                 )}
@@ -611,23 +951,6 @@ export default function AdminStoresPage() {
         </div>
       </section>
     </div>
-  );
-}
-
-function StatCard({ icon: Icon, label, value, hint }: { icon: ComponentType<{ size?: number; className?: string }>; label: string; value: number; hint: string; }) {
-  return (
-    <SurfaceCard className="flex flex-col justify-between p-3.5">
-      <div className="flex items-start justify-between">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{label}</p>
-        <div className="rounded-lg border border-outline bg-background/50 p-2 text-secondary">
-          <Icon size={15} />
-        </div>
-      </div>
-      <div>
-        <p className="mt-3 text-2xl font-bold tracking-tight text-on-surface">{value}</p>
-        <p className="mt-1 text-xs font-semibold text-on-surface-variant/60 uppercase tracking-widest">{hint}</p>
-      </div>
-    </SurfaceCard>
   );
 }
 
@@ -651,19 +974,19 @@ function BrandForm({
   void _mode;
 
   return (
-    <div className="space-y-6">
+    <div className="atlas-component-stack">
       {formSections.map((section) => (
-        <div key={section.title} className="space-y-3">
+<div key={section.title} className="atlas-component-stack-compact">
           <div className="flex items-center gap-3">
              <h3 className="shrink-0 text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">{section.title}</h3>
              <div className="h-px flex-1 bg-outline" />
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {section.fields.map(([key, label, placeholder]) => (
-              <Field
+              <FormInputField
                 key={key}
                 label={label}
-                value={form[key as keyof BrandFormState]}
+                value={form[key]}
                 placeholder={placeholder}
                 onChange={(value) => onChange({ ...form, [key]: value })}
               />
@@ -672,14 +995,14 @@ function BrandForm({
         </div>
       ))}
 
-      <div className="space-y-3">
+<div className="atlas-component-stack-compact">
         <div className="flex items-center gap-3">
            <h3 className="shrink-0 text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">Comentários e SEO</h3>
            <div className="h-px flex-1 bg-outline" />
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-           <Field label="Descrição curta" value={form.description} placeholder="Proposta de valor" onChange={(value) => onChange({ ...form, description: value })} multiline />
-           <Field label="Anotações internas" value={form.notes} placeholder="Condições, tarifas, links" onChange={(value) => onChange({ ...form, notes: value })} multiline />
+           <FormInputField label="Descrição curta" value={form.description} placeholder="Proposta de valor" onChange={(value) => onChange({ ...form, description: value })} multiline />
+           <FormInputField label="Anotações internas" value={form.notes} placeholder="Condições, tarifas, links" onChange={(value) => onChange({ ...form, notes: value })} multiline />
         </div>
       </div>
 
@@ -689,7 +1012,7 @@ function BrandForm({
              type="button"
              disabled={disabled}
              onClick={onCancel}
-             className="w-full rounded-lg border border-outline bg-surface-container/50 px-5 py-2.5 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container hover:text-on-surface disabled:opacity-50 sm:w-auto"
+             className="brandops-button brandops-button-secondary w-full sm:w-auto"
            >
              Cancelar
            </button>
@@ -698,7 +1021,7 @@ function BrandForm({
           type="button"
           disabled={disabled}
           onClick={() => void onSubmit()}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-secondary px-5 py-2.5 text-sm font-semibold tracking-wide text-on-secondary transition hover:bg-secondary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="brandops-button brandops-button-primary flex-1"
         >
           <Settings2 size={18} />
           {submitLabel}
@@ -708,7 +1031,7 @@ function BrandForm({
   );
 }
 
-function Field({
+function FormInputField({
   label,
   value,
   placeholder,
@@ -721,13 +1044,20 @@ function Field({
   onChange: (value: string) => void;
   multiline?: boolean;
 }) {
-  const baseClassName = "brandops-input w-full rounded-lg border border-outline bg-background/50 px-3 py-2.5 text-sm font-medium text-on-surface outline-none transition focus:border-secondary focus:bg-background";
+  const baseClassName = "brandops-input w-full";
   return (
-    <label className="space-y-1.5 block">
-      <span className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant flex items-center justify-between">
-         {label}
-         {!value && <span className="opacity-0 group-focus-within:opacity-100 text-tertiary transition-opacity">*</span>}
-      </span>
+    <FormField
+      label={
+        <span className="flex items-center justify-between gap-2">
+          <span>{label}</span>
+          {!value ? (
+            <span className="opacity-0 transition-opacity group-focus-within:opacity-100 text-tertiary">
+              *
+            </span>
+          ) : null}
+        </span>
+      }
+    >
       {multiline ? (
         <textarea
           value={value}
@@ -744,6 +1074,35 @@ function Field({
           className={`${baseClassName} placeholder:text-on-surface-variant/40`}
         />
       )}
+    </FormField>
+  );
+}
+
+function FeatureToggle({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <label className="flex items-start justify-between gap-3 rounded-xl border border-outline bg-background px-3 py-3">
+      <div>
+        <p className="text-sm font-semibold text-on-surface">{label}</p>
+        <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
+          {description}
+        </p>
+      </div>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="mt-1 h-4 w-4 accent-[var(--color-primary)]"
+      />
     </label>
   );
 }
@@ -762,26 +1121,3 @@ function SkeletonCard() {
   );
 }
 
-function MiniStat({ label, value, className = "" }: { label: string; value: string; className?: string }) {
-  return (
-    <div className={`rounded-lg border border-outline bg-background px-3 py-2 ${className}`.trim()}>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">{label}</p>
-      <p className="mt-1 truncate text-sm font-semibold text-on-surface">{value}</p>
-    </div>
-  );
-}
-
-function MetaChip({
-  icon: Icon,
-  text,
-}: {
-  icon: ComponentType<{ size?: number; className?: string }>;
-  text: string;
-}) {
-  return (
-    <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-outline bg-background px-2 py-1 font-medium text-on-surface">
-      <Icon size={13} className="shrink-0 text-on-surface-variant" />
-      <span className="truncate">{text}</span>
-    </span>
-  );
-}

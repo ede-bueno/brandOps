@@ -1,8 +1,9 @@
 import { google } from "googleapis";
 import type { analyticsdata_v1beta } from "googleapis";
 import { readFileSync } from "node:fs";
+import { basename } from "node:path";
 
-type ServiceAccountPayload = {
+export type ServiceAccountPayload = {
   client_email: string;
   private_key: string;
   project_id?: string;
@@ -38,7 +39,42 @@ export type Ga4ItemSyncRow = {
   purchaseToViewRate: number;
 };
 
-function getGa4ServiceAccount() {
+export function parseGa4ServiceAccount(raw: string) {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    throw new Error("Credencial do GA4 vazia.");
+  }
+
+  let parsed: ServiceAccountPayload;
+  try {
+    parsed = JSON.parse(trimmed) as ServiceAccountPayload;
+  } catch {
+    throw new Error("GA4_SERVICE_ACCOUNT_JSON inválida.");
+  }
+
+  if (!parsed.client_email || !parsed.private_key) {
+    throw new Error("Credencial do GA4 incompleta.");
+  }
+
+  return {
+    ...parsed,
+    private_key: parsed.private_key.replace(/\\n/g, "\n"),
+  };
+}
+
+export function getGa4CredentialSourceHint() {
+  if (process.env.GA4_SERVICE_ACCOUNT_JSON?.trim()) {
+    return "GA4_SERVICE_ACCOUNT_JSON";
+  }
+
+  const filePath =
+    process.env.GA4_SERVICE_ACCOUNT_FILE?.trim() ||
+    process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim();
+
+  return filePath ? basename(filePath) : null;
+}
+
+export function getGa4ServiceAccountFromEnv() {
   let raw = process.env.GA4_SERVICE_ACCOUNT_JSON?.trim();
 
   if (!raw) {
@@ -61,21 +97,7 @@ function getGa4ServiceAccount() {
     );
   }
 
-  let parsed: ServiceAccountPayload;
-  try {
-    parsed = JSON.parse(raw) as ServiceAccountPayload;
-  } catch {
-    throw new Error("GA4_SERVICE_ACCOUNT_JSON inválida.");
-  }
-
-  if (!parsed.client_email || !parsed.private_key) {
-    throw new Error("Credencial do GA4 incompleta.");
-  }
-
-  return {
-    ...parsed,
-    private_key: parsed.private_key.replace(/\\n/g, "\n"),
-  };
+  return parseGa4ServiceAccount(raw);
 }
 
 function toInteger(value?: string | null) {
@@ -100,8 +122,11 @@ export async function fetchGa4DailyPerformance(
   propertyId: string,
   startDate: string,
   endDate: string,
+  options?: {
+    credentials?: ServiceAccountPayload;
+  },
 ): Promise<Ga4SyncRow[]> {
-  const credentials = getGa4ServiceAccount();
+  const credentials = options?.credentials ?? getGa4ServiceAccountFromEnv();
   const auth = new google.auth.GoogleAuth({
     credentials,
     scopes: ["https://www.googleapis.com/auth/analytics.readonly"],
@@ -163,8 +188,11 @@ export async function fetchGa4ItemDailyPerformance(
   propertyId: string,
   startDate: string,
   endDate: string,
+  options?: {
+    credentials?: ServiceAccountPayload;
+  },
 ): Promise<Ga4ItemSyncRow[]> {
-  const credentials = getGa4ServiceAccount();
+  const credentials = options?.credentials ?? getGa4ServiceAccountFromEnv();
   const auth = new google.auth.GoogleAuth({
     credentials,
     scopes: ["https://www.googleapis.com/auth/analytics.readonly"],

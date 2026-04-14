@@ -1,41 +1,48 @@
 import { NextResponse } from "next/server";
 import { requireBrandAccess, requireSuperAdmin } from "@/lib/brandops/admin";
+import {
+  hydrateIntegrationConfigs,
+  normalizeIntegrationSettings,
+} from "@/lib/brandops/integration-config";
 import type { IntegrationMode, IntegrationProvider } from "@/lib/brandops/types";
 
 const allowedProviders = new Set<IntegrationProvider>(["ink", "meta", "ga4"]);
 const allowedModes = new Set<IntegrationMode>(["manual_csv", "api", "disabled"]);
 
 function normalizeSettings(provider: IntegrationProvider, settings: unknown) {
-  const source =
-    settings && typeof settings === "object" && !Array.isArray(settings)
-      ? (settings as Record<string, unknown>)
-      : {};
+  const source = normalizeIntegrationSettings(provider, settings);
 
   if (provider === "ga4") {
     return {
-      propertyId:
-        typeof source.propertyId === "string" && source.propertyId.trim()
-          ? source.propertyId.trim()
-          : null,
-      timezone:
-        typeof source.timezone === "string" && source.timezone.trim()
-          ? source.timezone.trim()
-          : "America/Sao_Paulo",
+      propertyId: source.propertyId,
+      timezone: source.timezone,
+      autoSyncEnabled: source.autoSyncEnabled,
+      autoSyncIntervalHours: source.autoSyncIntervalHours,
+      autoSyncLastRunAt: source.autoSyncLastRunAt,
+      autoSyncNextRunAt: source.autoSyncNextRunAt,
+      credentialSource: source.credentialSource,
+      hasApiKey: source.hasApiKey,
+      apiKeyHint: source.apiKeyHint,
     };
   }
 
   if (provider === "meta") {
     return {
-      adAccountId:
-        typeof source.adAccountId === "string" && source.adAccountId.trim()
-          ? source.adAccountId.trim()
-          : null,
-      manualFallback:
-        typeof source.manualFallback === "boolean" ? source.manualFallback : true,
-      syncWindowDays:
-        typeof source.syncWindowDays === "number" && Number.isFinite(source.syncWindowDays)
-          ? source.syncWindowDays
-          : 30,
+      adAccountId: source.adAccountId,
+      catalogId: source.catalogId,
+      manualFallback: source.manualFallback,
+      syncWindowDays: source.syncWindowDays,
+      autoSyncEnabled: source.autoSyncEnabled,
+      autoSyncIntervalHours: source.autoSyncIntervalHours,
+      autoSyncLastRunAt: source.autoSyncLastRunAt,
+      autoSyncNextRunAt: source.autoSyncNextRunAt,
+      catalogSyncAt: source.catalogSyncAt,
+      catalogSyncStatus: source.catalogSyncStatus,
+      catalogSyncError: source.catalogSyncError,
+      catalogProductCount: source.catalogProductCount,
+      credentialSource: source.credentialSource,
+      hasApiKey: source.hasApiKey,
+      apiKeyHint: source.apiKeyHint,
     };
   }
 
@@ -63,7 +70,23 @@ export async function GET(
       throw error;
     }
 
-    return NextResponse.json({ integrations: data ?? [] });
+    const integrations = await hydrateIntegrationConfigs(
+      brandId,
+      (data ?? []).map((row) => ({
+        id: row.id,
+        provider: row.provider as IntegrationProvider,
+        mode: row.mode as IntegrationMode,
+        settings:
+          row.settings && typeof row.settings === "object" && !Array.isArray(row.settings)
+            ? row.settings
+            : {},
+        lastSyncAt: row.last_sync_at ?? null,
+        lastSyncStatus: row.last_sync_status ?? "idle",
+        lastSyncError: row.last_sync_error ?? null,
+      })),
+    );
+
+    return NextResponse.json({ integrations });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Falha ao carregar integrações." },
@@ -92,6 +115,24 @@ export async function PATCH(
       throw new Error("Nenhuma integração informada para atualização.");
     }
 
+    const { data: currentRows, error: currentError } = await supabase
+      .from("brand_integrations")
+      .select("provider, settings")
+      .eq("brand_id", brandId);
+
+    if (currentError) {
+      throw currentError;
+    }
+
+    const currentSettingsMap = new Map(
+      (currentRows ?? []).map((row) => [
+        row.provider as IntegrationProvider,
+        row.settings && typeof row.settings === "object" && !Array.isArray(row.settings)
+          ? (row.settings as Record<string, unknown>)
+          : {},
+      ]),
+    );
+
     const rows = updates.map((entry) => {
       const provider = String(entry.provider ?? "").trim() as IntegrationProvider;
       const mode = String(entry.mode ?? "").trim() as IntegrationMode;
@@ -108,7 +149,10 @@ export async function PATCH(
         brand_id: brandId,
         provider,
         mode,
-        settings: normalizeSettings(provider, entry.settings),
+        settings: {
+          ...currentSettingsMap.get(provider),
+          ...normalizeSettings(provider, entry.settings),
+        },
       };
     });
 
@@ -130,7 +174,23 @@ export async function PATCH(
       throw refreshError;
     }
 
-    return NextResponse.json({ integrations: data ?? [] });
+    const integrations = await hydrateIntegrationConfigs(
+      brandId,
+      (data ?? []).map((row) => ({
+        id: row.id,
+        provider: row.provider as IntegrationProvider,
+        mode: row.mode as IntegrationMode,
+        settings:
+          row.settings && typeof row.settings === "object" && !Array.isArray(row.settings)
+            ? row.settings
+            : {},
+        lastSyncAt: row.last_sync_at ?? null,
+        lastSyncStatus: row.last_sync_status ?? "idle",
+        lastSyncError: row.last_sync_error ?? null,
+      })),
+    );
+
+    return NextResponse.json({ integrations });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Falha ao atualizar integrações." },

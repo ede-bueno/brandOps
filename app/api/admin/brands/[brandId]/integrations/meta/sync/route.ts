@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireBrandAccess } from "@/lib/brandops/admin";
-import { syncMetaRowsForBrand, type MetaIntegrationSettings } from "@/lib/integrations/meta";
+import { syncMetaIntegrationForBrand } from "@/lib/brandops/integration-automation";
 
 function formatError(error: unknown) {
   if (error instanceof Error) {
@@ -27,31 +27,10 @@ export async function POST(
     ({ brandId } = await params);
     const { supabase } = await requireBrandAccess(request, brandId);
     authenticatedSupabase = supabase;
-
-    const { data: integration, error: integrationError } = await supabase
-      .from("brand_integrations")
-      .select("id, mode, settings")
-      .eq("brand_id", brandId)
-      .eq("provider", "meta")
-      .single();
-
-    if (integrationError || !integration) {
-      throw integrationError ?? new Error("Integração da Meta não encontrada para esta loja.");
-    }
-
-    if (integration.mode !== "api") {
-      throw new Error("A integração da Meta precisa estar em modo API para sincronizar.");
-    }
-
-    const result = await syncMetaRowsForBrand(supabase, {
+    const result = await syncMetaIntegrationForBrand({
+      supabase,
       brandId,
-      integrationId: integration.id,
-      settings:
-        integration.settings &&
-        typeof integration.settings === "object" &&
-        !Array.isArray(integration.settings)
-          ? (integration.settings as MetaIntegrationSettings)
-          : {},
+      trigger: "manual",
     });
 
     return NextResponse.json({

@@ -1,0 +1,97 @@
+
+> brandops@0.1.0 build
+> npm run check && node scripts/run-next-build.js
+
+
+> brandops@0.1.0 check
+> npm run type-check && npm run lint
+
+
+> brandops@0.1.0 type-check
+> tsc --noEmit -p tsconfig.typecheck.json
+
+
+> brandops@0.1.0 lint
+> next lint
+
+
+ ⚠ The Next.js plugin was not detected in your ESLint configuration. See https://nextjs.org/docs/app/api-reference/config/eslint#migrating-existing-config
+✔ No ESLint warnings or errors
+   ▲ Next.js 15.1.12
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+
+ ⚠ The Next.js plugin was not detected in your ESLint configuration. See https://nextjs.org/docs/app/api-reference/config/eslint#migrating-existing-config
+   Collecting page data ...
+   Generating static pages (0/33) ...
+   Generating static pages (8/33) 
+   Generating static pages (16/33) 
+   Generating static pages (24/33) 
+ ✓ Generating static pages (33/33)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                                     Size     First Load JS
+┌ ○ /                                                           211 B           106 kB
+├ ○ /_not-found                                                 211 B           106 kB
+├ ○ /admin/stores                                               8.76 kB         210 kB
+├ ƒ /api/admin/brands                                           211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]                                 211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/atlas-analyst                   211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/atlas-context                   211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/atlas-learning                  211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/integrations                    211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/integrations/ga4/credentials    211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/integrations/ga4/sync           211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/integrations/gemini             211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/integrations/gemini/models      211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/integrations/meta/catalog-sync  211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/integrations/meta/credentials   211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/integrations/meta/sync          211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/reports/catalog                 211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/reports/financial               211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/reports/media                   211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/reports/product-insights        211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/reports/sales                   211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/reports/sanitization            211 B           106 kB
+├ ƒ /api/admin/brands/[brandId]/reports/traffic                 211 B           106 kB
+├ ƒ /api/admin/invitations                                      211 B           106 kB
+├ ƒ /api/cron/brand-syncs                                       211 B           106 kB
+├ ƒ /api/cron/meta-sync                                         211 B           106 kB
+├ ○ /cmv                                                        5.01 kB         206 kB
+├ ○ /cost-center                                                6.63 kB         207 kB
+├ ○ /dashboard                                                  11 kB           212 kB
+├ ○ /dashboard/contribution-margin                              4.78 kB         315 kB
+├ ○ /dre                                                        5.03 kB         315 kB
+├ ○ /feed                                                       10.4 kB         211 kB
+├ ○ /help                                                       7.52 kB         130 kB
+├ ○ /icon.svg                                                   0 B                0 B
+├ ○ /import                                                     23.8 kB         222 kB
+├ ○ /integrations                                               14.2 kB         216 kB
+├ ○ /integrations/tutorials                                     147 B           125 kB
+├ ƒ /integrations/tutorials/[provider]                          146 B           125 kB
+├ ○ /login                                                      3.35 kB         185 kB
+├ ○ /media                                                      206 B           319 kB
+├ ○ /media/campanhas                                            212 B           319 kB
+├ ○ /media/radar                                                212 B           319 kB
+├ ○ /media/visao-executiva                                      212 B           319 kB
+├ ○ /product-insights                                           205 B           318 kB
+├ ○ /product-insights/detalhamento                              210 B           318 kB
+├ ○ /product-insights/radar                                     210 B           318 kB
+├ ○ /product-insights/visao-executiva                           210 B           318 kB
+├ ○ /sales                                                      3.95 kB         311 kB
+├ ○ /sanitization                                               6.83 kB         205 kB
+├ ○ /settings                                                   15.3 kB         217 kB
+└ ○ /traffic                                                    6.11 kB         316 kB
++ First Load JS shared by all                                   106 kB
+  ├ chunks/1517-86ffcf8618625d66.js                             50.9 kB
+  ├ chunks/4bd1b696-ef4e24eeb8de3189.js                         53 kB
+  └ other shared chunks (total)                                 2 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
