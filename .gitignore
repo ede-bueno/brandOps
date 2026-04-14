@@ -24,6 +24,10 @@
 .codex/
 .codex-temp/
 .codex-*.log
+.atlas-local*.log
+.build-*.log
+.next-*.log
+dev-server-*.log
 .playwright/
 .playwright-cli/
 /output/
