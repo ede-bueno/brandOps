@@ -169,7 +169,7 @@ export default function SanitizationPage() {
         ? "Mídia"
         : "Pedidos";
 
-  if (activeBrandId && (!activeBrand || isBrandHydrating || isReportLoading)) {
+  if (activeBrandId && (!activeBrand || isReportLoading)) {
     return (
       <div className="atlas-page-stack">
         <PageHeader
@@ -189,7 +189,7 @@ export default function SanitizationPage() {
     );
   }
 
-  if (!activeBrand || (!activeBrand.media.length && !activeBrand.paidOrders.length)) {
+  if (!activeBrand || (!report.meta.hasData && !isReportLoading)) {
     return (
       <EmptyState
         title={reportError ? "Saneamento indisponível" : "Nenhum dado carregado para saneamento"}

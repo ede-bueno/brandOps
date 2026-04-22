@@ -52,6 +52,17 @@ function resolveCommercialOrderValue(row: {
   return netRevenue;
 }
 
+function resolveSanitizationStatus(
+  value: "PENDING" | "KEPT" | "IGNORED" | null | undefined,
+  isIgnored?: boolean | null,
+) {
+  if (value === "PENDING" || value === "KEPT" || value === "IGNORED") {
+    return value;
+  }
+
+  return isIgnored ? "IGNORED" : "PENDING";
+}
+
 function mapOrder(row: {
   id: string;
   order_number: string;
@@ -70,6 +81,8 @@ function mapOrder(row: {
   coupon_name: string | null;
   is_ignored: boolean | null;
   ignore_reason: string | null;
+  ignored_by: string | null;
+  ignored_at: string | null;
   sanitization_status: "PENDING" | "KEPT" | "IGNORED" | null;
   sanitization_note: string | null;
   sanitized_at: string | null;
@@ -92,10 +105,10 @@ function mapOrder(row: {
     shippingState: row.shipping_state ?? undefined,
     isIgnored: row.is_ignored ?? false,
     ignoreReason: row.ignore_reason ?? null,
-    sanitizationStatus: row.sanitization_status ?? "PENDING",
+    sanitizationStatus: resolveSanitizationStatus(row.sanitization_status, row.is_ignored),
     sanitizationNote: row.sanitization_note ?? null,
-    sanitizedAt: row.sanitized_at ?? null,
-    sanitizedBy: row.sanitized_by ?? null,
+    sanitizedAt: row.sanitized_at ?? row.ignored_at ?? null,
+    sanitizedBy: row.sanitized_by ?? row.ignored_by ?? null,
   };
 }
 
@@ -124,6 +137,8 @@ function mapMediaRow(row: {
   add_to_cart: number | null;
   is_ignored: boolean | null;
   ignore_reason: string | null;
+  ignored_by: string | null;
+  ignored_at: string | null;
   sanitization_status: "PENDING" | "KEPT" | "IGNORED" | null;
   sanitization_note: string | null;
   sanitized_at: string | null;
@@ -153,10 +168,10 @@ function mapMediaRow(row: {
     addToCart: Number(row.add_to_cart ?? 0),
     isIgnored: row.is_ignored ?? false,
     ignoreReason: row.ignore_reason ?? null,
-    sanitizationStatus: row.sanitization_status ?? "PENDING",
+    sanitizationStatus: resolveSanitizationStatus(row.sanitization_status, row.is_ignored),
     sanitizationNote: row.sanitization_note ?? null,
-    sanitizedAt: row.sanitized_at ?? null,
-    sanitizedBy: row.sanitized_by ?? null,
+    sanitizedAt: row.sanitized_at ?? row.ignored_at ?? null,
+    sanitizedBy: row.sanitized_by ?? row.ignored_by ?? null,
     dataSource: row.delivery?.toLowerCase() === "api" ? "api" : "manual_csv",
   };
 }
@@ -232,7 +247,7 @@ export async function GET(
         supabase
           .from("orders")
           .select(
-            "id, order_number, order_date, payment_method, payment_status, customer_name, items_in_order, gross_revenue, net_revenue, discount, commission_value, source, tracking_url, shipping_state, coupon_name, is_ignored, ignore_reason, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
+            "id, order_number, order_date, payment_method, payment_status, customer_name, items_in_order, gross_revenue, net_revenue, discount, commission_value, source, tracking_url, shipping_state, coupon_name, is_ignored, ignore_reason, ignored_by, ignored_at, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
           )
           .eq("brand_id", brandId)
           .range(from, to),
@@ -241,7 +256,7 @@ export async function GET(
         supabase
           .from("media_performance")
           .select(
-            "id, report_start, report_end, row_hash, campaign_name, adset_name, account_name, ad_name, platform, placement, device_platform, delivery, reach, impressions, clicks_all, spend, purchases, conversion_value, link_clicks, ctr_all, ctr_link, add_to_cart, is_ignored, ignore_reason, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
+            "id, report_start, report_end, row_hash, campaign_name, adset_name, account_name, ad_name, platform, placement, device_platform, delivery, reach, impressions, clicks_all, spend, purchases, conversion_value, link_clicks, ctr_all, ctr_link, add_to_cart, is_ignored, ignore_reason, ignored_by, ignored_at, sanitization_status, sanitization_note, sanitized_at, sanitized_by",
           )
           .eq("brand_id", brandId)
           .range(from, to),

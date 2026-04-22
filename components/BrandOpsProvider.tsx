@@ -788,7 +788,7 @@ export function BrandOpsProvider({
         await setMediaSanitizationState(mediaRowId, "IGNORED", reason);
         if (activeBrandId) {
           applyOptimisticSanitizationDecision("MEDIA", mediaRowId, "IGNORED", reason);
-          refreshAfterMutation(activeBrandId);
+          refreshAfterMutation(activeBrandId, false, false);
         }
         setErrorMessage(null);
       },
@@ -796,7 +796,7 @@ export function BrandOpsProvider({
         await setMediaSanitizationState(mediaRowId, "KEPT", reason);
         if (activeBrandId) {
           applyOptimisticSanitizationDecision("MEDIA", mediaRowId, "KEPT", reason);
-          refreshAfterMutation(activeBrandId);
+          refreshAfterMutation(activeBrandId, false, false);
         }
         setErrorMessage(null);
       },
@@ -804,7 +804,7 @@ export function BrandOpsProvider({
         await setMediaSanitizationState(mediaRowId, "PENDING");
         if (activeBrandId) {
           applyOptimisticSanitizationDecision("MEDIA", mediaRowId, "PENDING");
-          refreshAfterMutation(activeBrandId);
+          refreshAfterMutation(activeBrandId, false, false);
         }
         setErrorMessage(null);
       },
@@ -812,7 +812,7 @@ export function BrandOpsProvider({
         await setOrderSanitizationState(brandId, orderNumber, "IGNORED", reason);
         if (activeBrandId === brandId) {
           applyOptimisticSanitizationDecision("ORDER", orderNumber, "IGNORED", reason);
-          refreshAfterMutation(brandId);
+          refreshAfterMutation(brandId, false, false);
         }
         setErrorMessage(null);
       },
@@ -820,7 +820,7 @@ export function BrandOpsProvider({
         await setOrderSanitizationState(brandId, orderNumber, "KEPT", reason);
         if (activeBrandId === brandId) {
           applyOptimisticSanitizationDecision("ORDER", orderNumber, "KEPT", reason);
-          refreshAfterMutation(brandId);
+          refreshAfterMutation(brandId, false, false);
         }
         setErrorMessage(null);
       },
@@ -828,7 +828,7 @@ export function BrandOpsProvider({
         await setOrderSanitizationState(brandId, orderNumber, "PENDING");
         if (activeBrandId === brandId) {
           applyOptimisticSanitizationDecision("ORDER", orderNumber, "PENDING");
-          refreshAfterMutation(brandId);
+          refreshAfterMutation(brandId, false, false);
         }
         setErrorMessage(null);
       },
