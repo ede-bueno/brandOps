@@ -33,7 +33,10 @@ const child = spawn(
   ],
   {
     stdio: "inherit",
-    env: process.env,
+    env: {
+      ...process.env,
+      BRANDOPS_DIST_DIR: (process.env.BRANDOPS_DIST_DIR || "").trim() || ".next-dev",
+    },
   },
 );
 

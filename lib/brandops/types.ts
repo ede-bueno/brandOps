@@ -1101,4 +1101,192 @@ export interface CatalogReport {
   meta: CatalogReportMeta;
 }
 
+export type ExecutiveActionDomain = "cash" | "acquisition" | "offer" | "operations";
+export type ExecutiveActionPriority = "critical" | "high" | "medium" | "low";
+export type ExecutiveActionConfidence = "high" | "medium" | "low";
+export type ExecutiveActionStatus = "new" | "in_progress" | "deferred" | "resolved";
+export type ManagementTone = "positive" | "warning" | "negative" | "neutral" | "info";
+export type ManagementSourceHealthStatus = "healthy" | "warning" | "error" | "missing";
+
+export interface ExecutiveSourceRef {
+  label: string;
+  detail: string;
+  href: string;
+}
+
+export interface ExecutiveActionItem {
+  id: string;
+  actionKey: string;
+  domain: ExecutiveActionDomain;
+  title: string;
+  summary: string;
+  priority: ExecutiveActionPriority;
+  impact: string;
+  confidence: ExecutiveActionConfidence;
+  status: ExecutiveActionStatus;
+  reviewAt: string | null;
+  sourceRefs: ExecutiveSourceRef[];
+  drilldownHref: string;
+}
+
+export interface ManagementSourceHealthItem {
+  key: string;
+  label: string;
+  status: ManagementSourceHealthStatus;
+  freshnessLabel: string;
+  detail: string;
+  href: string;
+}
+
+export interface ManagementKpiDockItem {
+  key: string;
+  label: string;
+  value: string;
+  description: string;
+  tone: ManagementTone;
+  href?: string;
+}
+
+export interface ManagementStatusCard {
+  tone: ManagementTone;
+  title: string;
+  summary: string;
+  highlight: string;
+  nextMove: string;
+}
+
+export interface ManagementInsightItem {
+  key: string;
+  label: string;
+  value: string;
+  summary: string;
+  tone: ManagementTone;
+  href?: string;
+}
+
+export interface ManagementRiskItem {
+  key: string;
+  title: string;
+  summary: string;
+  tone: ManagementTone;
+  href: string;
+}
+
+export interface ManagementEvidenceLink {
+  label: string;
+  href: string;
+  summary: string;
+}
+
+export interface ManagementContextV2 {
+  brandId: string;
+  brandName: string;
+  from: string | null;
+  to: string | null;
+  generatedAt: string;
+  confidenceScore: number;
+  confidenceLabel: string;
+  hasData: boolean;
+}
+
+export interface ManagementCashDrivers {
+  headline: string;
+  summary: string;
+  dominantMetric: {
+    label: string;
+    value: string;
+    description: string;
+  };
+  drivers: ManagementInsightItem[];
+  trend: Array<{
+    label: string;
+    contributionAfterMedia: number;
+    netResult: number;
+  }>;
+}
+
+export interface ManagementAcquisitionSnapshot {
+  headline: string;
+  summary: string;
+  topOpportunity: string | null;
+  topRisk: string | null;
+  drivers: ManagementInsightItem[];
+  trend: Array<{
+    date: string;
+    spend: number;
+    attributedRevenue: number;
+    sessions: number;
+    purchaseRevenue: number;
+  }>;
+}
+
+export interface ManagementOfferSnapshot {
+  headline: string;
+  summary: string;
+  topOpportunity: string | null;
+  topRisk: string | null;
+  drivers: ManagementInsightItem[];
+  topProducts: Array<{
+    label: string;
+    value: string;
+    summary: string;
+  }>;
+}
+
+export interface ManagementOperationalRisks {
+  headline: string;
+  summary: string;
+  items: ManagementRiskItem[];
+}
+
+export interface ManagementSnapshotV2 {
+  context: ManagementContextV2;
+  sourceHealth: ManagementSourceHealthItem[];
+  kpiDock: ManagementKpiDockItem[];
+  executiveStatus: ManagementStatusCard;
+  decisionQueue: ExecutiveActionItem[];
+  cashDrivers: ManagementCashDrivers;
+  acquisitionSnapshot: ManagementAcquisitionSnapshot;
+  offerSnapshot: ManagementOfferSnapshot;
+  operationalRisks: ManagementOperationalRisks;
+  evidenceLinks: ManagementEvidenceLink[];
+}
+
+export interface FinanceHubReport {
+  context: ManagementContextV2;
+  sourceHealth: ManagementSourceHealthItem[];
+  executiveStatus: ManagementStatusCard;
+  kpiDock: ManagementKpiDockItem[];
+  priorities: ExecutiveActionItem[];
+  overview: ManagementCashDrivers;
+  financial: AnnualDreReport;
+  sales: SalesDetailReport;
+  evidenceLinks: ManagementEvidenceLink[];
+}
+
+export interface AcquisitionHubReport {
+  context: ManagementContextV2;
+  sourceHealth: ManagementSourceHealthItem[];
+  executiveStatus: ManagementStatusCard;
+  kpiDock: ManagementKpiDockItem[];
+  priorities: ExecutiveActionItem[];
+  overview: ManagementAcquisitionSnapshot;
+  media: MediaReport;
+  traffic: TrafficReport;
+  evidenceLinks: ManagementEvidenceLink[];
+}
+
+export interface OfferHubReport {
+  context: ManagementContextV2;
+  sourceHealth: ManagementSourceHealthItem[];
+  executiveStatus: ManagementStatusCard;
+  kpiDock: ManagementKpiDockItem[];
+  priorities: ExecutiveActionItem[];
+  overview: ManagementOfferSnapshot;
+  sales: SalesDetailReport;
+  productInsights: ProductInsightsReport;
+  catalog: CatalogReport;
+  evidenceLinks: ManagementEvidenceLink[];
+}
+
 

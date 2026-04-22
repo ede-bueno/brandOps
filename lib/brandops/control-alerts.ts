@@ -59,7 +59,7 @@ export function buildControlAlerts(
       title: "Resultado operacional no vermelho",
       description:
         "O DRE do período virou prioridade para localizar a principal pressão estrutural.",
-      href: APP_ROUTES.dre,
+      href: APP_ROUTES.finance,
       tone: "negative",
       badge: currencyFormatter.format(telemetry.netResult),
     });
@@ -71,7 +71,7 @@ export function buildControlAlerts(
       eyebrow: "Base",
       title: "Base ainda pede saneamento",
       description: `${telemetry.pendingSanitizationCount} pendência(s) ainda podem distorcer comparação, margem e ranking.`,
-      href: APP_ROUTES.sanitization,
+      href: APP_ROUTES.operations,
       tone: "warning",
       badge: `${telemetry.pendingSanitizationCount} pendência(s)`,
     });
@@ -84,7 +84,7 @@ export function buildControlAlerts(
       title: "Há integração com erro recente",
       description:
         "Meta ou GA4 falhou recentemente. Valide a fonte antes de agir em cima do dado.",
-      href: APP_ROUTES.integrations,
+      href: APP_ROUTES.platform,
       tone: "warning",
       badge: "revisar",
     });
@@ -97,7 +97,7 @@ export function buildControlAlerts(
       title: "Custo variável pressionando a receita",
       description:
         "CMV e mídia estão consumindo uma fatia alta da RLD disponível no período.",
-      href: APP_ROUTES.dre,
+      href: APP_ROUTES.finance,
       tone: "warning",
       badge: percentFormatter.format(telemetry.variableCostShare),
     });
@@ -114,7 +114,7 @@ export function buildControlAlerts(
       title: "Retorno de mídia curto para escalar",
       description:
         "A aquisição ainda pede revisão de verba, criativo ou segmentação antes de ganhar escala.",
-      href: APP_ROUTES.media,
+      href: APP_ROUTES.acquisition,
       tone: "info",
       badge: `${telemetry.grossRoas.toFixed(2)}x`,
     });

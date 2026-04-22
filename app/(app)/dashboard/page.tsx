@@ -1,151 +1,119 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import {
-  AnalyticsCalloutCard,
-  AnalyticsKpiCard,
-} from "@/components/analytics/AnalyticsPrimitives";
-import { AtlasControlTowerHome } from "@/components/AtlasControlTowerHome";
+import { startTransition, useEffect, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
+import { CommandCenterView } from "@/components/management-v2";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, SectionHeading, StackItem, SurfaceCard, WorkspaceTabs } from "@/components/ui-shell";
-import { useSanitizationPendingCount } from "@/hooks/use-sanitization-summary";
-import { buildControlAlerts } from "@/lib/brandops/control-alerts";
 import {
-  currencyFormatter,
-  integerFormatter,
-  percentFormatter,
-} from "@/lib/brandops/format";
-import { APP_ROUTES } from "@/lib/brandops/routes";
+  fetchCommandCenterReport,
+  updateExecutiveActionQueueItem,
+} from "@/lib/brandops/database";
+import type {
+  ExecutiveActionItem,
+  ExecutiveActionStatus,
+  ManagementSnapshotV2,
+} from "@/lib/brandops/types";
 
-type DashboardSection = "overview" | "diagnostics" | "atlas";
-
-type DiagnosticTone =
-  | "default"
-  | "secondary"
-  | "warning"
-  | "info"
-  | "negative"
-  | "positive";
-
-type DiagnosticItem = {
-  eyebrow: string;
-  title: string;
-  description: string;
-  tone: DiagnosticTone;
-  href: string;
-  actionLabel?: string;
-};
-
-function getDiagnosticActionLabel(href: string) {
-  if (href === APP_ROUTES.dashboardContributionMargin) {
-    return "Abrir margem";
-  }
-
-  if (href === APP_ROUTES.dre) {
-    return "Abrir DRE";
-  }
-
-  if (href === APP_ROUTES.sanitization) {
-    return "Abrir saneamento";
-  }
-
-  if (href === APP_ROUTES.integrations) {
-    return "Revisar fontes";
-  }
-
-  if (href === APP_ROUTES.media) {
-    return "Abrir mídia";
-  }
-
-  if (href === APP_ROUTES.productInsights) {
-    return "Abrir produtos";
-  }
-
-  return "Abrir";
+function LoadingShell() {
+  return (
+    <div className="atlas-page-stack-compact animate-pulse">
+      <div className="h-32 rounded-[1.7rem] bg-surface-container" />
+      <div className="grid gap-3 lg:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="h-24 rounded-2xl bg-surface-container" />
+        ))}
+      </div>
+      <div className="grid gap-3 lg:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div key={index} className="h-28 rounded-2xl bg-surface-container" />
+        ))}
+      </div>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(21rem,0.85fr)]">
+        <div className="h-[34rem] rounded-[1.7rem] bg-surface-container" />
+        <div className="h-[34rem] rounded-[1.7rem] bg-surface-container" />
+      </div>
+    </div>
+  );
 }
 
 export default function DashboardPage() {
-  const [activeSection, setActiveSection] = useState<DashboardSection>("overview");
+  const [report, setReport] = useState<ManagementSnapshotV2 | null>(null);
+  const [isReportLoading, setIsReportLoading] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [pendingActionKey, setPendingActionKey] = useState<string | null>(null);
   const {
     activeBrand,
     activeBrandId,
     brands,
+    periodRange,
     selectedPeriodLabel,
-    isLoading: isDatasetLoading,
-    isMetricsLoading,
-    financialReportFiltered,
-    session,
+    isLoading,
   } = useBrandOps();
 
   const selectedBrandName =
     activeBrand?.name ??
     brands.find((brand) => brand.id === activeBrandId)?.name ??
-    "Loja";
-
-  const pendingSanitizationCount = useSanitizationPendingCount(
-    activeBrandId,
-    session?.access_token,
-  );
-
-  const isBrandLoading =
-    Boolean(activeBrandId) && (isDatasetLoading || isMetricsLoading || !activeBrand);
-  const mediaIntegration =
-    activeBrand?.integrations.find((integration) => integration.provider === "meta") ?? null;
-  const ga4Integration =
-    activeBrand?.integrations.find((integration) => integration.provider === "ga4") ?? null;
-  const geminiIntegration =
-    activeBrand?.integrations.find((integration) => integration.provider === "gemini") ?? null;
-  const canUseAtlasTab =
-    (activeBrand?.governance.featureFlags.atlasAi ?? false) &&
-    (activeBrand?.governance.featureFlags.atlasCommandCenter ?? false) &&
-    geminiIntegration?.mode === "api";
-  const effectiveSection =
-    !canUseAtlasTab && activeSection === "atlas" ? "overview" : activeSection;
+    "Marca";
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (!activeBrandId) {
+      setReport(null);
+      setReportError(null);
+      setIsReportLoading(false);
       return;
     }
 
-    const syncSectionFromHash = () => {
-      if (window.location.hash === "#atlas-ai-home" && canUseAtlasTab) {
-        setActiveSection("atlas");
-      }
-    };
+    let cancelled = false;
+    const brandId = activeBrandId;
 
-    syncSectionFromHash();
-    window.addEventListener("hashchange", syncSectionFromHash);
-    return () => window.removeEventListener("hashchange", syncSectionFromHash);
-  }, [canUseAtlasTab]);
+    async function loadReport() {
+      setIsReportLoading(true);
+      setReportError(null);
+
+      try {
+        const nextReport = await fetchCommandCenterReport(
+          brandId,
+          periodRange?.start ?? null,
+          periodRange?.end ?? null,
+        );
+
+        if (!cancelled) {
+          setReport(nextReport);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setReport(null);
+          setReportError(
+            error instanceof Error
+              ? error.message
+              : "Não foi possível consolidar o Centro de Comando.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsReportLoading(false);
+        }
+      }
+    }
+
+    void loadReport();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeBrandId, periodRange?.end, periodRange?.start]);
+
+  const isBrandLoading = Boolean(activeBrandId) && (isLoading || isReportLoading || !activeBrand);
 
   if (isBrandLoading) {
-    return (
-<div className="atlas-component-stack">
-        <PageHeader
-          eyebrow="Torre de Controle"
-          title={selectedBrandName}
-          description="Carregando a leitura executiva da operação."
-        />
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <div key={index} className="h-28 rounded-xl bg-surface-container animate-pulse" />
-          ))}
-        </div>
-        <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
-          <div className="h-72 rounded-xl bg-surface-container animate-pulse" />
-          <div className="h-72 rounded-xl bg-surface-container animate-pulse" />
-        </div>
-      </div>
-    );
+    return <LoadingShell />;
   }
 
   if (!activeBrandId && !activeBrand) {
     return (
-        <EmptyState
+      <EmptyState
         title="Nenhuma marca em foco"
-        description="Selecione uma marca para abrir a Torre de Controle."
+        description="Selecione uma marca para abrir o Centro de Comando do Atlas."
       />
     );
   }
@@ -153,465 +121,93 @@ export default function DashboardPage() {
   if (!activeBrand) {
     return (
       <EmptyState
-        title="Dados da loja indisponíveis"
-        description="Não foi possível montar o dataset da loja selecionada."
+        title={reportError ? "Centro de Comando indisponível" : "Dados da marca indisponíveis"}
+        description={reportError ?? "Não foi possível carregar o contexto da marca selecionada."}
       />
     );
   }
 
-  if (!financialReportFiltered?.total) {
+  if (!report) {
     return (
       <EmptyState
-        title="Relatório indisponível"
-        description="Não foi possível carregar a leitura financeira canônica desta loja."
+        title="Centro de Comando vazio"
+        description="Ainda não há leitura suficiente para montar a gestão desta marca no recorte atual."
       />
     );
   }
 
-  const metrics = financialReportFiltered.total;
-  const analysis = financialReportFiltered.analysis;
-  const expenseBreakdown = financialReportFiltered.expenseBreakdown.slice(0, 4);
-  const variableCostShare = analysis.shares.variableCostShare;
-  const diagnostics: DiagnosticItem[] = (() => {
-    const items = buildControlAlerts(
-      {
-        pendingSanitizationCount,
-        mediaIntegrationError: mediaIntegration?.lastSyncStatus === "error",
-        ga4IntegrationError: ga4Integration?.lastSyncStatus === "error",
-        contributionAfterMedia: metrics.contributionAfterMedia,
-        netResult: metrics.netResult,
-        variableCostShare,
-        grossRoas: metrics.grossRoas,
-      },
-      { includeStableFallback: true },
-    ).map((alert) => ({
-      eyebrow: alert.eyebrow,
-      title: alert.title,
-      description: alert.description,
-      tone:
-        alert.tone === "positive"
-          ? "positive"
-          : alert.tone === "negative"
-            ? "negative"
-            : alert.tone,
-      href: alert.href,
-      actionLabel: getDiagnosticActionLabel(alert.href),
-    })) satisfies DiagnosticItem[];
-
-    if (items.length === 1 && items[0]?.tone === "positive") {
-      items.push({
-        eyebrow: "Próximo passo",
-        title: "Cruze produto, mídia e funil antes de escalar",
-        description:
-          "Com a base estável, o próximo ganho tende a vir do mix entre catálogo, aquisição e conversão.",
-        tone: "info",
-        href: "/product-insights",
-        actionLabel: "Abrir produtos",
-      });
+  const handleUpdateAction = (
+    action: ExecutiveActionItem,
+    update: { status?: ExecutiveActionStatus; reviewAt?: string | null },
+  ) => {
+    if (!activeBrandId) {
+      return;
     }
 
-    return items.slice(0, 4);
-  })();
+    const nextStatus = update.status ?? action.status;
+    const nextReviewAt =
+      update.reviewAt === undefined ? action.reviewAt : update.reviewAt;
 
-  const primaryDiagnostic = diagnostics[0] ?? null;
-  const momentumLabel =
-    analysis.momentum.hasComparison
-      ? `${analysis.momentum.delta >= 0 ? "+" : ""}${analysis.momentum.delta.toFixed(1)} p.p.`
-      : "sem comparação";
-  const topExpense = analysis.topExpenseCategory;
-  const breakEvenValue =
-    metrics.breakEvenDisplay !== null ? currencyFormatter.format(metrics.breakEvenDisplay) : "N/A";
-  const atlasStatus = canUseAtlasTab
-    ? {
-        title: "Atlas IA pronto",
-        description: "Mesa do Atlas liberada para esta marca no recorte atual.",
-        aside: "abrir mesa",
-        tone: "positive" as const,
-        href: `${APP_ROUTES.dashboard}#atlas-ai-home`,
-      }
-    : activeBrand?.governance.featureFlags.atlasAi ?? false
-      ? {
-          title: "Atlas IA ainda incompleto",
-          description:
-            geminiIntegration?.mode === "api"
-              ? "A marca já tem Gemini, mas a mesa do Atlas ainda não foi liberada na governança."
-              : "Falta ativar o Gemini por API para liberar a leitura assistida na Torre.",
-          aside:
-            geminiIntegration?.mode === "api" ? "rever governança" : "ativar Gemini",
-          tone: "warning" as const,
-          href:
-            geminiIntegration?.mode === "api"
-              ? APP_ROUTES.adminStores
-              : APP_ROUTES.integrations,
-        }
-      : {
-          title: "Atlas IA bloqueado pelo plano",
-          description:
-            "A leitura assistida ainda não foi liberada para esta marca. Ajuste a governança antes da ativação técnica.",
-          aside: "liberar plano",
-          tone: "info" as const,
-          href: APP_ROUTES.adminStores,
-        };
+    setPendingActionKey(action.actionKey);
+    setReport((current) =>
+      current
+        ? {
+            ...current,
+            decisionQueue: current.decisionQueue.map((item) =>
+              item.actionKey === action.actionKey
+                ? {
+                    ...item,
+                    status: nextStatus,
+                    reviewAt: nextReviewAt,
+                  }
+                : item,
+            ),
+          }
+        : current,
+    );
+
+    startTransition(() => {
+      void updateExecutiveActionQueueItem(activeBrandId, {
+        actionKey: action.actionKey,
+        domain: action.domain,
+        status: nextStatus,
+        reviewAt: nextReviewAt,
+        from: periodRange?.start ?? null,
+        to: periodRange?.end ?? null,
+      })
+        .then(() => {
+          setPendingActionKey(null);
+        })
+        .catch((error) => {
+          setReportError(
+            error instanceof Error
+              ? error.message
+              : "Não foi possível salvar a fila executiva.",
+          );
+          setPendingActionKey(null);
+          void fetchCommandCenterReport(
+            activeBrandId,
+            periodRange?.start ?? null,
+            periodRange?.end ?? null,
+          )
+            .then((nextReport) => setReport(nextReport))
+            .catch(() => undefined);
+        });
+    });
+  };
 
   return (
-    <div className="atlas-page-stack-compact">
-      <PageHeader
-        eyebrow="Torre de Controle"
-        title="Painel executivo"
-        description="Leitura rápida para decidir margem, base e aquisição no recorte ativo."
-        actions={
-          <WorkspaceTabs
-            items={[
-              {
-                key: "dashboard-overview",
-                label: "Operação",
-                active: effectiveSection === "overview",
-                onClick: () => setActiveSection("overview"),
-              },
-              {
-                key: "dashboard-diagnostics",
-                label: "Alertas",
-                active: effectiveSection === "diagnostics",
-                onClick: () => setActiveSection("diagnostics"),
-              },
-              ...(canUseAtlasTab
-                ? [
-                    {
-                      key: "dashboard-atlas",
-                      label: "Atlas IA",
-                      active: effectiveSection === "atlas",
-                      onClick: () => setActiveSection("atlas"),
-                    },
-                  ]
-                : []),
-            ]}
-          />
-        }
-      />
-
-      {effectiveSection === "overview" ? (
-        <>
-          <section className="atlas-kpi-grid xl:grid-cols-4">
-            <AnalyticsKpiCard
-              label="Resultado operacional"
-              value={currencyFormatter.format(metrics.netResult)}
-              description="Resultado final depois de CMV, mídia e despesas."
-              tone={metrics.netResult >= 0 ? "positive" : "negative"}
-            />
-            <AnalyticsKpiCard
-              label="Contribuição pós-mídia"
-              value={currencyFormatter.format(metrics.contributionAfterMedia)}
-              description={percentFormatter.format(metrics.contributionMargin)}
-              tone={metrics.contributionAfterMedia >= 0 ? "positive" : "negative"}
-              href="/dashboard/contribution-margin"
-              actionLabel="Margem"
-            />
-            <AnalyticsKpiCard
-              label="RLD"
-              value={currencyFormatter.format(metrics.rld)}
-              description="Receita líquida disponível após descontos."
-              tone="info"
-            />
-            <AnalyticsKpiCard
-              label="ROAS bruto"
-              value={`${metrics.grossRoas.toFixed(2)}x`}
-              description="Faturado bruto dividido pelo investimento de mídia."
-              tone={metrics.grossRoas >= 2 ? "positive" : "warning"}
-            />
-            <AnalyticsKpiCard
-              label="Pedidos pagos"
-              value={integerFormatter.format(metrics.paidOrderCount)}
-              description="Pedidos pagos no período ativo."
-              tone="default"
-            />
-            <AnalyticsKpiCard
-              label="Itens vendidos"
-              value={integerFormatter.format(metrics.unitsSold)}
-              description="Volume real de itens usados no DRE."
-              tone="default"
-            />
-            <AnalyticsKpiCard
-              label="Ticket médio"
-              value={currencyFormatter.format(metrics.averageTicket)}
-              description="Faturado bruto dividido por pedidos pagos."
-              tone="default"
-            />
-            <AnalyticsKpiCard
-              label="Mídia"
-              value={currencyFormatter.format(metrics.mediaSpend)}
-              description="Investimento total saneado no período."
-              tone="warning"
-            />
-          </section>
-
-          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.62fr)_18.5rem]">
-            <SurfaceCard>
-              <SectionHeading
-                title="Prioridade do período"
-                description="O primeiro bloco decide o próximo clique. O restante confirma se o recorte está saudável."
-                aside={<span className="atlas-inline-metric">{selectedBrandName}</span>}
-              />
-              <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(17rem,0.48fr)]">
-                <div className="atlas-priority-rail">
-                  <AnalyticsCalloutCard
-                    eyebrow={primaryDiagnostic?.eyebrow ?? "Operação"}
-                    title={primaryDiagnostic?.title ?? "Sem alerta crítico no corte"}
-                    description={
-                      primaryDiagnostic?.description ??
-                      "A leitura atual não mostra pressão estrutural imediata, então o próximo passo é perseguir eficiência."
-                    }
-                    tone={primaryDiagnostic?.tone ?? "default"}
-                    href={primaryDiagnostic?.href ?? "/dashboard"}
-                    actionLabel={primaryDiagnostic?.actionLabel ?? "Abrir"}
-                    footer={selectedPeriodLabel}
-                  />
-
-                  <div className="atlas-diagnostic-list">
-                    {diagnostics.slice(1, 4).map((diagnostic) => (
-                      <Link key={diagnostic.title} href={diagnostic.href} className="atlas-diagnostic-row" data-tone={diagnostic.tone}>
-                        <div className="min-w-0 flex-1">
-                          <p className="atlas-analytics-eyebrow">{diagnostic.eyebrow}</p>
-                          <p className="mt-1 text-[13px] font-semibold text-on-surface">{diagnostic.title}</p>
-                          <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">{diagnostic.description}</p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="atlas-compact-stack">
-                  <StackItem
-                    title="Momento da margem"
-                    description={analysis.momentum.description}
-                    aside={momentumLabel}
-                    tone={analysis.momentum.tone === "positive" ? "positive" : analysis.momentum.tone === "warning" ? "warning" : "default"}
-                  />
-                  <StackItem
-                    title="Ponto de equilíbrio"
-                    description={metrics.breakEvenReason}
-                    aside={breakEvenValue}
-                    tone={metrics.breakEvenDisplay !== null ? "info" : "warning"}
-                  />
-                  <StackItem
-                    title="Custo variável"
-                    description="Participação combinada de CMV e mídia sobre a RLD."
-                    aside={percentFormatter.format(variableCostShare)}
-                    tone={variableCostShare > 0.7 ? "warning" : "default"}
-                  />
-                </div>
-              </div>
-            </SurfaceCard>
-
-            <SurfaceCard>
-              <SectionHeading
-                title="Saúde do recorte"
-                description="Validação curta antes de aprofundar."
-              />
-              <div className="mt-4 atlas-compact-stack">
-                <StackItem
-                  title="Base e saneamento"
-                  description={
-                    pendingSanitizationCount > 0
-                      ? `${pendingSanitizationCount} pendência(s) ainda pedem revisão.`
-                      : "Sem pendência estrutural aberta no período."
-                  }
-                  aside={pendingSanitizationCount > 0 ? "revisar" : "ok"}
-                  tone={pendingSanitizationCount > 0 ? "warning" : "positive"}
-                />
-                <StackItem
-                  title="Integrações"
-                  description={
-                    mediaIntegration?.lastSyncStatus === "error" || ga4Integration?.lastSyncStatus === "error"
-                      ? "Há fonte com erro recente. Valide antes de agir."
-                      : "Meta e GA4 sem erro recente registrado."
-                  }
-                  aside={
-                    mediaIntegration?.lastSyncStatus === "error" || ga4Integration?.lastSyncStatus === "error"
-                      ? "alerta"
-                      : "ok"
-                  }
-                  tone={
-                    mediaIntegration?.lastSyncStatus === "error" || ga4Integration?.lastSyncStatus === "error"
-                      ? "warning"
-                      : "positive"
-                  }
-                />
-                <StackItem
-                  title="Maior despesa"
-                  description={topExpense ? topExpense.categoryName : "Sem lançamento relevante no período."}
-                  aside={topExpense ? currencyFormatter.format(topExpense.total) : "-"}
-                  tone="default"
-                />
-                <Link href={atlasStatus.href} prefetch={false} className="block">
-                  <StackItem
-                    title={atlasStatus.title}
-                    description={atlasStatus.description}
-                    aside={atlasStatus.aside}
-                    tone={atlasStatus.tone}
-                    className="transition hover:border-primary/20"
-                  />
-                </Link>
-              </div>
-            </SurfaceCard>
-          </section>
-
-          <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <SurfaceCard>
-              <SectionHeading
-                title="Leitura comercial"
-                description="Volume, retenção e densidade do período."
-              />
-              <div className="mt-4 atlas-compact-stack">
-                <StackItem
-                  title="Pedidos pagos"
-                  description="Base comercial consolidada da INK."
-                  aside={integerFormatter.format(metrics.paidOrderCount)}
-                  tone="default"
-                />
-                <StackItem
-                  title="Itens vendidos"
-                  description="Peças reais usadas no cálculo do CMV."
-                  aside={integerFormatter.format(metrics.unitsSold)}
-                  tone="default"
-                />
-                <StackItem
-                  title="Ticket médio"
-                  description="Faturado bruto por pedido pago."
-                  aside={currencyFormatter.format(metrics.averageTicket)}
-                  tone="default"
-                />
-                <StackItem
-                  title="Descontos"
-                  description={`Cupom identificado: ${currencyFormatter.format(metrics.couponDiscounts)}.`}
-                  aside={currencyFormatter.format(metrics.discounts)}
-                  tone="warning"
-                />
-              </div>
-            </SurfaceCard>
-
-            <SurfaceCard>
-              <SectionHeading
-                title="Economia unitária"
-                description="O que sustenta ou corrói a operação por baixo."
-              />
-              <div className="mt-4 atlas-compact-stack">
-                <StackItem
-                  title="Comissão INK"
-                  description="Resultado operacional originado na INK."
-                  aside={currencyFormatter.format(metrics.inkProfit)}
-                  tone="positive"
-                />
-                <StackItem
-                  title="CMV aplicado"
-                  description="Custo histórico usado nos itens vendidos."
-                  aside={currencyFormatter.format(metrics.cmvTotal)}
-                  tone="warning"
-                />
-                <StackItem
-                  title="Mídia no período"
-                  description="Investimento total saneado."
-                  aside={currencyFormatter.format(metrics.mediaSpend)}
-                  tone="warning"
-                />
-                <StackItem
-                  title="Resultado após despesas"
-                  description="Leitura final da operação no recorte."
-                  aside={currencyFormatter.format(metrics.netResult)}
-                  tone={metrics.netResult >= 0 ? "positive" : "negative"}
-                />
-              </div>
-            </SurfaceCard>
-
-            <SurfaceCard className="xl:col-span-2">
-              <SectionHeading
-                title="Livro de despesas"
-                description="Categorias que mais pressionaram o resultado no corte."
-              />
-              <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                {expenseBreakdown.length ? (
-                  expenseBreakdown.map((expense) => (
-                    <StackItem
-                      key={expense.categoryName}
-                      title={expense.categoryName}
-                      description="Despesa consolidada no recorte ativo."
-                      aside={currencyFormatter.format(expense.total)}
-                      tone="default"
-                    />
-                  ))
-                ) : (
-                  <StackItem
-                    title="Sem despesa lançada"
-                    description="Ainda não há categorias lançadas para este período."
-                    aside="-"
-                    tone="info"
-                  />
-                )}
-              </div>
-            </SurfaceCard>
-          </section>
-        </>
-      ) : effectiveSection === "diagnostics" ? (
-          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.38fr)_17.5rem]">
-          <SurfaceCard>
-            <SectionHeading
-              title="Fila de alertas"
-              description="O primeiro alerta pede ação. Os demais ajudam a ordenar a investigação."
-            />
-            <div className="mt-4 atlas-component-stack-tight">
-              {diagnostics.map((diagnostic, index) => (
-                <Link key={`${diagnostic.eyebrow}-${diagnostic.title}`} href={diagnostic.href} className="block">
-                  {index === 0 ? (
-                    <AnalyticsCalloutCard
-                      eyebrow={diagnostic.eyebrow}
-                      title={diagnostic.title}
-                      description={diagnostic.description}
-                      tone={diagnostic.tone}
-                      actionLabel="Abrir"
-                    />
-                  ) : (
-                    <StackItem
-                      title={diagnostic.title}
-                      description={diagnostic.description}
-                      aside={diagnostic.eyebrow}
-                      tone={diagnostic.tone === "secondary" ? "default" : diagnostic.tone}
-                      className="transition hover:border-primary/20"
-                    />
-                  )}
-                </Link>
-              ))}
-            </div>
-          </SurfaceCard>
-
-          <SurfaceCard>
-            <SectionHeading
-              title="Contexto rápido"
-              description="Só o que ajuda a validar a fila."
-            />
-            <div className="mt-4 atlas-compact-stack">
-              <StackItem
-                title="Período ativo"
-                description="Recorte selecionado na shell."
-                aside={selectedPeriodLabel}
-                tone="default"
-              />
-              <StackItem
-                title="Resultado operacional"
-                description="Valor final depois de todas as pressões."
-                aside={currencyFormatter.format(metrics.netResult)}
-                tone={metrics.netResult >= 0 ? "positive" : "negative"}
-              />
-              <StackItem
-                title="Contribuição pós-mídia"
-                description="Margem disponível antes das despesas fixas."
-                aside={currencyFormatter.format(metrics.contributionAfterMedia)}
-                tone={metrics.contributionAfterMedia >= 0 ? "positive" : "negative"}
-              />
-            </div>
-          </SurfaceCard>
-        </section>
-      ) : (
-        <AtlasControlTowerHome />
-      )}
-    </div>
+    <CommandCenterView
+      snapshot={{
+        ...report,
+        context: {
+          ...report.context,
+          brandName: selectedBrandName,
+        },
+      }}
+      selectedPeriodLabel={selectedPeriodLabel}
+      onUpdateAction={handleUpdateAction}
+      pendingActionKey={pendingActionKey}
+    />
   );
 }

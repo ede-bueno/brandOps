@@ -3,6 +3,7 @@ import { ingestMetaRaw } from "@/lib/brandops/canonical-ingest";
 import { supabase } from "@/lib/supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  AcquisitionHubReport,
   AnnualDreReport,
   BrandExpense,
   BrandDataset,
@@ -12,15 +13,19 @@ import type {
   CmvCheckpoint,
   CmvMatchType,
   CsvFileKind,
+  ExecutiveActionStatus,
+  FinanceHubReport,
   Ga4ItemDailyPerformanceRow,
   Ga4DailyPerformanceRow,
   ImportRunInfo,
   ExpenseCategory,
   ImportedFileInfo,
+  ManagementSnapshotV2,
   MediaRow,
   MediaDataSource,
   MediaReport,
   OrderItem,
+  OfferHubReport,
   PaidOrder,
   ProductDecisionAction,
   ProductInsightClassification,
@@ -166,9 +171,13 @@ async function fetchBrandReportFromApi<T>(
     },
   );
 
-  const payload = (await response.json()) as T & { error?: string };
+  const payload = await readJsonResponse<T>(response);
   if (!response.ok) {
-    throw new Error(payload.error || options?.errorMessage || "Não foi possível carregar o relatório.");
+    throw new Error(payload?.error || options?.errorMessage || "Não foi possível carregar o relatório.");
+  }
+
+  if (!payload) {
+    throw new Error(options?.errorMessage || "O relatório retornou vazio.");
   }
 
   return payload;
@@ -288,6 +297,100 @@ export async function fetchSanitizationReport(
   return fetchBrandReportFromApi<SanitizationReport>(brandId, "sanitization", {
     errorMessage: "Não foi possível carregar o relatório de saneamento.",
   });
+}
+
+export async function fetchCommandCenterReport(
+  brandId: string,
+  from?: string | null,
+  to?: string | null,
+): Promise<ManagementSnapshotV2> {
+  return fetchBrandReportFromApi<ManagementSnapshotV2>(brandId, "command-center", {
+    from,
+    to,
+    errorMessage: "Não foi possível carregar o Centro de Comando.",
+  });
+}
+
+export async function fetchFinanceHubReport(
+  brandId: string,
+  from?: string | null,
+  to?: string | null,
+): Promise<FinanceHubReport> {
+  return fetchBrandReportFromApi<FinanceHubReport>(brandId, "finance-hub", {
+    from,
+    to,
+    errorMessage: "Não foi possível carregar o hub Financeiro.",
+  });
+}
+
+export async function fetchAcquisitionHubReport(
+  brandId: string,
+  from?: string | null,
+  to?: string | null,
+): Promise<AcquisitionHubReport> {
+  return fetchBrandReportFromApi<AcquisitionHubReport>(brandId, "acquisition-hub", {
+    from,
+    to,
+    errorMessage: "Não foi possível carregar o hub de Aquisição.",
+  });
+}
+
+export async function fetchOfferHubReport(
+  brandId: string,
+  from?: string | null,
+  to?: string | null,
+): Promise<OfferHubReport> {
+  return fetchBrandReportFromApi<OfferHubReport>(brandId, "offer-hub", {
+    from,
+    to,
+    errorMessage: "Não foi possível carregar o hub de Oferta.",
+  });
+}
+
+export async function updateExecutiveActionQueueItem(
+  brandId: string,
+  input: {
+    actionKey: string;
+    status: ExecutiveActionStatus;
+    reviewAt?: string | null;
+    domain: "cash" | "acquisition" | "offer" | "operations";
+    from?: string | null;
+    to?: string | null;
+  },
+) {
+  const accessToken = await getValidAccessToken();
+  const response = await fetch(
+    `/api/admin/brands/${encodeURIComponent(brandId)}/reports/command-center`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      cache: "no-store",
+      body: JSON.stringify(input),
+    },
+  );
+
+  const payload = await readJsonResponse<{ error?: string }>(response);
+  if (!response.ok) {
+    throw new Error(
+      payload?.error || "Não foi possível atualizar a fila executiva desta marca.",
+    );
+  }
+}
+
+async function readJsonResponse<T>(response: Response): Promise<(T & { error?: string }) | null> {
+  const raw = await response.text();
+  if (!raw.trim()) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw) as T & { error?: string };
+  } catch {
+    throw new Error("A resposta do servidor veio em formato inválido.");
+  }
 }
 
 function toImportErrorMessage(error: unknown) {

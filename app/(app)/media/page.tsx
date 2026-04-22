@@ -25,6 +25,7 @@ import {
   SectionHeading,
   StackItem,
   SurfaceCard,
+  TaskWorkspaceIntro,
   WorkspaceTabs,
 } from "@/components/ui-shell";
 import { fetchMediaReport } from "@/lib/brandops/database";
@@ -344,47 +345,45 @@ export function MediaWorkspace({
       />
 
       {pageMode === "home" ? (
-        <section className="atlas-kpi-grid xl:grid-cols-4">
-          <AnalyticsKpiCard
-            label="Investimento"
-            value={currencyFormatter.format(summary.spend)}
-            description="Gasto ativo da Meta no período saneado."
-            tone="default"
-          />
-          <AnalyticsKpiCard
-            label="Receita Meta atribuída"
-            value={currencyFormatter.format(summary.purchaseValue)}
-            tone="positive"
-            description="Receita de compra atribuída pela Meta. Não substitui o faturado real da INK."
-          />
-          <AnalyticsKpiCard
-            label="Compras Meta"
-            value={integerFormatter.format(summary.purchases)}
-            description="Volume de compras atribuídas pela plataforma."
-            tone="info"
-          />
-          <AnalyticsKpiCard
-            label="ROAS atribuído"
-            value={`${summary.attributedRoas.toFixed(2)}x`}
-            description={signals.attributedRoas.description}
-            tone={signalAccent(signals.attributedRoas)}
-          />
-        </section>
-      ) : null}
-
-      {pageMode === "home" ? (
         <>
+          <TaskWorkspaceIntro
+            title="Escolher a trilha de leitura e localizar a campanha em foco."
+            description="Use esta raiz para decidir se a próxima leitura deve ser síntese, curva diária ou tabela operacional."
+            primaryAction={primaryAction ?? report.commandRoom.narrative}
+            primaryDescription="Abra a visão executiva, o radar ou a tabela de campanhas conforme a pergunta que precisa responder."
+            supportItems={[
+              {
+                label: "Campanha em foco",
+                value: topCampaignBySpend?.campaignName ?? "Sem campanha dominante",
+                description:
+                  topCampaignBySpend?.summary ??
+                  "Abra campanhas para localizar a peça com maior peso operacional.",
+                tone: "default",
+              },
+              {
+                label: "Escalar primeiro",
+                value: bestScale ? bestScale.campaignName : "Sem campanha elegível",
+                description:
+                  report.commandRoom.bestScaleSummary ??
+                  "Ainda não há sinal forte o bastante para ampliar verba com segurança.",
+                tone: "positive",
+              },
+              {
+                label: "Revisar primeiro",
+                value: priorityReview ? priorityReview.campaignName : "Sem alerta crítico",
+                description:
+                  report.commandRoom.priorityReviewSummary ??
+                  "Nenhuma revisão dominante agora.",
+                tone: "warning",
+              },
+            ]}
+          />
+
           <section className="grid gap-4 xl:grid-cols-[minmax(0,1.42fr)_minmax(18rem,0.58fr)]">
-            <AnalyticsCalloutCard
-              eyebrow={analysis.narrativeTitle}
-              title={bestScale ? `Escalar ${bestScale.campaignName}` : "A mídia pede uma decisão curta"}
-              description={analysis.narrativeBody}
-              footer={primaryAction ?? report.commandRoom.narrative}
-            />
             <SurfaceCard>
               <SectionHeading
                 title="Escolha a leitura"
-                description="A home resume. O aprofundamento fica nas trilhas executiva, radar e campanhas."
+                description="Cada trilha responde a uma pergunta diferente do recorte."
                 aside={<span className="atlas-inline-metric">Recorte ativo</span>}
               />
               <div className="mt-5 grid gap-3 md:grid-cols-3">
@@ -408,58 +407,12 @@ export function MediaWorkspace({
                 />
               </div>
             </SurfaceCard>
-          </section>
-
-          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.34fr)_minmax(18rem,0.66fr)]">
-            <AnalyticsCalloutCard
-              eyebrow="Campanha em foco"
-              title={topCampaignBySpend?.campaignName ?? "Sem campanha dominante"}
-              description={
-                topCampaignBySpend?.summary ??
-                "Abra campanhas para localizar a peça com maior peso operacional."
-              }
-              footer={
-                topCampaignBySpend
-                  ? `${currencyFormatter.format(topCampaignBySpend.spend)} investidos`
-                  : "Aguardando massa de mídia suficiente."
-              }
-            />
-            <div className="atlas-side-stack">
-              <AnalyticsCalloutCard
-                eyebrow="Escalar primeiro"
-                title={bestScale ? bestScale.campaignName : "Sem campanha elegível"}
-                description={
-                  report.commandRoom.bestScaleSummary ??
-                  "Ainda não há sinal forte o bastante para ampliar verba com segurança."
-                }
-                tone="positive"
-                footer={
-                  bestScale
-                    ? `${bestScale.roas.toFixed(2)}x ROAS · ${percentFormatter.format(bestScale.ctrAll)} CTR`
-                    : "Aguardando campanha com sinal consistente."
-                }
-              />
-              <StackItem
-                tone="warning"
-                title={priorityReview ? `Revisar ${priorityReview.campaignName}` : "Sem alerta crítico"}
-                description={
-                  primaryAction ??
-                  report.commandRoom.priorityReviewSummary ??
-                  "Nenhuma revisão dominante agora."
-                }
-                aside={
-                  priorityReview
-                    ? `${priorityReview.roas.toFixed(2)}x ROAS · ${percentFormatter.format(priorityReview.ctrAll)} CTR`
-                    : "Sem campanha crítica no recorte."
-                }
-              />
-            </div>
-            <SurfaceCard className="xl:col-span-2">
+            <SurfaceCard>
               <SectionHeading
                 title="Prioridade do recorte"
-                description="Uma faixa única para decidir onde corrigir, manter ou abrir a tabela."
+                description="Uma faixa curta para confirmar foco, risco e próximo passo operacional."
               />
-              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              <div className="mt-4 grid gap-3">
                 <StackItem
                   tone="default"
                   title={topCampaignBySpend ? `Foco em ${topCampaignBySpend.campaignName}` : "Sem campanha dominante"}
@@ -477,7 +430,7 @@ export function MediaWorkspace({
                   tone="info"
                   title="Próximo passo operacional"
                   description={report.commandRoom.narrative}
-                  aside={topCampaignBySpend ? `${currencyFormatter.format(topCampaignBySpend.spend)} investidos` : "Aguardando massa de mídia suficiente."}
+                  aside={bestScale ? `${bestScale.roas.toFixed(2)}x ROAS` : "Sem escala dominante"}
                 />
               </div>
             </SurfaceCard>

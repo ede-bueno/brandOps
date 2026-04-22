@@ -9,14 +9,36 @@ function cleanupReservedPublicNextFolder() {
   }
 }
 
+function getBuildDistDir() {
+  return (process.env.BRANDOPS_DIST_DIR || "").trim() || ".next";
+}
+
+function cleanupBuildDistDir(distDir) {
+  const workspace = process.cwd();
+  const resolvedDistDir = path.resolve(workspace, distDir);
+  const relativeDistDir = path.relative(workspace, resolvedDistDir);
+  const isInsideWorkspace =
+    relativeDistDir && !relativeDistDir.startsWith("..") && !path.isAbsolute(relativeDistDir);
+
+  if (!isInsideWorkspace) {
+    throw new Error(`[brandops] Diretório de build inválido: ${distDir}`);
+  }
+
+  if (fs.existsSync(resolvedDistDir)) {
+    fs.rmSync(resolvedDistDir, { recursive: true, force: true });
+  }
+}
+
 function runBuild() {
+  const distDir = getBuildDistDir();
   cleanupReservedPublicNextFolder();
+  cleanupBuildDistDir(distDir);
 
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [require.resolve("next/dist/bin/next"), "build"], {
       env: {
         ...process.env,
-        BRANDOPS_DIST_DIR: (process.env.BRANDOPS_DIST_DIR || "").trim() || ".next",
+        BRANDOPS_DIST_DIR: distDir,
         BRANDOPS_OUTPUT_MODE: (process.env.BRANDOPS_OUTPUT_MODE || "").trim() || "standalone",
       },
       stdio: ["inherit", "pipe", "pipe"],

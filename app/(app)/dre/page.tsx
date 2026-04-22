@@ -5,12 +5,11 @@ import Link from "next/link";
 import {
   AnalyticsCalloutCard,
   AnalyticsKpiCard,
-  AnalyticsPanel,
 } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { ContributionTrendPanel, mapContributionTrendPoints } from "@/components/finance/ContributionTrendPanel";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { EntityChip, PageHeader, SectionHeading, SurfaceCard, WorkspaceTabs } from "@/components/ui-shell";
+import { EntityChip, PageHeader, SectionHeading, SurfaceCard, TaskWorkspaceIntro, WorkspaceTabs } from "@/components/ui-shell";
 import { currencyFormatter, percentFormatter } from "@/lib/brandops/format";
 import { APP_ROUTES } from "@/lib/brandops/routes";
 import { cn } from "@/lib/utils";
@@ -144,125 +143,34 @@ export default function DrePage() {
         }
       />
 
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Decisão do período"
-          title={primaryAction}
-          description="O corte mais útil agora para proteger caixa e margem."
-          tone={report.total.netResult >= 0 ? "info" : "warning"}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Pressão dominante"
-          title={pressureCardTitle}
-          description={
-            topExpense
+      <TaskWorkspaceIntro
+        title="Alternar entre histórico e recorte para validar linha, pressão e competência."
+        description="Use a matriz mensal e o resumo do recorte para localizar a linha que pede revisão e confirmar a leitura financeira."
+        primaryAction={primaryAction}
+        primaryDescription="Comece pela grade mensal ou pelo resumo do recorte, conforme a pergunta financeira que precisa responder agora."
+        supportItems={[
+          {
+            label: "Pressão dominante",
+            value: pressureCardTitle,
+            description: topExpense
               ? `${currencyFormatter.format(topExpense.total)} no recorte atual.`
-              : "Nenhuma categoria isolada concentrou pressão relevante."
-          }
-          tone={topExpense ? "warning" : "default"}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Próximo mergulho"
-          title={nextDiveTitle}
-          description={nextDiveDescription}
-          href={report.total.contributionMargin < 0 ? "/dashboard/contribution-margin" : undefined}
-          actionLabel={
-            report.total.contributionMargin < 0 ? "Abrir margem" : "Ver matriz"
-          }
-          tone="info"
-        />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-3">
-        <AnalyticsPanel
-          eyebrow="Entrada comercial"
-          title="Receita e base"
-          description="O tamanho da operação antes da pressão de custo."
-        >
-          <AnalyticsKpiCard
-            label="Faturado"
-            value={currencyFormatter.format(report.total.rob)}
-            description="Entrada comercial exportada pela INK."
-            tone="secondary"
-          />
-          <AnalyticsKpiCard
-            label="RLD"
-            value={currencyFormatter.format(report.total.rld)}
-            description="Receita líquida de desconto para a leitura do DRE."
-            tone="info"
-          />
-          <AnalyticsKpiCard
-            label="Resultado"
-            value={currencyFormatter.format(report.total.netResult)}
-            description={`Margem final ${percentFormatter.format(report.total.operatingMargin)}.`}
-            tone={report.total.netResult >= 0 ? "positive" : "negative"}
-          />
-        </AnalyticsPanel>
-
-        <AnalyticsPanel
-          eyebrow="Pressão direta"
-          title="Custos que comem margem"
-          description="O que mais consome o caixa antes do resultado final."
-        >
-          <AnalyticsKpiCard
-            label="CMV"
-            value={currencyFormatter.format(report.total.cmvTotal)}
-            description="Custo histórico aplicado por competência."
-            tone="warning"
-          />
-          <AnalyticsKpiCard
-            label="Mídia"
-            value={currencyFormatter.format(report.total.mediaSpend)}
-            description="Investimento atribuído ao período."
-            tone="warning"
-          />
-          <AnalyticsKpiCard
-            label="Despesas operacionais"
-            value={currencyFormatter.format(report.total.fixedExpensesTotal)}
-            description={
-              report.expenseBreakdown.length
-                ? `${report.expenseBreakdown.length} categorias lançadas.`
-                : "Sem lançamentos no período."
-            }
-            tone="warning"
-          />
-        </AnalyticsPanel>
-
-        <AnalyticsPanel
-          eyebrow="Controle"
-          title="Margem e equilíbrio"
-          description="O que sobra e o que falta para a operação se pagar."
-          footer={
-            <Link
-              href="/dashboard/contribution-margin"
-              className="text-xs font-medium text-primary hover:underline"
-            >
-              Abrir detalhe da margem
-            </Link>
-          }
-        >
-          <AnalyticsKpiCard
-            label="Margem de contribuição"
-            value={percentFormatter.format(report.total.contributionMargin)}
-            description="Percentual da RLD que sobra após CMV e mídia."
-            tone={report.total.contributionMargin >= 0 ? "positive" : "negative"}
-          />
-          <AnalyticsKpiCard
-            label="Ponto de equilíbrio"
-            value={breakEvenValue}
-            description={breakEvenHelp}
-            tone={report.total.breakEvenDisplay !== null ? "secondary" : "warning"}
-          />
-          {topExpense ? (
-            <AnalyticsKpiCard
-              label="Maior grupo de despesa"
-              value={topExpense.categoryName}
-              description={currencyFormatter.format(topExpense.total)}
-              tone="default"
-            />
-          ) : null}
-        </AnalyticsPanel>
-      </section>
+              : "Nenhuma categoria isolada concentrou pressão relevante.",
+            tone: topExpense ? "warning" : "default",
+          },
+          {
+            label: "Próximo mergulho",
+            value: nextDiveTitle,
+            description: nextDiveDescription,
+            tone: "info",
+          },
+          {
+            label: "Base ativa",
+            value: viewMode === "historical" ? "Histórico completo" : selectedPeriodLabel,
+            description: "A alternância entre histórico e filtro continua disponível na barra superior.",
+            tone: "default",
+          },
+        ]}
+      />
 
       <SurfaceCard>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

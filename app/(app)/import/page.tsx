@@ -11,10 +11,16 @@ import {
   Loader2,
   UploadCloud,
 } from "lucide-react";
-import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
+import { AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { EmptyState } from "@/components/EmptyState";
-import { InlineNotice, PageHeader, SectionHeading, StackItem, SurfaceCard } from "@/components/ui-shell";
+import {
+  InlineNotice,
+  PageHeader,
+  SectionHeading,
+  StackItem,
+  SurfaceCard,
+} from "@/components/ui-shell";
 import type { CsvFileKind, IntegrationMode, IntegrationProvider } from "@/lib/brandops/types";
 
 type ImportStatus = "idle" | "running" | "success" | "error";
@@ -174,14 +180,6 @@ export default function ImportPage() {
   );
 
   const progressPercent = stats ? Math.round((completedSources / sourceChecklist.length) * 100) : 0;
-  const primaryAction = files.length
-    ? "Conferir fila e iniciar importação"
-    : progressPercent >= 100
-      ? "Base pronta para novas janelas"
-      : "Completar checklist da base";
-  const metaMode =
-    activeBrand && getProviderMode(activeBrand, "meta") === "api" ? "API + fallback" : "CSV manual";
-
   const recentImports = useMemo<RecentImportRow[]>(() => {
     if (!activeBrand) {
       return [];
@@ -273,10 +271,10 @@ export default function ImportPage() {
             </div>
           </div>
 
-          <div className="min-w-[220px]">
-            <div className="mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-              <span>Saúde da base</span>
-              <span>{progressPercent}%</span>
+            <div className="min-w-[220px]">
+              <div className="mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                <span>Saúde da base</span>
+                <span>{progressPercent}%</span>
             </div>
             <div className="h-2.5 overflow-hidden rounded-full bg-surface-container-high">
               <div
@@ -287,7 +285,7 @@ export default function ImportPage() {
           </div>
         </div>
 
-        <div className="px-4 pt-4">
+        <div className="flex flex-col gap-3 border-t border-outline/60 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="brandops-subtabs">
             {importTabs.map((tab) => (
               <button
@@ -300,56 +298,24 @@ export default function ImportPage() {
               </button>
             ))}
           </div>
+          {files.length ? (
+            <button
+              onClick={handleImport}
+              disabled={status === "running"}
+              className="brandops-button brandops-button-primary"
+            >
+              {status === "running" ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Importando
+                </>
+              ) : (
+                "Iniciar importação"
+              )}
+            </button>
+          ) : null}
         </div>
       </SurfaceCard>
-
-      <section className="atlas-kpi-grid xl:grid-cols-4">
-        <AnalyticsKpiCard
-          label="Rodadas"
-          value={String(stats?.totalRuns ?? 0)}
-          description="Total de importações registradas pela marca."
-          tone="info"
-        />
-        <AnalyticsKpiCard
-          label="Linhas"
-          value={(stats?.totalRows ?? 0).toLocaleString("pt-BR")}
-          description="Volume total lido por CSV ao longo do histórico."
-          tone="default"
-        />
-        <AnalyticsKpiCard
-          label="Consolidação"
-          value={String(progressPercent)}
-          description="Percentual do checklist padrão já consolidado."
-          tone="positive"
-        />
-        <AnalyticsKpiCard
-          label="Período"
-          value={`${formatDate(stats?.firstOrderDate)} - ${formatDate(stats?.lastOrderDate)}`}
-          description="Janela comercial coberta pela base ativa."
-          tone="default"
-        />
-      </section>
-
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Próximo movimento"
-          title={primaryAction}
-          description="A melhor ação agora para manter a base íntegra e pronta para leitura."
-          tone="info"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Cobertura atual"
-          title={`${completedSources}/${sourceChecklist.length} fontes consolidadas`}
-          description="Quanto do checklist padrão já está coberto nesta marca."
-          tone={progressPercent >= 100 ? "positive" : "warning"}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Modo Meta"
-          title={metaMode}
-          description="O canal Meta continua aceitando contingência por CSV quando necessário."
-          tone="default"
-        />
-      </section>
 
       {activeTab === "upload" && (
         <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
@@ -439,16 +405,16 @@ export default function ImportPage() {
               description="Regras curtas para importar sem ruído."
             />
             <div className="grid gap-3 sm:grid-cols-2">
-              <AnalyticsKpiCard
-                label="Checklist pronto"
-                value={`${completedSources}/${sourceChecklist.length}`}
-                description="Fontes já consolidadas na base ativa."
+              <StackItem
+                title="Base reconhecida"
+                description={`${completedSources}/${sourceChecklist.length} fonte(s) já consolidadas na marca.`}
+                aside={progressPercent >= 100 ? "Completo" : "Em andamento"}
                 tone={progressPercent >= 100 ? "positive" : "info"}
               />
-              <AnalyticsKpiCard
-                label="Janela coberta"
-                value={`${formatDate(stats?.firstOrderDate)} - ${formatDate(stats?.lastOrderDate)}`}
-                description="Faixa comercial já reconhecida na marca."
+              <StackItem
+                title="Janela comercial"
+                description={`${formatDate(stats?.firstOrderDate)} até ${formatDate(stats?.lastOrderDate)}`}
+                aside="Histórico"
                 tone="default"
               />
             </div>

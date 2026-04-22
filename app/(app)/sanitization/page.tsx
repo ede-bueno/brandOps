@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, Ban, CheckCircle2, RotateCcw, Search, ShieldCheck } from "lucide-react";
-import { AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import {
@@ -50,7 +49,6 @@ export default function SanitizationPage() {
     activeBrand,
     activeBrandId,
     brands,
-    isBrandHydrating,
     ignoreMediaRow,
     keepMediaRow,
     restoreMediaRow,
@@ -121,7 +119,7 @@ export default function SanitizationPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeBrandId, isBrandHydrating]);
+  }, [activeBrandId]);
 
   const selectedBrandName =
     activeBrand?.name ?? brands.find((brand) => brand.id === activeBrandId)?.name ?? "Loja";
@@ -162,13 +160,6 @@ export default function SanitizationPage() {
     }),
     [allKnownAnomalies, report.meta.historyCount, report.meta.pendingCount],
   );
-  const dominantTarget =
-    summary.media === 0 && summary.orders === 0
-      ? "Base limpa"
-      : summary.media >= summary.orders
-        ? "Mídia"
-        : "Pedidos";
-
   if (activeBrandId && (!activeBrand || isReportLoading)) {
     return (
       <div className="atlas-page-stack">
@@ -292,31 +283,6 @@ export default function SanitizationPage() {
         }
       />
 
-      <section className="atlas-kpi-grid xl:grid-cols-3">
-        <AnalyticsKpiCard
-          label="Pendentes"
-          value={String(summary.pending)}
-          description="Ocorrências que ainda precisam de decisão."
-          tone="warning"
-        />
-        <AnalyticsKpiCard
-          label="Histórico"
-          value={String(summary.history)}
-          description="Decisões já registradas no banco."
-          tone="info"
-        />
-        <AnalyticsKpiCard
-          label="Foco atual"
-          value={dominantTarget}
-          description={
-            summary.pending
-              ? "O Atlas destaca primeiro o alvo com mais pressão aberta."
-              : "Sem pendência aberta. A tela vira histórico e auditoria."
-          }
-          tone={summary.pending ? "default" : "positive"}
-        />
-      </section>
-
       <details className="atlas-disclosure">
         <summary className="atlas-disclosure-summary">
           Distribuição por alvo
@@ -324,18 +290,24 @@ export default function SanitizationPage() {
         </summary>
         <div className="atlas-disclosure-body">
           <section className="grid gap-3 sm:grid-cols-2">
-            <AnalyticsKpiCard
-              label="Mídia"
-              value={String(summary.media)}
-              description="Ocorrências ligadas a campanhas e investimento."
-              tone="default"
-            />
-            <AnalyticsKpiCard
-              label="Pedidos"
-              value={String(summary.orders)}
-              description="Ocorrências vindas da camada comercial."
-              tone="default"
-            />
+            <div className="atlas-callout-card rounded-2xl border p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                Mídia
+              </p>
+              <div className="mt-3 text-[16px] font-semibold text-on-surface">{summary.media}</div>
+              <p className="mt-2 text-[12px] leading-5 text-on-surface-variant">
+                Ocorrências ligadas a campanhas e investimento.
+              </p>
+            </div>
+            <div className="atlas-callout-card rounded-2xl border p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                Pedidos
+              </p>
+              <div className="mt-3 text-[16px] font-semibold text-on-surface">{summary.orders}</div>
+              <p className="mt-2 text-[12px] leading-5 text-on-surface-variant">
+                Ocorrências vindas da camada comercial.
+              </p>
+            </div>
           </section>
         </div>
       </details>

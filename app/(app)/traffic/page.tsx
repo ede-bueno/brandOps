@@ -19,7 +19,7 @@ import {
 } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, SectionHeading, SurfaceCard, WorkspaceTabs } from "@/components/ui-shell";
+import { PageHeader, SectionHeading, SurfaceCard, TaskWorkspaceIntro, WorkspaceTabs } from "@/components/ui-shell";
 import { fetchTrafficReport } from "@/lib/brandops/database";
 import { APP_ROUTES } from "@/lib/brandops/routes";
 import {
@@ -267,7 +267,7 @@ function PlaybookColumn({
 }
 
 export default function TrafficPage() {
-  const [view, setView] = useState<TrafficView>("executive");
+  const [view, setView] = useState<TrafficView>("channels");
   const [executiveSection, setExecutiveSection] = useState<"command" | "playbook" | "highlights">("command");
   const [report, setReport] = useState<TrafficReport>(EMPTY_TRAFFIC_REPORT);
   const [isReportLoading, setIsReportLoading] = useState(false);
@@ -406,14 +406,14 @@ export default function TrafficPage() {
       <PageHeader
         eyebrow="Analytics"
         title="Console de tráfego"
-        description="Aquisição, funil e entradas do recorte atual."
+        description="Canais, funil e entradas do recorte atual."
         actions={
           <div className="flex min-w-0 flex-wrap items-center gap-2.5">
             <WorkspaceTabs
               items={[
                 {
                   key: "traffic-executive",
-                  label: "Visão executiva",
+                  label: "Resumo do recorte",
                   active: view === "executive",
                   onClick: () => setView("executive"),
                 },
@@ -438,6 +438,33 @@ export default function TrafficPage() {
             <span className="atlas-inline-metric">{selectedPeriodLabel}</span>
           </div>
         }
+      />
+
+      <TaskWorkspaceIntro
+        title="Localizar o gargalo de canal, landing page ou campanha."
+        description="Comece por canais ou detalhamento para validar onde o funil perde força e onde a receita por sessão ainda se sustenta."
+        primaryAction={primaryAction ?? analysis.narrativeTitle}
+        primaryDescription="Abra o resumo do recorte só quando precisar consolidar os principais números da análise."
+        supportItems={[
+          {
+            label: "Maior oportunidade",
+            value: analysis.topOpportunity ?? "Sem oportunidade dominante",
+            description: "Ponto do tráfego com melhor sinal para reforço no recorte.",
+            tone: "positive",
+          },
+          {
+            label: "Maior risco",
+            value: analysis.topRisk ?? "Sem risco dominante",
+            description: "Canal, campanha ou landing que merece revisão antes de redistribuir investimento.",
+            tone: "warning",
+          },
+          {
+            label: "Modo inicial",
+            value: "Canais",
+            description: "A página passa a abrir na investigação por entrada; o resumo numérico fica em aba secundária.",
+            tone: "default",
+          },
+        ]}
       />
 
       <section className="atlas-kpi-grid xl:grid-cols-4">

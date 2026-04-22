@@ -29,6 +29,7 @@ import {
   SectionHeading,
   StackItem,
   SurfaceCard,
+  TaskWorkspaceIntro,
   WorkspaceTabs,
 } from "@/components/ui-shell";
 import { fetchProductInsightsReport } from "@/lib/brandops/database";
@@ -327,36 +328,40 @@ export function ProductInsightsWorkspace({
       />
 
       {pageMode === "home" ? (
-        <section className="atlas-kpi-grid xl:grid-cols-4">
-          <AnalyticsKpiCard
-            label="Estampas ativas"
-            value={integerFormatter.format(report.overview.totalRows)}
-            description="Quantidade de estampas que entraram no recorte atual."
-            tone="info"
-          />
-          <AnalyticsKpiCard
-            label="Views totais"
-            value={integerFormatter.format(report.overview.totalViews)}
-            description="Volume de atenção coletado no GA4 para itens do catálogo."
-            tone="default"
-          />
-          <AnalyticsKpiCard
-            label="Peças reais"
-            value={integerFormatter.format(report.overview.totalRealUnitsSold)}
-            description="Venda real conciliada da INK no mesmo recorte."
-            tone={report.overview.totalRealUnitsSold > 0 ? "positive" : "default"}
-          />
-          <AnalyticsKpiCard
-            label="Receita real"
-            value={currencyFormatter.format(report.overview.totalRealGrossRevenue)}
-            description="Receita operacional confirmada pela INK."
-            tone={report.overview.totalRealGrossRevenue > 0 ? "positive" : "default"}
-          />
-        </section>
-      ) : null}
-
-      {pageMode === "home" ? (
         <>
+          <TaskWorkspaceIntro
+            title="Encontrar a estampa ou categoria que pede ação agora."
+            description="Use as trilhas para decidir se a próxima leitura deve focar decisão comercial, mapa do portfólio ou auditoria item a item."
+            primaryAction={primaryAction ?? report.analysis.narrativeTitle ?? "Revisar o portfólio do recorte"}
+            primaryDescription="Abra a trilha que melhor responde a sua próxima pergunta sobre foco, escala, teste ou revisão."
+            supportItems={[
+              {
+                label: "Maior oportunidade",
+                value: report.analysis.topOpportunity ?? "Sem destaque dominante",
+                description:
+                  heroRow?.recommendedAction ??
+                  "O Atlas ainda não consolidou um movimento dominante de escala.",
+                tone: "positive",
+              },
+              {
+                label: "Maior risco",
+                value: report.analysis.topRisk ?? "Sem risco dominante",
+                description:
+                  heroRow?.decisionSummary ??
+                  "Sem risco crítico consolidado para o recorte atual.",
+                tone: "warning",
+              },
+              {
+                label: "Estampa em foco",
+                value: heroRow?.stampName ?? "Sem foco dominante",
+                description:
+                  heroRow?.decisionSummary ??
+                  "Abra o detalhamento para localizar o item que está puxando a leitura.",
+                tone: "default",
+              },
+            ]}
+          />
+
           <section className="grid gap-4 xl:grid-cols-[minmax(0,1.34fr)_minmax(19rem,0.66fr)]">
             <SurfaceCard>
               <SectionHeading

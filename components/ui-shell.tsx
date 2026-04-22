@@ -89,6 +89,87 @@ export function SectionHeading({
   );
 }
 
+function workspaceToneData(tone?: "default" | "positive" | "warning" | "negative" | "info") {
+  switch (tone) {
+    case "positive":
+      return "positive";
+    case "warning":
+      return "warning";
+    case "negative":
+      return "negative";
+    default:
+      return undefined;
+  }
+}
+
+export function TaskWorkspaceIntro({
+  title,
+  description,
+  primaryAction,
+  primaryDescription,
+  actions,
+  supportItems = [],
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  primaryAction: ReactNode;
+  primaryDescription?: ReactNode;
+  actions?: ReactNode;
+  supportItems?: Array<{
+    label: ReactNode;
+    value: ReactNode;
+    description?: ReactNode;
+    tone?: "default" | "positive" | "warning" | "negative" | "info";
+  }>;
+}) {
+  return (
+    <section className="brandops-panel atlas-tech-grid atlas-command-deck p-5 lg:p-5">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
+        <div className="min-w-0">
+          <h2 className="font-headline text-[clamp(1.35rem,2vw,1.85rem)] font-semibold tracking-tight text-on-surface">
+            {title}
+          </h2>
+          {description ? (
+            <div className="mt-3 max-w-[68ch] text-[13px] leading-6 text-on-surface-variant">
+              {description}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="atlas-callout-card rounded-2xl border p-4" data-tone="positive">
+          <div className="text-[14px] font-semibold leading-6 text-on-surface">{primaryAction}</div>
+          {primaryDescription ? (
+            <div className="mt-2 text-[12px] leading-5 text-on-surface-variant">{primaryDescription}</div>
+          ) : null}
+          {actions ? <div className="mt-4 flex flex-wrap gap-2">{actions}</div> : null}
+        </div>
+      </div>
+
+      {supportItems.length ? (
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          {supportItems.map((item, index) => (
+            <div
+              key={`${index}-${String(item.label)}`}
+              className="atlas-callout-card rounded-2xl border p-4"
+              data-tone={workspaceToneData(item.tone)}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                {item.label}
+              </p>
+              <div className="mt-3 text-[14px] font-semibold leading-6 text-on-surface">{item.value}</div>
+              {item.description ? (
+                <div className="mt-2 text-[12px] leading-5 text-on-surface-variant">
+                  {item.description}
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export function ActionToast({
   message,
   tone = "success",

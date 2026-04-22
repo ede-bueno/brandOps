@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { CheckCircle2, PencilLine, X } from "lucide-react";
-import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { InlineNotice, PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
@@ -122,13 +121,6 @@ export default function CmvPage() {
   const unmatchedProductsCount = soldProducts.filter(
     (product) => !product.productName || !product.productType,
   ).length;
-  const primaryAction =
-    typesWithRuleCount < typeCandidates.length
-      ? "Cobrir tipos sem regra antes de revisar o restante da base."
-      : latestCheckpoint
-        ? "Base protegida: aplique novo checkpoint só depois de revisar mudanças."
-        : "Criar o primeiro checkpoint para congelar a vigência atual.";
-
   const typeHistory = useMemo(() => {
     if (!activeBrand || !selectedType) {
       return [];
@@ -206,59 +198,11 @@ export default function CmvPage() {
         }
       />
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <AnalyticsKpiCard
-          label="Tipos vendidos"
-          value={integerFormatter.format(typeCandidates.length)}
-          description="Tipos com volume no período."
-        />
-        <AnalyticsKpiCard
-          label="Produtos conciliados"
-          value={integerFormatter.format(soldProducts.length)}
-          description="Base usada para agrupar estampas e peças."
-        />
-        <AnalyticsKpiCard
-          label="Pedidos auditados"
-          value={integerFormatter.format(orderDetails.length)}
-          description="Pedidos com detalhe de CMV disponível."
-        />
-        <AnalyticsKpiCard
-          label="Último checkpoint"
-          value={latestCheckpoint ? formatLongDateTime(latestCheckpoint.createdAt) : "Base aberta"}
-          description="Fechamento que congelou a vigência anterior."
-        />
-      </section>
-
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Próximo ajuste"
-          title={primaryAction}
-          description="A ação mais útil agora para manter o CMV confiável sem retrabalho."
-          tone="info"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Cobertura"
-          title={`${typesWithRuleCount}/${typeCandidates.length} tipos com regra`}
-          description="Tipos já protegidos por vigência registrada."
-          tone={typesWithRuleCount === typeCandidates.length ? "positive" : "warning"}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Revisar primeiro"
-          title={
-            unmatchedProductsCount
-              ? `${integerFormatter.format(unmatchedProductsCount)} produto(s) sem match`
-              : "Sem produto sem match"
-          }
-          description="Conferência de vínculo antes de confiar na leitura detalhada."
-          tone={unmatchedProductsCount ? "warning" : "positive"}
-        />
-      </section>
-
       <SurfaceCard className="p-0 overflow-hidden">
         <div className="flex flex-col gap-4 border-b border-outline px-5 py-4 xl:flex-row xl:items-end xl:justify-between">
           <SectionHeading
             title="Painel de gestão"
-            description="Tipos, pedidos, referência oficial e base conciliada em um fluxo curto."
+            description="Tipos, pedidos, referência oficial e base conciliada."
           />
           <div className="brandops-subtabs">
             {viewTabs.map((tab) => (
@@ -380,17 +324,28 @@ export default function CmvPage() {
                     description="Leitura rápida antes de abrir a tabela detalhada."
                   />
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <AnalyticsKpiCard
-                      label="Tipos com regra"
-                      value={integerFormatter.format(typesWithRuleCount)}
-                      description="Tipos já protegidos por vigência registrada."
-                    />
-                    <AnalyticsKpiCard
-                      label="Sem match"
-                      value={integerFormatter.format(unmatchedProductsCount)}
-                      description="Produtos que ainda pedem conferência de vínculo."
-                      tone="warning"
-                    />
+                    <div className="atlas-callout-card rounded-2xl border p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                        Tipos cobertos
+                      </p>
+                      <p className="mt-3 text-[14px] font-semibold text-on-surface">
+                        {integerFormatter.format(typesWithRuleCount)}
+                      </p>
+                      <p className="mt-2 text-[12px] leading-5 text-on-surface-variant">
+                        Tipos já protegidos por vigência registrada.
+                      </p>
+                    </div>
+                    <div className="atlas-callout-card rounded-2xl border p-4" data-tone="warning">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                        Sem match
+                      </p>
+                      <p className="mt-3 text-[14px] font-semibold text-on-surface">
+                        {integerFormatter.format(unmatchedProductsCount)}
+                      </p>
+                      <p className="mt-2 text-[12px] leading-5 text-on-surface-variant">
+                        Produtos que ainda pedem conferência de vínculo.
+                      </p>
+                    </div>
                   </div>
                   {latestCheckpoint ? (
                     <InlineNotice
@@ -544,16 +499,30 @@ export default function CmvPage() {
 
           <div className="grid gap-4 p-5 lg:grid-cols-[0.94fr_1.06fr]">
             <div className="atlas-component-stack">
-                <AnalyticsKpiCard
-                  label="Peças vendidas"
-                  value={integerFormatter.format(selectedType.quantity)}
-                  description="Volume conciliado para a vigência selecionada."
-                />
-                <AnalyticsKpiCard
-                  label="Faturado"
-                  value={currencyFormatter.format(selectedType.revenue)}
-                  description="Receita usada como base de leitura do tipo."
-                />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="atlas-callout-card rounded-2xl border p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                      Peças vendidas
+                    </p>
+                    <div className="mt-3 text-[16px] font-semibold text-on-surface">
+                      {integerFormatter.format(selectedType.quantity)}
+                    </div>
+                    <p className="mt-2 text-[12px] leading-5 text-on-surface-variant">
+                      Volume conciliado para a vigência selecionada.
+                    </p>
+                  </div>
+                  <div className="atlas-callout-card rounded-2xl border p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                      Faturado
+                    </p>
+                    <div className="mt-3 text-[16px] font-semibold text-on-surface">
+                      {currencyFormatter.format(selectedType.revenue)}
+                    </div>
+                    <p className="mt-2 text-[12px] leading-5 text-on-surface-variant">
+                      Receita usada como base de leitura do tipo.
+                    </p>
+                  </div>
+                </div>
                 <label className="block">
                   <span className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Vigência

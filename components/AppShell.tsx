@@ -40,7 +40,12 @@ import {
   type AtlasOrbSyncLoadingDetail,
 } from "@/lib/brandops/orb-sync-loading";
 import { buildControlAlerts, summarizeControlAlert } from "@/lib/brandops/control-alerts";
-import { APP_ROUTES, type AppRoute } from "@/lib/brandops/routes";
+import {
+  APP_ROUTES,
+  getWorkspaceSurfaceKind,
+  type AppRoute,
+  type WorkspaceSurfaceKind,
+} from "@/lib/brandops/routes";
 
 interface NavItem {
   href: AppRoute;
@@ -68,70 +73,92 @@ interface AtlasOrbContextTelemetry extends AtlasOrbRadarTelemetry {
 
 const navigationGroups: NavGroup[] = [
   {
-    label: "Controle",
-    items: [{ href: APP_ROUTES.dashboard, label: "Torre de Controle", icon: LayoutDashboard }],
+    label: "Centro de Comando",
+    items: [{ href: APP_ROUTES.dashboard, label: "Centro de Comando", icon: LayoutDashboard }],
   },
   {
     label: "Financeiro",
     items: [
-      { href: APP_ROUTES.dre, label: "DRE Consolidado", icon: Receipt },
-      { href: APP_ROUTES.sales, label: "Receita e Vendas", icon: BarChart3 },
-      { href: APP_ROUTES.costCenter, label: "Lançamentos DRE", icon: Landmark },
-      { href: APP_ROUTES.cmv, label: "Custos e CMV", icon: Tags },
+      {
+        href: APP_ROUTES.finance,
+        label: "Hub Financeiro",
+        icon: Receipt,
+        children: [
+          { href: APP_ROUTES.dre, label: "DRE Consolidado", icon: Receipt },
+          { href: APP_ROUTES.costCenter, label: "Lançamentos DRE", icon: Landmark },
+          { href: APP_ROUTES.cmv, label: "Custos e CMV", icon: Tags },
+        ],
+      },
     ],
   },
   {
     label: "Aquisição",
     items: [
       {
-        href: APP_ROUTES.media,
-        label: "Mídia e Performance",
+        href: APP_ROUTES.acquisition,
+        label: "Hub de Aquisição",
         icon: TrendingUp,
         children: [
-          { href: APP_ROUTES.mediaExecutive, label: "Visão executiva", icon: TrendingUp },
-          { href: APP_ROUTES.mediaRadar, label: "Radar", icon: TrendingUp },
-          { href: APP_ROUTES.mediaCampaigns, label: "Campanhas", icon: TrendingUp },
+          { href: APP_ROUTES.media, label: "Mídia e Performance", icon: TrendingUp },
+          { href: APP_ROUTES.mediaExecutive, label: "Mídia · Executiva", icon: TrendingUp },
+          { href: APP_ROUTES.mediaRadar, label: "Mídia · Radar", icon: TrendingUp },
+          { href: APP_ROUTES.mediaCampaigns, label: "Mídia · Campanhas", icon: TrendingUp },
+          { href: APP_ROUTES.traffic, label: "Tráfego Digital", icon: Activity },
         ],
       },
-      { href: APP_ROUTES.traffic, label: "Tráfego Digital", icon: Activity },
+    ],
+  },
+  {
+    label: "Oferta",
+    items: [
       {
-        href: APP_ROUTES.productInsights,
-        label: "Produtos e Insights",
+        href: APP_ROUTES.offer,
+        label: "Hub de Oferta",
         icon: Sparkles,
         children: [
-          { href: APP_ROUTES.productInsightsExecutive, label: "Visão executiva", icon: Sparkles },
-          { href: APP_ROUTES.productInsightsRadar, label: "Radar", icon: Sparkles },
-          { href: APP_ROUTES.productInsightsDetail, label: "Detalhamento", icon: Sparkles },
+          { href: APP_ROUTES.sales, label: "Receita e Vendas", icon: BarChart3 },
+          { href: APP_ROUTES.productInsights, label: "Produtos e Insights", icon: Sparkles },
+          { href: APP_ROUTES.productInsightsExecutive, label: "Produtos · Executiva", icon: Sparkles },
+          { href: APP_ROUTES.productInsightsRadar, label: "Produtos · Radar", icon: Sparkles },
+          { href: APP_ROUTES.productInsightsDetail, label: "Produtos · Detalhamento", icon: Sparkles },
+          { href: APP_ROUTES.feed, label: "Catálogo", icon: Images },
         ],
       },
     ],
   },
   {
-    label: "Operação",
+    label: "Backoffice",
     items: [
-      { href: APP_ROUTES.feed, label: "Catálogo", icon: Images },
-      { href: APP_ROUTES.import, label: "ETL e Importação", icon: FileUp },
-      { href: APP_ROUTES.sanitization, label: "Saneamento", icon: ShieldAlert },
-    ],
-  },
-  {
-    label: "Plataforma",
-    items: [
-      { href: APP_ROUTES.integrations, label: "Integrações", icon: PlugZap },
-      { href: APP_ROUTES.settings, label: "Central Estratégica", icon: Settings2 },
-      { href: APP_ROUTES.integrationsTutorials, label: "Tutoriais", icon: BookOpen },
-      { href: APP_ROUTES.adminStores, label: "Acessos", icon: UserRound },
-      { href: APP_ROUTES.help, label: "Ajuda", icon: CircleHelp },
+      {
+        href: APP_ROUTES.operations,
+        label: "Operações",
+        icon: FileUp,
+        children: [
+          { href: APP_ROUTES.import, label: "ETL e Importação", icon: FileUp },
+          { href: APP_ROUTES.sanitization, label: "Saneamento", icon: ShieldAlert },
+          { href: APP_ROUTES.integrations, label: "Integrações", icon: PlugZap },
+        ],
+      },
+      {
+        href: APP_ROUTES.platform,
+        label: "Plataforma",
+        icon: Settings2,
+        children: [
+          { href: APP_ROUTES.settings, label: "Central Estratégica", icon: Settings2 },
+          { href: APP_ROUTES.integrationsTutorials, label: "Tutoriais", icon: BookOpen },
+          { href: APP_ROUTES.adminStores, label: "Acessos", icon: UserRound },
+          { href: APP_ROUTES.help, label: "Ajuda", icon: CircleHelp },
+        ],
+      },
     ],
   },
 ];
 
 const mobilePrimaryNav = [
-  { href: APP_ROUTES.dashboard, label: "Torre", icon: LayoutDashboard },
-  { href: APP_ROUTES.dre, label: "DRE", icon: Receipt },
-  { href: APP_ROUTES.media, label: "Mídia", icon: TrendingUp },
-  { href: APP_ROUTES.feed, label: "Catálogo", icon: Images },
-  { href: APP_ROUTES.settings, label: "Central", icon: Settings2 },
+  { href: APP_ROUTES.dashboard, label: "Atlas", icon: LayoutDashboard },
+  { href: APP_ROUTES.finance, label: "Financeiro", icon: Receipt },
+  { href: APP_ROUTES.acquisition, label: "Aquisição", icon: TrendingUp },
+  { href: APP_ROUTES.offer, label: "Oferta", icon: Sparkles },
 ];
 
 function isRouteActive(pathname: string, href: AppRoute) {
@@ -155,8 +182,8 @@ function getNavigationContext(pathname: string) {
   }
 
   return {
-    groupLabel: "Controle",
-    itemLabel: "Torre de Controle",
+    groupLabel: "Centro de Comando",
+    itemLabel: "Centro de Comando",
   };
 }
 
@@ -185,62 +212,127 @@ function buildShellAlerts(
   })).slice(0, 3);
 }
 
-function getOrbCopy(pathname: string, brandName: string, periodLabel: string) {
-  if (pathname.startsWith(APP_ROUTES.dashboard)) {
+function getOrbCopy(
+  pathname: string,
+  surfaceKind: WorkspaceSurfaceKind,
+  brandName: string,
+  periodLabel: string,
+) {
+  if (surfaceKind === "command") {
       return {
-        status: "monitorando a operação",
-        description: `Atlas acompanha a ${brandName} no recorte ${periodLabel.toLowerCase()} para puxar atenção só para o que realmente pede ação.`,
+        status: "orquestrando a gestão",
+        description: `Atlas consolida caixa, aquisição, oferta e operação da ${brandName} no recorte ${periodLabel.toLowerCase()} para devolver decisão, não dispersão.`,
         hints: [
-        "Comece pelo alerta dominante e só depois aprofunde o restante.",
-        "Quando a operação tensiona, Atlas puxa primeiro margem, resultado e base.",
-        "Se o recorte estiver estável, avance para produto, mídia e conversão.",
+        "A primeira resposta precisa sair aqui, sem abrir outra tela.",
+        "O Atlas puxa primeiro o maior gargalo e só depois abre a evidência.",
+        "Quando a janela estiver saudável, use a fila para decidir escala seletiva.",
         ],
       };
   }
 
-  if (pathname.startsWith(APP_ROUTES.media)) {
+  if (surfaceKind === "hub" && pathname.startsWith(APP_ROUTES.finance)) {
       return {
-        status: "observando a mídia",
-        description: `Atlas cruza gasto, retorno e sinais de performance da ${brandName} para decidir ajuste, revisão ou escala.`,
+        status: "lendo o caixa",
+        description: `Atlas resume margem, CMV, despesas e venda real da ${brandName} para orientar a próxima decisão financeira sem abrir a fonte ainda.`,
         hints: [
-        "O foco aqui é decidir verba, criativo e prioridade de campanha.",
-        "Confirme a saúde da fonte antes de tomar decisão de escala.",
-        "Saia do agregado só quando o sinal já estiver claro.",
+        "O hub concentra os números que decidem escala ou correção.",
+        "O drill-down financeiro só entra depois que a direção já ficou clara.",
+        "Margem e resultado mandam no ritmo do restante da operação.",
         ],
       };
   }
 
-  if (pathname.startsWith(APP_ROUTES.traffic)) {
+  if (surfaceKind === "source" && (pathname.startsWith(APP_ROUTES.finance) || pathname.startsWith(APP_ROUTES.dre))) {
       return {
-        status: "lendo o funil",
-        description: `Atlas acompanha intenção, fricção e monetização da ${brandName} no período ativo.`,
+        status: "abrindo a fonte financeira",
+        description: `Atlas mantém o contexto do recorte da ${brandName}, mas aqui o objetivo é trabalhar a análise micro do financeiro sem competir com o Centro de Comando.`,
         hints: [
-        "Procure primeiro onde o funil trava ou perde monetização.",
-        "Vá da leitura executiva ao detalhe só quando houver sinal de atrito.",
-        "O objetivo não é replicar GA4, e sim traduzir em decisão.",
+        "Use esta superfície para validar linha, competência e matriz.",
+        "A decisão executiva já deveria ter vindo do hub ou do Centro de Comando.",
+        "O detalhe existe para confirmar a causa, não para reinventar a priorização.",
         ],
       };
   }
 
-  if (pathname.startsWith(APP_ROUTES.integrations) || pathname.startsWith(APP_ROUTES.settings)) {
+  if (surfaceKind === "hub" && pathname.startsWith(APP_ROUTES.acquisition)) {
       return {
-        status: "sincronizando a plataforma",
-        description: `Atlas organiza integrações, parâmetros e prontidão operacional da ${brandName}.`,
+        status: "coordenando a aquisição",
+        description: `Atlas resume mídia e tráfego da ${brandName} para separar o que pede escala, correção ou observação no recorte atual.`,
         hints: [
-        "Toda configuração precisa deixar claro impacto e próximo passo.",
-        "Fonte saudável vem antes de qualquer recomendação.",
-        "Corrija o bloqueio operacional antes de voltar para a análise.",
+        "O hub decide a prioridade macro da aquisição.",
+        "A fonte micro existe para validar campanha, canal ou página específica.",
+        "Não trate ROAS atribuído como verdade financeira final.",
         ],
       };
+  }
+
+  if (surfaceKind === "source" && (pathname.startsWith(APP_ROUTES.media) || pathname.startsWith(APP_ROUTES.traffic))) {
+      return {
+        status: "abrindo a fonte de aquisição",
+        description: `Atlas preserva a leitura do recorte da ${brandName}, mas esta superfície serve para localizar o gargalo micro em campanha, tráfego, landing ou conversão.`,
+        hints: [
+        "Comece pela pergunta operacional, não pelo mosaico de KPIs.",
+        "Use esta área para confirmar onde o funil ou a campanha perde força.",
+        "O detalhe só importa se ele muda a ação seguinte.",
+        ],
+      };
+  }
+
+  if (surfaceKind === "hub" && pathname.startsWith(APP_ROUTES.offer)) {
+      return {
+        status: "priorizando a oferta",
+        description: `Atlas resume vendas, catálogo e leitura de produto da ${brandName} para dizer onde concentrar distribuição e ajuste de portfólio.`,
+        hints: [
+        "O hub define foco comercial e de portfólio.",
+        "As superfícies fonte confirmam item, coleção, canal ou estampa.",
+        "Venda real deve pesar mais que curiosidade isolada de tráfego.",
+        ],
+      };
+  }
+
+  if (surfaceKind === "source" && (pathname.startsWith(APP_ROUTES.productInsights) || pathname.startsWith(APP_ROUTES.feed) || pathname.startsWith(APP_ROUTES.sales))) {
+      return {
+        status: "abrindo a fonte da oferta",
+        description: `Atlas mantém o contexto do recorte da ${brandName}, mas aqui a tarefa é trabalhar a análise micro de venda, catálogo ou produto sem virar dashboard paralelo.`,
+        hints: [
+        "A pergunta central deve aparecer antes dos números-resumo.",
+        "Use esta camada para filtrar, comparar e confirmar o próximo ajuste.",
+        "Se a leitura virar KPI deck, a página perdeu o papel dela.",
+        ],
+      };
+  }
+
+  if (surfaceKind === "operation") {
+    return {
+      status: "executando a operação",
+      description: `Atlas mantém a ${brandName} íntegra no recorte ${periodLabel.toLowerCase()}, mas esta área existe para fazer o trabalho operacional sem disputar atenção com leitura gerencial.`,
+      hints: [
+        "A primeira dobra precisa deixar clara a tarefa, não o dashboard.",
+        "Use a operação para corrigir base, lançar dado ou executar rotina.",
+        "Os alertas aqui são discretos porque não podem substituir a ação principal.",
+      ],
+    };
+  }
+
+  if (surfaceKind === "platform") {
+    return {
+      status: "organizando a plataforma",
+      description: `Atlas separa governança, conhecimento e configuração da ${brandName} para que o usuário resolva plataforma sem misturar isso com decisão gerencial.`,
+      hints: [
+        "Plataforma e ajuda servem para configurar, liberar e orientar.",
+        "O backoffice protege a confiança do Atlas, não compete com ela.",
+        "A navegação deve levar rápido ao próximo passo de configuração ou suporte.",
+      ],
+    };
   }
 
   return {
-    status: "escutando o sistema",
-    description: `Atlas acompanha a ${brandName} no recorte ${periodLabel.toLowerCase()} e mantém contexto sobre a área atual.`,
+    status: "mantendo o contexto",
+    description: `Atlas acompanha a ${brandName} no recorte ${periodLabel.toLowerCase()} e preserva a leitura da área atual sem perder a história principal.`,
     hints: [
-      "Use o Orb para abrir o próximo caminho, não para substituir a tela atual.",
-      "Alertas, navegação e período precisam contar a mesma história.",
-      "Se o contexto não estiver claro, volte para a Torre de Controle.",
+      "A navegação agora parte da gestão e desce para a fonte só quando necessário.",
+      "Evite transformar a superfície atual em lista de KPIs sem contexto.",
+      "Se a história se perder, volte para o Centro de Comando.",
     ],
   };
 }
@@ -475,6 +567,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   const navigationContext = useMemo(() => getNavigationContext(pathname), [pathname]);
+  const surfaceKind = useMemo(() => getWorkspaceSurfaceKind(pathname), [pathname]);
 
   const atlasOrbTelemetry = useMemo<AtlasOrbContextTelemetry>(() => {
     const mediaIntegration = activeBrand?.integrations.find((integration) => integration.provider === "meta");
@@ -500,16 +593,23 @@ export function AppShell({ children }: { children: ReactNode }) {
     () => buildShellAlerts(atlasOrbTelemetry, selectedBrandName),
     [atlasOrbTelemetry, selectedBrandName],
   );
+  const visibleShellAlerts = useMemo(
+    () =>
+      surfaceKind === "operation" || surfaceKind === "platform"
+        ? shellAlerts.filter((alert) => alert.tone !== "info").slice(0, 1)
+        : shellAlerts,
+    [shellAlerts, surfaceKind],
+  );
 
   const orbCopy = useMemo(
-    () => getOrbCopy(pathname, selectedBrandName, selectedPeriodLabel),
-    [pathname, selectedBrandName, selectedPeriodLabel],
+    () => getOrbCopy(pathname, surfaceKind, selectedBrandName, selectedPeriodLabel),
+    [pathname, selectedBrandName, selectedPeriodLabel, surfaceKind],
   );
 
   const orbAttentionLevel =
-    shellAlerts.some((alert) => alert.tone === "negative" || alert.tone === "warning")
+    visibleShellAlerts.some((alert) => alert.tone === "negative" || alert.tone === "warning")
       ? "alert"
-      : shellAlerts.some((alert) => alert.tone === "info")
+      : visibleShellAlerts.some((alert) => alert.tone === "info")
         ? "notice"
         : "idle";
 
@@ -753,9 +853,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             </div>
 
-            {shellAlerts.length ? (
+            {visibleShellAlerts.length ? (
               <div className="atlas-topbar-alerts">
-                {shellAlerts.map((alert) => (
+                {visibleShellAlerts.map((alert) => (
                   <Link
                     key={`${alert.href}-${alert.label}`}
                     href={alert.href}
@@ -879,10 +979,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           hints={orbCopy.hints}
           storageKey={isMobileViewport ? "atlas.orb.position.mobile" : "atlas.orb.position"}
           attentionLevel={orbAttentionLevel}
-          hoverAlert={shellAlerts[0]?.label ?? orbCopy.description}
+          hoverAlert={visibleShellAlerts[0]?.label ?? orbCopy.description}
           hoverActions={
-            shellAlerts.length
-              ? shellAlerts.map((alert) => ({
+            visibleShellAlerts.length
+              ? visibleShellAlerts.map((alert) => ({
                   label:
                     alert.href === APP_ROUTES.dre
                       ? "Abrir DRE"
@@ -907,7 +1007,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <AtlasOrbRadarPanel
               telemetry={atlasOrbTelemetry}
               status={orbCopy.status}
-              hoverAlert={shellAlerts[0]?.label ?? orbCopy.description}
+              hoverAlert={visibleShellAlerts[0]?.label ?? orbCopy.description}
             />
           }
         />

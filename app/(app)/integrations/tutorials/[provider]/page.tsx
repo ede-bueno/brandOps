@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, CheckCircle2, CircleAlert } from "lucide-react";
-import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { notFound } from "next/navigation";
 import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
 import { getIntegrationTutorial } from "@/lib/brandops/integration-tutorials";
@@ -36,48 +35,6 @@ export default async function IntegrationTutorialProviderPage({
           </div>
         }
       />
-
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsKpiCard
-          label="Passos"
-          value={String(tutorial.steps.length)}
-          description="Etapas principais do guia."
-          tone="info"
-        />
-        <AnalyticsKpiCard
-          label="Validações"
-          value={String(tutorial.validation.length)}
-          description="Checks para confirmar que a integração ficou pronta."
-          tone="positive"
-        />
-        <AnalyticsKpiCard
-          label="Links oficiais"
-          value={String(tutorial.externalLinks.length)}
-          description="Atalhos para o ambiente certo do provedor."
-          tone="default"
-        />
-      </section>
-
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Para quem é"
-          title={tutorial.audience}
-          description="Perfil operacional esperado para executar este fluxo."
-          tone="info"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Abrir agora"
-          title={tutorial.externalLinks[0]?.label ?? "Painel oficial"}
-          description={tutorial.externalLinks[0]?.helper ?? "Abra o ambiente correto do provedor."}
-          tone="default"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Resumo"
-          title={tutorial.summary}
-          description="Visão curta do que este tutorial cobre."
-          tone="default"
-        />
-      </section>
 
       <SurfaceCard>
         <SectionHeading

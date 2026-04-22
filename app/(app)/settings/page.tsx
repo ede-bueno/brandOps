@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
-import { AnalyticsCalloutCard } from "@/components/analytics/AnalyticsPrimitives";
 import { AtlasBusinessLearningPanel } from "@/components/AtlasBusinessLearningPanel";
 import { AtlasAnalystSettingsPanel } from "@/components/AtlasAnalystSettingsPanel";
 import { AtlasContextWorkspace } from "@/components/AtlasContextWorkspace";
@@ -221,33 +220,6 @@ export default function SettingsPage() {
           </div>
         }
       />
-
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Próximo clique"
-          title={strategicFocus.title}
-          description={strategicFocus.description}
-          href={strategicFocus.href}
-          actionLabel={strategicFocus.cta}
-          tone={strategicFocus.tone}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Plano"
-          title={BRAND_PLAN_LABELS[governance.planTier]}
-          description={atlasEnabled ? "Atlas IA liberado nesta marca." : "IA ainda bloqueada para esta marca."}
-          href={APP_ROUTES.settingsGovernance}
-          actionLabel="Abrir governança"
-          tone={atlasEnabled ? "positive" : "default"}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Aprendizado"
-          title={governance.featureFlags.brandLearning ? "Aprender negócio liberado" : "Aprender negócio bloqueado"}
-          description="Memória, contexto curado e comportamento do Atlas ficam aqui."
-          href={APP_ROUTES.settingsAtlasAi}
-          actionLabel="Abrir Atlas"
-          tone={governance.featureFlags.brandLearning ? "info" : "default"}
-        />
-      </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
         <SurfaceCard className="atlas-settings-hub">

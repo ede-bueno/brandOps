@@ -14,7 +14,7 @@ import {
 import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { InlineNotice, PageHeader, SectionHeading, SurfaceCard, WorkspaceTabs } from "@/components/ui-shell";
+import { InlineNotice, PageHeader, SectionHeading, SurfaceCard, TaskWorkspaceIntro, WorkspaceTabs } from "@/components/ui-shell";
 import { fetchSalesDetailReport } from "@/lib/brandops/database";
 import { currencyFormatter, formatCompactDate, integerFormatter } from "@/lib/brandops/format";
 import { APP_ROUTES } from "@/lib/brandops/routes";
@@ -65,7 +65,7 @@ const EMPTY_SALES_DETAIL: SalesDetailReport = {
 };
 
 export default function SalesPage() {
-  const [view, setView] = useState<"summary" | "cadence" | "products">("summary");
+  const [view, setView] = useState<"summary" | "cadence" | "products">("products");
   const {
     activeBrand,
     activeBrandId,
@@ -198,7 +198,7 @@ export default function SalesPage() {
       <PageHeader
         eyebrow="Leitura comercial"
         title="Console comercial"
-        description="Ritmo, mix e prioridade comercial do período sem transformar a área em dashboard inflado."
+        description="Ritmo, mix e prioridade comercial do período."
         actions={
           <div className="flex min-w-0 flex-wrap items-center gap-2.5">
             <span className="atlas-inline-metric">{selectedBrandName}</span>
@@ -210,55 +210,32 @@ export default function SalesPage() {
         }
       />
 
-      <section className="atlas-kpi-grid xl:grid-cols-4">
-        <AnalyticsKpiCard
-          label="Pedidos pagos"
-          value={integerFormatter.format(metrics.paidOrderCount)}
-          description="Ordens concluídas no período comercial selecionado."
-          tone="info"
-        />
-        <AnalyticsKpiCard
-          label="Itens vendidos"
-          value={integerFormatter.format(metrics.unitsSold)}
-          description="Volume total de peças reconhecidas pela camada comercial."
-          tone="default"
-        />
-        <AnalyticsKpiCard
-          label="Faturado"
-          value={currencyFormatter.format(metrics.grossRevenue)}
-          description="Receita bruta exportada pela INK para o recorte atual."
-          tone="positive"
-        />
-        <AnalyticsKpiCard
-          label="Ticket médio"
-          value={currencyFormatter.format(metrics.averageTicket)}
-          description="Média de faturamento por pedido pago."
-          tone="default"
-        />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.38fr)_minmax(18rem,0.62fr)]">
-        <AnalyticsCalloutCard
-          eyebrow="Decisão do período"
-          title={primaryAction ?? salesDetail.analysis.narrativeTitle ?? "Rever ritmo comercial"}
-          description="O movimento com maior impacto imediato no faturado, no mix e na cadência do período."
-          tone="info"
-        />
-        <div className="atlas-side-stack">
-          <AnalyticsCalloutCard
-            eyebrow="Maior oportunidade"
-            title={salesDetail.analysis.topOpportunity ?? "Sem oportunidade dominante"}
-            description="Produto ou frente com melhor sinal para empurrar distribuição agora."
-            tone="positive"
-          />
-          <AnalyticsCalloutCard
-            eyebrow="Revisar primeiro"
-            title={salesDetail.analysis.topRisk ?? "Sem risco principal identificado"}
-            description="Ponto do mix que pede revisão antes de acelerar novas ações."
-            tone="warning"
-          />
-        </div>
-      </section>
+      <TaskWorkspaceIntro
+        title="Localizar produto, cadência e ação comercial do recorte."
+        description="Use os modos abaixo para separar síntese do período, cadência diária e ranking de produtos."
+        primaryAction={primaryAction ?? salesDetail.analysis.narrativeTitle ?? "Rever ritmo comercial"}
+        primaryDescription="Comece pela visão que responde a pergunta de agora e aprofunde só no ponto que pede decisão."
+        supportItems={[
+          {
+            label: "Maior oportunidade",
+            value: salesDetail.analysis.topOpportunity ?? "Sem oportunidade dominante",
+            description: "Produto ou frente com melhor sinal para empurrar distribuição agora.",
+            tone: "positive",
+          },
+          {
+            label: "Revisar primeiro",
+            value: salesDetail.analysis.topRisk ?? "Sem risco principal identificado",
+            description: "Ponto do mix que pede revisão antes de acelerar novas ações.",
+            tone: "warning",
+          },
+          {
+            label: "Modo inicial",
+            value: "Produtos",
+            description: "A página passa a abrir no ranking operacional; o resumo executivo fica em aba secundária.",
+            tone: "default",
+          },
+        ]}
+      />
 
       <SurfaceCard>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -271,7 +248,7 @@ export default function SalesPage() {
             items={[
               {
                 key: "sales-summary",
-                label: "Resumo",
+                label: "Resumo do recorte",
                 active: view === "summary",
                 onClick: () => setView("summary"),
               },

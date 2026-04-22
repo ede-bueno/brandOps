@@ -118,6 +118,7 @@ interface BrandOpsContextValue {
 }
 
 const BrandOpsContext = createContext<BrandOpsContextValue | null>(null);
+const DEFAULT_PERIOD_FILTER: PeriodFilter = "month";
 
 function isSessionStateError(error: unknown) {
   return (
@@ -144,7 +145,7 @@ export function BrandOpsProvider({
   const [financialReportHistorical, setFinancialReportHistorical] = useState<AnnualDreReport | null>(null);
   const [financialReportFiltered, setFinancialReportFiltered] = useState<AnnualDreReport | null>(null);
   const [isFinancialReportLoading, setIsFinancialReportLoading] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>("30d");
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>(DEFAULT_PERIOD_FILTER);
   const [customDateRange, setCustomDateRange] = useState<CustomDateRange>({
     from: "",
     to: "",

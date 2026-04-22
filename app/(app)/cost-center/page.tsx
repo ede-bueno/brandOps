@@ -9,7 +9,6 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import {
@@ -182,39 +181,6 @@ export default function CostCenterPage() {
 
     return [...totals.values()].sort((left, right) => right.total - left.total);
   }, [expenses]);
-
-  const totalExpenses = useMemo(
-    () => expenses.reduce((accumulator, expense) => accumulator + expense.amount, 0),
-    [expenses],
-  );
-  const topCategory = categorySummary[0] ?? null;
-
-  const currentMonthTotal = useMemo(() => {
-    return expenses
-      .filter((expense) => expense.incurredOn.startsWith(defaultMonth))
-      .reduce((accumulator, expense) => accumulator + expense.amount, 0);
-  }, [defaultMonth, expenses]);
-
-  const activeMonthEntries = useMemo(
-    () => expenses.filter((expense) => expense.incurredOn.startsWith(defaultMonth)).length,
-    [defaultMonth, expenses],
-  );
-
-  const activeMonthCategories = useMemo(
-    () =>
-      new Set(
-        expenses
-          .filter((expense) => expense.incurredOn.startsWith(defaultMonth))
-          .map((expense) => expense.categoryId),
-      ).size,
-    [defaultMonth, expenses],
-  );
-  const primaryAction =
-    !expenses.length
-      ? "Criar o primeiro lançamento da marca."
-      : activeMonthEntries === 0
-        ? `Abrir ${formatCompetencyLabel(defaultMonth)} e registrar os lançamentos do mês.`
-        : "Revisar o livro do mês e fechar a competência com menos ruído.";
 
   const resetExpenseForm = () => {
     setExpenseForm({
@@ -482,31 +448,6 @@ export default function CostCenterPage() {
         }
       />
 
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Próximo movimento"
-          title={primaryAction}
-          description="O melhor corte agora para manter o DRE limpo e operacional."
-          tone="info"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Maior pressão"
-          title={topCategory ? topCategory.categoryName : "Sem categoria dominante"}
-          description={
-            topCategory
-              ? `${currencyFormatter.format(topCategory.total)} distribuídos em ${topCategory.entries} lançamento(s).`
-              : "Sem lançamentos suficientes para apontar uma categoria dominante."
-          }
-          tone={topCategory ? "warning" : "default"}
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Competência ativa"
-          title={`${activeMonthEntries} lançamento(s) em ${formatCompetencyLabel(defaultMonth)}`}
-          description={`${activeMonthCategories} categoria(s) movimentaram o mês ativo.`}
-          tone={activeMonthEntries ? "positive" : "warning"}
-        />
-      </section>
-
       <SurfaceCard>
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
@@ -564,30 +505,6 @@ export default function CostCenterPage() {
               </div>
             </div>
           </SurfaceCard>
-
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <AnalyticsKpiCard
-              label="Competência em foco"
-              value={formatCompetencyLabel(`${defaultMonth}-01`)}
-              description="Mês padrão usado para leitura rápida e novos lançamentos."
-            />
-            <AnalyticsKpiCard
-              label="Total no mês"
-              value={currencyFormatter.format(currentMonthTotal)}
-              description="Soma de despesas lançadas na competência em foco."
-              tone={currentMonthTotal > 0 ? "warning" : "default"}
-            />
-            <AnalyticsKpiCard
-              label="Lançamentos no mês"
-              value={integerFormatter.format(activeMonthEntries)}
-              description="Quantidade de movimentos lançados na competência ativa."
-            />
-            <AnalyticsKpiCard
-              label="Categorias usadas"
-              value={integerFormatter.format(activeMonthCategories)}
-              description="Categorias que já apareceram na competência em foco."
-            />
-          </section>
 
           {launchView === "overview" ? (
             <div className="grid gap-4 xl:grid-cols-[1.52fr_0.92fr]">
@@ -810,25 +727,6 @@ export default function CostCenterPage() {
 
           {categoryView === "overview" ? (
             <div className="atlas-component-stack">
-              <div className="grid gap-4 md:grid-cols-3">
-                <AnalyticsKpiCard
-                  label="Categorias totais"
-                  value={integerFormatter.format(expenseCategories.length)}
-                  description="Categorias disponíveis para alimentar o DRE."
-                />
-                <AnalyticsKpiCard
-                  label="Categorias customizadas"
-                  value={integerFormatter.format(expenseCategories.filter((category) => !category.isSystem).length)}
-                  description="Categorias que podem ser editadas pela operação."
-                />
-                <AnalyticsKpiCard
-                  label="Despesas lançadas"
-                  value={currencyFormatter.format(totalExpenses)}
-                  description="Acumulado de despesas registradas na marca."
-                  tone={totalExpenses > 0 ? "warning" : "default"}
-                />
-              </div>
-
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.18fr)_minmax(18rem,0.82fr)]">
                 <SurfaceCard>
 <div className="atlas-component-stack">
@@ -863,23 +761,35 @@ export default function CostCenterPage() {
                       description="Atalhos rápidos para manter a base de despesas limpa e útil."
                     />
                     <div className="atlas-component-stack-compact">
-                      <AnalyticsCalloutCard
-                        eyebrow="Catálogo"
-                        title="Criar categoria"
-                        description="Adicione um novo agrupador para despesas recorrentes ou novas frentes operacionais."
+                      <button
+                        type="button"
+                        className="atlas-callout-card rounded-2xl border p-4 text-left transition hover:border-primary/25"
                         onClick={openNewCategoryModal}
-                        actionLabel="Abrir"
-                      />
-                      <AnalyticsCalloutCard
-                        eyebrow="Livro"
-                        title="Abrir livro de lançamentos"
-                        description="Revisar competências, encontrar um lançamento específico ou corrigir um valor lançado."
+                      >
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                          Catálogo
+                        </p>
+                        <p className="mt-3 text-[14px] font-semibold text-on-surface">Criar categoria</p>
+                        <p className="mt-2 text-[12px] leading-5 text-on-surface-variant">
+                          Adicione um novo agrupador para despesas recorrentes ou novas frentes operacionais.
+                        </p>
+                      </button>
+                      <button
+                        type="button"
+                        className="atlas-callout-card rounded-2xl border p-4 text-left transition hover:border-primary/25"
                         onClick={() => {
                           setActiveTab("launches");
                           setLaunchView("ledger");
                         }}
-                        actionLabel="Abrir"
-                      />
+                      >
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                          Livro
+                        </p>
+                        <p className="mt-3 text-[14px] font-semibold text-on-surface">Abrir livro de lançamentos</p>
+                        <p className="mt-2 text-[12px] leading-5 text-on-surface-variant">
+                          Revisar competências, encontrar um lançamento específico ou corrigir um valor lançado.
+                        </p>
+                      </button>
                     </div>
                   </div>
                 </SurfaceCard>

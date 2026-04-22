@@ -4,10 +4,6 @@ import type { ElementType } from "react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, DatabaseZap, KeyRound, Link2, ShieldCheck, Sparkles } from "lucide-react";
-import {
-  AnalyticsCalloutCard,
-  AnalyticsKpiCard,
-} from "@/components/analytics/AnalyticsPrimitives";
 import { PageHeader, SurfaceCard } from "@/components/ui-shell";
 import { APP_ROUTES } from "@/lib/brandops/routes";
 
@@ -252,27 +248,24 @@ function HelpCallout({
   items: string[];
 }) {
   return (
-    <div id={id}>
-      <AnalyticsCalloutCard
-        eyebrow={title}
-        title={cardDescription(title)}
-        description={
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-secondary-container/70 text-secondary">
-              <Icon size={16} />
-            </span>
-            <ul className="atlas-component-stack-tight text-[13px] leading-6 text-on-surface-variant">
-              {items.map((item) => (
-                <li key={item} className="flex gap-2">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary/80" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        }
-        tone="default"
-      />
+    <div id={id} className="atlas-callout-card rounded-2xl border p-5">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+        {title}
+      </p>
+      <h3 className="mt-3 text-[16px] font-semibold text-on-surface">{cardDescription(title)}</h3>
+      <div className="mt-4 flex items-start gap-3">
+        <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-secondary-container/70 text-secondary">
+          <Icon size={16} />
+        </span>
+        <ul className="atlas-component-stack-tight text-[13px] leading-6 text-on-surface-variant">
+          {items.map((item) => (
+            <li key={item} className="flex gap-2">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary/80" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
@@ -316,50 +309,25 @@ export default function HelpPage() {
         description="Abra rápido o guia certo sem precisar vasculhar o sistema."
       />
 
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsKpiCard
-          label="Leitura"
-          value="Backend"
-          description="Cálculos e decisões saem do backend. O front só apresenta e opera."
-          tone="info"
-        />
-        <AnalyticsKpiCard
-          label="Integração"
-          value="Por loja"
-          description="Meta, GA4 e Gemini usam credencial própria de cada marca."
-          tone="default"
-        />
-        <AnalyticsKpiCard
-          label="Confiança"
-          value="Auditável"
-          description="Saneamento, histórico e credenciais ficam consistentes e rastreáveis."
-          tone="positive"
-        />
-      </section>
-
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Abrir agora"
-          title="Tutoriais de integração"
-          description="Passo a passo por provedor, com links para os painéis corretos."
-          href={APP_ROUTES.integrationsTutorials}
-          tone="info"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Abrir agora"
-          title="Central estratégica"
-          description="Comportamento do Atlas, learning e governança da marca."
-          href={APP_ROUTES.settings}
-          tone="default"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Abrir agora"
-          title="Área de integrações"
-          description="Conexões, saúde do conector e sincronizações da loja."
-          href={APP_ROUTES.integrations}
-          tone="default"
-        />
-      </section>
+      <SurfaceCard>
+        <div className="grid gap-3 md:grid-cols-3">
+          <Link href={APP_ROUTES.integrationsTutorials} className="atlas-callout-card rounded-2xl border p-4 transition hover:border-primary/30">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">Abrir agora</p>
+            <div className="mt-3 text-[16px] font-semibold text-on-surface">Tutoriais de integração</div>
+            <p className="mt-2 text-[12px] leading-5 text-on-surface-variant">Passo a passo por provedor, com links para os painéis corretos.</p>
+          </Link>
+          <Link href={APP_ROUTES.settings} className="atlas-callout-card rounded-2xl border p-4 transition hover:border-primary/30">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">Abrir agora</p>
+            <div className="mt-3 text-[16px] font-semibold text-on-surface">Central estratégica</div>
+            <p className="mt-2 text-[12px] leading-5 text-on-surface-variant">Comportamento do Atlas, learning e governança da marca.</p>
+          </Link>
+          <Link href={APP_ROUTES.integrations} className="atlas-callout-card rounded-2xl border p-4 transition hover:border-primary/30">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">Abrir agora</p>
+            <div className="mt-3 text-[16px] font-semibold text-on-surface">Área de integrações</div>
+            <p className="mt-2 text-[12px] leading-5 text-on-surface-variant">Conexões, saúde do conector e sincronizações da loja.</p>
+          </Link>
+        </div>
+      </SurfaceCard>
 
       <SurfaceCard className="overflow-hidden p-0">
         <div className="border-b border-outline px-4 py-3">
@@ -448,22 +416,20 @@ export default function HelpPage() {
                 </summary>
                 <section className="mt-4 grid gap-4 xl:grid-cols-3">
                   {providerTutorials.map((provider) => (
-                    <AnalyticsCalloutCard
-                      key={provider.title}
-                      eyebrow={provider.eyebrow}
-                      title={provider.title}
-                      description={
-                        <ul className="atlas-component-stack-tight text-[13px] leading-6 text-on-surface-variant">
-                          {provider.items.map((item) => (
-                            <li key={item} className="flex gap-2">
-                              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary/80" />
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      }
-                      tone="default"
-                    />
+                    <article key={provider.title} className="atlas-callout-card rounded-2xl border p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                        {provider.eyebrow}
+                      </p>
+                      <h3 className="mt-3 text-[16px] font-semibold text-on-surface">{provider.title}</h3>
+                      <ul className="mt-3 atlas-component-stack-tight text-[13px] leading-6 text-on-surface-variant">
+                        {provider.items.map((item) => (
+                          <li key={item} className="flex gap-2">
+                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary/80" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </article>
                   ))}
                 </section>
               </details>

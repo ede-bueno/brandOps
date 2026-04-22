@@ -4,10 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ExternalLink, Images, Search } from "lucide-react";
-import { AnalyticsCalloutCard, AnalyticsKpiCard } from "@/components/analytics/AnalyticsPrimitives";
 import { EmptyState } from "@/components/EmptyState";
 import { useBrandOps } from "@/components/BrandOpsProvider";
-import { PageHeader, SectionHeading, SurfaceCard } from "@/components/ui-shell";
+import { PageHeader, SectionHeading, SurfaceCard, TaskWorkspaceIntro } from "@/components/ui-shell";
 import { fetchCatalogReport } from "@/lib/brandops/database";
 import { currencyFormatter, integerFormatter } from "@/lib/brandops/format";
 import type { CatalogReport, CatalogStatusFilter } from "@/lib/brandops/types";
@@ -119,7 +118,7 @@ function PlaybookColumn({
 }
 
 export default function FeedPage() {
-  const { activeBrand, activeBrandId, brands, periodRange, selectedPeriodLabel, isLoading, isBrandHydrating } = useBrandOps();
+  const { activeBrand, activeBrandId, brands, periodRange, selectedPeriodLabel, isLoading } = useBrandOps();
   const [view, setView] = useState<"overview" | "playbook" | "grid">("overview");
   const [report, setReport] = useState<CatalogReport>(EMPTY_REPORT);
   const [isReportLoading, setIsReportLoading] = useState(false);
@@ -184,7 +183,7 @@ export default function FeedPage() {
   }, [activeBrandId, collectionFilter, periodRange?.end, periodRange?.start, search, statusFilter, typeFilter]);
 
   const isPageLoading =
-    Boolean(activeBrandId) && (isLoading || isBrandHydrating || isReportLoading || !activeBrand);
+    Boolean(activeBrandId) && (isLoading || isReportLoading || !activeBrand);
 
   if (!activeBrandId && !activeBrand) {
     return (
@@ -243,7 +242,7 @@ export default function FeedPage() {
       <PageHeader
         eyebrow="Catalogo visual"
         title="Console de catálogo"
-        description="Leia cobertura, venda e distribuição visual do catálogo sem transformar a área em vitrine."
+        description="Cobertura, venda e distribuição visual do catálogo."
         actions={
           <div className="flex flex-wrap gap-2">
             <span className="atlas-inline-metric">{selectedBrandName}</span>
@@ -252,53 +251,32 @@ export default function FeedPage() {
         }
       />
 
-      <section className="atlas-kpi-grid xl:grid-cols-4">
-        <AnalyticsKpiCard
-          label="SKUs no recorte"
-          value={integerFormatter.format(report.summary.totalProducts)}
-          description="Produtos ativos na leitura atual."
-          tone="info"
-        />
-        <AnalyticsKpiCard
-          label="SKUs com venda"
-          value={integerFormatter.format(report.summary.soldProducts)}
-          description="Itens que já provaram demanda no período."
-          tone="positive"
-        />
-        <AnalyticsKpiCard
-          label="Peças conciliadas"
-          value={integerFormatter.format(report.summary.totalUnitsSold)}
-          description="Volume vendido já amarrado ao catálogo."
-          tone="default"
-        />
-        <AnalyticsKpiCard
-          label="Com galeria"
-          value={integerFormatter.format(report.summary.productsWithGallery)}
-          description="Produtos com base visual suficiente para distribuição."
-          tone="default"
-        />
-      </section>
-
-      <section className="grid gap-3 md:grid-cols-3">
-        <AnalyticsCalloutCard
-          eyebrow="Decisão do catálogo"
-          title={primaryAction ?? report.analysis.narrativeTitle}
-          description="O movimento mais útil agora para cobertura, distribuição ou revisão."
-          tone="info"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Maior oportunidade"
-          title={report.analysis.topOpportunity ?? "Sem destaque"}
-          description="Sinal mais promissor para empurrar exposição ou cobertura."
-          tone="positive"
-        />
-        <AnalyticsCalloutCard
-          eyebrow="Revisar primeiro"
-          title={report.analysis.topRisk ?? "Sem risco dominante"}
-          description="Gargalo que merece ajuste antes de novas expansões."
-          tone="warning"
-        />
-      </section>
+      <TaskWorkspaceIntro
+        title="Filtrar o catálogo, localizar cobertura e abrir a grade certa."
+        description="Use busca, filtros e modos para encontrar item, cobertura e gargalo visual sem perder a origem da fonte."
+        primaryAction={primaryAction ?? report.analysis.narrativeTitle}
+        primaryDescription="Combine filtros, grade e playbook para decidir cobertura, distribuição e revisão do catálogo."
+        supportItems={[
+          {
+            label: "Maior oportunidade",
+            value: report.analysis.topOpportunity ?? "Sem destaque",
+            description: "Sinal mais promissor para empurrar exposição ou cobertura.",
+            tone: "positive",
+          },
+          {
+            label: "Revisar primeiro",
+            value: report.analysis.topRisk ?? "Sem risco dominante",
+            description: "Gargalo que merece ajuste antes de novas expansões.",
+            tone: "warning",
+          },
+          {
+            label: "Origem ativa",
+            value: report.meta.sourceLabel,
+            description: report.analysis.narrativeBody,
+            tone: "info",
+          },
+        ]}
+      />
 
       <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <SurfaceCard>
@@ -355,25 +333,36 @@ export default function FeedPage() {
             description="Origem ativa e cobertura visual em um bloco curto."
           />
           <div className="mt-5 grid gap-3">
-            <AnalyticsKpiCard
-              label="Modo de origem"
-              value={report.meta.sourceLabel}
-              description={report.analysis.narrativeBody}
-              tone="info"
-            />
+            <div className="atlas-callout-card rounded-2xl border p-4" data-tone="info">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                Modo de origem
+              </p>
+              <div className="mt-3 text-[16px] font-semibold text-on-surface">{report.meta.sourceLabel}</div>
+              <p className="mt-2 text-[12px] leading-5 text-on-surface-variant">{report.analysis.narrativeBody}</p>
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <AnalyticsKpiCard
-                label="Meta Catalog"
-                value={integerFormatter.format(report.summary.metaCatalogProducts)}
-                description="Produtos já prontos para a fonte Meta."
-                tone="positive"
-              />
-              <AnalyticsKpiCard
-                label="Feed manual"
-                value={integerFormatter.format(report.summary.manualFeedProducts)}
-                description="Produtos ainda sustentados pelo feed da INK."
-                tone="default"
-              />
+              <div className="atlas-callout-card rounded-2xl border p-4" data-tone="positive">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                  Meta Catalog
+                </p>
+                <div className="mt-3 text-[16px] font-semibold text-on-surface">
+                  {integerFormatter.format(report.summary.metaCatalogProducts)}
+                </div>
+                <p className="mt-2 text-[12px] leading-5 text-on-surface-variant">
+                  Produtos já prontos para a fonte Meta.
+                </p>
+              </div>
+              <div className="atlas-callout-card rounded-2xl border p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+                  Feed manual
+                </p>
+                <div className="mt-3 text-[16px] font-semibold text-on-surface">
+                  {integerFormatter.format(report.summary.manualFeedProducts)}
+                </div>
+                <p className="mt-2 text-[12px] leading-5 text-on-surface-variant">
+                  Produtos ainda sustentados pelo feed da INK.
+                </p>
+              </div>
             </div>
           </div>
         </SurfaceCard>
