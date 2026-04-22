@@ -11,7 +11,12 @@ import type {
   IntegrationMode,
   IntegrationProvider,
 } from "@/lib/brandops/types";
-import { parseGa4ServiceAccount } from "@/lib/integrations/ga4";
+import {
+  getGa4CredentialSourceHint,
+  getGa4ServiceAccountFromEnv,
+  parseGa4ServiceAccount,
+} from "@/lib/integrations/ga4";
+import { getMetaAccessTokenFromEnv } from "@/lib/integrations/meta";
 import { normalizeAutoSyncIntervalHours } from "@/lib/brandops/integration-automation";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 
@@ -28,6 +33,48 @@ function asSettingsObject(value: unknown) {
 
 function normalizeCredentialSource(): IntegrationCredentialSource {
   return "brand_key";
+}
+
+function isMissingSecretsStoreError(error: unknown) {
+  const candidate = error as {
+    code?: string;
+    message?: string;
+    details?: string;
+    hint?: string;
+  };
+  const haystack = [
+    candidate?.message,
+    candidate?.details,
+    candidate?.hint,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    candidate?.code === "42P01" ||
+    candidate?.code === "PGRST205" ||
+    haystack.includes("brand_integration_secrets") ||
+    haystack.includes("schema cache")
+  );
+}
+
+function getPlatformCredentialMetadata(provider: SecretBackedIntegrationProvider) {
+  if (provider === "meta") {
+    return {
+      hasSecret: Boolean(process.env.META_ACCESS_TOKEN?.trim()),
+      secretHint: process.env.META_ACCESS_TOKEN?.trim()
+        ? "META_ACCESS_TOKEN"
+        : null,
+    };
+  }
+
+  const ga4Hint = getGa4CredentialSourceHint();
+
+  return {
+    hasSecret: Boolean(ga4Hint),
+    secretHint: ga4Hint,
+  };
 }
 
 export function isSecretBackedIntegrationProvider(
@@ -125,16 +172,30 @@ export async function hydrateIntegrationConfig(
     return integration;
   }
 
-  const secretMetadata = await getBrandIntegrationSecretMetadata(brandId, integration.provider);
+  let secretMetadata;
+  try {
+    secretMetadata = await getBrandIntegrationSecretMetadata(brandId, integration.provider);
+  } catch (error) {
+    if (!isMissingSecretsStoreError(error)) {
+      throw error;
+    }
+
+    secretMetadata = {
+      hasSecret: false,
+      secretHint: null,
+    };
+  }
+  const platformMetadata = getPlatformCredentialMetadata(integration.provider);
 
   const settings = normalizeIntegrationSettings(integration.provider, integration.settings);
+  const hasApiKey = secretMetadata.hasSecret || platformMetadata.hasSecret;
 
   return {
     ...integration,
     settings: {
       ...settings,
-      hasApiKey: secretMetadata.hasSecret,
-      apiKeyHint: secretMetadata.secretHint,
+      hasApiKey,
+      apiKeyHint: secretMetadata.secretHint ?? platformMetadata.secretHint,
     },
   };
 }
@@ -238,38 +299,68 @@ export async function resolveMetaAccessTokenForBrand(options: {
   brandId: string;
   settings: unknown;
 }) {
-  const brandSecret = await getBrandIntegrationSecretValue(options.brandId, "meta");
-
-  if (!brandSecret?.secret) {
-    throw new Error(
-      "Nenhum token próprio da Meta foi salvo para esta marca. Cada loja precisa informar sua própria credencial no painel de integrações.",
-    );
+  let brandSecret = null;
+  try {
+    brandSecret = await getBrandIntegrationSecretValue(options.brandId, "meta");
+  } catch (error) {
+    if (!isMissingSecretsStoreError(error)) {
+      throw error;
+    }
   }
 
-  return {
-    accessToken: brandSecret.secret,
-    source: "brand_key" as const,
-    secretHint: brandSecret.secretHint,
-  };
+  if (brandSecret?.secret) {
+    return {
+      accessToken: brandSecret.secret,
+      source: "brand_key" as const,
+      secretHint: brandSecret.secretHint,
+    };
+  }
+
+  try {
+    return {
+      accessToken: getMetaAccessTokenFromEnv(),
+      source: "platform_env" as const,
+      secretHint: "META_ACCESS_TOKEN",
+    };
+  } catch {
+    throw new Error(
+      "Nenhum token da Meta foi encontrado. Salve o token próprio da marca no painel ou configure META_ACCESS_TOKEN no ambiente da produção.",
+    );
+  }
 }
 
 export async function resolveGa4CredentialsForBrand(options: {
   brandId: string;
   settings: unknown;
 }) {
-  const brandSecret = await getBrandIntegrationSecretValue(options.brandId, "ga4");
-
-  if (!brandSecret?.secret) {
-    throw new Error(
-      "Nenhuma credencial própria do GA4 foi salva para esta marca. Cada loja precisa informar seu JSON no painel de integrações.",
-    );
+  let brandSecret = null;
+  try {
+    brandSecret = await getBrandIntegrationSecretValue(options.brandId, "ga4");
+  } catch (error) {
+    if (!isMissingSecretsStoreError(error)) {
+      throw error;
+    }
   }
 
-  return {
-    credentials: parseGa4ServiceAccount(brandSecret.secret),
-    source: "brand_key" as const,
-    secretHint: brandSecret.secretHint,
-  };
+  if (brandSecret?.secret) {
+    return {
+      credentials: parseGa4ServiceAccount(brandSecret.secret),
+      source: "brand_key" as const,
+      secretHint: brandSecret.secretHint,
+    };
+  }
+
+  try {
+    return {
+      credentials: getGa4ServiceAccountFromEnv(),
+      source: "platform_env" as const,
+      secretHint: getGa4CredentialSourceHint(),
+    };
+  } catch {
+    throw new Error(
+      "Nenhuma credencial do GA4 foi encontrada. Salve o JSON da service account no painel ou configure GA4_SERVICE_ACCOUNT_JSON, GA4_SERVICE_ACCOUNT_FILE ou GOOGLE_APPLICATION_CREDENTIALS no ambiente da produção.",
+    );
+  }
 }
 
 
