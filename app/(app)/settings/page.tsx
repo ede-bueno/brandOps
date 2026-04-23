@@ -1,46 +1,19 @@
 import { redirect } from "next/navigation";
-
-type SearchParamValue = string | string[] | undefined;
-type SearchParams = Record<string, SearchParamValue>;
-
-function buildRedirectPath(
-  pathname: string,
-  defaults: Record<string, string>,
-  searchParams?: SearchParams,
-) {
-  const params = new URLSearchParams();
-
-  if (searchParams) {
-    for (const [key, value] of Object.entries(searchParams)) {
-      if (Array.isArray(value)) {
-        for (const item of value) {
-          if (item) {
-            params.append(key, item);
-          }
-        }
-      } else if (value) {
-        params.set(key, value);
-      }
-    }
-  }
-
-  for (const [key, value] of Object.entries(defaults)) {
-    params.set(key, value);
-  }
-
-  const query = params.toString();
-  return query ? `${pathname}?${query}` : pathname;
-}
+import {
+  buildLegacyRedirectPath,
+  resolveLegacySearchParams,
+  type LegacySearchParams,
+} from "@/lib/brandops-v3/legacy-route-alias";
 
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams?: Promise<SearchParams>;
+  searchParams?: Promise<LegacySearchParams>;
 }) {
-  const resolvedSearchParams = await searchParams;
+  const resolvedSearchParams = await resolveLegacySearchParams(searchParams);
 
   redirect(
-    buildRedirectPath(
+    buildLegacyRedirectPath(
       "/studio/ops",
       {
         tab: "governance",

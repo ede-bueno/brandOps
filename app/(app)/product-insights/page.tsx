@@ -1,38 +1,11 @@
 import { redirect } from "next/navigation";
+import {
+  buildLegacyRedirectPath,
+  resolveLegacySearchParams,
+  type LegacySearchParams,
+} from "@/lib/brandops-v3/legacy-route-alias";
 
-type SearchParamValue = string | string[] | undefined;
-type SearchParams = Record<string, SearchParamValue>;
-
-function buildRedirectPath(
-  pathname: string,
-  defaults: Record<string, string>,
-  searchParams?: SearchParams,
-) {
-  const params = new URLSearchParams();
-
-  if (searchParams) {
-    for (const [key, value] of Object.entries(searchParams)) {
-      if (Array.isArray(value)) {
-        for (const item of value) {
-          if (item) {
-            params.append(key, item);
-          }
-        }
-      } else if (value) {
-        params.set(key, value);
-      }
-    }
-  }
-
-  for (const [key, value] of Object.entries(defaults)) {
-    params.set(key, value);
-  }
-
-  const query = params.toString();
-  return query ? `${pathname}?${query}` : pathname;
-}
-
-function resolveView(searchParams?: SearchParams) {
+function resolveView(searchParams?: LegacySearchParams) {
   const mode = searchParams?.mode;
   const normalizedMode = Array.isArray(mode) ? mode[0] : mode;
 
@@ -50,12 +23,12 @@ function resolveView(searchParams?: SearchParams) {
 export default async function ProductInsightsPage({
   searchParams,
 }: {
-  searchParams?: Promise<SearchParams>;
+  searchParams?: Promise<LegacySearchParams>;
 }) {
-  const resolvedSearchParams = await searchParams;
+  const resolvedSearchParams = await resolveLegacySearchParams(searchParams);
 
   redirect(
-    buildRedirectPath(
+    buildLegacyRedirectPath(
       "/studio/offer",
       {
         tab: "decisions",
