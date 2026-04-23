@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { V3ModuleChrome } from "../BrandOpsShellV3";
-import { ExecutiveQueueBoard, FocusList, InlineEmpty, MetricRibbon, TrendBars, WorkspaceTabs } from "../StudioPrimitives";
+import { ExecutiveQueueBoard, FocusList, MetricRibbon, TrendBars, WorkspaceTabs } from "../StudioPrimitives";
 import { StudioEvidenceSection } from "../shared/StudioEvidenceSection";
 import { FinanceDreTab } from "./FinanceDreTab";
 import { FinanceLedger } from "./FinanceLedger";
+import { FinanceOperationsPrimary, FinanceOperationsSecondary } from "./FinanceOperationsPanels";
 import { FinanceOperationsTab } from "./FinanceOperationsTab";
 import { FinanceOverviewPanel } from "./FinanceOverviewPanel";
+import { FinancePlaybookPanel, FinanceSalesPanel } from "./FinanceSalesPanels";
 import { FinanceSalesTab } from "./FinanceSalesTab";
 import { getFinanceWorkspaceMeta } from "./getFinanceWorkspaceMeta";
 import {
-  buildStudioHref,
   buildFinanceMetrics,
   getStudioWorkspaceTabs,
   mapActionsToFocus,
@@ -19,7 +20,7 @@ import {
   type StudioFocusItem,
   type StudioModuleContext,
 } from "@/lib/brandops-v3/view-models";
-import { currencyFormatter, integerFormatter } from "@/lib/brandops/format";
+import { currencyFormatter } from "@/lib/brandops/format";
 import type { FinanceHubReport } from "@/lib/brandops/types";
 
 function mapManagementToneToFocusTone(tone: string): StudioFocusItem["tone"] {
@@ -118,120 +119,20 @@ export function FinanceWorkspace({
         ) : null}
         {activeTab === "operations" ? (
           <FinanceOperationsTab
-            primary={
-              <div className="v3-panel-body">
-                <div className="v3-subsection-head">
-                  <span>{context.focus === "cmv" ? "Custos e CMV" : "Rotina financeira"}</span>
-                </div>
-                <FocusList
-                  items={[
-                    {
-                      label: "Lançamentos",
-                      title: "Registrar competência, categoria e despesa",
-                      detail:
-                        "Registre despesas e categorias sem sair da leitura financeira do recorte.",
-                      href: buildStudioHref("finance", { surface: "operations" }),
-                      tone: "info",
-                    },
-                    {
-                      label: "CMV",
-                      title: currencyFormatter.format(report.financial.total.cmvTotal),
-                      detail:
-                        "Valide o custo dos itens vendidos e a pressão do recorte antes de escalar mídia ou catálogo.",
-                      href: buildStudioHref("finance", { surface: "operations", focus: "cmv" }),
-                      tone: "warn",
-                    },
-                    {
-                      label: "Fechamento",
-                      title: `${report.financial.months.length} competências reconciliadas`,
-                      detail: "Volte ao DRE para consolidar leitura e decisões do período.",
-                      href: buildStudioHref("finance", { surface: "dre" }),
-                      tone: "good",
-                    },
-                  ]}
-                />
-              </div>
-            }
+            primary={<FinanceOperationsPrimary report={report} context={context} />}
             secondary={
-              <div className="v3-panel-body">
-                <div className="v3-subsection-head">
-                  <span>Prioridades do Atlas</span>
-                </div>
-                <FocusList
-                  items={[
-                    ...mapActionsToFocus(report.priorities),
-                    {
-                      label: "Produto com maior custo",
-                      title: topProducts[0]?.productName ?? "Sem item dominante",
-                      detail: topProducts[0]
-                        ? `${currencyFormatter.format(topProducts[0].grossRevenue)} em venda real no recorte.`
-                        : "Quando houver venda consolidada, o BrandOps destaca o item que mais sustenta caixa.",
-                      href: buildStudioHref("offer", { surface: "sales" }),
-                      tone: "info" as const,
-                    },
-                  ].slice(0, 4)}
-                />
-              </div>
+              <FinanceOperationsSecondary
+                report={report}
+                topProductName={topProducts[0]?.productName}
+                topProductRevenue={topProducts[0]?.grossRevenue}
+              />
             }
           />
         ) : null}
         {activeTab === "sales" ? (
           <FinanceSalesTab
-            sales={
-              <div className="v3-panel-body">
-                <div className="v3-subsection-head">
-                  <span>Produtos que sustentam caixa</span>
-                </div>
-                <div className="v3-data-list">
-                  {topProducts.length ? (
-                    topProducts.map((product) => (
-                      <Link key={product.productKey} href={buildStudioHref("offer", { surface: "sales" })}>
-                        <span>{product.productName}</span>
-                        <strong>{currencyFormatter.format(product.grossRevenue)}</strong>
-                        <small>{integerFormatter.format(product.quantity)} itens</small>
-                      </Link>
-                    ))
-                  ) : (
-                    <InlineEmpty
-                      title="Sem venda dominante"
-                      description="Quando o recorte tiver venda consolidada, os itens líderes aparecem aqui."
-                    />
-                  )}
-                </div>
-              </div>
-            }
-            playbook={
-              <div className="v3-panel-body">
-                <div className="v3-subsection-head">
-                  <span>Playbook de venda</span>
-                </div>
-                <FocusList
-                  items={[
-                    {
-                      label: report.sales.playbook.protect.title,
-                      title: `${report.sales.playbook.protect.count} itens para proteger`,
-                      detail: report.sales.playbook.protect.description,
-                      href: buildStudioHref("offer", { surface: "sales" }),
-                      tone: "warn",
-                    },
-                    {
-                      label: report.sales.playbook.grow.title,
-                      title: `${report.sales.playbook.grow.count} itens para crescer`,
-                      detail: report.sales.playbook.grow.description,
-                      href: buildStudioHref("offer", { surface: "sales" }),
-                      tone: "good",
-                    },
-                    {
-                      label: report.sales.playbook.review.title,
-                      title: `${report.sales.playbook.review.count} itens para revisar`,
-                      detail: report.sales.playbook.review.description,
-                      href: buildStudioHref("offer", { surface: "sales" }),
-                      tone: "info",
-                    },
-                  ]}
-                />
-              </div>
-            }
+            sales={<FinanceSalesPanel topProducts={topProducts} />}
+            playbook={<FinancePlaybookPanel report={report} />}
           />
         ) : null}
         {activeTab === "evidence" ? (
