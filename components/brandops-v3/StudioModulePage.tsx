@@ -582,8 +582,8 @@ function FinanceWorkspace({
           actionHref: buildStudioHref("finance", { surface: "dre" }),
           banner:
             context.focus === "cmv"
-              ? "Foco em CMV: esta entrada veio de uma rota legacy de custo e abre a camada operacional dentro de Finanças."
-              : "Foco em lançamentos: a rotina operacional foi absorvida pelo workbench financeiro do BrandOps.",
+              ? "CMV em foco: valide cobertura de custo, base aplicada e pressão sobre margem antes de ajustar preço ou escala."
+              : "Lançamentos em foco: trabalhe competência, categoria e despesa mantendo o efeito no resultado sempre visível.",
         }
       : requestedSurface === "sales"
         ? {
@@ -592,7 +592,7 @@ function FinanceWorkspace({
               "Cruze receita real, produtos líderes e playbook comercial sem sair do ambiente financeiro.",
             actionLabel: "Abrir DRE",
             actionHref: buildStudioHref("finance", { surface: "dre" }),
-            banner: "Foco em vendas: esta entrada veio da leitura comercial ligada ao financeiro.",
+            banner: "Vendas em foco: confira receita real, mix e itens líderes antes de aceitar qualquer leitura de caixa.",
           }
         : requestedSurface === "evidence"
           ? {
@@ -601,7 +601,7 @@ function FinanceWorkspace({
                 "Fontes, evidências e confiança da leitura financeira em uma única superfície secundária.",
               actionLabel: "Abrir DRE",
               actionHref: buildStudioHref("finance", { surface: "dre" }),
-              banner: "Foco em evidências: use esta área para validar fonte, consistência e reconciliação.",
+              banner: "Evidências em foco: valide consistência, fonte e reconciliação antes de fechar uma decisão financeira.",
             }
           : {
               title: "Workbench financeiro",
@@ -626,7 +626,7 @@ function FinanceWorkspace({
       <MetricRibbon metrics={buildFinanceMetrics(report)} />
       {financeMeta.banner ? (
         <div className="v3-note">
-          <strong>Contexto preservado</strong>
+          <strong>Leitura rápida</strong>
           <p>{financeMeta.banner}</p>
         </div>
       ) : null}
@@ -848,7 +848,7 @@ function GrowthWorkspace({
           actionLabel: "Abrir mídia",
           actionHref: buildStudioHref("growth", { surface: "media" }),
           banner:
-            "Foco em tráfego: esta entrada preserva a intenção da análise micro sem reabrir a UI antiga.",
+            "Tráfego em foco: use esta camada para localizar fricção do funil, origem mais sensível e perda de conversão.",
         }
       : requestedSurface === "evidence"
         ? {
@@ -858,7 +858,7 @@ function GrowthWorkspace({
             actionLabel: "Voltar ao diagnóstico",
             actionHref: buildStudioHref("growth", { surface: "media" }),
             banner:
-              "Foco em evidências: valide a leitura reconciliada antes de decidir escala ou revisão.",
+              "Evidências em foco: confirme confiança, saúde das fontes e sinais reconciliados antes de escalar ou cortar.",
           }
         : context.mode === "campaigns"
           ? {
@@ -868,7 +868,7 @@ function GrowthWorkspace({
               actionLabel: "Abrir tráfego",
               actionHref: buildStudioHref("growth", { surface: "traffic" }),
               banner:
-                "Foco em campanhas: a rota antiga de mídia agora abre diretamente o workbench de crescimento.",
+                "Campanhas em foco: priorize verba dominante, ativos em revisão e espaço real para escala.",
             }
           : context.mode === "radar"
             ? {
@@ -878,7 +878,7 @@ function GrowthWorkspace({
                 actionLabel: "Abrir campanhas",
                 actionHref: buildStudioHref("growth", { surface: "media", mode: "campaigns" }),
                 banner:
-                  "Foco em radar: esta visão prioriza curva e eficiência sem separar mídia do restante da aquisição.",
+                  "Radar em foco: acompanhe curva de eficiência e resposta do período sem perder o elo com receita.",
               }
             : context.mode === "executive"
               ? {
@@ -888,7 +888,7 @@ function GrowthWorkspace({
                   actionLabel: "Abrir campanhas",
                   actionHref: buildStudioHref("growth", { surface: "media", mode: "campaigns" }),
                   banner:
-                    "Foco executivo: a antiga visão executiva de mídia foi absorvida pelo BrandOps Studio.",
+                    "Leitura executiva em foco: use esta camada para decidir expansão, corte ou revisão de aquisição.",
                 }
               : {
                   title: "Aquisição e conversão",
@@ -913,7 +913,7 @@ function GrowthWorkspace({
       <MetricRibbon metrics={buildGrowthMetrics(report)} />
       {growthMeta.banner ? (
         <div className="v3-note">
-          <strong>Contexto preservado</strong>
+          <strong>Leitura rápida</strong>
           <p>{growthMeta.banner}</p>
         </div>
       ) : null}
@@ -1161,7 +1161,7 @@ function OfferWorkspace({
             "Receita, unidades e playbook comercial tratados como leitura operacional do portfólio.",
           actionLabel: "Abrir portfólio",
           actionHref: buildStudioHref("offer", { surface: "products" }),
-          banner: "Foco em vendas: a antiga superfície comercial agora desembarca no workbench de oferta.",
+          banner: "Vendas em foco: veja o que realmente converte, sustenta caixa e merece mais atenção comercial.",
         }
       : requestedSurface === "catalog"
         ? {
@@ -1170,7 +1170,7 @@ function OfferWorkspace({
               "Cobertura visual, produtos ativos e itens descobertos em uma única superfície de manutenção comercial.",
             actionLabel: "Abrir vendas",
             actionHref: buildStudioHref("offer", { surface: "sales" }),
-            banner: "Foco em catálogo: a antiga tela de feed foi absorvida pelo BrandOps Studio.",
+            banner: "Catálogo em foco: revise cobertura visual, itens ativos e lacunas que travam escala.",
           }
         : requestedSurface === "evidence"
           ? {
@@ -1179,7 +1179,7 @@ function OfferWorkspace({
                 "Fila executiva, fontes e reconciliação do portfólio sem poluir a leitura principal.",
               actionLabel: "Abrir portfólio",
               actionHref: buildStudioHref("offer", { surface: "products" }),
-              banner: "Foco em evidências: use esta camada para validar a confiança dos sinais de produto.",
+              banner: "Evidências em foco: confirme se o sinal de produto está sustentado por venda, atenção e consistência.",
             }
           : context.mode === "executive"
             ? {
@@ -1188,7 +1188,7 @@ function OfferWorkspace({
                   "Foco, momentum e próxima decisão comercial em uma leitura curta de produtos.",
                 actionLabel: "Abrir radar",
                 actionHref: buildStudioHref("offer", { surface: "products", mode: "radar" }),
-                banner: "Foco executivo: a visão executiva antiga foi incorporada ao workbench de oferta.",
+                banner: "Leitura executiva em foco: priorize quais itens proteger, escalar ou retirar da frente comercial.",
               }
             : context.mode === "radar"
               ? {
@@ -1197,17 +1197,17 @@ function OfferWorkspace({
                     "Use esta camada para localizar escala, perda de força e itens que pedem revisão.",
                   actionLabel: "Abrir catálogo",
                   actionHref: buildStudioHref("offer", { surface: "catalog" }),
-                  banner: "Foco em radar: a antiga rota de radar agora reaproveita a mesma base de produto.",
+                  banner: "Radar em foco: acompanhe momentum, perda de força e itens que pedem revisão imediata.",
                 }
               : context.mode === "detail"
                 ? {
                     title: "Detalhamento de produtos",
                     description:
-                      "Mesa operacional para auditar item, decisão e contexto comercial sem voltar ao front legado.",
+                      "Mesa operacional para auditar item, decisão e contexto comercial com profundidade.",
                     actionLabel: "Abrir vendas",
                     actionHref: buildStudioHref("offer", { surface: "sales" }),
                     banner:
-                      "Foco em detalhe: a antiga tabela operacional foi incorporada ao módulo de oferta.",
+                      "Detalhe em foco: use esta camada para validar SKU, decisão e contexto comercial sem ruído.",
                   }
                 : {
                     title: "Portfólio e venda real",
@@ -1232,7 +1232,7 @@ function OfferWorkspace({
       <MetricRibbon metrics={buildOfferMetrics(report)} />
       {offerMeta.banner ? (
         <div className="v3-note">
-          <strong>Contexto preservado</strong>
+          <strong>Leitura rápida</strong>
           <p>{offerMeta.banner}</p>
         </div>
       ) : null}
@@ -1443,7 +1443,7 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
             "Mantenha as cargas previsíveis e acompanhe arquivos recentes sem sair do módulo operacional.",
           actionLabel: "Abrir integrações",
           actionHref: buildStudioHref("ops", { surface: "integrations" }),
-          banner: "Foco em importação: esta entrada substitui a antiga tela de ETL e importação.",
+          banner: "Importação em foco: acompanhe cargas recentes, previsibilidade do processamento e próximos arquivos.",
         }
       : requestedSurface === "governance"
         ? {
@@ -1460,8 +1460,8 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
                 : buildStudioHref("ops", { surface: "support" }),
             banner:
               context.focus === "sanitization"
-                ? "Foco em saneamento: a fila operacional antiga agora vive dentro do BrandOps Studio."
-                : "Foco em governança: configurações e administração foram absorvidas pelo console operacional.",
+                ? "Saneamento em foco: trate pendências e ruído da base antes de confiar na leitura gerencial."
+                : "Governança em foco: revise flags, acessos e consistência operacional da marca.",
           }
         : requestedSurface === "support"
           ? {
@@ -1471,7 +1471,7 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
               actionLabel: "Abrir integrações",
               actionHref: buildStudioHref("ops", { surface: "integrations" }),
               banner:
-                "Foco em suporte: ajuda, tutoriais e administração deixaram de ser telas soltas no shell antigo.",
+                "Suporte em foco: concentre setup guiado, ajuda operacional e administração sem poluir o trabalho principal.",
             }
           : {
               title: "Console de manutenção",
@@ -1496,7 +1496,7 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
       <MetricRibbon metrics={buildOpsMetrics(activeBrand)} />
       {opsMeta.banner ? (
         <div className="v3-note">
-          <strong>Contexto preservado</strong>
+          <strong>Leitura rápida</strong>
           <p>{opsMeta.banner}</p>
         </div>
       ) : null}
@@ -1546,8 +1546,7 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
               <div className="v3-note">
                 <strong>Provedor em foco</strong>
                 <p>
-                  O atalho legado preservou o provedor <strong>{context.provider.toUpperCase()}</strong> dentro do console
-                  de integrações.
+                  O console foi aberto já com o provedor <strong>{context.provider.toUpperCase()}</strong> em foco.
                 </p>
               </div>
             ) : null}
@@ -1625,7 +1624,7 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
                       : "Guias de integração",
                     detail:
                       context.provider
-                        ? "A rota antiga abriu o tutorial do provedor dentro do módulo operacional."
+                        ? "Abra o passo a passo do provedor já no contexto operacional da marca."
                         : "Centralize onboarding, setup e troubleshooting sem sair do Studio.",
                     href: buildStudioHref("ops", {
                       surface: "support",
