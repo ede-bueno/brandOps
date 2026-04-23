@@ -1,45 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { currencyFormatter, percentFormatter } from "@/lib/brandops/format";
 import { buildStudioHref } from "@/lib/brandops-v3/view-models";
+import { WorkspaceTabs } from "./StudioPrimitives";
 import { V3EmptyState, V3ModuleChrome } from "./BrandOpsShellV3";
 
 type MarginViewMode = "historical" | "filtered";
 type MarginSection = "radar" | "timeline";
 
-function MarginTabs({
-  active,
-  items,
-  onChange,
-}: {
-  active: string;
-  items: Array<{ key: string; label: string }>;
-  onChange: (key: string) => void;
-}) {
-  return (
-    <div className="v3-tabs" role="tablist">
-      {items.map((item) => (
-        <button
-          key={item.key}
-          type="button"
-          className="v3-tab"
-          data-active={item.key === active}
-          onClick={() => onChange(item.key)}
-        >
-          {item.label}
-        </button>
-      ))}
-    </div>
-  );
+function buildMarginHref(view: MarginViewMode, section: MarginSection) {
+  const params = new URLSearchParams();
+  params.set("view", view);
+  params.set("section", section);
+  return `/studio/margin?${params.toString()}`;
 }
 
-export function ContributionMarginPageV3() {
-  const [viewMode, setViewMode] = useState<MarginViewMode>("historical");
-  const [activeSection, setActiveSection] = useState<MarginSection>("radar");
+export function ContributionMarginPageV3({
+  view,
+  section,
+}: {
+  view?: string | null;
+  section?: string | null;
+}) {
+  const viewMode: MarginViewMode = view === "filtered" ? "filtered" : "historical";
+  const activeSection: MarginSection = section === "timeline" ? "timeline" : "radar";
   const {
     activeBrand,
     activeBrandId,
@@ -224,20 +212,18 @@ export function ContributionMarginPageV3() {
           <span>Painel da margem</span>
           <strong>{viewMode === "historical" ? "Histórico completo" : selectedPeriodLabel}</strong>
         </div>
-        <MarginTabs
+        <WorkspaceTabs
           active={viewMode}
-          onChange={(key) => setViewMode(key as MarginViewMode)}
-          items={[
-            { key: "historical", label: "Histórico" },
-            { key: "filtered", label: "Recorte ativo" },
+          tabs={[
+            { key: "historical", label: "Histórico", href: buildMarginHref("historical", activeSection) },
+            { key: "filtered", label: "Recorte ativo", href: buildMarginHref("filtered", activeSection) },
           ]}
         />
-        <MarginTabs
+        <WorkspaceTabs
           active={activeSection}
-          onChange={(key) => setActiveSection(key as MarginSection)}
-          items={[
-            { key: "radar", label: "Radar" },
-            { key: "timeline", label: "Linha do tempo" },
+          tabs={[
+            { key: "radar", label: "Radar", href: buildMarginHref(viewMode, "radar") },
+            { key: "timeline", label: "Linha do tempo", href: buildMarginHref(viewMode, "timeline") },
           ]}
         />
 
