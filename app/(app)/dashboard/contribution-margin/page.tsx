@@ -145,7 +145,7 @@ export default function ContributionMarginPage() {
                 Filtro atual
               </button>
             </div>
-            <Link href="/dashboard" className="brandops-button brandops-button-secondary">
+            <Link href="/studio" className="brandops-button brandops-button-secondary">
               <ArrowLeft size={14} />
               Voltar para a Torre de Controle
             </Link>
@@ -174,7 +174,11 @@ export default function ContributionMarginPage() {
               ? "Valide mês, despesas e resultado junto da matriz gerencial."
               : "Entenda se a margem ganhou ou perdeu tração por gasto ou retorno."
           }
-          href={report.total.contributionMargin < 0 ? "/dre" : "/media"}
+          href={
+            report.total.contributionMargin < 0
+              ? "/studio/finance?surface=dre"
+              : "/studio/growth?surface=media"
+          }
           tone="info"
         />
       </section>
@@ -345,21 +349,21 @@ export default function ContributionMarginPage() {
               />
               <div className="mt-5 grid gap-3">
                 <AnalyticsCalloutCard
-                  href="/dre"
+                  href="/studio/finance?surface=dre"
                   eyebrow="Próxima leitura"
                   title="Abrir DRE consolidado"
                   description="Conferir os meses com maior compressão de margem junto com despesas e resultado final."
                   tone="info"
                 />
                 <AnalyticsCalloutCard
-                  href="/media"
+                  href="/studio/growth?surface=media"
                   eyebrow="Próxima leitura"
                   title="Cruzar com Performance Mídia"
                   description="Entender se a pressão veio de aumento de mídia, queda de ROAS ou mudança de mix."
                   tone="default"
                 />
                 <AnalyticsCalloutCard
-                  href="/cost-center"
+                  href="/studio/finance?surface=operations"
                   eyebrow="Próxima leitura"
                   title="Revisar lançamentos do DRE"
                   description="Validar se despesas operacionais ou competências recentes distorceram o resultado."

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useId, useState, type FocusEvent, type ReactNode } from "react";
 import { ArrowUpRight, Info } from "lucide-react";
 import { AtlasOrb } from "./AtlasOrb";
+import { normalizeStudioHref } from "@/lib/brandops-v3/view-models";
 
 export function PageHeader({
   eyebrow,
@@ -413,7 +414,7 @@ export function WorkspaceTabs({
         item.href ? (
           <Link
             key={item.key ?? `${item.href}-${String(item.label)}`}
-            href={item.href}
+            href={normalizeStudioHref(item.href)}
             prefetch={false}
             className="brandops-subtab"
             data-active={item.active ? "true" : "false"}

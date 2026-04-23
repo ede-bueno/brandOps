@@ -30,7 +30,7 @@ export function Sidebar() {
           </p>
           <div className="space-y-1">
             <Link
-              href="/dashboard"
+              href="/studio"
               className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all hover:bg-surface-container-high text-on-surface-variant hover:text-primary font-medium group"
             >
               <LayoutDashboard size={18} className="text-ink-muted group-hover:text-primary transition-colors" />
@@ -46,14 +46,14 @@ export function Sidebar() {
           </p>
           <div className="space-y-1">
             <Link
-              href="/dre"
+              href="/studio/finance?surface=dre"
               className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all hover:bg-surface-container-high text-on-surface-variant hover:text-primary font-medium group"
             >
               <DollarSign size={18} className="text-ink-muted group-hover:text-primary transition-colors" />
               <span className="text-sm">DRE Consolidado</span>
             </Link>
             <Link
-              href="/cmv"
+              href="/studio/finance?surface=operations&focus=cmv"
               className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all hover:bg-surface-container-high text-on-surface-variant hover:text-primary font-medium group"
             >
               <PieChart size={18} className="text-ink-muted group-hover:text-primary transition-colors" />
@@ -69,14 +69,14 @@ export function Sidebar() {
           </p>
           <div className="space-y-1">
             <Link
-              href="/sales"
+              href="/studio/offer?surface=sales"
               className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all hover:bg-surface-container-high text-on-surface-variant hover:text-primary font-medium group"
             >
               <TrendingUp size={18} className="text-ink-muted group-hover:text-primary transition-colors" />
               <span className="text-sm">Performance Vendas</span>
             </Link>
             <Link
-              href="/media"
+              href="/studio/growth?surface=media"
               className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all hover:bg-surface-container-high text-on-surface-variant hover:text-primary font-medium group"
             >
               <Megaphone size={18} className="text-ink-muted group-hover:text-primary transition-colors" />
@@ -92,14 +92,14 @@ export function Sidebar() {
           </p>
           <div className="space-y-1">
             <Link
-              href="/import"
+              href="/studio/ops?surface=imports"
               className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all hover:bg-surface-container-high text-on-surface-variant hover:text-primary font-medium group"
             >
               <Upload size={18} className="text-ink-muted group-hover:text-primary transition-colors" />
               <span className="text-sm">ETL & Imports</span>
             </Link>
             <Link
-              href="/sanitization"
+              href="/studio/ops?surface=governance&focus=sanitization"
               className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all hover:bg-surface-container-high text-on-surface-variant hover:text-primary font-medium group"
             >
               <ShieldAlert size={18} className="text-ink-muted group-hover:text-primary transition-colors" />

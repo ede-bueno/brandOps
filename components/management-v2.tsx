@@ -44,6 +44,7 @@ import type {
   ManagementTone,
   OfferHubReport,
 } from "@/lib/brandops/types";
+import { normalizeStudioHref } from "@/lib/brandops-v3/view-models";
 
 function toneDataTone(tone: ManagementTone): "positive" | "warning" | "negative" | undefined {
   switch (tone) {
@@ -92,7 +93,7 @@ function SourceHealthStrip({ items }: { items: ManagementSourceHealthItem[] }) {
       {items.map((item) => (
         <Link
           key={item.key}
-          href={item.href}
+          href={normalizeStudioHref(item.href ?? "#")}
           prefetch={false}
           className="rounded-2xl border border-outline/65 bg-surface-container/70 p-3 transition hover:border-primary/25"
         >
@@ -133,7 +134,7 @@ function MetricDock({ items }: { items: ManagementKpiDockItem[] }) {
       {items.map((item) => (
         <Link
           key={item.key}
-          href={item.href ?? "#"}
+          href={normalizeStudioHref(item.href)}
           prefetch={false}
           data-tone={toneDataTone(item.tone)}
           className="atlas-kpi-tile rounded-[1.4rem] border transition hover:border-primary/25"
@@ -262,7 +263,7 @@ function DecisionCard({ action }: { action: ExecutiveActionItem }) {
         ))}
       </div>
       <Link
-        href={action.drilldownHref}
+        href={normalizeStudioHref(action.drilldownHref)}
         prefetch={false}
         className="mt-5 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary"
       >
@@ -289,7 +290,7 @@ function InsightsRail({
         {items.map((item) => (
           <Link
             key={item.key}
-            href={item.href ?? "#"}
+            href={normalizeStudioHref(item.href ?? "#")}
             prefetch={false}
             data-tone={toneDataTone(item.tone)}
             className="atlas-callout-card rounded-2xl border p-4 transition hover:border-primary/25"
@@ -480,7 +481,7 @@ function OperationalRiskPanel({
         {items.map((item) => (
           <Link
             key={item.key}
-            href={item.href}
+            href={normalizeStudioHref(item.href)}
             prefetch={false}
             data-tone={toneDataTone(item.tone)}
             className="atlas-callout-card rounded-2xl border p-4 transition hover:border-primary/25"
@@ -516,7 +517,7 @@ function EvidenceRail({ items }: { items: ManagementEvidenceLink[] }) {
         {items.map((item) => (
           <Link
             key={item.label}
-            href={item.href}
+            href={normalizeStudioHref(item.href)}
             prefetch={false}
             className="atlas-callout-card rounded-2xl border p-4 transition hover:border-primary/25"
           >
@@ -633,7 +634,7 @@ function ExecutiveQueueBoard({
                     />
                   </label>
                   <Link
-                    href={action.drilldownHref}
+                    href={normalizeStudioHref(action.drilldownHref)}
                     prefetch={false}
                     className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary"
                   >
@@ -1084,7 +1085,7 @@ export function BackofficeDirectory({
             {group.items.map((item) => (
               <Link
                 key={item.href}
-                href={item.href}
+                href={normalizeStudioHref(item.href)}
                 prefetch={false}
                 className="atlas-callout-card rounded-2xl border p-4 transition hover:border-primary/25"
               >

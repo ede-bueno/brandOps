@@ -26,6 +26,7 @@ import {
   ATLAS_GEMINI_MODEL_SUGGESTIONS,
 } from "@/lib/brandops/ai/model-policy";
 import { APP_ROUTES } from "@/lib/brandops/routes";
+import { normalizeStudioHref } from "@/lib/brandops-v3/view-models";
 
 const ANALYSIS_WINDOW_OPTIONS = [7, 14, 30, 60, 90] as const;
 
@@ -387,7 +388,7 @@ export function AtlasAnalystSettingsPanel() {
             {!notice ? (
               <>
                 {" "}A leitura histórica da marca fica em{" "}
-                <Link href={APP_ROUTES.settingsAtlasLearning} prefetch={false} className="relative z-10 text-secondary hover:underline">
+                <Link href={normalizeStudioHref(APP_ROUTES.settingsAtlasLearning)} prefetch={false} className="relative z-10 text-secondary hover:underline">
                   Aprender negócio
                 </Link>
                 .
@@ -618,7 +619,7 @@ export function AtlasAnalystSettingsPanel() {
         <p className="text-[11px] leading-5 text-on-surface-variant">
           A memória operacional da marca fica logo ao lado. Integrações, chave e
           ativação continuam em{" "}
-          <Link href={APP_ROUTES.integrations} prefetch={false} className="text-secondary hover:underline">
+          <Link href={normalizeStudioHref(APP_ROUTES.integrations)} prefetch={false} className="text-secondary hover:underline">
             Integrações
           </Link>
           .

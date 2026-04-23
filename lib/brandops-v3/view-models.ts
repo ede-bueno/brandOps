@@ -203,6 +203,96 @@ export function buildStudioHref(
   return query ? `${basePath}?${query}` : basePath;
 }
 
+export function normalizeStudioHref(href: string | null | undefined) {
+  if (!href) return "/studio";
+  if (!href.startsWith("/")) return href;
+
+  const [withoutHash, hash = ""] = href.split("#");
+  const [pathname, query = ""] = withoutHash.split("?");
+  const currentParams = new URLSearchParams(query);
+  const withHash = (nextHref: string) => (hash ? `${nextHref}#${hash}` : nextHref);
+  const appendQueryAndHash = (base: string) => {
+    const normalizedQuery = currentParams.toString();
+    return withHash(normalizedQuery ? `${base}?${normalizedQuery}` : base);
+  };
+  const merge = (
+    destination: Exclude<StudioModule, "command">,
+    defaults: Partial<StudioModuleContext>,
+  ) => {
+    const params = new URLSearchParams(currentParams);
+    for (const [key, value] of Object.entries(defaults)) {
+      if (value) params.set(key, value);
+    }
+    const normalizedQuery = params.toString();
+    const base = buildStudioHref(destination);
+    return withHash(normalizedQuery ? `${base}?${normalizedQuery}` : base);
+  };
+
+  switch (pathname) {
+    case "/dashboard":
+      return appendQueryAndHash("/studio");
+    case "/finance":
+      return appendQueryAndHash("/studio/finance");
+    case "/acquisition":
+      return appendQueryAndHash("/studio/growth");
+    case "/offer":
+      return appendQueryAndHash("/studio/offer");
+    case "/operations":
+    case "/platform":
+      return appendQueryAndHash("/studio/ops");
+    case "/dre":
+      return merge("finance", { surface: "dre" });
+    case "/cost-center":
+      return merge("finance", { surface: "operations" });
+    case "/cmv":
+      return merge("finance", { surface: "operations", focus: "cmv" });
+    case "/sales":
+      return merge("offer", { surface: "sales" });
+    case "/media":
+      return merge("growth", { surface: "media" });
+    case "/media/visao-executiva":
+      return merge("growth", { surface: "media", mode: "executive" });
+    case "/media/radar":
+      return merge("growth", { surface: "media", mode: "radar" });
+    case "/media/campanhas":
+      return merge("growth", { surface: "media", mode: "campaigns" });
+    case "/traffic":
+      return merge("growth", { surface: "traffic" });
+    case "/product-insights":
+      return merge("offer", { surface: "products" });
+    case "/product-insights/visao-executiva":
+      return merge("offer", { surface: "products", mode: "executive" });
+    case "/product-insights/radar":
+      return merge("offer", { surface: "products", mode: "radar" });
+    case "/product-insights/detalhamento":
+      return merge("offer", { surface: "products", mode: "detail" });
+    case "/feed":
+      return merge("offer", { surface: "catalog" });
+    case "/import":
+      return merge("ops", { surface: "imports" });
+    case "/sanitization":
+      return merge("ops", { surface: "governance", focus: "sanitization" });
+    case "/integrations":
+      return merge("ops", { surface: "integrations" });
+    case "/integrations/tutorials":
+      return merge("ops", { surface: "support" });
+    case "/help":
+      return merge("ops", { surface: "support" });
+    case "/settings":
+      return merge("ops", { surface: "governance" });
+    case "/admin/stores":
+      return merge("ops", { surface: "governance", focus: "stores" });
+    default:
+      if (pathname.startsWith("/integrations/tutorials/")) {
+        return merge("ops", {
+          surface: "support",
+          provider: pathname.split("/").filter(Boolean).at(-1),
+        });
+      }
+      return href;
+    }
+  }
+
 export function getStudioModuleContext(
   module: StudioModule,
   searchParams: Pick<URLSearchParams, "get"> | null,

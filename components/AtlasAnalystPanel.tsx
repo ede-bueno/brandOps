@@ -24,6 +24,7 @@ import type {
 } from "@/lib/brandops/ai/types";
 import { getLatestDatasetDate } from "@/lib/brandops/metrics";
 import { APP_ROUTES } from "@/lib/brandops/routes";
+import { normalizeStudioHref } from "@/lib/brandops-v3/view-models";
 
 const SKILL_OPTIONS: Array<{ value: AtlasAnalystSkillId; label: string }> = [
   { value: "auto", label: "Auto" },
@@ -131,7 +132,7 @@ function DisabledNotice({
         {hasPlanAccess ? (
           <>
             Conecte a chave da loja no painel de{" "}
-            <Link href={APP_ROUTES.integrations} prefetch={false} className="text-secondary hover:underline">
+            <Link href={normalizeStudioHref(APP_ROUTES.integrations)} prefetch={false} className="text-secondary hover:underline">
               Integrações
             </Link>{" "}
             para usar o Atlas com a credencial própria da marca.
@@ -139,7 +140,7 @@ function DisabledNotice({
         ) : (
           <>
             Libere o recurso em{" "}
-            <Link href={APP_ROUTES.adminStores} prefetch={false} className="text-secondary hover:underline">
+            <Link href={normalizeStudioHref(APP_ROUTES.adminStores)} prefetch={false} className="text-secondary hover:underline">
               Acessos
             </Link>{" "}
             antes de tentar a configuração técnica.
@@ -364,7 +365,7 @@ export function AtlasAnalystPanel({
               </div>
               <div className="mt-3 flex items-center justify-between gap-3">
                 <p className="text-[10px] leading-4 text-ink-muted">Abra a mesa do Atlas abaixo para conversar com o agente.</p>
-                <Link href={`${APP_ROUTES.dashboard}#atlas-ai-home`} prefetch={false} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-primary/25 bg-primary px-3 py-1.5 text-[11px] font-semibold text-on-primary transition hover:brightness-105">
+                <Link href={normalizeStudioHref(`${APP_ROUTES.dashboard}#atlas-ai-home`)} prefetch={false} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-primary/25 bg-primary px-3 py-1.5 text-[11px] font-semibold text-on-primary transition hover:brightness-105">
                   Abrir mesa do Atlas
                 </Link>
               </div>
@@ -518,7 +519,7 @@ export function AtlasAnalystPanel({
                         {skill === "auto" ? (
                           <>
                             Auto usa <span className="font-semibold text-on-surface">{defaultSkillLabel}</span> como base e respeita os parâmetros salvos em{" "}
-                            <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="text-secondary hover:underline">
+                            <Link href={normalizeStudioHref(APP_ROUTES.settingsAtlasAi)} prefetch={false} className="text-secondary hover:underline">
                               Configurações
                             </Link>
                             .

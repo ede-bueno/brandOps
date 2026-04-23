@@ -14,7 +14,7 @@ export default function NotFound() {
           continuar operando normalmente.
         </p>
         <Link
-          href="/dashboard"
+          href="/studio"
           className="brandops-button brandops-button-primary mt-6 inline-flex px-5 py-3 text-sm"
         >
           Ir para o dashboard

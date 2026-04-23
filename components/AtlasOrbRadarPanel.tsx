@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { buildControlAlerts } from "@/lib/brandops/control-alerts";
 import { APP_ROUTES } from "@/lib/brandops/routes";
+import { normalizeStudioHref } from "@/lib/brandops-v3/view-models";
 import { cn } from "@/lib/utils";
 
 export interface AtlasOrbRadarTelemetry {
@@ -542,7 +543,7 @@ export function AtlasOrbRadarPanel({
             {radarAlerts.slice(0, 1).map((alert) => (
               <Link
                 key={alert.id}
-                href={alert.href}
+                href={normalizeStudioHref(alert.href)}
                 className="atlas-analytics-card"
                 data-tone={alert.tone === "alert" ? "warning" : alert.tone === "notice" ? "info" : "default"}
               >
@@ -572,7 +573,7 @@ export function AtlasOrbRadarPanel({
             {shortcutPreview.map((shortcut) => (
               <Link
                 key={shortcut.id}
-                href={shortcut.href}
+                href={normalizeStudioHref(shortcut.href)}
                 className="atlas-soft-subcard flex items-start justify-between gap-3 px-3 py-3"
               >
                 <div className="min-w-0">
@@ -615,7 +616,7 @@ export function AtlasOrbRadarPanel({
             {filteredItems.slice(0, 6).map((item) => (
               <Link
                 key={item.href}
-                href={item.href}
+                href={normalizeStudioHref(item.href)}
                 className="atlas-soft-subcard flex items-center justify-between gap-3 px-3 py-2.5"
               >
                 <div className="min-w-0">

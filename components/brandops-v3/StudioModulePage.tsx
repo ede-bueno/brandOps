@@ -47,6 +47,7 @@ import {
   getStudioNavItem,
   makeModuleFallback,
   mapActionsToFocus,
+  normalizeStudioHref,
   type FinanceStudioSurface,
   type GrowthStudioSurface,
   type OfferStudioSurface,
@@ -165,7 +166,11 @@ function FocusList({ items }: { items: StudioFocusItem[] }) {
 
         if (item.href) {
           return (
-            <Link key={`${item.label}-${item.title}`} href={item.href} data-tone={item.tone}>
+            <Link
+              key={`${item.label}-${item.title}`}
+              href={normalizeStudioHref(item.href)}
+              data-tone={item.tone}
+            >
               {content}
             </Link>
           );
@@ -194,7 +199,7 @@ function EvidenceList({ links }: { links: ManagementEvidenceLink[] }) {
   return (
     <div className="v3-evidence-list">
       {links.map((link) => (
-        <Link key={link.href} href={link.href}>
+        <Link key={link.href} href={normalizeStudioHref(link.href)}>
           <span>{link.label}</span>
           <strong>{link.summary}</strong>
           <small>{link.href}</small>
@@ -208,7 +213,7 @@ function SourceHealth({ sources }: { sources: ManagementSourceHealthItem[] }) {
   return (
     <section className="v3-source-grid">
       {sources.map((source) => (
-        <Link key={source.key} href={source.href} data-status={source.status}>
+        <Link key={source.key} href={normalizeStudioHref(source.href)} data-status={source.status}>
           <span>{source.label}</span>
           <strong>{formatSourceStatus(source.status)}</strong>
           <p>{source.detail}</p>
@@ -340,11 +345,11 @@ function ExecutiveQueueBoard({
           <div className="v3-queue-footer">
             <div className="v3-queue-links">
               {action.sourceRefs.slice(0, 2).map((ref) => (
-                <Link key={`${action.actionKey}-${ref.href}`} href={ref.href}>
+                <Link key={`${action.actionKey}-${ref.href}`} href={normalizeStudioHref(ref.href)}>
                   {ref.label}
                 </Link>
               ))}
-              <Link href={action.drilldownHref}>Abrir análise</Link>
+              <Link href={normalizeStudioHref(action.drilldownHref)}>Abrir análise</Link>
             </div>
             <label className="v3-status-select">
               <span>Status</span>
@@ -1245,7 +1250,7 @@ function OfferWorkspace({
                     label: product.productType,
                     title: product.decisionTitle,
                     detail: product.decisionSummary,
-                    href: "/product-insights",
+                    href: buildStudioHref("offer", { surface: "products" }),
                     tone: "info" as const,
                   }))
             }

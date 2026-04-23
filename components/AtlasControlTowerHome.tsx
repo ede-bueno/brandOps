@@ -10,6 +10,7 @@ import { SectionHeading, StackItem, SurfaceCard, WorkspaceTabs } from "./ui-shel
 import { useSanitizationPendingCount } from "@/hooks/use-sanitization-summary";
 import { buildControlAlerts } from "@/lib/brandops/control-alerts";
 import { APP_ROUTES } from "@/lib/brandops/routes";
+import { normalizeStudioHref } from "@/lib/brandops-v3/view-models";
 
 export function AtlasControlTowerHome() {
   const [activeView, setActiveView] = useState<"mesa" | "radar">("mesa");
@@ -112,7 +113,7 @@ export function AtlasControlTowerHome() {
                 />
                 <div className="mt-4 space-y-2">
                   {primarySignal ? (
-                    <Link href={primarySignal.href} prefetch={false} className="relative z-10 block">
+                    <Link href={normalizeStudioHref(primarySignal.href)} prefetch={false} className="relative z-10 block">
                       <StackItem
                         title={primarySignal.title}
                         description={primarySignal.description}
@@ -136,13 +137,13 @@ export function AtlasControlTowerHome() {
                   description="Configuração, contexto e fontes ficam fora da mesa de decisão."
                 />
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Link href={APP_ROUTES.settingsAtlasAi} prefetch={false} className="brandops-button brandops-button-ghost">
+                  <Link href={normalizeStudioHref(APP_ROUTES.settingsAtlasAi)} prefetch={false} className="brandops-button brandops-button-ghost">
                     Ajustar Atlas
                   </Link>
-                  <Link href={APP_ROUTES.settingsAtlasContext} prefetch={false} className="brandops-button brandops-button-ghost">
+                  <Link href={normalizeStudioHref(APP_ROUTES.settingsAtlasContext)} prefetch={false} className="brandops-button brandops-button-ghost">
                     Ensinar Atlas
                   </Link>
-                  <Link href={APP_ROUTES.integrations} prefetch={false} className="brandops-button brandops-button-ghost">
+                  <Link href={normalizeStudioHref(APP_ROUTES.integrations)} prefetch={false} className="brandops-button brandops-button-ghost">
                     Revisar fontes
                   </Link>
                 </div>
@@ -158,7 +159,7 @@ export function AtlasControlTowerHome() {
               />
               <div className="mt-4 space-y-2">
                 {signals.map((signal) => (
-                  <Link key={signal.id} href={signal.href} prefetch={false} className="relative z-10 block">
+                  <Link key={signal.id} href={normalizeStudioHref(signal.href)} prefetch={false} className="relative z-10 block">
                     <StackItem
                       title={signal.title}
                       description={signal.description}
@@ -182,7 +183,7 @@ export function AtlasControlTowerHome() {
                 description="A IA só entra depois da leitura factual."
               />
               <div className="mt-4 atlas-component-stack-tight">
-                <Link href={APP_ROUTES.dre} prefetch={false} className="relative z-10 block">
+                <Link href={normalizeStudioHref(APP_ROUTES.dre)} prefetch={false} className="relative z-10 block">
                   <StackItem
                     title="Abrir leitura financeira"
                     description="Confirme margem, mídia e despesas antes de aceitar qualquer hipótese."
@@ -221,7 +222,7 @@ export function AtlasControlTowerHome() {
                   Voltar para Mesa
                 </button>
                 <Link
-                  href={primarySignal?.href ?? APP_ROUTES.dre}
+                  href={normalizeStudioHref(primarySignal?.href ?? APP_ROUTES.dre)}
                   prefetch={false}
                   className="brandops-button brandops-button-ghost"
                 >

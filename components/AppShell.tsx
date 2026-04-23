@@ -46,6 +46,7 @@ import {
   type AppRoute,
   type WorkspaceSurfaceKind,
 } from "@/lib/brandops/routes";
+import { normalizeStudioHref } from "@/lib/brandops-v3/view-models";
 
 interface NavItem {
   href: AppRoute;
@@ -455,7 +456,7 @@ function SidebarGroup({
             <div key={item.href} className="atlas-sidebar-node">
               <div className="atlas-sidebar-branch-row">
                 <Link
-                  href={item.href}
+                  href={normalizeStudioHref(item.href)}
                   prefetch={false}
                   onClick={(event) => {
                     event.preventDefault();
@@ -497,7 +498,7 @@ function SidebarGroup({
                     return (
                       <Link
                         key={child.href}
-                        href={child.href}
+                        href={normalizeStudioHref(child.href)}
                         prefetch={false}
                         onClick={(event) => {
                           event.preventDefault();
@@ -617,7 +618,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setIsMobileMenuOpen(false);
     setIsPeriodMenuOpen(false);
     setIsUserMenuOpen(false);
-    router.push(href);
+    router.push(normalizeStudioHref(href));
   }
 
   useEffect(() => {
@@ -858,7 +859,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {visibleShellAlerts.map((alert) => (
                   <Link
                     key={`${alert.href}-${alert.label}`}
-                    href={alert.href}
+                    href={normalizeStudioHref(alert.href)}
                     prefetch={false}
                     className="atlas-topbar-alert"
                     data-tone={alert.tone}
@@ -890,7 +891,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={normalizeStudioHref(item.href)}
                 prefetch={false}
                 onClick={(event) => {
                   event.preventDefault();
@@ -995,11 +996,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                             : alert.href === APP_ROUTES.media
                               ? "Abrir mídia"
                               : "Abrir",
-                  href: alert.href,
+                  href: normalizeStudioHref(alert.href),
                 }))
               : [
-                  { label: "Ir para Integrações", href: APP_ROUTES.integrations },
-                  { label: "Abrir Configurações", href: APP_ROUTES.settings },
+                  { label: "Ir para Integrações", href: normalizeStudioHref(APP_ROUTES.integrations) },
+                  { label: "Abrir Configurações", href: normalizeStudioHref(APP_ROUTES.settings) },
                 ]
           }
           panelVariant="custom"
