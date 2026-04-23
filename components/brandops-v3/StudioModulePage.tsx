@@ -2,43 +2,25 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState, useTransition } from "react";
-import {
-  ArrowUpRight,
-  CircleAlert,
-  CircleCheck,
-  Database,
-  Loader2,
-  PackageSearch,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CircleAlert, CircleCheck, Database, PackageSearch } from "lucide-react";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import {
   fetchAcquisitionHubReport,
   fetchCommandCenterReport,
   fetchFinanceHubReport,
   fetchOfferHubReport,
-  updateExecutiveActionQueueItem,
 } from "@/lib/brandops/database";
-import {
-  currencyFormatter,
-  integerFormatter,
-  percentFormatter,
-} from "@/lib/brandops/format";
+import { currencyFormatter, integerFormatter, percentFormatter } from "@/lib/brandops/format";
 import type {
   AcquisitionHubReport,
-  ExecutiveActionItem,
-  ExecutiveActionStatus,
   FinanceHubReport,
-  ManagementEvidenceLink,
   ManagementSnapshotV2,
-  ManagementSourceHealthItem,
   OfferHubReport,
 } from "@/lib/brandops/types";
 import {
   buildStudioHref,
   buildCommandMetrics,
-  buildFinanceLedgerRows,
-  buildFinanceMetrics,
   buildGrowthMetrics,
   buildOfferMetrics,
   buildOpsFocusItems,
@@ -48,16 +30,28 @@ import {
   getStudioWorkspaceTabs,
   makeModuleFallback,
   mapActionsToFocus,
-  normalizeStudioHref,
-  type FinanceStudioSurface,
   type GrowthStudioSurface,
   type OfferStudioSurface,
   type OpsStudioSurface,
   type StudioFocusItem,
-  type StudioMetric,
   type StudioModuleContext,
   type StudioModule,
 } from "@/lib/brandops-v3/view-models";
+import { resolveGrowthWorkspaceMeta } from "./growth/resolveGrowthWorkspaceMeta";
+import { resolveOfferWorkspaceMeta } from "./offer/resolveOfferWorkspaceMeta";
+import { FinanceWorkspace } from "./finance/FinanceWorkspace";
+import {
+  EvidenceList,
+  ExecutiveQueueBoard,
+  FocusList,
+  InlineEmpty,
+  MetricRibbon,
+  SourceHealth,
+  TrendBars,
+  V3LoadingPanel,
+  WorkspaceTabs,
+} from "./StudioPrimitives";
+import { StudioEvidenceSection } from "./shared/StudioEvidenceSection";
 import { V3EmptyState, V3ModuleChrome } from "./BrandOpsShellV3";
 
 type StudioReport =
@@ -68,23 +62,6 @@ type StudioReport =
   | null;
 
 type StudioPageSearchParams = Record<string, string | string[] | undefined>;
-
-const actionStatusOptions: Array<{
-  value: ExecutiveActionStatus;
-  label: string;
-}> = [
-  { value: "new", label: "Novo" },
-  { value: "in_progress", label: "Em andamento" },
-  { value: "deferred", label: "Adiado" },
-  { value: "resolved", label: "Resolvido" },
-];
-
-function formatSourceStatus(status: ManagementSourceHealthItem["status"]) {
-  if (status === "healthy") return "OK";
-  if (status === "warning") return "Atenção";
-  if (status === "error") return "Erro";
-  return "Ausente";
-}
 
 function mapManagementToneToFocusTone(tone: string): StudioFocusItem["tone"] {
   if (tone === "negative") return "bad";
@@ -99,325 +76,6 @@ function getSearchParamValue(
 ) {
   const value = searchParams?.[key];
   return Array.isArray(value) ? value[0] ?? null : value ?? null;
-}
-
-function V3LoadingPanel({ label = "Carregando visão" }: { label?: string }) {
-  return (
-    <div className="v3-panel v3-loading-panel">
-      <Loader2 className="animate-spin" size={18} />
-      <span>{label}</span>
-    </div>
-  );
-}
-
-function InlineEmpty({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="v3-note">
-      <strong>{title}</strong>
-      <p>{description}</p>
-    </div>
-  );
-}
-
-function MetricRibbon({ metrics }: { metrics: StudioMetric[] }) {
-  return (
-    <section className="v3-metric-ribbon" aria-label="Indicadores do recorte">
-      {metrics.map((metric) => (
-        <article key={metric.label} data-tone={metric.tone}>
-          <span>{metric.label}</span>
-          <strong>{metric.value}</strong>
-          <p>{metric.detail}</p>
-        </article>
-      ))}
-    </section>
-  );
-}
-
-function WorkspaceTabs({
-  active,
-  tabs,
-}: {
-  active: string;
-  tabs: Array<{ key: string; label: string; href: string }>;
-}) {
-  return (
-    <div className="v3-tabs" role="tablist">
-      {tabs.map((tab) => (
-        <Link
-          key={tab.key}
-          className="v3-tab"
-          data-active={tab.key === active}
-          href={tab.href}
-          role="tab"
-          aria-selected={tab.key === active}
-        >
-          {tab.label}
-        </Link>
-      ))}
-    </div>
-  );
-}
-
-function FocusList({ items }: { items: StudioFocusItem[] }) {
-  return (
-    <div className="v3-focus-list">
-      {items.map((item) => {
-        const content = (
-          <>
-            <div>
-              <span>{item.label}</span>
-              <strong>{item.title}</strong>
-              <p>{item.detail}</p>
-            </div>
-            {item.href ? <ArrowUpRight size={16} /> : null}
-          </>
-        );
-
-        if (item.href) {
-          return (
-            <Link
-              key={`${item.label}-${item.title}`}
-              href={normalizeStudioHref(item.href)}
-              data-tone={item.tone}
-            >
-              {content}
-            </Link>
-          );
-        }
-
-        return (
-          <article key={`${item.label}-${item.title}`} data-tone={item.tone}>
-            {content}
-          </article>
-        );
-      })}
-    </div>
-  );
-}
-
-function EvidenceList({ links }: { links: ManagementEvidenceLink[] }) {
-  if (!links.length) {
-    return (
-      <div className="v3-note">
-        <strong>Sem evidências adicionais</strong>
-        <p>Quando houver reconciliação suficiente, o Atlas expõe fontes e trilhas nesta área.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="v3-evidence-list">
-      {links.map((link) => (
-        <Link key={link.href} href={normalizeStudioHref(link.href)}>
-          <span>{link.label}</span>
-          <strong>{link.summary}</strong>
-          <small>{link.href}</small>
-        </Link>
-      ))}
-    </div>
-  );
-}
-
-function SourceHealth({ sources }: { sources: ManagementSourceHealthItem[] }) {
-  return (
-    <section className="v3-source-grid">
-      {sources.map((source) => (
-        <Link key={source.key} href={normalizeStudioHref(source.href)} data-status={source.status}>
-          <span>{source.label}</span>
-          <strong>{formatSourceStatus(source.status)}</strong>
-          <p>{source.detail}</p>
-          <small>{source.freshnessLabel}</small>
-        </Link>
-      ))}
-    </section>
-  );
-}
-
-function TrendBars({
-  title,
-  items,
-  formatValue,
-}: {
-  title: string;
-  items: Array<{
-    label: string;
-    value: number;
-    detail?: string;
-    tone?: "good" | "warn" | "bad" | "info";
-  }>;
-  formatValue?: (value: number) => string;
-}) {
-  if (!items.length) {
-    return null;
-  }
-
-  const maxValue = Math.max(...items.map((item) => Math.abs(item.value)), 1);
-
-  return (
-    <div className="v3-panel-body">
-      <div className="v3-subsection-head">
-        <span>{title}</span>
-      </div>
-      <div className="v3-trend-list">
-        {items.map((item) => (
-          <article key={`${title}-${item.label}`} data-tone={item.tone ?? "info"}>
-            <header>
-              <span>{item.label}</span>
-              <strong>{formatValue ? formatValue(item.value) : currencyFormatter.format(item.value)}</strong>
-            </header>
-            <div className="v3-trend-meter">
-              <div
-                className="v3-trend-fill"
-                style={{ width: `${Math.max((Math.abs(item.value) / maxValue) * 100, 6)}%` }}
-              />
-            </div>
-            {item.detail ? <p>{item.detail}</p> : null}
-          </article>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ExecutiveQueueBoard({
-  brandId,
-  from,
-  to,
-  actions,
-  fallbackModule,
-}: {
-  brandId: string;
-  from: string | null;
-  to: string | null;
-  actions: ExecutiveActionItem[];
-  fallbackModule: StudioModule;
-}) {
-  const [queue, setQueue] = useState(actions);
-  const [pendingKey, setPendingKey] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    setQueue(actions);
-  }, [actions]);
-
-  if (!queue.length) {
-    return <FocusList items={makeModuleFallback(fallbackModule)} />;
-  }
-
-  const updateStatus = (action: ExecutiveActionItem, status: ExecutiveActionStatus) => {
-    if (status === action.status) {
-      return;
-    }
-
-    const previousQueue = queue;
-    const nextQueue = queue.map((item) =>
-      item.actionKey === action.actionKey ? { ...item, status } : item,
-    );
-
-    setPendingKey(action.actionKey);
-    setQueue(nextQueue);
-
-    startTransition(() => {
-      void updateExecutiveActionQueueItem(brandId, {
-        actionKey: action.actionKey,
-        status,
-        reviewAt: action.reviewAt,
-        domain: action.domain,
-        from,
-        to,
-      })
-        .catch(() => {
-          setQueue(previousQueue);
-        })
-        .finally(() => {
-          setPendingKey(null);
-        });
-    });
-  };
-
-  return (
-    <div className="v3-queue-board">
-      {queue.map((action) => (
-        <article key={action.actionKey} data-priority={action.priority}>
-          <div className="v3-queue-main">
-            <div className="v3-queue-copy">
-              <span>{action.domain}</span>
-              <strong>{action.title}</strong>
-              <p>{action.summary}</p>
-            </div>
-            <div className="v3-chip-cluster">
-              <small>{action.impact}</small>
-              <small>Confiança {action.confidence}</small>
-              {action.reviewAt ? <small>Revisão {action.reviewAt.slice(0, 10)}</small> : null}
-            </div>
-          </div>
-          <div className="v3-queue-footer">
-            <div className="v3-queue-links">
-              {action.sourceRefs.slice(0, 2).map((ref) => (
-                <Link key={`${action.actionKey}-${ref.href}`} href={normalizeStudioHref(ref.href)}>
-                  {ref.label}
-                </Link>
-              ))}
-              <Link href={normalizeStudioHref(action.drilldownHref)}>Abrir análise</Link>
-            </div>
-            <label className="v3-status-select">
-              <span>Status</span>
-              <select
-                value={action.status}
-                onChange={(event) =>
-                  updateStatus(action, event.target.value as ExecutiveActionStatus)
-                }
-                disabled={isPending && pendingKey === action.actionKey}
-              >
-                {actionStatusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function FinanceLedger({ report }: { report: FinanceHubReport }) {
-  const months = report.financial.months.slice(-8);
-  const monthKeys = new Set(months.map((month) => month.monthKey));
-  const filteredReport = {
-    ...report.financial,
-    months: report.financial.months.filter((month) => monthKeys.has(month.monthKey)),
-  };
-  const rows = buildFinanceLedgerRows(filteredReport);
-
-  return (
-    <div className="v3-ledger">
-      <div className="v3-ledger-row v3-ledger-head">
-        <span>Indicador</span>
-        {months.map((month) => (
-          <strong key={month.monthKey}>{month.label}</strong>
-        ))}
-      </div>
-      {rows.map((row) => (
-        <div key={row.label} className="v3-ledger-row">
-          <span>{row.label}</span>
-          {row.values.map((value, index) => (
-            <strong key={`${row.label}-${months[index]?.monthKey ?? index}`}>
-              {currencyFormatter.format(value)}
-            </strong>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
 }
 
 function CommandWorkspace({
@@ -571,261 +229,6 @@ function CommandWorkspace({
   );
 }
 
-function FinanceWorkspace({
-  report,
-  context,
-}: {
-  report: FinanceHubReport;
-  context: StudioModuleContext;
-}) {
-  const requestedSurface = context.surface as FinanceStudioSurface;
-  const nextActiveTab: FinanceStudioSurface =
-    requestedSurface === "sales" ||
-    requestedSurface === "operations" ||
-    requestedSurface === "evidence"
-      ? requestedSurface
-      : "dre";
-  const activeTab = nextActiveTab;
-  const topProducts = report.sales.topProducts.slice(0, 6);
-  const financeMeta =
-    requestedSurface === "operations"
-      ? {
-          title:
-            context.focus === "cmv" ? "Custos, CMV e composição" : "Lançamentos e categorias",
-          description:
-            context.focus === "cmv"
-              ? "Use este recorte para validar custo aplicado, cobertura de CMV e pressão dos itens vendidos."
-              : "Organize competência, despesas e categorias sem perder o contexto financeiro da marca.",
-          actionLabel: "Voltar ao DRE",
-          actionHref: buildStudioHref("finance", { surface: "dre" }),
-          banner:
-            context.focus === "cmv"
-              ? "CMV em foco: valide cobertura de custo, base aplicada e pressão sobre margem antes de ajustar preço ou escala."
-              : "Lançamentos em foco: trabalhe competência, categoria e despesa mantendo o efeito no resultado sempre visível.",
-        }
-      : requestedSurface === "sales"
-        ? {
-            title: "Vendas que sustentam caixa",
-            description:
-              "Cruze receita real, produtos líderes e playbook comercial sem sair do ambiente financeiro.",
-            actionLabel: "Abrir DRE",
-            actionHref: buildStudioHref("finance", { surface: "dre" }),
-            banner: "Vendas em foco: confira receita real, mix e itens líderes antes de aceitar qualquer leitura de caixa.",
-          }
-        : requestedSurface === "evidence"
-          ? {
-              title: "Evidências e reconciliação financeira",
-              description:
-                "Fontes, evidências e confiança da leitura financeira em uma única superfície secundária.",
-              actionLabel: "Abrir DRE",
-              actionHref: buildStudioHref("finance", { surface: "dre" }),
-              banner: "Evidências em foco: valide consistência, fonte e reconciliação antes de fechar uma decisão financeira.",
-            }
-          : {
-              title: "Panorama financeiro",
-              description:
-                "DRE, custos e vendas organizados numa leitura financeira contínua, com Atlas só quando fizer sentido.",
-              actionLabel: "Abrir lançamentos",
-              actionHref: buildStudioHref("finance", { surface: "operations" }),
-              banner: null,
-            };
-
-  return (
-    <V3ModuleChrome
-      eyebrow="Finanças"
-      title={financeMeta.title}
-      description={financeMeta.description}
-      aside={<Link className="v3-primary-link" href={financeMeta.actionHref}>{financeMeta.actionLabel}</Link>}
-    >
-      <MetricRibbon metrics={buildFinanceMetrics(report)} />
-      {financeMeta.banner ? (
-        <div className="v3-note">
-          <strong>Sinal do recorte</strong>
-          <p>{financeMeta.banner}</p>
-        </div>
-      ) : null}
-
-      <section className="v3-command-grid">
-        <div className="v3-panel v3-brief-panel">
-          <span>O que mais pesa</span>
-          <h2>{report.overview.headline}</h2>
-          <p>{report.overview.summary}</p>
-          <FocusList
-            items={[
-              ...report.overview.drivers.map((item) => ({
-                label: item.label,
-                title: item.value,
-                detail: item.summary,
-                href: item.href,
-                tone: mapManagementToneToFocusTone(item.tone),
-              })),
-              ...mapActionsToFocus(report.priorities),
-            ].slice(0, 5)}
-          />
-        </div>
-        <div className="v3-panel v3-panel-quiet">
-          <div className="v3-panel-heading">
-            <span>Resumo da marca</span>
-            <strong>{report.context.brandName}</strong>
-          </div>
-          <TrendBars
-            title="Resultado por competência"
-            items={report.financial.months.slice(-6).map((month) => ({
-              label: month.label,
-              value: month.metrics.netResult,
-              detail: `RLD ${currencyFormatter.format(month.metrics.rld)}`,
-              tone: month.metrics.netResult >= 0 ? "good" : "bad",
-            }))}
-          />
-        </div>
-      </section>
-
-      <section className="v3-panel v3-panel-quiet">
-        <div className="v3-panel-heading">
-          <span>Painel financeiro</span>
-          <strong>{report.financial.months.length} competências</strong>
-        </div>
-        <WorkspaceTabs
-          active={activeTab}
-          tabs={getStudioWorkspaceTabs("finance", context)}
-        />
-        {activeTab === "dre" ? (
-          <div className="v3-section-grid">
-            <div className="v3-panel-shell">
-              <FinanceLedger report={report} />
-            </div>
-            <div className="v3-section-stack">
-              <ExecutiveQueueBoard
-                brandId={report.context.brandId}
-                from={report.context.from}
-                to={report.context.to}
-                actions={report.priorities}
-                fallbackModule="finance"
-              />
-            </div>
-          </div>
-        ) : null}
-        {activeTab === "operations" ? (
-          <div className="v3-section-grid">
-            <div className="v3-panel-body">
-              <div className="v3-subsection-head">
-                <span>{context.focus === "cmv" ? "Custos e CMV" : "Rotina financeira"}</span>
-              </div>
-              <FocusList
-                items={[
-                  {
-                    label: "Lançamentos",
-                    title: "Registrar competência, categoria e despesa",
-                    detail:
-                      "Registre despesas e categorias sem sair da leitura financeira do recorte.",
-                    href: buildStudioHref("finance", { surface: "operations" }),
-                    tone: "info",
-                  },
-                  {
-                    label: "CMV",
-                    title: currencyFormatter.format(report.financial.total.cmvTotal),
-                    detail:
-                      "Valide o custo dos itens vendidos e a pressão do recorte antes de escalar mídia ou catálogo.",
-                    href: buildStudioHref("finance", { surface: "operations", focus: "cmv" }),
-                    tone: "warn",
-                  },
-                  {
-                    label: "Fechamento",
-                    title: `${report.financial.months.length} competências reconciliadas`,
-                    detail: "Volte ao DRE para consolidar leitura e decisões do período.",
-                    href: buildStudioHref("finance", { surface: "dre" }),
-                    tone: "good",
-                  },
-                ]}
-              />
-            </div>
-            <div className="v3-panel-body">
-              <div className="v3-subsection-head">
-                <span>Prioridades do Atlas</span>
-              </div>
-              <FocusList
-                items={[
-                  ...mapActionsToFocus(report.priorities),
-                  {
-                    label: "Produto com maior custo",
-                    title: topProducts[0]?.productName ?? "Sem item dominante",
-                    detail: topProducts[0]
-                      ? `${currencyFormatter.format(topProducts[0].grossRevenue)} em venda real no recorte.`
-                      : "Quando houver venda consolidada, o BrandOps destaca o item que mais sustenta caixa.",
-                    href: buildStudioHref("offer", { surface: "sales" }),
-                    tone: "info" as const,
-                  },
-                ].slice(0, 4)}
-              />
-            </div>
-          </div>
-        ) : null}
-        {activeTab === "sales" ? (
-          <div className="v3-section-grid">
-            <div className="v3-panel-body">
-              <div className="v3-subsection-head">
-                <span>Produtos que sustentam caixa</span>
-              </div>
-              <div className="v3-data-list">
-                {topProducts.length ? (
-                  topProducts.map((product) => (
-                    <Link key={product.productKey} href={buildStudioHref("offer", { surface: "sales" })}>
-                      <span>{product.productName}</span>
-                      <strong>{currencyFormatter.format(product.grossRevenue)}</strong>
-                      <small>{integerFormatter.format(product.quantity)} itens</small>
-                    </Link>
-                  ))
-                ) : (
-                  <InlineEmpty
-                    title="Sem venda dominante"
-                    description="Quando o recorte tiver venda consolidada, os itens líderes aparecem aqui."
-                  />
-                )}
-              </div>
-            </div>
-            <div className="v3-panel-body">
-              <div className="v3-subsection-head">
-                <span>Playbook de venda</span>
-              </div>
-              <FocusList
-                items={[
-                  {
-                    label: report.sales.playbook.protect.title,
-                    title: `${report.sales.playbook.protect.count} itens para proteger`,
-                    detail: report.sales.playbook.protect.description,
-                    href: buildStudioHref("offer", { surface: "sales" }),
-                    tone: "warn",
-                  },
-                  {
-                    label: report.sales.playbook.grow.title,
-                    title: `${report.sales.playbook.grow.count} itens para crescer`,
-                    detail: report.sales.playbook.grow.description,
-                    href: buildStudioHref("offer", { surface: "sales" }),
-                    tone: "good",
-                  },
-                  {
-                    label: report.sales.playbook.review.title,
-                    title: `${report.sales.playbook.review.count} itens para revisar`,
-                    detail: report.sales.playbook.review.description,
-                    href: buildStudioHref("offer", { surface: "sales" }),
-                    tone: "info",
-                  },
-                ]}
-              />
-            </div>
-          </div>
-        ) : null}
-        {activeTab === "evidence" ? (
-          <div className="v3-section-stack">
-            <SourceHealth sources={report.sourceHealth} />
-            <EvidenceList links={report.evidenceLinks} />
-          </div>
-        ) : null}
-      </section>
-    </V3ModuleChrome>
-  );
-}
-
 function GrowthWorkspace({
   report,
   context,
@@ -854,65 +257,7 @@ function GrowthWorkspace({
       href: buildStudioHref("growth", { surface: "traffic" }),
     },
   ].slice(0, 5);
-  const growthMeta =
-    requestedSurface === "traffic"
-      ? {
-          title: "Diagnóstico de tráfego",
-          description:
-            "Fontes, gargalos de conversão e fricção do funil em uma superfície de trabalho única.",
-          actionLabel: "Abrir mídia",
-          actionHref: buildStudioHref("growth", { surface: "media" }),
-          banner:
-            "Tráfego em foco: use esta camada para localizar fricção do funil, origem mais sensível e perda de conversão.",
-        }
-      : requestedSurface === "evidence"
-        ? {
-            title: "Evidências de aquisição",
-            description:
-              "Confiança, filas executivas e saúde das fontes de aquisição reunidas em uma camada secundária.",
-            actionLabel: "Voltar ao diagnóstico",
-            actionHref: buildStudioHref("growth", { surface: "media" }),
-            banner:
-              "Evidências em foco: confirme confiança, saúde das fontes e sinais reconciliados antes de escalar ou cortar.",
-          }
-        : context.mode === "campaigns"
-          ? {
-              title: "Campanhas e mídia",
-              description:
-                "Organize verba dominante, prioridade de revisão e leitura por campanha numa mesma camada.",
-              actionLabel: "Abrir tráfego",
-              actionHref: buildStudioHref("growth", { surface: "traffic" }),
-              banner:
-                "Campanhas em foco: priorize verba dominante, ativos em revisão e espaço real para escala.",
-            }
-          : context.mode === "radar"
-            ? {
-                title: "Radar de mídia",
-                description:
-                  "Use o recorte para acompanhar eficiência do gasto, pressão diária e resposta do período.",
-                actionLabel: "Abrir campanhas",
-                actionHref: buildStudioHref("growth", { surface: "media", mode: "campaigns" }),
-                banner:
-                  "Radar em foco: acompanhe curva de eficiência e resposta do período sem perder o elo com receita.",
-              }
-            : context.mode === "executive"
-              ? {
-                  title: "Sala de comando de aquisição",
-                  description:
-                    "Leia mídia, risco e próximo passo operacional como uma única camada decisória.",
-                  actionLabel: "Abrir campanhas",
-                  actionHref: buildStudioHref("growth", { surface: "media", mode: "campaigns" }),
-                  banner:
-                    "Leitura executiva em foco: use esta camada para decidir expansão, corte ou revisão de aquisição.",
-                }
-              : {
-                  title: "Aquisição e conversão",
-                  description:
-                    "Diagnóstico operacional de mídia, tráfego e funil sem transformar a tela em mural de indicadores.",
-                  actionLabel: "Abrir mídia",
-                  actionHref: buildStudioHref("growth", { surface: "media" }),
-                  banner: null,
-                };
+  const growthMeta = resolveGrowthWorkspaceMeta(context);
 
   return (
     <V3ModuleChrome
@@ -1131,17 +476,19 @@ function GrowthWorkspace({
           </div>
         ) : null}
         {activeTab === "evidence" ? (
-          <div className="v3-section-stack">
-            <ExecutiveQueueBoard
-              brandId={report.context.brandId}
-              from={report.context.from}
-              to={report.context.to}
-              actions={report.priorities}
-              fallbackModule="growth"
-            />
-            <SourceHealth sources={report.sourceHealth} />
-            <EvidenceList links={report.evidenceLinks} />
-          </div>
+          <StudioEvidenceSection
+            queue={
+              <ExecutiveQueueBoard
+                brandId={report.context.brandId}
+                from={report.context.from}
+                to={report.context.to}
+                actions={report.priorities}
+                fallbackModule="growth"
+              />
+            }
+            sources={report.sourceHealth}
+            links={report.evidenceLinks}
+          />
         ) : null}
       </section>
     </V3ModuleChrome>
@@ -1166,70 +513,7 @@ function OfferWorkspace({
   const topProducts = report.catalog.highlights.topSellers.length
     ? report.catalog.highlights.topSellers
     : report.catalog.rows.slice(0, 6);
-  const offerMeta =
-    requestedSurface === "sales"
-      ? {
-          title: "Vendas e demanda real",
-          description:
-            "Receita, unidades e playbook comercial tratados como leitura operacional do portfólio.",
-          actionLabel: "Abrir portfólio",
-          actionHref: buildStudioHref("offer", { surface: "products" }),
-          banner: "Vendas em foco: veja o que realmente converte, sustenta caixa e merece mais atenção comercial.",
-        }
-      : requestedSurface === "catalog"
-        ? {
-            title: "Catálogo operacional",
-            description:
-              "Cobertura visual, produtos ativos e itens descobertos em uma única superfície de manutenção comercial.",
-            actionLabel: "Abrir vendas",
-            actionHref: buildStudioHref("offer", { surface: "sales" }),
-            banner: "Catálogo em foco: revise cobertura visual, itens ativos e lacunas que travam escala.",
-          }
-        : requestedSurface === "evidence"
-          ? {
-              title: "Evidências de oferta",
-              description:
-                "Fila executiva, fontes e reconciliação do portfólio sem poluir a leitura principal.",
-              actionLabel: "Abrir portfólio",
-              actionHref: buildStudioHref("offer", { surface: "products" }),
-              banner: "Evidências em foco: confirme se o sinal de produto está sustentado por venda, atenção e consistência.",
-            }
-          : context.mode === "executive"
-            ? {
-                title: "Portfólio executivo",
-                description:
-                  "Foco, momentum e próxima decisão comercial em uma leitura curta de produtos.",
-                actionLabel: "Abrir radar",
-                actionHref: buildStudioHref("offer", { surface: "products", mode: "radar" }),
-                banner: "Leitura executiva em foco: priorize quais itens proteger, escalar ou retirar da frente comercial.",
-              }
-            : context.mode === "radar"
-              ? {
-                  title: "Radar do portfólio",
-                  description:
-                    "Use esta camada para localizar escala, perda de força e itens que pedem revisão.",
-                  actionLabel: "Abrir catálogo",
-                  actionHref: buildStudioHref("offer", { surface: "catalog" }),
-                  banner: "Radar em foco: acompanhe momentum, perda de força e itens que pedem revisão imediata.",
-                }
-              : context.mode === "detail"
-                ? {
-                    title: "Detalhamento de produtos",
-                    description:
-                      "Audite item, decisão e contexto comercial com profundidade, sem virar dashboard paralelo.",
-                    actionLabel: "Abrir vendas",
-                    actionHref: buildStudioHref("offer", { surface: "sales" }),
-                    banner:
-                      "Detalhe em foco: use esta camada para validar SKU, decisão e contexto comercial sem ruído.",
-                  }
-                : {
-                    title: "Portfólio e venda real",
-                    description:
-                      "Catálogo, produtos e sinais comerciais tratados como inventário ativo da marca.",
-                    actionLabel: "Abrir catálogo",
-                    actionHref: buildStudioHref("offer", { surface: "catalog" }),
-                    banner: null,
-                  };
+  const offerMeta = resolveOfferWorkspaceMeta(context);
 
   return (
     <V3ModuleChrome
@@ -1419,17 +703,19 @@ function OfferWorkspace({
           </div>
         ) : null}
         {activeTab === "evidence" ? (
-          <div className="v3-section-stack">
-            <ExecutiveQueueBoard
-              brandId={report.context.brandId}
-              from={report.context.from}
-              to={report.context.to}
-              actions={report.priorities}
-              fallbackModule="offer"
-            />
-            <SourceHealth sources={report.sourceHealth} />
-            <EvidenceList links={report.evidenceLinks} />
-          </div>
+          <StudioEvidenceSection
+            queue={
+              <ExecutiveQueueBoard
+                brandId={report.context.brandId}
+                from={report.context.from}
+                to={report.context.to}
+                actions={report.priorities}
+                fallbackModule="offer"
+              />
+            }
+            sources={report.sourceHealth}
+            links={report.evidenceLinks}
+          />
         ) : null}
       </section>
     </V3ModuleChrome>
