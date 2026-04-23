@@ -67,6 +67,16 @@ function CommandPalette({
   onClose: () => void;
   onOpenAtlas: () => void;
 }) {
+  const [query, setQuery] = useState("");
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleItems = normalizedQuery
+    ? studioCommandItems.filter((item) => {
+        const haystack = `${item.label} ${item.description}`.toLowerCase();
+        return haystack.includes(normalizedQuery);
+      })
+    : studioCommandItems;
+
   if (!isOpen) {
     return null;
   }
@@ -82,11 +92,16 @@ function CommandPalette({
       >
         <div className="v3-command-input">
           <Search size={18} />
-          <input autoFocus placeholder="Buscar tela, ação ou pedir contexto ao Atlas" />
+          <input
+            autoFocus
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Buscar tela, ação ou pedir contexto ao Atlas"
+          />
           <span>Ctrl K</span>
         </div>
         <div className="v3-command-list">
-          {studioCommandItems.map((item) => {
+          {visibleItems.map((item) => {
             const Icon = item.icon;
             if (item.href === "#atlas") {
               return (
@@ -118,6 +133,15 @@ function CommandPalette({
               </Link>
             );
           })}
+          {!visibleItems.length ? (
+            <div className="v3-command-row">
+              <Search size={17} />
+              <span>
+                <strong>Nada encontrado</strong>
+                <small>Tente buscar por módulo, ação ou Atlas.</small>
+              </span>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
