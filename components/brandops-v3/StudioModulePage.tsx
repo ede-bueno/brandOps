@@ -45,6 +45,7 @@ import {
   buildOpsMetrics,
   getStudioModuleContext,
   getStudioNavItem,
+  getStudioWorkspaceTabs,
   makeModuleFallback,
   mapActionsToFocus,
   normalizeStudioHref,
@@ -505,11 +506,7 @@ function CommandWorkspace({
         </div>
         <WorkspaceTabs
           active={activeTab}
-          tabs={[
-            { key: "decisions", label: "Decisões", href: "/studio?tab=decisions" },
-            { key: "drivers", label: "Drivers", href: "/studio?tab=drivers" },
-            { key: "sources", label: "Fontes", href: "/studio?tab=sources" },
-          ]}
+          tabs={getStudioWorkspaceTabs("command", context)}
         />
         {activeTab === "decisions" ? (
           <ExecutiveQueueBoard
@@ -690,23 +687,7 @@ function FinanceWorkspace({
         </div>
         <WorkspaceTabs
           active={activeTab}
-          tabs={[
-            { key: "dre", label: "DRE", href: buildStudioHref("finance", { surface: "dre" }) },
-            {
-              key: "operations",
-              label: "Operação",
-              href: buildStudioHref("finance", {
-                surface: "operations",
-                focus: context.focus === "cmv" ? "cmv" : undefined,
-              }),
-            },
-            { key: "sales", label: "Vendas", href: buildStudioHref("finance", { surface: "sales" }) },
-            {
-              key: "evidence",
-              label: "Evidências",
-              href: buildStudioHref("finance", { surface: "evidence" }),
-            },
-          ]}
+          tabs={getStudioWorkspaceTabs("finance", context)}
         />
         {activeTab === "dre" ? (
           <div className="v3-section-grid">
@@ -975,31 +956,7 @@ function GrowthWorkspace({
         </div>
         <WorkspaceTabs
           active={activeTab}
-          tabs={[
-            {
-              key: "media",
-              label: "Mídia",
-              href: buildStudioHref("growth", {
-                surface: "media",
-                mode:
-                  context.mode === "campaigns" ||
-                  context.mode === "radar" ||
-                  context.mode === "executive"
-                    ? context.mode
-                    : undefined,
-              }),
-            },
-            {
-              key: "traffic",
-              label: "Tráfego",
-              href: buildStudioHref("growth", { surface: "traffic" }),
-            },
-            {
-              key: "evidence",
-              label: "Evidências",
-              href: buildStudioHref("growth", { surface: "evidence" }),
-            },
-          ]}
+          tabs={getStudioWorkspaceTabs("growth", context)}
         />
         {activeTab === "media" ? (
           <div className="v3-section-grid">
@@ -1328,32 +1285,7 @@ function OfferWorkspace({
         </div>
         <WorkspaceTabs
           active={activeTab}
-          tabs={[
-            {
-              key: "products",
-              label: "Produtos",
-              href: buildStudioHref("offer", {
-                surface: "products",
-                mode:
-                  context.mode === "executive" ||
-                  context.mode === "radar" ||
-                  context.mode === "detail"
-                    ? context.mode
-                    : undefined,
-              }),
-            },
-            { key: "sales", label: "Vendas", href: buildStudioHref("offer", { surface: "sales" }) },
-            {
-              key: "catalog",
-              label: "Catálogo",
-              href: buildStudioHref("offer", { surface: "catalog" }),
-            },
-            {
-              key: "evidence",
-              label: "Evidências",
-              href: buildStudioHref("offer", { surface: "evidence" }),
-            },
-          ]}
+          tabs={getStudioWorkspaceTabs("offer", context)}
         />
         {activeTab === "products" ? (
           <div className="v3-section-grid">
@@ -1613,36 +1545,7 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
         </div>
         <WorkspaceTabs
           active={activeTab}
-          tabs={[
-            {
-              key: "integrations",
-              label: "Integrações",
-              href: buildStudioHref("ops", {
-                surface: "integrations",
-                provider: context.provider ?? undefined,
-              }),
-            },
-            { key: "imports", label: "Imports", href: buildStudioHref("ops", { surface: "imports" }) },
-            {
-              key: "governance",
-              label: "Governança",
-              href: buildStudioHref("ops", {
-                surface: "governance",
-                focus:
-                  context.focus === "sanitization" || context.focus === "stores"
-                    ? context.focus
-                    : undefined,
-              }),
-            },
-            {
-              key: "support",
-              label: "Suporte",
-              href: buildStudioHref("ops", {
-                surface: "support",
-                provider: context.provider ?? undefined,
-              }),
-            },
-          ]}
+          tabs={getStudioWorkspaceTabs("ops", context)}
         />
         {activeTab === "integrations" ? (
           <div className="v3-panel-body">

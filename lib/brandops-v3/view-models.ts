@@ -51,6 +51,12 @@ export interface StudioModuleSubnavItem {
   href: string;
 }
 
+export interface StudioWorkspaceTabItem {
+  key: string;
+  label: string;
+  href: string;
+}
+
 export interface StudioMetric {
   label: string;
   value: string;
@@ -202,6 +208,128 @@ export function buildStudioHref(
 
   const query = params.toString();
   return query ? `${basePath}?${query}` : basePath;
+}
+
+export function buildCommandHref(context: Partial<StudioModuleContext> = {}) {
+  const params = new URLSearchParams();
+
+  if (context.tab) params.set("tab", context.tab);
+
+  const query = params.toString();
+  return query ? `/studio?${query}` : "/studio";
+}
+
+export function getStudioWorkspaceTabs(
+  module: StudioModule,
+  context: Partial<StudioModuleContext> = {},
+): StudioWorkspaceTabItem[] {
+  if (module === "command") {
+    return [
+      { key: "decisions", label: "Decisões", href: buildCommandHref({ tab: "decisions" }) },
+      { key: "drivers", label: "Drivers", href: buildCommandHref({ tab: "drivers" }) },
+      { key: "sources", label: "Fontes", href: buildCommandHref({ tab: "sources" }) },
+    ];
+  }
+
+  if (module === "finance") {
+    return [
+      { key: "dre", label: "DRE", href: buildStudioHref("finance", { surface: "dre" }) },
+      {
+        key: "operations",
+        label: "Operação",
+        href: buildStudioHref("finance", {
+          surface: "operations",
+          focus: context.focus === "cmv" ? "cmv" : undefined,
+        }),
+      },
+      { key: "sales", label: "Vendas", href: buildStudioHref("finance", { surface: "sales" }) },
+      {
+        key: "evidence",
+        label: "Evidências",
+        href: buildStudioHref("finance", { surface: "evidence" }),
+      },
+    ];
+  }
+
+  if (module === "growth") {
+    return [
+      {
+        key: "media",
+        label: "Mídia",
+        href: buildStudioHref("growth", {
+          surface: "media",
+          mode:
+            context.mode === "campaigns" ||
+            context.mode === "radar" ||
+            context.mode === "executive"
+              ? context.mode
+              : undefined,
+        }),
+      },
+      { key: "traffic", label: "Tráfego", href: buildStudioHref("growth", { surface: "traffic" }) },
+      {
+        key: "evidence",
+        label: "Evidências",
+        href: buildStudioHref("growth", { surface: "evidence" }),
+      },
+    ];
+  }
+
+  if (module === "offer") {
+    return [
+      {
+        key: "products",
+        label: "Produtos",
+        href: buildStudioHref("offer", {
+          surface: "products",
+          mode:
+            context.mode === "executive" ||
+            context.mode === "radar" ||
+            context.mode === "detail"
+              ? context.mode
+              : undefined,
+        }),
+      },
+      { key: "sales", label: "Vendas", href: buildStudioHref("offer", { surface: "sales" }) },
+      { key: "catalog", label: "Catálogo", href: buildStudioHref("offer", { surface: "catalog" }) },
+      {
+        key: "evidence",
+        label: "Evidências",
+        href: buildStudioHref("offer", { surface: "evidence" }),
+      },
+    ];
+  }
+
+  return [
+    {
+      key: "integrations",
+      label: "Integrações",
+      href: buildStudioHref("ops", {
+        surface: "integrations",
+        provider: context.provider ?? undefined,
+      }),
+    },
+    { key: "imports", label: "Imports", href: buildStudioHref("ops", { surface: "imports" }) },
+    {
+      key: "governance",
+      label: "Governança",
+      href: buildStudioHref("ops", {
+        surface: "governance",
+        focus:
+          context.focus === "sanitization" || context.focus === "stores"
+            ? context.focus
+            : undefined,
+      }),
+    },
+    {
+      key: "support",
+      label: "Suporte",
+      href: buildStudioHref("ops", {
+        surface: "support",
+        provider: context.provider ?? undefined,
+      }),
+    },
+  ];
 }
 
 export function normalizeStudioHref(href: string | null | undefined) {
