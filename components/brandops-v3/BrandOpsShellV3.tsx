@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
+  CalendarRange,
+  Check,
   ChevronDown,
   Loader2,
   LogOut,
@@ -24,6 +26,19 @@ import {
   studioModuleSubnav,
   studioNavItems,
 } from "@/lib/brandops-v3/view-models";
+import type { CustomDateRange, PeriodFilter } from "@/lib/brandops/types";
+
+const periodOptions: Array<{ value: PeriodFilter; label: string; shortLabel?: string }> = [
+  { value: "today", label: "Hoje" },
+  { value: "7d", label: "7 dias" },
+  { value: "14d", label: "14 dias" },
+  { value: "30d", label: "30 dias" },
+  { value: "month", label: "Mês atual" },
+  { value: "year", label: "Ano atual" },
+  { value: "lastMonth", label: "Mês passado" },
+  { value: "all", label: "Todo o período", shortLabel: "Tudo" },
+  { value: "custom", label: "Período livre", shortLabel: "Livre" },
+];
 
 function BrandOpsGlyph() {
   return (
@@ -55,6 +70,139 @@ function V3ThemeToggle() {
       <Moon className="v3-theme-icon-light" size={17} />
       <Sun className="v3-theme-icon-dark" size={17} />
     </button>
+  );
+}
+
+function V3PeriodMenu({
+  open,
+  selectedPeriod,
+  selectedPeriodLabel,
+  customDateRange,
+  onToggle,
+  onClose,
+  onSelectPeriod,
+  onChangeCustomDateRange,
+}: {
+  open: boolean;
+  selectedPeriod: PeriodFilter;
+  selectedPeriodLabel: string;
+  customDateRange: CustomDateRange;
+  onToggle: () => void;
+  onClose: () => void;
+  onSelectPeriod: (period: PeriodFilter) => void;
+  onChangeCustomDateRange: (next: CustomDateRange) => void;
+}) {
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose, open]);
+
+  return (
+    <div ref={menuRef} className="v3-period-shell">
+      <button
+        type="button"
+        className="v3-period-trigger"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-label="Abrir filtro de recorte"
+      >
+        <CalendarRange size={14} />
+        <span>
+          <small>Recorte</small>
+          <strong>{selectedPeriodLabel}</strong>
+        </span>
+        <ChevronDown size={14} />
+      </button>
+
+      {open ? (
+        <div className="v3-period-menu">
+          <div className="v3-period-menu-head">
+            <div>
+              <span>Recorte</span>
+              <strong>{selectedPeriodLabel}</strong>
+            </div>
+            <CalendarRange size={14} />
+          </div>
+          <div className="v3-period-grid">
+            {periodOptions.map((option) => {
+              const isActive = selectedPeriod === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  className="v3-period-option"
+                  data-active={isActive}
+                  onClick={() => {
+                    onSelectPeriod(option.value);
+                    if (option.value !== "custom") {
+                      onClose();
+                    }
+                  }}
+                >
+                  <span>
+                    <strong>{option.shortLabel ?? option.label}</strong>
+                    <small>{option.value === "custom" ? "manual" : "preset"}</small>
+                  </span>
+                  {isActive ? <Check size={14} /> : null}
+                </button>
+              );
+            })}
+          </div>
+          {selectedPeriod === "custom" ? (
+            <div className="v3-period-range">
+              <label>
+                <span>De</span>
+                <input
+                  type="date"
+                  value={customDateRange.from}
+                  onChange={(event) =>
+                    onChangeCustomDateRange({
+                      ...customDateRange,
+                      from: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label>
+                <span>Até</span>
+                <input
+                  type="date"
+                  value={customDateRange.to}
+                  onChange={(event) =>
+                    onChangeCustomDateRange({
+                      ...customDateRange,
+                      to: event.target.value,
+                    })
+                  }
+                />
+              </label>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -248,10 +396,15 @@ function StudioTopbar({
     activeBrand,
     activeBrandId,
     brands,
+    customDateRange,
+    selectedPeriod,
     selectedPeriodLabel,
+    setCustomDateRange,
     setActiveBrandId,
+    setSelectedPeriod,
     signOut,
   } = useBrandOps();
+  const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
   const selectedBrandName =
     activeBrand?.name ?? brands.find((brand) => brand.id === activeBrandId)?.name ?? "Marca";
 
@@ -287,10 +440,16 @@ function StudioTopbar({
           </select>
           <ChevronDown size={14} />
         </label>
-        <div className="v3-context-pill">
-          <span>Recorte</span>
-          <strong>{selectedPeriodLabel}</strong>
-        </div>
+        <V3PeriodMenu
+          open={isPeriodMenuOpen}
+          selectedPeriod={selectedPeriod}
+          selectedPeriodLabel={selectedPeriodLabel}
+          customDateRange={customDateRange}
+          onToggle={() => setIsPeriodMenuOpen((current) => !current)}
+          onClose={() => setIsPeriodMenuOpen(false)}
+          onSelectPeriod={setSelectedPeriod}
+          onChangeCustomDateRange={setCustomDateRange}
+        />
         <div className="v3-context-pill v3-context-pill-wide">
           <span>Em foco</span>
           <strong>{selectedBrandName}</strong>

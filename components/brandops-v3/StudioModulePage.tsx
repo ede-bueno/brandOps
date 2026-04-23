@@ -109,6 +109,21 @@ function V3LoadingPanel({ label = "Carregando visão" }: { label?: string }) {
   );
 }
 
+function InlineEmpty({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="v3-note">
+      <strong>{title}</strong>
+      <p>{description}</p>
+    </div>
+  );
+}
+
 function MetricRibbon({ metrics }: { metrics: StudioMetric[] }) {
   return (
     <section className="v3-metric-ribbon" aria-label="Indicadores do recorte">
@@ -759,13 +774,20 @@ function FinanceWorkspace({
                 <span>Produtos que sustentam caixa</span>
               </div>
               <div className="v3-data-list">
-                {topProducts.map((product) => (
-                  <Link key={product.productKey} href={buildStudioHref("offer", { surface: "sales" })}>
-                    <span>{product.productName}</span>
-                    <strong>{currencyFormatter.format(product.grossRevenue)}</strong>
-                    <small>{integerFormatter.format(product.quantity)} itens</small>
-                  </Link>
-                ))}
+                {topProducts.length ? (
+                  topProducts.map((product) => (
+                    <Link key={product.productKey} href={buildStudioHref("offer", { surface: "sales" })}>
+                      <span>{product.productName}</span>
+                      <strong>{currencyFormatter.format(product.grossRevenue)}</strong>
+                      <small>{integerFormatter.format(product.quantity)} itens</small>
+                    </Link>
+                  ))
+                ) : (
+                  <InlineEmpty
+                    title="Sem venda dominante"
+                    description="Quando o recorte tiver venda consolidada, os itens líderes aparecem aqui."
+                  />
+                )}
               </div>
             </div>
             <div className="v3-panel-body">
@@ -976,16 +998,23 @@ function GrowthWorkspace({
                 />
               ) : null}
               <div className="v3-data-list">
-                {report.media.campaigns.slice(0, 8).map((campaign) => (
-                  <Link
-                    key={campaign.campaignName}
-                    href={buildStudioHref("growth", { surface: "media", mode: "campaigns" })}
-                  >
-                    <span>{campaign.campaignName}</span>
-                    <strong>{currencyFormatter.format(campaign.spend)}</strong>
-                    <small>{campaign.roas.toFixed(2)}x ROAS</small>
-                  </Link>
-                ))}
+                {report.media.campaigns.length ? (
+                  report.media.campaigns.slice(0, 8).map((campaign) => (
+                    <Link
+                      key={campaign.campaignName}
+                      href={buildStudioHref("growth", { surface: "media", mode: "campaigns" })}
+                    >
+                      <span>{campaign.campaignName}</span>
+                      <strong>{currencyFormatter.format(campaign.spend)}</strong>
+                      <small>{campaign.roas.toFixed(2)}x ROAS</small>
+                    </Link>
+                  ))
+                ) : (
+                  <InlineEmpty
+                    title="Sem campanhas no recorte"
+                    description="A mídia volta a ocupar esta área assim que houver campanha consolidada para o período."
+                  />
+                )}
               </div>
             </div>
             <div className="v3-section-stack">
@@ -1337,16 +1366,23 @@ function OfferWorkspace({
                 <span>Receita que puxa o recorte</span>
               </div>
               <div className="v3-data-list">
-                {report.sales.topProducts.slice(0, 8).map((product) => (
-                  <Link
-                    key={product.productKey}
-                    href={buildStudioHref("offer", { surface: "sales" })}
-                  >
-                    <span>{product.productName}</span>
-                    <strong>{currencyFormatter.format(product.grossRevenue)}</strong>
-                    <small>{integerFormatter.format(product.quantity)} itens</small>
-                  </Link>
-                ))}
+                {report.sales.topProducts.length ? (
+                  report.sales.topProducts.slice(0, 8).map((product) => (
+                    <Link
+                      key={product.productKey}
+                      href={buildStudioHref("offer", { surface: "sales" })}
+                    >
+                      <span>{product.productName}</span>
+                      <strong>{currencyFormatter.format(product.grossRevenue)}</strong>
+                      <small>{integerFormatter.format(product.quantity)} itens</small>
+                    </Link>
+                  ))
+                ) : (
+                  <InlineEmpty
+                    title="Sem receita consolidada"
+                    description="Quando houver venda real no recorte, a leitura comercial aparece aqui."
+                  />
+                )}
               </div>
             </div>
             <div className="v3-panel-body">
@@ -1372,17 +1408,24 @@ function OfferWorkspace({
                 <span>Produtos em operação</span>
               </div>
               <div className="v3-product-strip">
-                {topProducts.slice(0, 6).map((product) => (
-                  <Link key={product.id} href={buildStudioHref("offer", { surface: "catalog" })}>
-                    {product.imageUrl ? (
-                      <Image src={product.imageUrl} alt="" width={96} height={96} unoptimized />
-                    ) : (
-                      <PackageSearch size={22} />
-                    )}
-                    <span>{product.title}</span>
-                    <small>{integerFormatter.format(product.unitsSold)} unidades</small>
-                  </Link>
-                ))}
+                {topProducts.length ? (
+                  topProducts.slice(0, 6).map((product) => (
+                    <Link key={product.id} href={buildStudioHref("offer", { surface: "catalog" })}>
+                      {product.imageUrl ? (
+                        <Image src={product.imageUrl} alt="" width={96} height={96} unoptimized />
+                      ) : (
+                        <PackageSearch size={22} />
+                      )}
+                      <span>{product.title}</span>
+                      <small>{integerFormatter.format(product.unitsSold)} unidades</small>
+                    </Link>
+                  ))
+                ) : (
+                  <InlineEmpty
+                    title="Catálogo sem itens destacados"
+                    description="Assim que houver catálogo e venda no recorte, os produtos ativos aparecem aqui."
+                  />
+                )}
               </div>
             </div>
             <div className="v3-panel-body">
@@ -1551,38 +1594,52 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
               </div>
             ) : null}
             <div className="v3-ops-grid">
-              {integrations.map((integration) => (
-                <Link
-                  key={integration.id}
-                  href={buildStudioHref("ops", {
-                    surface: "integrations",
-                    provider: integration.provider,
-                  })}
-                  data-status={integration.lastSyncStatus}
-                >
-                  {integration.lastSyncStatus === "error" ? (
-                    <CircleAlert size={18} />
-                  ) : (
-                    <CircleCheck size={18} />
-                  )}
-                  <span>{integration.provider.toUpperCase()}</span>
-                  <strong>{integration.mode}</strong>
-                  <small>{integration.lastSyncAt?.slice(0, 10) ?? "sem sync"}</small>
-                </Link>
-              ))}
+              {integrations.length ? (
+                integrations.map((integration) => (
+                  <Link
+                    key={integration.id}
+                    href={buildStudioHref("ops", {
+                      surface: "integrations",
+                      provider: integration.provider,
+                    })}
+                    data-status={integration.lastSyncStatus}
+                  >
+                    {integration.lastSyncStatus === "error" ? (
+                      <CircleAlert size={18} />
+                    ) : (
+                      <CircleCheck size={18} />
+                    )}
+                    <span>{integration.provider.toUpperCase()}</span>
+                    <strong>{integration.mode}</strong>
+                    <small>{integration.lastSyncAt?.slice(0, 10) ?? "sem sync"}</small>
+                  </Link>
+                ))
+              ) : (
+                <InlineEmpty
+                  title="Sem integrações conectadas"
+                  description="Conecte Meta, GA4, INK ou feed para ativar a camada operacional."
+                />
+              )}
             </div>
           </div>
         ) : null}
         {activeTab === "imports" ? (
           <div className="v3-panel-body">
             <div className="v3-data-list">
-              {files.map((file) => (
-                <Link key={file.kind} href={buildStudioHref("ops", { surface: "imports", focus: file.kind })}>
-                  <span>{file.kind}</span>
-                  <strong>{integerFormatter.format(file.totalInserted)} linhas</strong>
-                  <small>{file.runs[0]?.fileName ?? file.lastImportedAt.slice(0, 10)}</small>
-                </Link>
-              ))}
+              {files.length ? (
+                files.map((file) => (
+                  <Link key={file.kind} href={buildStudioHref("ops", { surface: "imports", focus: file.kind })}>
+                    <span>{file.kind}</span>
+                    <strong>{integerFormatter.format(file.totalInserted)} linhas</strong>
+                    <small>{file.runs[0]?.fileName ?? file.lastImportedAt.slice(0, 10)}</small>
+                  </Link>
+                ))
+              ) : (
+                <InlineEmpty
+                  title="Nenhum arquivo recente"
+                  description="As últimas cargas aparecem aqui assim que a operação começar a importar arquivos."
+                />
+              )}
             </div>
           </div>
         ) : null}

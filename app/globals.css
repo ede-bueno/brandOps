@@ -4407,14 +4407,14 @@ html.dark .brandops-v3 {
     linear-gradient(to bottom, rgba(74, 68, 59, 0.04) 1px, transparent 1px);
   background-size: 56px 56px;
   mask-image: linear-gradient(90deg, transparent, black 18%, black 82%, transparent);
-  opacity: 0.58;
+  opacity: 0.34;
 }
 
 html.dark .brandops-v3::before {
   background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  opacity: 0.42;
+  opacity: 0.24;
 }
 
 .brandops-v3 a,
@@ -4495,13 +4495,15 @@ html.dark .brandops-v3::before {
   top: 0;
   z-index: 15;
   display: flex;
+  height: 100svh;
   min-height: 100svh;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1rem 0.9rem;
+  gap: 0.8rem;
+  padding: 0.9rem 0.8rem;
   border-right: 1px solid var(--v3-line);
-  background: color-mix(in srgb, var(--v3-bg-elevated) 88%, transparent);
-  backdrop-filter: blur(18px);
+  background: color-mix(in srgb, var(--v3-bg-elevated) 80%, transparent);
+  backdrop-filter: blur(14px);
+  overflow: hidden;
 }
 
 .v3-rail-brand {
@@ -4539,8 +4541,8 @@ html.dark .brandops-v3::before {
   width: 100%;
   border: 1px solid var(--v3-line);
   border-radius: 1.1rem;
-  background: color-mix(in srgb, var(--v3-surface) 74%, transparent);
-  padding: 0.8rem;
+  background: color-mix(in srgb, var(--v3-surface) 56%, transparent);
+  padding: 0.72rem 0.78rem;
 }
 
 .v3-rail-current strong {
@@ -4557,6 +4559,7 @@ html.dark .brandops-v3::before {
 .v3-rail-nav {
   display: grid;
   width: 100%;
+  min-height: 0;
   gap: 0.45rem;
 }
 
@@ -4566,12 +4569,12 @@ html.dark .brandops-v3::before {
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 0.75rem;
-  min-height: 4rem;
+  min-height: 3.75rem;
   border: 1px solid var(--v3-line);
-  border-radius: 1.2rem;
-  background: color-mix(in srgb, var(--v3-bg-elevated) 58%, transparent);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--v3-bg-elevated) 44%, transparent);
   color: var(--v3-ink-soft);
-  padding: 0.72rem 0.78rem;
+  padding: 0.65rem 0.72rem;
   transition:
     transform 160ms ease,
     background 160ms ease,
@@ -4582,12 +4585,12 @@ html.dark .brandops-v3::before {
 
 .v3-rail-icon {
   display: inline-grid;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.3rem;
+  height: 2.3rem;
   place-items: center;
   border: 1px solid var(--v3-line);
-  border-radius: 0.95rem;
-  background: color-mix(in srgb, var(--v3-surface) 76%, transparent);
+  border-radius: 0.82rem;
+  background: color-mix(in srgb, var(--v3-surface) 58%, transparent);
 }
 
 .v3-rail-copy {
@@ -4612,11 +4615,11 @@ html.dark .brandops-v3::before {
 
 .v3-rail-item:hover,
 .v3-rail-item[data-active="true"] {
-  transform: translateY(-1px);
+  transform: none;
   border-color: color-mix(in srgb, var(--v3-accent) 28%, var(--v3-line));
-  background: linear-gradient(135deg, var(--v3-accent-soft), color-mix(in srgb, var(--v3-surface) 92%, transparent));
+  background: color-mix(in srgb, var(--v3-accent-soft) 50%, var(--v3-bg-elevated));
   color: var(--v3-ink);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--v3-accent-soft) 44%, transparent);
+  box-shadow: none;
 }
 
 .v3-rail-item[data-active="true"]::before {
@@ -4632,7 +4635,7 @@ html.dark .brandops-v3::before {
 
 .v3-rail-item[data-active="true"] .v3-rail-icon {
   border-color: color-mix(in srgb, var(--v3-accent) 34%, var(--v3-line));
-  background: color-mix(in srgb, var(--v3-accent-soft) 56%, var(--v3-surface));
+  background: color-mix(in srgb, var(--v3-accent-soft) 42%, var(--v3-surface));
 }
 
 .v3-rail-footer {
@@ -4728,14 +4731,14 @@ html.dark .brandops-v3::before {
   top: 0;
   z-index: 14;
   display: grid;
-  min-height: 4.05rem;
+  min-height: 3.8rem;
   grid-template-columns: auto minmax(17rem, 1fr) auto;
   align-items: center;
   gap: 0.8rem;
-  padding: 0.66rem clamp(0.9rem, 1.8vw, 1.45rem);
+  padding: 0.58rem clamp(0.9rem, 1.8vw, 1.35rem);
   border-bottom: 1px solid var(--v3-line);
-  background: color-mix(in srgb, var(--v3-bg-elevated) 82%, transparent);
-  backdrop-filter: blur(22px);
+  background: color-mix(in srgb, var(--v3-bg-elevated) 74%, transparent);
+  backdrop-filter: blur(16px);
 }
 
 .v3-topbar-product {
@@ -4771,12 +4774,11 @@ html.dark .brandops-v3::before {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.68rem 0.85rem;
+  padding: 0.62rem 0.8rem;
   border: 1px solid var(--v3-line);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--v3-surface) 78%, transparent);
+  background: color-mix(in srgb, var(--v3-surface) 62%, transparent);
   color: var(--v3-ink-soft);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26);
   transition:
     border-color 160ms ease,
     background 160ms ease,
@@ -4786,8 +4788,8 @@ html.dark .brandops-v3::before {
 .v3-command-trigger:hover,
 .v3-command-trigger:focus-visible {
   border-color: color-mix(in srgb, var(--v3-accent) 42%, var(--v3-line));
-  background: var(--v3-surface-strong);
-  box-shadow: 0 0 0 4px var(--v3-accent-soft);
+  background: color-mix(in srgb, var(--v3-accent-soft) 36%, var(--v3-surface));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--v3-accent-soft) 42%, transparent);
   outline: none;
 }
 
@@ -4818,9 +4820,9 @@ html.dark .brandops-v3::before {
   display: flex;
   gap: 0.45rem;
   overflow-x: auto;
-  padding: 0.5rem clamp(0.9rem, 1.8vw, 1.45rem);
+  padding: 0.42rem clamp(0.9rem, 1.8vw, 1.35rem);
   border-bottom: 1px solid var(--v3-line);
-  background: color-mix(in srgb, var(--v3-bg-elevated) 74%, transparent);
+  background: color-mix(in srgb, var(--v3-bg-elevated) 62%, transparent);
   scrollbar-width: none;
 }
 
@@ -4832,13 +4834,13 @@ html.dark .brandops-v3::before {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2rem;
+  min-height: 1.85rem;
   border: 1px solid transparent;
   border-radius: 999px;
-  padding: 0 0.72rem;
+  padding: 0 0.66rem;
   color: var(--v3-ink-muted);
-  font-size: 0.76rem;
-  font-weight: 800;
+  font-size: 0.72rem;
+  font-weight: 760;
   white-space: nowrap;
   transition:
     color 160ms ease,
@@ -4853,15 +4855,144 @@ html.dark .brandops-v3::before {
   background: var(--v3-accent-soft);
 }
 
+.v3-period-shell {
+  position: relative;
+}
+
+.v3-period-trigger {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 2.7rem;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 10.2rem;
+  border: 1px solid var(--v3-line);
+  border-radius: 0.95rem;
+  background: color-mix(in srgb, var(--v3-surface) 58%, transparent);
+  padding: 0.52rem 0.75rem;
+}
+
+.v3-period-trigger span {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.v3-period-trigger small,
+.v3-period-menu-head span,
+.v3-period-range span,
+.v3-period-option small {
+  color: var(--v3-ink-muted);
+  font-family: var(--font-brandops-data), var(--font-mono), monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.v3-period-trigger strong,
+.v3-period-menu-head strong {
+  overflow: hidden;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v3-period-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.55rem);
+  z-index: 40;
+  display: grid;
+  gap: 0.75rem;
+  width: min(24rem, calc(100vw - 2rem));
+  border: 1px solid var(--v3-line-strong);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--v3-bg-elevated) 96%, transparent);
+  padding: 0.82rem;
+  box-shadow: var(--v3-shadow);
+  backdrop-filter: blur(20px);
+}
+
+.v3-period-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.v3-period-menu-head > div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.v3-period-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.v3-period-option {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  border: 1px solid var(--v3-line);
+  border-radius: 0.95rem;
+  background: color-mix(in srgb, var(--v3-surface) 52%, transparent);
+  padding: 0.72rem;
+  text-align: left;
+}
+
+.v3-period-option span {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.v3-period-option strong {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.v3-period-option[data-active="true"] {
+  border-color: color-mix(in srgb, var(--v3-accent) 34%, var(--v3-line));
+  background: color-mix(in srgb, var(--v3-accent-soft) 48%, var(--v3-surface));
+  color: var(--v3-ink);
+}
+
+.v3-period-range {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.v3-period-range label {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.v3-period-range input {
+  min-height: 2.5rem;
+  border: 1px solid var(--v3-line);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--v3-surface) 52%, transparent);
+  padding: 0 0.72rem;
+  color: var(--v3-ink);
+}
+
 .v3-select-shell,
 .v3-context-pill {
   display: grid;
-  min-height: 2.85rem;
+  min-height: 2.7rem;
   align-content: center;
   gap: 0.15rem;
   border: 1px solid var(--v3-line);
   border-radius: 0.95rem;
-  background: color-mix(in srgb, var(--v3-surface) 76%, transparent);
+  background: color-mix(in srgb, var(--v3-surface) 58%, transparent);
   padding: 0.52rem 0.75rem;
 }
 
@@ -4904,13 +5035,13 @@ html.dark .brandops-v3::before {
 .v3-icon-button,
 .v3-primary-link {
   display: inline-flex;
-  min-height: 2.65rem;
+  min-height: 2.5rem;
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
   border: 1px solid var(--v3-line);
   border-radius: 999px;
-  background: var(--v3-surface);
+  background: color-mix(in srgb, var(--v3-surface) 76%, transparent);
   color: var(--v3-ink);
   font-size: 0.84rem;
   font-weight: 800;
@@ -4939,9 +5070,9 @@ html.dark .brandops-v3::before {
 .v3-atlas-button:hover,
 .v3-icon-button:hover,
 .v3-primary-link:hover {
-  transform: translateY(-1px);
+  transform: none;
   border-color: color-mix(in srgb, var(--v3-accent) 48%, var(--v3-line));
-  box-shadow: 0 0 0 4px var(--v3-accent-soft);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--v3-accent-soft) 44%, transparent);
 }
 
 .v3-theme-icon-dark {
@@ -4957,7 +5088,7 @@ html.dark .v3-theme-icon-dark {
 }
 
 .v3-workspace {
-  padding: clamp(0.85rem, 1.7vw, 1.35rem);
+  padding: clamp(0.8rem, 1.55vw, 1.2rem);
 }
 
 .v3-mobile-heading,
@@ -4968,16 +5099,16 @@ html.dark .v3-theme-icon-dark {
 .v3-module-shell {
   display: grid;
   max-width: 94rem;
-  gap: 0.85rem;
+  gap: 0.72rem;
   margin: 0 auto;
 }
 
 .v3-module-heading {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 1rem;
+  gap: 0.85rem;
   align-items: end;
-  padding: clamp(0.75rem, 1.7vw, 1.35rem) 0 clamp(0.6rem, 1.2vw, 1rem);
+  padding: clamp(0.62rem, 1.45vw, 1rem) 0 clamp(0.45rem, 1vw, 0.82rem);
 }
 
 .v3-module-heading span,
@@ -5025,10 +5156,10 @@ html.dark .v3-theme-icon-dark {
   display: grid;
   gap: 0.2rem;
   min-width: 9.5rem;
-  padding: 0.75rem 0.9rem;
+  padding: 0.66rem 0.82rem;
   border: 1px solid var(--v3-line);
   border-radius: 1rem;
-  background: color-mix(in srgb, var(--v3-surface) 72%, transparent);
+  background: color-mix(in srgb, var(--v3-surface) 52%, transparent);
 }
 
 .v3-confidence strong {
@@ -5040,17 +5171,17 @@ html.dark .v3-theme-icon-dark {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   overflow: hidden;
   border: 1px solid var(--v3-line);
-  border-radius: 0.9rem;
-  background: color-mix(in srgb, var(--v3-surface) 76%, transparent);
+  border-radius: 0.82rem;
+  background: color-mix(in srgb, var(--v3-surface) 56%, transparent);
 }
 
 .v3-metric-ribbon article {
   position: relative;
   display: grid;
-  min-height: 6.35rem;
+  min-height: 5.2rem;
   align-content: start;
-  gap: 0.28rem;
-  padding: 0.82rem 1rem;
+  gap: 0.22rem;
+  padding: 0.72rem 0.9rem;
   border-right: 1px solid var(--v3-line);
 }
 
@@ -5061,10 +5192,10 @@ html.dark .v3-theme-icon-dark {
 .v3-metric-ribbon article::before {
   content: "";
   position: absolute;
-  left: 1.1rem;
+  left: 0.95rem;
   top: 0;
-  width: 2.5rem;
-  height: 0.14rem;
+  width: 1.85rem;
+  height: 0.12rem;
   border-radius: 999px;
   background: var(--v3-accent);
   opacity: 0.6;
@@ -5116,7 +5247,7 @@ html.dark .v3-theme-icon-dark {
   overflow: hidden;
   border: 1px solid var(--v3-line);
   border-radius: var(--v3-radius);
-  background: color-mix(in srgb, var(--v3-surface) 82%, transparent);
+  background: color-mix(in srgb, var(--v3-surface) 66%, transparent);
   box-shadow: var(--v3-shadow-soft);
 }
 
@@ -5127,15 +5258,15 @@ html.dark .v3-theme-icon-dark {
   inset: 0;
   border-radius: inherit;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 32%),
-    radial-gradient(circle at 12% 0%, var(--v3-accent-soft), transparent 20rem);
-  opacity: 0.72;
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 28%),
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--v3-accent-soft) 68%, transparent), transparent 18rem);
+  opacity: 0.34;
 }
 
 html.dark .v3-panel::before {
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.055), transparent 32%),
-    radial-gradient(circle at 12% 0%, var(--v3-accent-soft), transparent 20rem);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.03), transparent 28%),
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--v3-accent-soft) 56%, transparent), transparent 18rem);
 }
 
 .v3-panel > * {
@@ -5150,9 +5281,9 @@ html.dark .v3-panel::before {
 .v3-brief-panel {
   display: grid;
   align-content: start;
-  gap: 0.95rem;
-  min-height: 20rem;
-  padding: clamp(1.05rem, 1.7vw, 1.45rem);
+  gap: 0.8rem;
+  min-height: 17.5rem;
+  padding: clamp(0.95rem, 1.45vw, 1.25rem);
 }
 
 .v3-brief-panel h2 {
@@ -5174,11 +5305,11 @@ html.dark .v3-panel::before {
 
 .v3-panel-heading {
   display: flex;
-  min-height: 3.9rem;
+  min-height: 3.45rem;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.82rem 0.95rem;
+  padding: 0.72rem 0.86rem;
   border-bottom: 1px solid var(--v3-line);
 }
 
@@ -5190,8 +5321,8 @@ html.dark .v3-panel::before {
 
 .v3-panel-body {
   display: grid;
-  gap: 0.8rem;
-  padding: 0.9rem;
+  gap: 0.7rem;
+  padding: 0.82rem;
 }
 
 .v3-panel-shell {
@@ -5202,19 +5333,19 @@ html.dark .v3-panel::before {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
-  padding: 0 1rem 1rem;
+  padding: 0 0.86rem 0.82rem;
   border-bottom: 1px solid var(--v3-line);
 }
 
 .v3-tab {
   display: inline-flex;
-  min-height: 2.45rem;
+  min-height: 2.2rem;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--v3-line);
   border-radius: 999px;
   background: color-mix(in srgb, var(--v3-bg-elevated) 72%, transparent);
-  padding: 0 0.85rem;
+  padding: 0 0.76rem;
   color: var(--v3-ink-soft);
   font-size: 0.8rem;
   font-weight: 800;
@@ -5238,13 +5369,13 @@ html.dark .v3-panel::before {
 .v3-section-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(20rem, 0.9fr);
-  gap: 1rem;
+  gap: 0.82rem;
 }
 
 .v3-section-stack {
   display: grid;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 0.82rem;
+  padding: 0.82rem;
 }
 
 .v3-subsection-head {
@@ -5278,7 +5409,7 @@ html.dark .v3-panel::before {
 }
 
 .v3-focus-list {
-  gap: 0.68rem;
+  gap: 0.58rem;
 }
 
 .v3-focus-list article,
@@ -5301,8 +5432,8 @@ html.dark .v3-panel::before {
 .v3-focus-list a {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  padding: 0.95rem;
-  border-radius: 1rem;
+  padding: 0.82rem 0.86rem;
+  border-radius: 0.9rem;
 }
 
 .v3-focus-list a:hover,
@@ -5337,7 +5468,7 @@ html.dark .v3-panel::before {
 .v3-panel > .v3-action-queue,
 .v3-panel > .v3-data-list,
 .v3-panel > .v3-ops-grid {
-  padding: 1rem;
+  padding: 0.86rem;
 }
 
 .v3-action-queue {
@@ -6122,6 +6253,14 @@ html.dark .v3-panel::before {
     display: none;
   }
 
+  .v3-period-trigger {
+    min-width: 0;
+  }
+
+  .v3-period-menu {
+    right: -3.4rem;
+  }
+
   .v3-workspace {
     padding: 0.8rem;
   }
@@ -6231,6 +6370,11 @@ html.dark .v3-panel::before {
   }
 
   .v3-flag-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .v3-period-grid,
+  .v3-period-range {
     grid-template-columns: 1fr;
   }
 
