@@ -100,7 +100,7 @@ function getSearchParamValue(
   return Array.isArray(value) ? value[0] ?? null : value ?? null;
 }
 
-function V3LoadingPanel({ label = "Carregando workspace" }: { label?: string }) {
+function V3LoadingPanel({ label = "Carregando módulo" }: { label?: string }) {
   return (
     <div className="v3-panel v3-loading-panel">
       <Loader2 className="animate-spin" size={18} />
@@ -111,7 +111,7 @@ function V3LoadingPanel({ label = "Carregando workspace" }: { label?: string }) 
 
 function MetricRibbon({ metrics }: { metrics: StudioMetric[] }) {
   return (
-    <section className="v3-metric-ribbon" aria-label="Métricas do workspace">
+    <section className="v3-metric-ribbon" aria-label="Métricas do módulo">
       {metrics.map((metric) => (
         <article key={metric.label} data-tone={metric.tone}>
           <span>{metric.label}</span>
@@ -478,7 +478,7 @@ function CommandWorkspace({ snapshot }: { snapshot: ManagementSnapshotV2 }) {
 
       <section className="v3-panel">
         <div className="v3-panel-heading">
-          <span>Atlas workspace</span>
+            <span>Mesa Atlas</span>
           <strong>{snapshot.context.brandName}</strong>
         </div>
         <WorkspaceTabs
@@ -604,7 +604,7 @@ function FinanceWorkspace({
               banner: "Evidências em foco: valide consistência, fonte e reconciliação antes de fechar uma decisão financeira.",
             }
           : {
-              title: "Workbench financeiro",
+              title: "Mesa financeira",
               description:
                 "DRE, custos e vendas em uma mesa de leitura operacional, com Atlas como explicador contextual.",
               actionLabel: "Abrir lançamentos",
@@ -709,7 +709,7 @@ function FinanceWorkspace({
                     label: "Lançamentos",
                     title: "Registrar competência, categoria e despesa",
                     detail:
-                      "A rotina operacional de despesas agora fica dentro do workbench financeiro, sem abrir outra interface.",
+                "A rotina operacional de despesas fica na mesma mesa financeira, sem trocar de ambiente.",
                     href: buildStudioHref("finance", { surface: "operations" }),
                     tone: "info",
                   },
@@ -940,7 +940,7 @@ function GrowthWorkspace({
 
       <section className="v3-panel">
         <div className="v3-panel-heading">
-          <span>Workbench de aquisição</span>
+            <span>Mesa de aquisição</span>
           <strong>{report.context.brandName}</strong>
         </div>
         <WorkspaceTabs
@@ -1271,7 +1271,7 @@ function OfferWorkspace({
 
       <section className="v3-panel">
         <div className="v3-panel-heading">
-          <span>Workbench de oferta</span>
+            <span>Mesa de oferta</span>
           <strong>{report.context.brandName}</strong>
         </div>
         <WorkspaceTabs
@@ -1474,7 +1474,7 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
                 "Suporte em foco: concentre setup guiado, ajuda operacional e administração sem poluir o trabalho principal.",
             }
           : {
-              title: "Console de manutenção",
+              title: "Mesa operacional",
               description:
                 "Imports, saneamento, integrações e governança reunidos para manter o BrandOps confiável.",
               actionLabel: "Importar",
@@ -1503,8 +1503,8 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
 
       <section className="v3-command-grid">
         <div className="v3-panel v3-brief-panel">
-          <span>Estado operacional</span>
-          <h2>{activeBrand?.name ?? "Workspace operacional"}</h2>
+            <span>Estado operacional</span>
+            <h2>{activeBrand?.name ?? "Módulo operacional"}</h2>
           <p>
             Use esta área para manter fontes, catálogo e governança previsíveis enquanto a leitura
             executiva continua no Comando.
@@ -1590,7 +1590,7 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
           <div className="v3-section-grid">
             <div className="v3-panel-body">
               <div className="v3-subsection-head">
-                <span>Flags do workspace</span>
+                <span>Flags do módulo</span>
               </div>
               <div className="v3-flag-grid">
                 {featureFlags.map(([key, enabled]) => (
@@ -1651,7 +1651,7 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
             </div>
             <div className="v3-panel-body">
               <div className="v3-subsection-head">
-                <span>Estado do workspace</span>
+                <span>Estado do módulo</span>
               </div>
               <FocusList items={focus.length ? focus : makeModuleFallback("ops")} />
             </div>
@@ -1678,7 +1678,7 @@ function ModuleReportView({
   if (!report) {
     return (
       <V3EmptyState
-        title="Workspace sem relatório"
+        title="Módulo sem relatório"
         description="O BrandOps não recebeu dados suficientes para montar esta superfície ainda."
       />
     );

@@ -145,11 +145,11 @@ function StudioRail({
           <span>Atlas intelligence layer</span>
         </div>
       </Link>
-      <div className="v3-rail-current">
-        <span>Workspace ativo</span>
-        <strong>{activeItem.label}</strong>
-        <small>{activeItem.description}</small>
-      </div>
+        <div className="v3-rail-current">
+          <span>Módulo ativo</span>
+          <strong>{activeItem.label}</strong>
+          <small>{activeItem.description}</small>
+        </div>
       <nav className="v3-rail-nav">
         {studioNavItems.map((item) => {
           const Icon = item.icon;
@@ -379,8 +379,8 @@ function StudioLoading() {
     <div className="brandops-v3 v3-loading-screen">
       <BrandOpsGlyph />
       <div>
-        <strong>BrandOps</strong>
-        <span>Preparando o workspace da marca.</span>
+            <strong>BrandOps</strong>
+            <span>Preparando o módulo da marca.</span>
       </div>
       <Loader2 className="animate-spin" size={18} />
     </div>
