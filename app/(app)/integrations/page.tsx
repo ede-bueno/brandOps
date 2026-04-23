@@ -14,12 +14,11 @@ export default async function IntegrationsPage({
 
   redirect(
     buildLegacyRedirectPath(
-      "/studio/ops",
-      {
-        tab: "integrations",
-        entry: "integrations",
-      },
-      resolvedSearchParams,
-    ),
+                "/studio/ops",
+                {
+                  surface: "integrations",
+                },
+                resolvedSearchParams,
+              ),
   );
 }

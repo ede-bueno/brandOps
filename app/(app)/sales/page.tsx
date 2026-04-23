@@ -14,13 +14,11 @@ export default async function SalesPage({
 
   redirect(
     buildLegacyRedirectPath(
-      "/studio/offer",
-      {
-        tab: "decisions",
-        entry: "sales",
-        view: "products",
-      },
-      resolvedSearchParams,
-    ),
+                "/studio/offer",
+                {
+                  surface: "sales",
+                },
+                resolvedSearchParams,
+              ),
   );
 }

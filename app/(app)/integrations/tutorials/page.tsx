@@ -14,13 +14,11 @@ export default async function IntegrationTutorialsPage({
 
   redirect(
     buildLegacyRedirectPath(
-      "/studio/ops",
-      {
-        tab: "integrations",
-        entry: "tutorials",
-        view: "index",
-      },
-      resolvedSearchParams,
-    ),
+                "/studio/ops",
+                {
+                  surface: "support",
+                },
+                resolvedSearchParams,
+              ),
   );
 }

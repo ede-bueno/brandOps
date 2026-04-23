@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, KeyRound, Loader2, LockKeyhole, MailCheck } from "lucide-react";
+import { ArrowRight, KeyRound, Loader2, LockKeyhole, MailCheck, Sparkles } from "lucide-react";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { BRANDING } from "@/lib/branding";
 
@@ -69,7 +69,7 @@ export default function LoginPage() {
 
       await requestMagicLink(email.trim());
       setNotice(
-        "Se este email estiver autorizado no Atlas, enviamos um link magico para concluir o acesso.",
+        "Se este email estiver autorizado no BrandOps, enviamos um link magico para concluir o acesso.",
       );
     } catch (authError) {
       setError(toFriendlyAuthErrorMessage(authError));
@@ -79,30 +79,32 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-8">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(58,88,140,0.12)_1px,transparent_0)] bg-[length:24px_24px]" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top,rgba(8,145,178,0.18),transparent_62%)]" />
-
-      <div className="brandops-panel atlas-tech-grid relative z-10 w-full max-w-md px-6 py-7 shadow-sm sm:px-7 sm:py-8">
-        <div className="atlas-brand-shell inline-flex h-12 w-12 items-center justify-center rounded-xl border text-secondary">
-          <LockKeyhole size={22} />
+    <div className="brandops-v3 v3-auth-screen" data-module="command" data-accent="blue">
+      <section className="v3-auth-panel">
+        <div className="v3-auth-brand">
+          <div className="v3-brand-glyph" aria-hidden="true">
+            <span />
+            <span />
+          </div>
+          <div>
+            <strong>{BRANDING.appName}</strong>
+            <span>Camada Atlas</span>
+          </div>
         </div>
 
-        <div className="mt-5">
-          <p className="eyebrow">{BRANDING.appName}</p>
-          <h1 className="mt-2 font-headline text-2xl font-semibold tracking-tight text-on-surface">
-            Entrar no painel
-          </h1>
-          <p className="mt-2 text-sm text-on-surface-variant">Entre com senha ou link mágico e volte direto para a operação.</p>
+        <div className="v3-auth-copy">
+          <span>Acesso operacional</span>
+          <h1>Entre para comandar a marca.</h1>
+          <p>Use senha ou link mágico. O BrandOps abre direto no Studio da operação ativa.</p>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
-          <span className="rounded-full border border-outline px-2.5 py-1">Torre</span>
-          <span className="rounded-full border border-outline px-2.5 py-1">Atlas IA</span>
-          <span className="rounded-full border border-outline px-2.5 py-1">Operação POD</span>
+        <div className="v3-auth-strip" aria-label="Pilares do BrandOps">
+          <span>Comando</span>
+          <span>Operação POD</span>
+          <span>Atlas IA</span>
         </div>
 
-        <div className="mt-6 flex gap-2 rounded-2xl border border-outline bg-surface-container-low p-1">
+        <div className="v3-auth-mode">
           <button
             type="button"
             onClick={() => {
@@ -110,16 +112,10 @@ export default function LoginPage() {
               setError("");
               setNotice("");
             }}
-            className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
-              mode === "password"
-                ? "bg-background text-on-surface shadow-sm"
-                : "text-on-surface-variant hover:text-on-surface"
-            }`}
+            data-active={mode === "password"}
           >
-            <span className="inline-flex items-center gap-2">
-              <KeyRound size={14} />
-              Senha
-            </span>
+            <KeyRound size={14} />
+            Senha
           </button>
           <button
             type="button"
@@ -128,58 +124,53 @@ export default function LoginPage() {
               setError("");
               setNotice("");
             }}
-            className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
-              mode === "magic-link"
-                ? "bg-background text-on-surface shadow-sm"
-                : "text-on-surface-variant hover:text-on-surface"
-            }`}
+            data-active={mode === "magic-link"}
           >
-            <span className="inline-flex items-center gap-2">
-              <MailCheck size={14} />
-              Link magico
-            </span>
+            <MailCheck size={14} />
+            Link mágico
           </button>
         </div>
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+        <form className="v3-auth-form" onSubmit={handleSubmit}>
           <div>
-            <label className="mb-2 block text-sm text-on-surface-variant">Email</label>
+            <label>Email</label>
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               autoComplete="email"
-              className="brandops-input w-full"
+              className="v3-auth-input"
               placeholder="contato@marca.com"
             />
           </div>
 
           {mode === "password" ? (
             <div>
-              <label className="mb-2 block text-sm text-on-surface-variant">Senha</label>
+              <label>Senha</label>
               <input
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 autoComplete="current-password"
-                className="brandops-input w-full"
+                className="v3-auth-input"
                 placeholder="Sua senha"
               />
             </div>
           ) : (
-            <div className="rounded-2xl border border-outline bg-surface-container-low px-4 py-3 text-sm leading-6 text-on-surface-variant">
-              O Atlas envia um link direto para o email informado. Ao abrir o link, voce entra no painel sem precisar lembrar a senha.
+            <div className="v3-auth-note">
+              <Sparkles size={15} />
+              <p>Atlas envia um link direto para o email informado. Ao abrir o link, você entra sem precisar lembrar a senha.</p>
             </div>
           )}
 
           {error ? (
-            <div className="rounded-xl border border-tertiary/20 bg-tertiary-container/60 px-4 py-3 text-sm text-on-tertiary-container">
+            <div className="v3-auth-alert" data-tone="bad">
               {error}
             </div>
           ) : null}
 
           {notice ? (
-            <div className="rounded-xl border border-primary/15 bg-primary-container/50 px-4 py-3 text-sm text-on-primary-container">
+            <div className="v3-auth-alert" data-tone="good">
               {notice}
             </div>
           ) : null}
@@ -187,20 +178,20 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting || isLoading || !email.trim() || (mode === "password" && !password)}
-            className="brandops-button brandops-button-primary inline-flex w-full items-center justify-center gap-2 px-5 py-3 text-sm disabled:translate-y-0 disabled:opacity-60"
+            className="v3-auth-submit"
           >
             {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
             {submitLabel}
           </button>
         </form>
 
-        <div className="mt-5 rounded-2xl border border-outline bg-background/70 px-4 py-3 text-xs leading-5 text-on-surface-variant">
-          <p className="font-semibold text-on-surface">Se a senha falhar</p>
-          <p className="mt-1">
-            Tente <span className="font-semibold text-on-surface">Link magico</span>. Ele costuma destravar o acesso mais rápido.
+        <div className="v3-auth-help">
+          <LockKeyhole size={15} />
+          <p>
+            Se a senha falhar, tente <strong>link mágico</strong>. Ele costuma destravar o acesso mais rápido.
           </p>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

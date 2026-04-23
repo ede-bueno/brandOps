@@ -141,24 +141,23 @@ function MetricRibbon({ metrics }: { metrics: StudioMetric[] }) {
 function WorkspaceTabs({
   active,
   tabs,
-  onChange,
 }: {
   active: string;
-  tabs: Array<{ key: string; label: string }>;
-  onChange: (tab: string) => void;
+  tabs: Array<{ key: string; label: string; href: string }>;
 }) {
   return (
     <div className="v3-tabs" role="tablist">
       {tabs.map((tab) => (
-        <button
+        <Link
           key={tab.key}
-          type="button"
           className="v3-tab"
           data-active={tab.key === active}
-          onClick={() => onChange(tab.key)}
+          href={tab.href}
+          role="tab"
+          aria-selected={tab.key === active}
         >
           {tab.label}
-        </button>
+        </Link>
       ))}
     </div>
   );
@@ -420,8 +419,16 @@ function FinanceLedger({ report }: { report: FinanceHubReport }) {
   );
 }
 
-function CommandWorkspace({ snapshot }: { snapshot: ManagementSnapshotV2 }) {
-  const [activeTab, setActiveTab] = useState("decisions");
+function CommandWorkspace({
+  snapshot,
+  context,
+}: {
+  snapshot: ManagementSnapshotV2;
+  context: StudioModuleContext;
+}) {
+  const requestedTab = context.tab;
+  const activeTab =
+    requestedTab === "drivers" || requestedTab === "sources" ? requestedTab : "decisions";
   const metrics = buildCommandMetrics(snapshot);
   const focus = mapActionsToFocus(snapshot.decisionQueue);
   const driverItems = [
@@ -476,7 +483,7 @@ function CommandWorkspace({ snapshot }: { snapshot: ManagementSnapshotV2 }) {
           <p>{snapshot.executiveStatus.nextMove}</p>
           <FocusList items={focus.length ? focus : makeModuleFallback("command")} />
         </div>
-        <div className="v3-panel">
+        <div className="v3-panel v3-panel-quiet">
           <div className="v3-panel-heading">
             <span>Plano dominante</span>
             <strong>{snapshot.cashDrivers.dominantMetric.label}</strong>
@@ -498,11 +505,10 @@ function CommandWorkspace({ snapshot }: { snapshot: ManagementSnapshotV2 }) {
         </div>
         <WorkspaceTabs
           active={activeTab}
-          onChange={setActiveTab}
           tabs={[
-            { key: "decisions", label: "Decisões" },
-            { key: "drivers", label: "Drivers" },
-            { key: "sources", label: "Fontes" },
+            { key: "decisions", label: "Decisões", href: "/studio?tab=decisions" },
+            { key: "drivers", label: "Drivers", href: "/studio?tab=drivers" },
+            { key: "sources", label: "Fontes", href: "/studio?tab=sources" },
           ]}
         />
         {activeTab === "decisions" ? (
@@ -582,7 +588,7 @@ function FinanceWorkspace({
     requestedSurface === "evidence"
       ? requestedSurface
       : "dre";
-  const [activeTab, setActiveTab] = useState<FinanceStudioSurface>(nextActiveTab);
+  const activeTab = nextActiveTab;
   const topProducts = report.sales.topProducts.slice(0, 6);
   const financeMeta =
     requestedSurface === "operations"
@@ -627,10 +633,6 @@ function FinanceWorkspace({
               banner: null,
             };
 
-  useEffect(() => {
-    setActiveTab(nextActiveTab);
-  }, [nextActiveTab]);
-
   return (
     <V3ModuleChrome
       eyebrow="Finanças"
@@ -664,7 +666,7 @@ function FinanceWorkspace({
             ].slice(0, 5)}
           />
         </div>
-        <div className="v3-panel">
+        <div className="v3-panel v3-panel-quiet">
           <div className="v3-panel-heading">
             <span>Resumo da marca</span>
             <strong>{report.context.brandName}</strong>
@@ -681,19 +683,29 @@ function FinanceWorkspace({
         </div>
       </section>
 
-      <section className="v3-panel">
+      <section className="v3-panel v3-panel-quiet">
         <div className="v3-panel-heading">
           <span>Painel financeiro</span>
           <strong>{report.financial.months.length} competências</strong>
         </div>
         <WorkspaceTabs
           active={activeTab}
-          onChange={(tab) => setActiveTab(tab as FinanceStudioSurface)}
           tabs={[
-            { key: "dre", label: "DRE" },
-            { key: "operations", label: "Operação" },
-            { key: "sales", label: "Vendas" },
-            { key: "evidence", label: "Evidências" },
+            { key: "dre", label: "DRE", href: buildStudioHref("finance", { surface: "dre" }) },
+            {
+              key: "operations",
+              label: "Operação",
+              href: buildStudioHref("finance", {
+                surface: "operations",
+                focus: context.focus === "cmv" ? "cmv" : undefined,
+              }),
+            },
+            { key: "sales", label: "Vendas", href: buildStudioHref("finance", { surface: "sales" }) },
+            {
+              key: "evidence",
+              label: "Evidências",
+              href: buildStudioHref("finance", { surface: "evidence" }),
+            },
           ]}
         />
         {activeTab === "dre" ? (
@@ -843,7 +855,7 @@ function GrowthWorkspace({
   const requestedSurface = context.surface as GrowthStudioSurface;
   const nextActiveTab: GrowthStudioSurface =
     requestedSurface === "traffic" || requestedSurface === "evidence" ? requestedSurface : "media";
-  const [activeTab, setActiveTab] = useState<GrowthStudioSurface>(nextActiveTab);
+  const activeTab = nextActiveTab;
   const focus = [
     ...mapActionsToFocus(report.priorities),
     {
@@ -921,10 +933,6 @@ function GrowthWorkspace({
                   banner: null,
                 };
 
-  useEffect(() => {
-    setActiveTab(nextActiveTab);
-  }, [nextActiveTab]);
-
   return (
     <V3ModuleChrome
       eyebrow="Crescimento"
@@ -947,7 +955,7 @@ function GrowthWorkspace({
           <p>{report.overview.summary}</p>
           <FocusList items={focus.length ? focus : makeModuleFallback("growth")} />
         </div>
-        <div className="v3-panel">
+        <div className="v3-panel v3-panel-quiet">
           <TrendBars
             title="Receita e gasto"
             items={report.overview.trend.slice(-6).map((point) => ({
@@ -960,18 +968,37 @@ function GrowthWorkspace({
         </div>
       </section>
 
-      <section className="v3-panel">
+      <section className="v3-panel v3-panel-quiet">
         <div className="v3-panel-heading">
             <span>Painel de aquisição</span>
           <strong>{report.context.brandName}</strong>
         </div>
         <WorkspaceTabs
           active={activeTab}
-          onChange={(tab) => setActiveTab(tab as GrowthStudioSurface)}
           tabs={[
-            { key: "media", label: "Mídia" },
-            { key: "traffic", label: "Tráfego" },
-            { key: "evidence", label: "Evidências" },
+            {
+              key: "media",
+              label: "Mídia",
+              href: buildStudioHref("growth", {
+                surface: "media",
+                mode:
+                  context.mode === "campaigns" ||
+                  context.mode === "radar" ||
+                  context.mode === "executive"
+                    ? context.mode
+                    : undefined,
+              }),
+            },
+            {
+              key: "traffic",
+              label: "Tráfego",
+              href: buildStudioHref("growth", { surface: "traffic" }),
+            },
+            {
+              key: "evidence",
+              label: "Evidências",
+              href: buildStudioHref("growth", { surface: "evidence" }),
+            },
           ]}
         />
         {activeTab === "media" ? (
@@ -1178,7 +1205,7 @@ function OfferWorkspace({
     requestedSurface === "evidence"
       ? requestedSurface
       : "products";
-  const [activeTab, setActiveTab] = useState<OfferStudioSurface>(nextActiveTab);
+  const activeTab = nextActiveTab;
   const topProducts = report.catalog.highlights.topSellers.length
     ? report.catalog.highlights.topSellers
     : report.catalog.rows.slice(0, 6);
@@ -1247,10 +1274,6 @@ function OfferWorkspace({
                     banner: null,
                   };
 
-  useEffect(() => {
-    setActiveTab(nextActiveTab);
-  }, [nextActiveTab]);
-
   return (
     <V3ModuleChrome
       eyebrow="Oferta"
@@ -1285,7 +1308,7 @@ function OfferWorkspace({
             }
           />
         </div>
-        <div className="v3-panel">
+        <div className="v3-panel v3-panel-quiet">
           <TrendBars
             title="Produtos em destaque"
             items={report.overview.topProducts.slice(0, 5).map((item) => ({
@@ -1298,19 +1321,38 @@ function OfferWorkspace({
         </div>
       </section>
 
-      <section className="v3-panel">
+      <section className="v3-panel v3-panel-quiet">
         <div className="v3-panel-heading">
             <span>Painel de oferta</span>
           <strong>{report.context.brandName}</strong>
         </div>
         <WorkspaceTabs
           active={activeTab}
-          onChange={(tab) => setActiveTab(tab as OfferStudioSurface)}
           tabs={[
-            { key: "products", label: "Produtos" },
-            { key: "sales", label: "Vendas" },
-            { key: "catalog", label: "Catálogo" },
-            { key: "evidence", label: "Evidências" },
+            {
+              key: "products",
+              label: "Produtos",
+              href: buildStudioHref("offer", {
+                surface: "products",
+                mode:
+                  context.mode === "executive" ||
+                  context.mode === "radar" ||
+                  context.mode === "detail"
+                    ? context.mode
+                    : undefined,
+              }),
+            },
+            { key: "sales", label: "Vendas", href: buildStudioHref("offer", { surface: "sales" }) },
+            {
+              key: "catalog",
+              label: "Catálogo",
+              href: buildStudioHref("offer", { surface: "catalog" }),
+            },
+            {
+              key: "evidence",
+              label: "Evidências",
+              href: buildStudioHref("offer", { surface: "evidence" }),
+            },
           ]}
         />
         {activeTab === "products" ? (
@@ -1470,7 +1512,7 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
     requestedSurface === "support"
       ? requestedSurface
       : "integrations";
-  const [activeTab, setActiveTab] = useState<OpsStudioSurface>(nextActiveTab);
+  const activeTab = nextActiveTab;
   const { activeBrand } = useBrandOps();
   const focus = buildOpsFocusItems(activeBrand);
   const integrations = activeBrand?.integrations ?? [];
@@ -1525,10 +1567,6 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
               banner: null,
             };
 
-  useEffect(() => {
-    setActiveTab(nextActiveTab);
-  }, [nextActiveTab]);
-
   return (
     <V3ModuleChrome
       eyebrow="Operação"
@@ -1554,7 +1592,7 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
           </p>
           <FocusList items={focus.length ? focus : makeModuleFallback("ops")} />
         </div>
-        <div className="v3-panel">
+        <div className="v3-panel v3-panel-quiet">
           <TrendBars
             title="Últimas cargas"
             items={files.slice(0, 5).map((file) => ({
@@ -1568,19 +1606,42 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
         </div>
       </section>
 
-      <section className="v3-panel">
+      <section className="v3-panel v3-panel-quiet">
         <div className="v3-panel-heading">
           <span>Operação da marca</span>
           <strong>{activeBrand?.governance.planTier ?? "starter"}</strong>
         </div>
         <WorkspaceTabs
           active={activeTab}
-          onChange={(tab) => setActiveTab(tab as OpsStudioSurface)}
           tabs={[
-            { key: "integrations", label: "Integrações" },
-            { key: "imports", label: "Imports" },
-            { key: "governance", label: "Governança" },
-            { key: "support", label: "Suporte" },
+            {
+              key: "integrations",
+              label: "Integrações",
+              href: buildStudioHref("ops", {
+                surface: "integrations",
+                provider: context.provider ?? undefined,
+              }),
+            },
+            { key: "imports", label: "Imports", href: buildStudioHref("ops", { surface: "imports" }) },
+            {
+              key: "governance",
+              label: "Governança",
+              href: buildStudioHref("ops", {
+                surface: "governance",
+                focus:
+                  context.focus === "sanitization" || context.focus === "stores"
+                    ? context.focus
+                    : undefined,
+              }),
+            },
+            {
+              key: "support",
+              label: "Suporte",
+              href: buildStudioHref("ops", {
+                surface: "support",
+                provider: context.provider ?? undefined,
+              }),
+            },
           ]}
         />
         {activeTab === "integrations" ? (
@@ -1742,7 +1803,7 @@ function ModuleReportView({
   }
 
   if (module === "command") {
-    return <CommandWorkspace snapshot={report as ManagementSnapshotV2} />;
+    return <CommandWorkspace snapshot={report as ManagementSnapshotV2} context={context} />;
   }
 
   if (module === "finance") {

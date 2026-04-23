@@ -14,13 +14,11 @@ export default async function ImportPage({
 
   redirect(
     buildLegacyRedirectPath(
-      "/studio/ops",
-      {
-        tab: "imports",
-        entry: "import",
-        view: "upload",
-      },
-      resolvedSearchParams,
-    ),
+                "/studio/ops",
+                {
+                  surface: "imports",
+                },
+                resolvedSearchParams,
+              ),
   );
 }

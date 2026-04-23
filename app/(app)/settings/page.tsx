@@ -14,13 +14,11 @@ export default async function SettingsPage({
 
   redirect(
     buildLegacyRedirectPath(
-      "/studio/ops",
-      {
-        tab: "governance",
-        entry: "settings",
-        view: "hub",
-      },
-      resolvedSearchParams,
-    ),
+                "/studio/ops",
+                {
+                  surface: "governance",
+                },
+                resolvedSearchParams,
+              ),
   );
 }

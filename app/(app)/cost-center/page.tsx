@@ -13,11 +13,8 @@ export default async function CostCenterPage({
   const resolvedSearchParams = await resolveLegacySearchParams(searchParams);
 
   redirect(
-    buildLegacyRedirectPath("/studio/finance", {
-      surface: "cost-center",
-      tab: "launches",
-      subview: "overview",
-      context: "legacy",
-    }, resolvedSearchParams),
-  );
+              buildLegacyRedirectPath("/studio/finance", {
+                surface: "operations",
+              }, resolvedSearchParams),
+            );
 }

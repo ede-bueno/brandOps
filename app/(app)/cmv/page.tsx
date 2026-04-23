@@ -13,10 +13,9 @@ export default async function CmvPage({
   const resolvedSearchParams = await resolveLegacySearchParams(searchParams);
 
   redirect(
-    buildLegacyRedirectPath("/studio/finance", {
-      surface: "cmv",
-      tab: "types",
-      context: "legacy",
-    }, resolvedSearchParams),
-  );
+              buildLegacyRedirectPath("/studio/finance", {
+                surface: "operations",
+                focus: "cmv",
+              }, resolvedSearchParams),
+            );
 }

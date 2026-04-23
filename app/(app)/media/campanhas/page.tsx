@@ -13,10 +13,9 @@ export default async function MediaCampaignsPage({
   const resolvedSearchParams = await resolveLegacySearchParams(searchParams);
 
   redirect(
-    buildLegacyRedirectPath("/studio/growth", {
-      surface: "media",
-      subview: "campaigns",
-      context: "legacy",
-    }, resolvedSearchParams),
-  );
+              buildLegacyRedirectPath("/studio/growth", {
+                surface: "media",
+                mode: "campaigns",
+              }, resolvedSearchParams),
+            );
 }

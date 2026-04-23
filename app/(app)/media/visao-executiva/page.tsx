@@ -13,10 +13,9 @@ export default async function MediaExecutivePage({
   const resolvedSearchParams = await resolveLegacySearchParams(searchParams);
 
   redirect(
-    buildLegacyRedirectPath("/studio/growth", {
-      surface: "media",
-      subview: "executive",
-      context: "legacy",
-    }, resolvedSearchParams),
-  );
+              buildLegacyRedirectPath("/studio/growth", {
+                surface: "media",
+                mode: "executive",
+              }, resolvedSearchParams),
+            );
 }

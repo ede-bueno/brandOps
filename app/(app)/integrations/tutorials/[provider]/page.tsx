@@ -19,14 +19,12 @@ export default async function IntegrationTutorialProviderPage({
 
   redirect(
     buildLegacyRedirectPath(
-      "/studio/ops",
-      {
-        tab: "integrations",
-        entry: "tutorials",
-        view: "provider",
-        provider,
-      },
-      resolvedSearchParams,
-    ),
+                "/studio/ops",
+                {
+                  surface: "support",
+                  provider,
+                },
+                resolvedSearchParams,
+              ),
   );
 }

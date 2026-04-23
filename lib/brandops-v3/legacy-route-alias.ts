@@ -7,9 +7,14 @@ export function buildLegacyRedirectPath(
   searchParams?: LegacySearchParams,
 ) {
   const params = new URLSearchParams();
+  const legacyOnlyKeys = new Set(["context", "entry", "subview", "tab", "view"]);
 
   if (searchParams) {
     for (const [key, value] of Object.entries(searchParams)) {
+      if (legacyOnlyKeys.has(key)) {
+        continue;
+      }
+
       if (Array.isArray(value)) {
         for (const item of value) {
           if (item !== undefined) {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   CalendarRange,
@@ -393,7 +393,6 @@ function StudioTopbar({
   onOpenAtlas: () => void;
 }) {
   const {
-    activeBrand,
     activeBrandId,
     brands,
     customDateRange,
@@ -405,19 +404,8 @@ function StudioTopbar({
     signOut,
   } = useBrandOps();
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
-  const selectedBrandName =
-    activeBrand?.name ?? brands.find((brand) => brand.id === activeBrandId)?.name ?? "Marca";
-
   return (
     <header className="v3-topbar">
-      <div className="v3-topbar-product">
-        <BrandOpsGlyph />
-        <div>
-          <strong>BrandOps</strong>
-          <span>Camada Atlas</span>
-        </div>
-      </div>
-
       <button type="button" className="v3-command-trigger" onClick={onOpenCommand}>
         <Search size={16} />
         <span>Comando, navegação ou pergunta</span>
@@ -450,10 +438,6 @@ function StudioTopbar({
           onSelectPeriod={setSelectedPeriod}
           onChangeCustomDateRange={setCustomDateRange}
         />
-        <div className="v3-context-pill v3-context-pill-wide">
-          <span>Em foco</span>
-          <strong>{selectedBrandName}</strong>
-        </div>
         <button type="button" className="v3-atlas-button" onClick={onOpenAtlas}>
           <Sparkles size={16} />
           Atlas
@@ -575,10 +559,17 @@ function StudioLoading() {
 export function BrandOpsShellV3({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname() ?? "/studio";
+  const searchParams = useSearchParams();
   const { isLoading, session } = useBrandOps();
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
-  const [isInspectorOpen, setIsInspectorOpen] = useState(true);
+  const [isInspectorOpen, setIsInspectorOpen] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return window.localStorage.getItem("brandops.v3.inspector") === "open";
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRailCollapsed, setIsRailCollapsed] = useState(() => {
     if (typeof window === "undefined") {
@@ -590,8 +581,7 @@ export function BrandOpsShellV3({ children }: { children: ReactNode }) {
 
   const activeModule = getStudioModule(pathname);
   const activeNav = useMemo(() => getStudioNavItem(activeModule), [activeModule]);
-  const currentSearch =
-    typeof window === "undefined" ? "" : window.location.search.replace(/^\?/, "");
+  const currentSearch = searchParams?.toString() ?? "";
 
   useEffect(() => {
     if (!isLoading && !session) {
@@ -624,6 +614,13 @@ export function BrandOpsShellV3({ children }: { children: ReactNode }) {
       isRailCollapsed ? "collapsed" : "expanded",
     );
   }, [isRailCollapsed]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      "brandops.v3.inspector",
+      isInspectorOpen ? "open" : "closed",
+    );
+  }, [isInspectorOpen]);
 
   if (isLoading && !session) {
     return <StudioLoading />;

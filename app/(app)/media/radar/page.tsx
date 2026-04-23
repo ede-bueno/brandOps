@@ -13,10 +13,9 @@ export default async function MediaRadarPage({
   const resolvedSearchParams = await resolveLegacySearchParams(searchParams);
 
   redirect(
-    buildLegacyRedirectPath("/studio/growth", {
-      surface: "media",
-      subview: "radar",
-      context: "legacy",
-    }, resolvedSearchParams),
-  );
+              buildLegacyRedirectPath("/studio/growth", {
+                surface: "media",
+                mode: "radar",
+              }, resolvedSearchParams),
+            );
 }

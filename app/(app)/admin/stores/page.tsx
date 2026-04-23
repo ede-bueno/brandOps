@@ -14,13 +14,12 @@ export default async function AdminStoresPage({
 
   redirect(
     buildLegacyRedirectPath(
-      "/studio/ops",
-      {
-        tab: "governance",
-        entry: "admin-stores",
-        view: "general",
-      },
-      resolvedSearchParams,
-    ),
+                "/studio/ops",
+                {
+                  surface: "governance",
+                  focus: "stores",
+                },
+                resolvedSearchParams,
+              ),
   );
 }

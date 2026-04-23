@@ -5,7 +5,7 @@ import {
   type LegacySearchParams,
 } from "@/lib/brandops-v3/legacy-route-alias";
 
-function resolveView(searchParams?: LegacySearchParams) {
+function resolveMode(searchParams?: LegacySearchParams) {
   const mode = searchParams?.mode;
   const normalizedMode = Array.isArray(mode) ? mode[0] : mode;
 
@@ -17,7 +17,7 @@ function resolveView(searchParams?: LegacySearchParams) {
     return normalizedMode;
   }
 
-  return "home";
+  return null;
 }
 
 export default async function ProductInsightsPage({
@@ -31,9 +31,8 @@ export default async function ProductInsightsPage({
     buildLegacyRedirectPath(
       "/studio/offer",
       {
-        tab: "decisions",
-        entry: "product-insights",
-        view: resolveView(resolvedSearchParams),
+        surface: "products",
+        mode: resolveMode(resolvedSearchParams),
       },
       resolvedSearchParams,
     ),

@@ -14,13 +14,12 @@ export default async function ProductInsightsExecutivePage({
 
   redirect(
     buildLegacyRedirectPath(
-      "/studio/offer",
-      {
-        tab: "decisions",
-        entry: "product-insights",
-        view: "executive",
-      },
-      resolvedSearchParams,
-    ),
+                "/studio/offer",
+                {
+                  surface: "products",
+                  mode: "executive",
+                },
+                resolvedSearchParams,
+              ),
   );
 }

@@ -14,13 +14,12 @@ export default async function SanitizationPage({
 
   redirect(
     buildLegacyRedirectPath(
-      "/studio/ops",
-      {
-        tab: "governance",
-        entry: "sanitization",
-        view: "pending",
-      },
-      resolvedSearchParams,
-    ),
+                "/studio/ops",
+                {
+                  surface: "governance",
+                  focus: "sanitization",
+                },
+                resolvedSearchParams,
+              ),
   );
 }

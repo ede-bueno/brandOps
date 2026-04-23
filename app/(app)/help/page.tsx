@@ -14,13 +14,11 @@ export default async function HelpPage({
 
   redirect(
     buildLegacyRedirectPath(
-      "/studio/ops",
-      {
-        tab: "governance",
-        entry: "help",
-        view: "operation",
-      },
-      resolvedSearchParams,
-    ),
+                "/studio/ops",
+                {
+                  surface: "support",
+                },
+                resolvedSearchParams,
+              ),
   );
 }

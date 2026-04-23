@@ -14,13 +14,12 @@ export default async function ProductInsightsRadarPage({
 
   redirect(
     buildLegacyRedirectPath(
-      "/studio/offer",
-      {
-        tab: "decisions",
-        entry: "product-insights",
-        view: "radar",
-      },
-      resolvedSearchParams,
-    ),
+                "/studio/offer",
+                {
+                  surface: "products",
+                  mode: "radar",
+                },
+                resolvedSearchParams,
+              ),
   );
 }

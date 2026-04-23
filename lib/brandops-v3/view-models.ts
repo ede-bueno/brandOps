@@ -30,6 +30,7 @@ export type OpsStudioSurface = "overview" | "integrations" | "imports" | "govern
 
 export interface StudioModuleContext {
   surface: string;
+  tab?: string | null;
   mode?: string | null;
   focus?: string | null;
   provider?: string | null;
@@ -328,7 +329,7 @@ export function getStudioModuleContext(
           ? "stores"
           : null);
 
-  return { surface, mode, focus, provider };
+  return { surface, tab: requestedTab, mode, focus, provider };
 }
 
 function resolveFinanceSurface(

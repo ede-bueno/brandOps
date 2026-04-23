@@ -13,9 +13,8 @@ export default async function MediaPage({
   const resolvedSearchParams = await resolveLegacySearchParams(searchParams);
 
   redirect(
-    buildLegacyRedirectPath("/studio/growth", {
-      surface: "media",
-      context: "legacy",
-    }, resolvedSearchParams),
-  );
+              buildLegacyRedirectPath("/studio/growth", {
+                surface: "media",
+              }, resolvedSearchParams),
+            );
 }

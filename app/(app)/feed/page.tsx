@@ -14,13 +14,11 @@ export default async function FeedPage({
 
   redirect(
     buildLegacyRedirectPath(
-      "/studio/offer",
-      {
-        tab: "catalog",
-        entry: "feed",
-        view: "overview",
-      },
-      resolvedSearchParams,
-    ),
+                "/studio/offer",
+                {
+                  surface: "catalog",
+                },
+                resolvedSearchParams,
+              ),
   );
 }

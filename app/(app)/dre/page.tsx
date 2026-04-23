@@ -13,11 +13,8 @@ export default async function DrePage({
   const resolvedSearchParams = await resolveLegacySearchParams(searchParams);
 
   redirect(
-    buildLegacyRedirectPath("/studio/finance", {
-      surface: "dre",
-      tab: "matrix",
-      subview: "historical",
-      context: "legacy",
-    }, resolvedSearchParams),
-  );
+              buildLegacyRedirectPath("/studio/finance", {
+                surface: "dre",
+              }, resolvedSearchParams),
+            );
 }

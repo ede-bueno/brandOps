@@ -13,10 +13,8 @@ export default async function TrafficPage({
   const resolvedSearchParams = await resolveLegacySearchParams(searchParams);
 
   redirect(
-    buildLegacyRedirectPath("/studio/growth", {
-      surface: "traffic",
-      tab: "channels",
-      context: "legacy",
-    }, resolvedSearchParams),
-  );
+              buildLegacyRedirectPath("/studio/growth", {
+                surface: "traffic",
+              }, resolvedSearchParams),
+            );
 }
