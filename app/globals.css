@@ -4728,11 +4728,11 @@ html.dark .brandops-v3::before {
   top: 0;
   z-index: 14;
   display: grid;
-  min-height: 4.7rem;
+  min-height: 4.05rem;
   grid-template-columns: auto minmax(17rem, 1fr) auto;
   align-items: center;
-  gap: 1rem;
-  padding: 0.9rem clamp(1rem, 2vw, 1.75rem);
+  gap: 0.8rem;
+  padding: 0.66rem clamp(0.9rem, 1.8vw, 1.45rem);
   border-bottom: 1px solid var(--v3-line);
   background: color-mix(in srgb, var(--v3-bg-elevated) 82%, transparent);
   backdrop-filter: blur(22px);
@@ -4771,7 +4771,7 @@ html.dark .brandops-v3::before {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.82rem 0.95rem;
+  padding: 0.68rem 0.85rem;
   border: 1px solid var(--v3-line);
   border-radius: 999px;
   background: color-mix(in srgb, var(--v3-surface) 78%, transparent);
@@ -4818,7 +4818,7 @@ html.dark .brandops-v3::before {
   display: flex;
   gap: 0.45rem;
   overflow-x: auto;
-  padding: 0.7rem clamp(1rem, 2vw, 1.75rem);
+  padding: 0.5rem clamp(0.9rem, 1.8vw, 1.45rem);
   border-bottom: 1px solid var(--v3-line);
   background: color-mix(in srgb, var(--v3-bg-elevated) 74%, transparent);
   scrollbar-width: none;
@@ -4832,10 +4832,10 @@ html.dark .brandops-v3::before {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.25rem;
+  min-height: 2rem;
   border: 1px solid transparent;
   border-radius: 999px;
-  padding: 0 0.8rem;
+  padding: 0 0.72rem;
   color: var(--v3-ink-muted);
   font-size: 0.76rem;
   font-weight: 800;
@@ -4957,7 +4957,7 @@ html.dark .v3-theme-icon-dark {
 }
 
 .v3-workspace {
-  padding: clamp(1rem, 2vw, 1.75rem);
+  padding: clamp(0.85rem, 1.7vw, 1.35rem);
 }
 
 .v3-mobile-heading,
@@ -4968,16 +4968,16 @@ html.dark .v3-theme-icon-dark {
 .v3-module-shell {
   display: grid;
   max-width: 94rem;
-  gap: 1rem;
+  gap: 0.85rem;
   margin: 0 auto;
 }
 
 .v3-module-heading {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 1.25rem;
+  gap: 1rem;
   align-items: end;
-  padding: clamp(1.1rem, 2.4vw, 2rem) 0 clamp(0.8rem, 1.6vw, 1.35rem);
+  padding: clamp(0.75rem, 1.7vw, 1.35rem) 0 clamp(0.6rem, 1.2vw, 1rem);
 }
 
 .v3-module-heading span,
@@ -4999,20 +4999,20 @@ html.dark .v3-theme-icon-dark {
 }
 
 .v3-module-heading h1 {
-  max-width: 58rem;
-  margin: 0.32rem 0 0;
-  font-size: clamp(1.9rem, 3.8vw, 4.25rem);
-  font-weight: 700;
-  letter-spacing: -0.065em;
-  line-height: 0.96;
+  max-width: 48rem;
+  margin: 0.24rem 0 0;
+  font-size: clamp(1.55rem, 2.6vw, 2.85rem);
+  font-weight: 650;
+  letter-spacing: -0.045em;
+  line-height: 1.03;
 }
 
 .v3-module-heading p {
-  max-width: 42rem;
-  margin: 0.75rem 0 0;
+  max-width: 38rem;
+  margin: 0.48rem 0 0;
   color: var(--v3-ink-soft);
-  font-size: clamp(0.95rem, 1.15vw, 1.08rem);
-  line-height: 1.55;
+  font-size: clamp(0.88rem, 1vw, 0.98rem);
+  line-height: 1.48;
 }
 
 .v3-module-aside {
@@ -5040,17 +5040,17 @@ html.dark .v3-theme-icon-dark {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   overflow: hidden;
   border: 1px solid var(--v3-line);
-  border-radius: var(--v3-radius-sm);
+  border-radius: 0.9rem;
   background: color-mix(in srgb, var(--v3-surface) 76%, transparent);
 }
 
 .v3-metric-ribbon article {
   position: relative;
   display: grid;
-  min-height: 8.2rem;
+  min-height: 6.35rem;
   align-content: start;
-  gap: 0.4rem;
-  padding: 1.05rem 1.15rem;
+  gap: 0.28rem;
+  padding: 0.82rem 1rem;
   border-right: 1px solid var(--v3-line);
 }
 
@@ -5063,8 +5063,8 @@ html.dark .v3-theme-icon-dark {
   position: absolute;
   left: 1.1rem;
   top: 0;
-  width: 3.5rem;
-  height: 0.2rem;
+  width: 2.5rem;
+  height: 0.14rem;
   border-radius: 999px;
   background: var(--v3-accent);
   opacity: 0.6;
@@ -5085,7 +5085,7 @@ html.dark .v3-theme-icon-dark {
 .v3-metric-ribbon span {
   color: var(--v3-ink-muted);
   font-family: var(--font-brandops-data), var(--font-mono), monospace;
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -5093,22 +5093,22 @@ html.dark .v3-theme-icon-dark {
 
 .v3-metric-ribbon strong {
   font-family: var(--font-brandops-data), var(--font-mono), monospace;
-  font-size: clamp(1.15rem, 2.2vw, 1.85rem);
-  letter-spacing: -0.06em;
+  font-size: clamp(1rem, 1.6vw, 1.42rem);
+  letter-spacing: -0.045em;
 }
 
 .v3-metric-ribbon p {
   margin: 0;
   color: var(--v3-ink-muted);
-  font-size: 0.83rem;
-  line-height: 1.45;
+  font-size: 0.76rem;
+  line-height: 1.38;
 }
 
 .v3-command-grid,
 .v3-two-column {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 0.65fr);
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .v3-panel {
@@ -5150,35 +5150,35 @@ html.dark .v3-panel::before {
 .v3-brief-panel {
   display: grid;
   align-content: start;
-  gap: 1.3rem;
-  min-height: 27rem;
-  padding: clamp(1.4rem, 2.2vw, 2rem);
+  gap: 0.95rem;
+  min-height: 20rem;
+  padding: clamp(1.05rem, 1.7vw, 1.45rem);
 }
 
 .v3-brief-panel h2 {
-  max-width: 34rem;
+  max-width: 30rem;
   margin: 0;
-  font-size: clamp(1.7rem, 2.9vw, 3.2rem);
-  font-weight: 700;
-  letter-spacing: -0.058em;
-  line-height: 1;
+  font-size: clamp(1.35rem, 2vw, 2.15rem);
+  font-weight: 650;
+  letter-spacing: -0.045em;
+  line-height: 1.06;
 }
 
 .v3-brief-panel p {
   max-width: 32rem;
   margin: 0;
   color: var(--v3-ink-soft);
-  font-size: 0.96rem;
-  line-height: 1.6;
+  font-size: 0.88rem;
+  line-height: 1.48;
 }
 
 .v3-panel-heading {
   display: flex;
-  min-height: 4.9rem;
+  min-height: 3.9rem;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.15rem;
+  padding: 0.82rem 0.95rem;
   border-bottom: 1px solid var(--v3-line);
 }
 
@@ -5190,8 +5190,8 @@ html.dark .v3-panel::before {
 
 .v3-panel-body {
   display: grid;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 0.8rem;
+  padding: 0.9rem;
 }
 
 .v3-panel-shell {
@@ -5944,6 +5944,100 @@ html.dark .v3-panel::before {
   line-height: 1.55;
 }
 
+/* V3 typography austerity: keep the product calm and operational. */
+.brandops-v3 {
+  font-size: 0.92rem;
+}
+
+.v3-topbar-product strong,
+.v3-rail-brand strong {
+  font-size: 0.88rem;
+  font-weight: 760;
+}
+
+.v3-command-trigger,
+.v3-select-shell,
+.v3-context-pill,
+.v3-atlas-button,
+.v3-primary-link,
+.v3-tabs,
+.v3-status-select,
+.v3-command-row {
+  font-size: 0.84rem;
+}
+
+.v3-module-heading span,
+.v3-panel-heading span,
+.v3-panel > span,
+.v3-focus-list span,
+.v3-action-queue > a > span:first-child,
+.v3-source-grid span,
+.v3-data-list span,
+.v3-product-strip span,
+.v3-ops-grid span,
+.v3-confidence span,
+.v3-subsection-head span,
+.v3-queue-copy span,
+.v3-chip-cluster small,
+.v3-queue-links a,
+.v3-status-select span {
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+}
+
+.v3-rail-copy strong,
+.v3-panel-heading strong,
+.v3-focus-list strong,
+.v3-action-queue strong,
+.v3-data-list strong,
+.v3-ops-grid strong,
+.v3-copy-block strong,
+.v3-note strong,
+.v3-queue-copy strong,
+.v3-command-row strong {
+  font-size: 0.84rem;
+  font-weight: 680;
+  letter-spacing: -0.026em;
+  line-height: 1.28;
+}
+
+.v3-rail-current strong,
+.v3-confidence strong {
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.v3-rail-copy span,
+.v3-rail-current small,
+.v3-focus-list p,
+.v3-action-queue p,
+.v3-data-list small,
+.v3-ops-grid small,
+.v3-copy-block p,
+.v3-note p,
+.v3-queue-copy p,
+.v3-command-row small {
+  font-size: 0.76rem;
+  line-height: 1.42;
+}
+
+.v3-metric-ribbon strong {
+  font-size: clamp(0.96rem, 1.35vw, 1.28rem);
+}
+
+.v3-module-heading h1 {
+  font-size: clamp(1.42rem, 2.15vw, 2.36rem);
+}
+
+.v3-brief-panel h2 {
+  font-size: clamp(1.18rem, 1.62vw, 1.72rem);
+}
+
+.v3-empty-state h2,
+.v3-error-panel strong {
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+}
+
 @media (max-width: 1320px) {
   .brandops-v3 {
     grid-template-columns: var(--v3-rail-width) minmax(0, 1fr);
@@ -6093,7 +6187,7 @@ html.dark .v3-panel::before {
   }
 
   .v3-module-heading h1 {
-    font-size: clamp(1.95rem, 10vw, 3rem);
+    font-size: clamp(1.45rem, 7.2vw, 2.05rem);
   }
 
   .v3-module-aside {
@@ -6105,7 +6199,7 @@ html.dark .v3-panel::before {
   }
 
   .v3-metric-ribbon article {
-    min-height: 7.2rem;
+    min-height: 6.2rem;
     border-bottom: 1px solid var(--v3-line);
   }
 
