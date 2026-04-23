@@ -5239,6 +5239,7 @@ html.dark .v3-theme-icon-dark {
 .v3-two-column {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 0.65fr);
+  align-items: start;
   gap: 0.85rem;
 }
 
@@ -5321,6 +5322,7 @@ html.dark .v3-panel::before {
 
 .v3-panel-body {
   display: grid;
+  align-content: start;
   gap: 0.7rem;
   padding: 0.82rem;
 }
@@ -5369,6 +5371,7 @@ html.dark .v3-panel::before {
 .v3-section-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(20rem, 0.9fr);
+  align-items: start;
   gap: 0.82rem;
 }
 
@@ -5688,7 +5691,8 @@ html.dark .v3-panel::before {
 .v3-data-list a {
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  padding: 0.86rem 0.95rem;
+  min-height: 0;
+  padding: 0.78rem 0.88rem;
   border-radius: 0.95rem;
 }
 
@@ -5843,9 +5847,9 @@ html.dark .v3-panel::before {
 }
 
 .v3-ops-grid a {
-  min-height: 8.4rem;
+  min-height: 6.1rem;
   align-content: start;
-  padding: 1rem;
+  padding: 0.86rem;
   border-radius: 1.15rem;
 }
 

@@ -28,8 +28,11 @@ import {
 } from "@/lib/brandops/database";
 import {
   clearStoredActiveBrandId,
+  clearStoredPeriodContext,
   hydrateWorkspace,
   persistStoredActiveBrandId,
+  persistStoredPeriodContext,
+  readStoredPeriodContext,
   type BrandWorkspaceOption,
 } from "@/lib/brandops/provider-workspace";
 import {
@@ -151,6 +154,7 @@ export function BrandOpsProvider({
     to: "",
   });
   const sessionUserIdRef = useRef<string | null>(null);
+  const periodContextHydratedRef = useRef(false);
   const activeBrandIdRef = useRef<string | null>(null);
   const brandLoadRequestRef = useRef(0);
   const summaryLoadRequestRef = useRef(0);
@@ -163,6 +167,20 @@ export function BrandOpsProvider({
   useEffect(() => {
     activeBrandIdRef.current = activeBrandId;
   }, [activeBrandId]);
+
+  useEffect(() => {
+    if (!userId) {
+      periodContextHydratedRef.current = false;
+      setSelectedPeriod(DEFAULT_PERIOD_FILTER);
+      setCustomDateRange({ from: "", to: "" });
+      return;
+    }
+
+    const stored = readStoredPeriodContext(userId);
+    setSelectedPeriod(stored.period ?? DEFAULT_PERIOD_FILTER);
+    setCustomDateRange(stored.customDateRange ?? { from: "", to: "" });
+    periodContextHydratedRef.current = true;
+  }, [userId]);
 
   const periodReferenceDate = useMemo(() => {
     if (!activeBrand) {
@@ -591,6 +609,14 @@ export function BrandOpsProvider({
     }
   }, [activeBrandId, userId]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || !userId || !periodContextHydratedRef.current) {
+      return;
+    }
+
+    persistStoredPeriodContext(userId, selectedPeriod, customDateRange);
+  }, [customDateRange, selectedPeriod, userId]);
+
   const handleSetActiveBrandId = useCallback(
     (brandId: string) => {
       setIsLoading(true);
@@ -741,6 +767,7 @@ export function BrandOpsProvider({
       signOut: async () => {
         if (typeof window !== "undefined" && userId) {
           clearStoredActiveBrandId(userId);
+          clearStoredPeriodContext(userId);
         }
         const { error } = await supabase.auth.signOut();
         if (error) {

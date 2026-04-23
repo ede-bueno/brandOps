@@ -131,7 +131,7 @@ export const studioCommandItems = [
 export const studioModuleSubnav: Record<StudioModule, StudioModuleSubnavItem[]> = {
   command: [
     { label: "Visão geral", href: "/studio" },
-    { label: "Margem", href: "/dashboard/contribution-margin" },
+    { label: "Margem", href: "/studio/margin" },
     { label: "Financeiro", href: "/studio/finance" },
     { label: "Crescimento", href: "/studio/growth" },
     { label: "Oferta", href: "/studio/offer" },
@@ -231,6 +231,8 @@ export function normalizeStudioHref(href: string | null | undefined) {
   switch (pathname) {
     case "/dashboard":
       return appendQueryAndHash("/studio");
+    case "/dashboard/contribution-margin":
+      return appendQueryAndHash("/studio/margin");
     case "/finance":
       return appendQueryAndHash("/studio/finance");
     case "/acquisition":

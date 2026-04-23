@@ -1,10 +1,5 @@
-import type { Metadata } from "next";
-import { ContributionMarginPageV3 } from "@/components/brandops-v3/ContributionMarginPageV3";
-
-export const metadata: Metadata = {
-  title: "BrandOps | Margem",
-};
+import { redirect } from "next/navigation";
 
 export default function ContributionMarginPage() {
-  return <ContributionMarginPageV3 />;
+  redirect("/studio/margin");
 }
