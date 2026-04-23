@@ -60,15 +60,17 @@ function V3ThemeToggle() {
 
 function CommandPalette({
   isOpen,
+  query,
+  onQueryChange,
   onClose,
   onOpenAtlas,
 }: {
   isOpen: boolean;
+  query: string;
+  onQueryChange: (value: string) => void;
   onClose: () => void;
   onOpenAtlas: () => void;
 }) {
-  const [query, setQuery] = useState("");
-
   const normalizedQuery = query.trim().toLowerCase();
   const visibleItems = normalizedQuery
     ? studioCommandItems.filter((item) => {
@@ -95,7 +97,7 @@ function CommandPalette({
           <input
             autoFocus
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => onQueryChange(event.target.value)}
             placeholder="Buscar tela, ação ou pedir contexto ao Atlas"
           />
           <span>Ctrl K</span>
@@ -166,11 +168,11 @@ function StudioRail({
         <BrandOpsGlyph />
         <div>
           <strong>BrandOps</strong>
-          <span>Atlas intelligence layer</span>
+          <span>Camada Atlas</span>
         </div>
       </Link>
         <div className="v3-rail-current">
-          <span>Módulo ativo</span>
+          <span>Painel ativo</span>
           <strong>{activeItem.label}</strong>
           <small>{activeItem.description}</small>
         </div>
@@ -209,7 +211,7 @@ function StudioRail({
           {isCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
           <span>{isCollapsed ? "Expandir" : "Colapsar"}</span>
         </button>
-        <span>Camada Atlas</span>
+        <span>Atlas</span>
         <p>Explicação contextual e fila executiva sob demanda.</p>
       </div>
     </aside>
@@ -259,7 +261,7 @@ function StudioTopbar({
         <BrandOpsGlyph />
         <div>
           <strong>BrandOps</strong>
-          <span>Atlas intelligence layer</span>
+          <span>Camada Atlas</span>
         </div>
       </div>
 
@@ -404,7 +406,7 @@ function StudioLoading() {
       <BrandOpsGlyph />
       <div>
             <strong>BrandOps</strong>
-            <span>Preparando o módulo da marca.</span>
+            <span>Preparando a operação da marca.</span>
       </div>
       <Loader2 className="animate-spin" size={18} />
     </div>
@@ -416,6 +418,7 @@ export function BrandOpsShellV3({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "/studio";
   const { isLoading, session } = useBrandOps();
   const [isCommandOpen, setIsCommandOpen] = useState(false);
+  const [commandQuery, setCommandQuery] = useState("");
   const [isInspectorOpen, setIsInspectorOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRailCollapsed, setIsRailCollapsed] = useState(() => {
@@ -441,7 +444,14 @@ export function BrandOpsShellV3({ children }: { children: ReactNode }) {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
+        setCommandQuery("");
         setIsCommandOpen(true);
+        return;
+      }
+
+      if (event.key === "Escape") {
+        setCommandQuery("");
+        setIsCommandOpen(false);
       }
     };
 
@@ -464,6 +474,16 @@ export function BrandOpsShellV3({ children }: { children: ReactNode }) {
     return null;
   }
 
+  const openCommand = () => {
+    setCommandQuery("");
+    setIsCommandOpen(true);
+  };
+
+  const closeCommand = () => {
+    setCommandQuery("");
+    setIsCommandOpen(false);
+  };
+
   return (
     <div
       className="brandops-v3"
@@ -478,7 +498,7 @@ export function BrandOpsShellV3({ children }: { children: ReactNode }) {
       />
       <div className="v3-app-frame">
         <StudioTopbar
-          onOpenCommand={() => setIsCommandOpen(true)}
+          onOpenCommand={openCommand}
           onOpenAtlas={() => setIsInspectorOpen(true)}
         />
         <StudioModuleSubnavBar
@@ -510,7 +530,9 @@ export function BrandOpsShellV3({ children }: { children: ReactNode }) {
       <StudioMobileNav pathname={pathname} />
       <CommandPalette
         isOpen={isCommandOpen}
-        onClose={() => setIsCommandOpen(false)}
+        query={commandQuery}
+        onQueryChange={setCommandQuery}
+        onClose={closeCommand}
         onOpenAtlas={() => setIsInspectorOpen(true)}
       />
     </div>

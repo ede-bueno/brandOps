@@ -116,7 +116,7 @@ export const studioNavItems: StudioNavItem[] = [
 export const studioCommandItems = [
   ...studioNavItems.map((item) => ({
     label: item.label,
-    description: `Abrir ${item.label.toLowerCase()} no BrandOps V3`,
+    description: `Abrir ${item.label.toLowerCase()} no BrandOps`,
     href: item.href,
     icon: item.icon,
   })),
@@ -137,21 +137,21 @@ export const studioModuleSubnav: Record<StudioModule, StudioModuleSubnavItem[]> 
     { label: "Oferta", href: "/studio/offer" },
   ],
   finance: [
-    { label: "Workbench", href: "/studio/finance" },
+    { label: "Visão geral", href: "/studio/finance" },
     { label: "DRE", href: buildStudioHref("finance", { surface: "dre" }) },
     { label: "Lançamentos", href: buildStudioHref("finance", { surface: "operations" }) },
     { label: "CMV", href: buildStudioHref("finance", { surface: "operations", focus: "cmv" }) },
     { label: "Vendas", href: buildStudioHref("finance", { surface: "sales" }) },
   ],
   growth: [
-    { label: "Workbench", href: "/studio/growth" },
+    { label: "Visão geral", href: "/studio/growth" },
     { label: "Mídia", href: buildStudioHref("growth", { surface: "media" }) },
     { label: "Campanhas", href: buildStudioHref("growth", { surface: "media", mode: "campaigns" }) },
     { label: "Radar", href: buildStudioHref("growth", { surface: "media", mode: "radar" }) },
     { label: "Tráfego", href: buildStudioHref("growth", { surface: "traffic" }) },
   ],
   offer: [
-    { label: "Workbench", href: "/studio/offer" },
+    { label: "Visão geral", href: "/studio/offer" },
     { label: "Produtos", href: buildStudioHref("offer", { surface: "products" }) },
     { label: "Executiva", href: buildStudioHref("offer", { surface: "products", mode: "executive" }) },
     { label: "Radar", href: buildStudioHref("offer", { surface: "products", mode: "radar" }) },
@@ -159,7 +159,7 @@ export const studioModuleSubnav: Record<StudioModule, StudioModuleSubnavItem[]> 
     { label: "Catálogo", href: buildStudioHref("offer", { surface: "catalog" }) },
   ],
   ops: [
-    { label: "Workbench", href: "/studio/ops" },
+    { label: "Visão geral", href: "/studio/ops" },
     { label: "Importação", href: buildStudioHref("ops", { surface: "imports" }) },
     { label: "Saneamento", href: buildStudioHref("ops", { surface: "governance", focus: "sanitization" }) },
     { label: "Integrações", href: buildStudioHref("ops", { surface: "integrations" }) },
@@ -550,7 +550,7 @@ export function buildOpsMetrics(brand: BrandDataset | null): StudioMetric[] {
     {
       label: "Catálogo",
       value: integerFormatter.format(brand?.catalog.length ?? 0),
-      detail: "Produtos carregados no workspace.",
+      detail: "Produtos carregados na operação.",
       tone: (brand?.catalog.length ?? 0) > 0 ? "good" : "warn",
     },
   ];
@@ -618,7 +618,7 @@ export function buildOpsFocusItems(brand: BrandDataset | null): StudioFocusItem[
       tone: latestFile ? "info" : "warn",
     },
     {
-      label: "Workspace",
+      label: "Base ativa",
       title: `${integerFormatter.format(brand?.paidOrders.length ?? 0)} pedidos pagos`,
       detail: `${integerFormatter.format(brand?.media.length ?? 0)} linhas de mídia e ${integerFormatter.format(brand?.catalog.length ?? 0)} produtos carregados.`,
       tone: "info",
@@ -639,7 +639,7 @@ export function makeModuleFallback(module: StudioModule): StudioFocusItem[] {
     {
       label: "Próximo passo",
       title: labels[module],
-      detail: "Quando houver dados suficientes, este workspace troca o vazio por operação real.",
+      detail: "Quando houver dados suficientes, este módulo assume leitura operacional real.",
       tone: "info",
     },
   ];

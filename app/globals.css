@@ -5946,7 +5946,7 @@ html.dark .v3-panel::before {
 
 /* V3 typography austerity: keep the product calm and operational. */
 .brandops-v3 {
-  font-size: 0.92rem;
+  font-size: 0.9rem;
 }
 
 .v3-topbar-product strong,
@@ -5963,7 +5963,7 @@ html.dark .v3-panel::before {
 .v3-tabs,
 .v3-status-select,
 .v3-command-row {
-  font-size: 0.84rem;
+  font-size: 0.81rem;
 }
 
 .v3-module-heading span,
@@ -6017,25 +6017,25 @@ html.dark .v3-panel::before {
 .v3-note p,
 .v3-queue-copy p,
 .v3-command-row small {
-  font-size: 0.76rem;
+  font-size: 0.73rem;
   line-height: 1.42;
 }
 
 .v3-metric-ribbon strong {
-  font-size: clamp(0.96rem, 1.35vw, 1.28rem);
+  font-size: clamp(0.9rem, 1.2vw, 1.14rem);
 }
 
 .v3-module-heading h1 {
-  font-size: clamp(1.42rem, 2.15vw, 2.36rem);
+  font-size: clamp(1.24rem, 1.75vw, 1.94rem);
 }
 
 .v3-brief-panel h2 {
-  font-size: clamp(1.18rem, 1.62vw, 1.72rem);
+  font-size: clamp(1.02rem, 1.25vw, 1.42rem);
 }
 
 .v3-empty-state h2,
 .v3-error-panel strong {
-  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  font-size: clamp(1.08rem, 1.5vw, 1.4rem);
 }
 
 @media (max-width: 1320px) {
@@ -6187,7 +6187,7 @@ html.dark .v3-panel::before {
   }
 
   .v3-module-heading h1 {
-    font-size: clamp(1.45rem, 7.2vw, 2.05rem);
+    font-size: clamp(1.18rem, 6vw, 1.62rem);
   }
 
   .v3-module-aside {

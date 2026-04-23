@@ -100,7 +100,7 @@ function getSearchParamValue(
   return Array.isArray(value) ? value[0] ?? null : value ?? null;
 }
 
-function V3LoadingPanel({ label = "Carregando módulo" }: { label?: string }) {
+function V3LoadingPanel({ label = "Carregando visão" }: { label?: string }) {
   return (
     <div className="v3-panel v3-loading-panel">
       <Loader2 className="animate-spin" size={18} />
@@ -111,7 +111,7 @@ function V3LoadingPanel({ label = "Carregando módulo" }: { label?: string }) {
 
 function MetricRibbon({ metrics }: { metrics: StudioMetric[] }) {
   return (
-    <section className="v3-metric-ribbon" aria-label="Métricas do módulo">
+    <section className="v3-metric-ribbon" aria-label="Indicadores do recorte">
       {metrics.map((metric) => (
         <article key={metric.label} data-tone={metric.tone}>
           <span>{metric.label}</span>
@@ -478,7 +478,7 @@ function CommandWorkspace({ snapshot }: { snapshot: ManagementSnapshotV2 }) {
 
       <section className="v3-panel">
         <div className="v3-panel-heading">
-            <span>Mesa Atlas</span>
+            <span>Decisões Atlas</span>
           <strong>{snapshot.context.brandName}</strong>
         </div>
         <WorkspaceTabs
@@ -604,9 +604,9 @@ function FinanceWorkspace({
               banner: "Evidências em foco: valide consistência, fonte e reconciliação antes de fechar uma decisão financeira.",
             }
           : {
-              title: "Mesa financeira",
+              title: "Panorama financeiro",
               description:
-                "DRE, custos e vendas em uma mesa de leitura operacional, com Atlas como explicador contextual.",
+                "DRE, custos e vendas organizados numa leitura financeira contínua, com Atlas só quando fizer sentido.",
               actionLabel: "Abrir lançamentos",
               actionHref: buildStudioHref("finance", { surface: "operations" }),
               banner: null,
@@ -626,14 +626,14 @@ function FinanceWorkspace({
       <MetricRibbon metrics={buildFinanceMetrics(report)} />
       {financeMeta.banner ? (
         <div className="v3-note">
-          <strong>Leitura rápida</strong>
+          <strong>Sinal do recorte</strong>
           <p>{financeMeta.banner}</p>
         </div>
       ) : null}
 
       <section className="v3-command-grid">
         <div className="v3-panel v3-brief-panel">
-          <span>Leitura dominante</span>
+          <span>O que mais pesa</span>
           <h2>{report.overview.headline}</h2>
           <p>{report.overview.summary}</p>
           <FocusList
@@ -651,7 +651,7 @@ function FinanceWorkspace({
         </div>
         <div className="v3-panel">
           <div className="v3-panel-heading">
-            <span>Resumo Atlas</span>
+            <span>Resumo da marca</span>
             <strong>{report.context.brandName}</strong>
           </div>
           <TrendBars
@@ -668,7 +668,7 @@ function FinanceWorkspace({
 
       <section className="v3-panel">
         <div className="v3-panel-heading">
-          <span>Mesa financeira</span>
+          <span>Painel financeiro</span>
           <strong>{report.financial.months.length} competências</strong>
         </div>
         <WorkspaceTabs
@@ -709,7 +709,7 @@ function FinanceWorkspace({
                     label: "Lançamentos",
                     title: "Registrar competência, categoria e despesa",
                     detail:
-                "A rotina operacional de despesas fica na mesma mesa financeira, sem trocar de ambiente.",
+                      "Registre despesas e categorias sem sair da leitura financeira do recorte.",
                     href: buildStudioHref("finance", { surface: "operations" }),
                     tone: "info",
                   },
@@ -864,7 +864,7 @@ function GrowthWorkspace({
           ? {
               title: "Campanhas e mídia",
               description:
-                "Mesa operacional para localizar verba dominante, prioridade de revisão e leitura por campanha.",
+                "Organize verba dominante, prioridade de revisão e leitura por campanha numa mesma camada.",
               actionLabel: "Abrir tráfego",
               actionHref: buildStudioHref("growth", { surface: "traffic" }),
               banner:
@@ -913,14 +913,14 @@ function GrowthWorkspace({
       <MetricRibbon metrics={buildGrowthMetrics(report)} />
       {growthMeta.banner ? (
         <div className="v3-note">
-          <strong>Leitura rápida</strong>
+          <strong>Sinal do recorte</strong>
           <p>{growthMeta.banner}</p>
         </div>
       ) : null}
 
       <section className="v3-command-grid">
         <div className="v3-panel v3-brief-panel">
-          <span>Leitura dominante</span>
+          <span>O que mais pesa</span>
           <h2>{report.overview.headline}</h2>
           <p>{report.overview.summary}</p>
           <FocusList items={focus.length ? focus : makeModuleFallback("growth")} />
@@ -940,7 +940,7 @@ function GrowthWorkspace({
 
       <section className="v3-panel">
         <div className="v3-panel-heading">
-            <span>Mesa de aquisição</span>
+            <span>Painel de aquisição</span>
           <strong>{report.context.brandName}</strong>
         </div>
         <WorkspaceTabs
@@ -1203,7 +1203,7 @@ function OfferWorkspace({
                 ? {
                     title: "Detalhamento de produtos",
                     description:
-                      "Mesa operacional para auditar item, decisão e contexto comercial com profundidade.",
+                      "Audite item, decisão e contexto comercial com profundidade, sem virar dashboard paralelo.",
                     actionLabel: "Abrir vendas",
                     actionHref: buildStudioHref("offer", { surface: "sales" }),
                     banner:
@@ -1232,14 +1232,14 @@ function OfferWorkspace({
       <MetricRibbon metrics={buildOfferMetrics(report)} />
       {offerMeta.banner ? (
         <div className="v3-note">
-          <strong>Leitura rápida</strong>
+          <strong>Sinal do recorte</strong>
           <p>{offerMeta.banner}</p>
         </div>
       ) : null}
 
       <section className="v3-command-grid">
         <div className="v3-panel v3-brief-panel">
-          <span>Leitura dominante</span>
+          <span>O que mais pesa</span>
           <h2>{report.productInsights.hero.title}</h2>
           <p>{report.productInsights.hero.description}</p>
           <FocusList
@@ -1271,7 +1271,7 @@ function OfferWorkspace({
 
       <section className="v3-panel">
         <div className="v3-panel-heading">
-            <span>Mesa de oferta</span>
+            <span>Painel de oferta</span>
           <strong>{report.context.brandName}</strong>
         </div>
         <WorkspaceTabs
@@ -1474,9 +1474,9 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
                 "Suporte em foco: concentre setup guiado, ajuda operacional e administração sem poluir o trabalho principal.",
             }
           : {
-              title: "Mesa operacional",
+              title: "Central operacional",
               description:
-                "Imports, saneamento, integrações e governança reunidos para manter o BrandOps confiável.",
+                "Imports, saneamento, integrações e governança reunidos para manter a operação previsível.",
               actionLabel: "Importar",
               actionHref: buildStudioHref("ops", { surface: "imports" }),
               banner: null,
@@ -1496,7 +1496,7 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
       <MetricRibbon metrics={buildOpsMetrics(activeBrand)} />
       {opsMeta.banner ? (
         <div className="v3-note">
-          <strong>Leitura rápida</strong>
+          <strong>Sinal do recorte</strong>
           <p>{opsMeta.banner}</p>
         </div>
       ) : null}
@@ -1527,7 +1527,7 @@ function OpsWorkspace({ context }: { context: StudioModuleContext }) {
 
       <section className="v3-panel">
         <div className="v3-panel-heading">
-          <span>Console operacional</span>
+          <span>Operação da marca</span>
           <strong>{activeBrand?.governance.planTier ?? "starter"}</strong>
         </div>
         <WorkspaceTabs
@@ -1763,7 +1763,7 @@ export function StudioModulePage({
         if (!cancelled) {
           setReport(null);
           setReportError(
-            error instanceof Error ? error.message : "Não foi possível carregar o workspace V3.",
+            error instanceof Error ? error.message : "Não foi possível carregar este módulo.",
           );
         }
       } finally {
