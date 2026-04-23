@@ -46,7 +46,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && session) {
-      router.replace("/dashboard");
+      router.replace("/studio");
     }
   }, [isLoading, router, session]);
 

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import {
   IBM_Plex_Mono,
   IBM_Plex_Sans,
+  Instrument_Sans,
+  JetBrains_Mono,
 } from "next/font/google";
 import { BrandOpsProvider } from "@/components/BrandOpsProvider";
 import { BRANDING } from "@/lib/branding";
@@ -25,6 +27,20 @@ const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-mono",
+  display: "swap",
+});
+
+const brandopsSans = Instrument_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-brandops-v3",
+  display: "swap",
+});
+
+const brandopsData = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-brandops-data",
   display: "swap",
 });
 
@@ -62,7 +78,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
       <body
-        className={`${plexSans.variable} ${plexSansHeadline.variable} ${plexMono.variable} antialiased bg-background text-on-background`}
+        className={`${plexSans.variable} ${plexSansHeadline.variable} ${plexMono.variable} ${brandopsSans.variable} ${brandopsData.variable} antialiased bg-background text-on-background`}
       >
         <BrandOpsProvider>{children}</BrandOpsProvider>
       </body>
