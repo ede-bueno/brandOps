@@ -170,7 +170,7 @@ export function StudioModulePage({
     );
   }
 
-  if ((isLoading && !activeBrand) || isReportLoading) {
+  if (!report && ((isLoading && !activeBrand) || isReportLoading)) {
     return <V3LoadingPanel label={`Montando ${activeNav.label.toLowerCase()}`} />;
   }
 

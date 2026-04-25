@@ -102,7 +102,10 @@ export function WorkspaceTabs({
 export function FocusList({ items }: { items: StudioFocusItem[] }) {
   return (
     <div className="v3-focus-list">
-      {items.map((item) => {
+      {items.map((item, index) => {
+        const itemKey = item.href
+          ? `${normalizeStudioHref(item.href)}-${item.label}-${item.title}-${index}`
+          : `${item.label}-${item.title}-${index}`;
         const content = (
           <>
             <div>
@@ -117,7 +120,7 @@ export function FocusList({ items }: { items: StudioFocusItem[] }) {
         if (item.href) {
           return (
             <Link
-              key={`${item.label}-${item.title}`}
+              key={itemKey}
               href={normalizeStudioHref(item.href)}
               data-tone={item.tone}
             >
@@ -127,7 +130,7 @@ export function FocusList({ items }: { items: StudioFocusItem[] }) {
         }
 
         return (
-          <article key={`${item.label}-${item.title}`} data-tone={item.tone}>
+          <article key={itemKey} data-tone={item.tone}>
             {content}
           </article>
         );

@@ -120,11 +120,13 @@ export function BrandOpsShellV3({ children }: { children: ReactNode }) {
           onOpenCommand={openCommand}
           onOpenAtlas={() => setIsInspectorOpen(true)}
         />
-        <StudioModuleSubnavBar
-          module={activeModule}
-          pathname={pathname}
-          currentSearch={currentSearch}
-        />
+        {activeModule !== "command" ? (
+          <StudioModuleSubnavBar
+            module={activeModule}
+            pathname={pathname}
+            currentSearch={currentSearch}
+          />
+        ) : null}
         <main className="v3-workspace">
           <div className="v3-mobile-heading">
             <button

@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -132,6 +133,27 @@ function isSessionStateError(error: unknown) {
   );
 }
 
+function shouldIgnoreBackgroundHydrationError(error: unknown) {
+  if (isSessionStateError(error)) {
+    return true;
+  }
+
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    (error as { code?: string }).code === "57014"
+  ) {
+    return true;
+  }
+
+  if (error && typeof error === "object" && Object.keys(error as Record<string, unknown>).length === 0) {
+    return true;
+  }
+
+  return false;
+}
+
 export function BrandOpsProvider({
   children,
 }: {
@@ -153,6 +175,7 @@ export function BrandOpsProvider({
     from: "",
     to: "",
   });
+  const pathname = usePathname() ?? "";
   const sessionUserIdRef = useRef<string | null>(null);
   const periodContextHydratedRef = useRef(false);
   const activeBrandIdRef = useRef<string | null>(null);
@@ -163,6 +186,8 @@ export function BrandOpsProvider({
   const fullHydrationTimerRef = useRef<number | null>(null);
   const userId = session?.user?.id ?? null;
   const accessToken = session?.access_token ?? null;
+  const shouldHydrateFullDataset = pathname.startsWith("/studio/ops");
+  const shouldLoadFinancialReports = pathname.startsWith("/studio/margin");
 
   useEffect(() => {
     activeBrandIdRef.current = activeBrandId;
@@ -239,12 +264,19 @@ export function BrandOpsProvider({
         return;
       }
 
+      if (!accessToken || !userId) {
+        setIsBrandHydrating(false);
+        return;
+      }
+
       cancelScheduledFullHydration();
       fullHydrationTimerRef.current = window.setTimeout(async () => {
         try {
           await refreshBrandResources(brandId, "full");
         } catch (error) {
-          console.error("Failed to hydrate auxiliary brand dataset:", error);
+          if (!shouldIgnoreBackgroundHydrationError(error)) {
+            console.error("Failed to hydrate auxiliary brand dataset:", error);
+          }
         } finally {
           if (brandLoadRequestRef.current === requestId) {
             setIsBrandHydrating(false);
@@ -253,7 +285,7 @@ export function BrandOpsProvider({
         }
       }, 250);
     },
-    [cancelScheduledFullHydration, refreshBrandResources],
+    [accessToken, cancelScheduledFullHydration, refreshBrandResources, userId],
   );
 
   const refreshFilteredFinancialReport = useCallback(
@@ -468,7 +500,7 @@ export function BrandOpsProvider({
 
   useEffect(() => {
     async function loadFilteredFinancialReport() {
-      if (!activeBrandId || !accessToken) {
+      if (!shouldLoadFinancialReports || !activeBrandId || !accessToken) {
         setFinancialReportFiltered(null);
         setIsFinancialReportLoading(false);
         return;
@@ -491,11 +523,11 @@ export function BrandOpsProvider({
     }
 
     void loadFilteredFinancialReport();
-  }, [accessToken, activeBrandId, refreshFilteredFinancialReport]);
+  }, [accessToken, activeBrandId, refreshFilteredFinancialReport, shouldLoadFinancialReports]);
 
   useEffect(() => {
     async function loadHistoricalFinancialReport() {
-      if (!activeBrandId || !accessToken) {
+      if (!shouldLoadFinancialReports || !activeBrandId || !accessToken) {
         setFinancialReportHistorical(null);
         return;
       }
@@ -512,7 +544,7 @@ export function BrandOpsProvider({
     }
 
     void loadHistoricalFinancialReport();
-  }, [accessToken, activeBrandId, refreshHistoricalFinancialReport]);
+  }, [accessToken, activeBrandId, refreshHistoricalFinancialReport, shouldLoadFinancialReports]);
 
   useEffect(() => {
     let isMounted = true;
@@ -653,7 +685,11 @@ export function BrandOpsProvider({
             setIsLoading(false);
           }
 
-          scheduleFullHydration(activeBrandId, requestId);
+          if (shouldHydrateFullDataset) {
+            scheduleFullHydration(activeBrandId, requestId);
+          } else {
+            setIsBrandHydrating(false);
+          }
         } catch (error) {
           console.error("Failed to load active brand dataset:", error);
           if (brandLoadRequestRef.current === requestId) {
@@ -673,7 +709,7 @@ export function BrandOpsProvider({
     }
 
     void loadBrand();
-    }, [activeBrandId, cancelScheduledFullHydration, refreshBrandResources, scheduleFullHydration, userId]);
+    }, [activeBrandId, cancelScheduledFullHydration, refreshBrandResources, scheduleFullHydration, shouldHydrateFullDataset, userId]);
 
   useEffect(() => {
     return () => {
