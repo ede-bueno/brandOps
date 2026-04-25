@@ -139,9 +139,6 @@ export const studioModuleSubnav: Record<StudioModule, StudioModuleSubnavItem[]> 
   command: [
     { label: "Visão geral", href: "/studio" },
     { label: "Margem", href: "/studio/margin" },
-    { label: "Financeiro", href: "/studio/finance" },
-    { label: "Crescimento", href: "/studio/growth" },
-    { label: "Oferta", href: "/studio/offer" },
   ],
   finance: [
     { label: "Visão geral", href: "/studio/finance" },

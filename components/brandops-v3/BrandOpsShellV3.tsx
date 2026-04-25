@@ -120,7 +120,7 @@ export function BrandOpsShellV3({ children }: { children: ReactNode }) {
           onOpenCommand={openCommand}
           onOpenAtlas={() => setIsInspectorOpen(true)}
         />
-        {activeModule !== "command" ? (
+        {activeModule !== "command" || pathname.startsWith("/studio/margin") ? (
           <StudioModuleSubnavBar
             module={activeModule}
             pathname={pathname}
