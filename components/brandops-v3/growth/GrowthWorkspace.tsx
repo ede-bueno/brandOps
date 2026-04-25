@@ -7,7 +7,6 @@ import {
   FocusList,
   MetricRibbon,
   TrendBars,
-  WorkspaceTabs,
 } from "../StudioPrimitives";
 import { StudioEvidenceSection } from "../shared/StudioEvidenceSection";
 import { GrowthMediaPanel } from "./GrowthMediaPanel";
@@ -16,7 +15,6 @@ import { resolveGrowthWorkspaceMeta } from "./resolveGrowthWorkspaceMeta";
 import {
   buildGrowthMetrics,
   buildStudioHref,
-  getStudioWorkspaceTabs,
   makeModuleFallback,
   mapActionsToFocus,
   type GrowthStudioSurface,
@@ -33,8 +31,6 @@ export function GrowthWorkspace({
   context: StudioModuleContext;
 }) {
   const requestedSurface = context.surface as GrowthStudioSurface;
-  const activeTab: GrowthStudioSurface =
-    requestedSurface === "traffic" || requestedSurface === "evidence" ? requestedSurface : "media";
   const focus = [
     ...mapActionsToFocus(report.priorities),
     {
@@ -98,10 +94,65 @@ export function GrowthWorkspace({
           <span>Painel de aquisição</span>
           <strong>{report.context.brandName}</strong>
         </div>
-        <WorkspaceTabs active={activeTab} tabs={getStudioWorkspaceTabs("growth", context)} />
-        {activeTab === "media" ? <GrowthMediaPanel report={report} context={context} /> : null}
-        {activeTab === "traffic" ? <GrowthTrafficPanel report={report} context={context} /> : null}
-        {activeTab === "evidence" ? (
+        {requestedSurface === "overview" ? (
+          <div className="v3-section-grid">
+            <div className="v3-panel-body">
+              <div className="v3-subsection-head">
+                <span>Frentes do módulo</span>
+              </div>
+              <FocusList
+                items={[
+                  {
+                    label: "Mídia",
+                    title: "Abrir leitura de mídia",
+                    detail:
+                      "Acompanhe investimento, verba dominante e sinais por campanha no recorte.",
+                    href: buildStudioHref("growth", { surface: "media" }),
+                    tone: "info",
+                  },
+                  {
+                    label: "Campanhas",
+                    title: "Priorizar ativos e verba",
+                    detail:
+                      "Use a camada de campanhas para encontrar onde existe espaço real de escala ou revisão.",
+                    href: buildStudioHref("growth", { surface: "media", mode: "campaigns" }),
+                    tone: "good",
+                  },
+                  {
+                    label: "Radar",
+                    title: "Ler pressão diária",
+                    detail:
+                      "Abra o radar para acompanhar a curva de eficiência e resposta do período.",
+                    href: buildStudioHref("growth", { surface: "media", mode: "radar" }),
+                    tone: "warn",
+                  },
+                  {
+                    label: "Tráfego",
+                    title: "Localizar gargalos do funil",
+                    detail:
+                      "Cruze origem, sessões e conversão antes de escalar qualquer campanha.",
+                    href: buildStudioHref("growth", { surface: "traffic" }),
+                    tone: "info",
+                  },
+                ]}
+              />
+            </div>
+            <div className="v3-panel-body">
+              <TrendBars
+                title="Pulso do recorte"
+                items={report.overview.trend.slice(-6).map((point) => ({
+                  label: point.date,
+                  value: point.purchaseRevenue - point.spend,
+                  detail: `Sessões ${integerFormatter.format(point.sessions)}`,
+                  tone: point.purchaseRevenue >= point.spend ? "good" : "warn",
+                }))}
+              />
+            </div>
+          </div>
+        ) : null}
+        {requestedSurface === "media" ? <GrowthMediaPanel report={report} context={context} /> : null}
+        {requestedSurface === "traffic" ? <GrowthTrafficPanel report={report} context={context} /> : null}
+        {requestedSurface === "evidence" ? (
           <StudioEvidenceSection
             queue={
               <ExecutiveQueueBoard

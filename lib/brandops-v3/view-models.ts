@@ -149,6 +149,7 @@ export const studioModuleSubnav: Record<StudioModule, StudioModuleSubnavItem[]> 
     { label: "Lançamentos", href: buildStudioHref("finance", { surface: "operations" }) },
     { label: "CMV", href: buildStudioHref("finance", { surface: "operations", focus: "cmv" }) },
     { label: "Vendas", href: buildStudioHref("finance", { surface: "sales" }) },
+    { label: "Evidências", href: buildStudioHref("finance", { surface: "evidence" }) },
   ],
   growth: [
     { label: "Visão geral", href: "/studio/growth" },
@@ -156,6 +157,7 @@ export const studioModuleSubnav: Record<StudioModule, StudioModuleSubnavItem[]> 
     { label: "Campanhas", href: buildStudioHref("growth", { surface: "media", mode: "campaigns" }) },
     { label: "Radar", href: buildStudioHref("growth", { surface: "media", mode: "radar" }) },
     { label: "Tráfego", href: buildStudioHref("growth", { surface: "traffic" }) },
+    { label: "Evidências", href: buildStudioHref("growth", { surface: "evidence" }) },
   ],
   offer: [
     { label: "Visão geral", href: "/studio/offer" },
@@ -164,6 +166,7 @@ export const studioModuleSubnav: Record<StudioModule, StudioModuleSubnavItem[]> 
     { label: "Radar", href: buildStudioHref("offer", { surface: "products", mode: "radar" }) },
     { label: "Vendas", href: buildStudioHref("offer", { surface: "sales" }) },
     { label: "Catálogo", href: buildStudioHref("offer", { surface: "catalog" }) },
+    { label: "Evidências", href: buildStudioHref("offer", { surface: "evidence" }) },
   ],
   ops: [
     { label: "Visão geral", href: "/studio/ops" },

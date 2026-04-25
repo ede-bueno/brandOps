@@ -148,7 +148,6 @@ export function BrandOpsShellV3({ children }: { children: ReactNode }) {
         </main>
       </div>
       <StudioInspector isOpen={isInspectorOpen} onClose={() => setIsInspectorOpen(false)} />
-      <StudioMobileNav pathname={pathname} />
       <CommandPalette
         isOpen={isCommandOpen}
         query={commandQuery}

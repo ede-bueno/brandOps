@@ -469,6 +469,10 @@ function isSubnavLinkActive(pathname: string, currentSearch: string, href: strin
     return ![...currentParams.keys()].length;
   }
 
+  if ([...currentParams.keys()].length !== [...hrefParams.keys()].length) {
+    return false;
+  }
+
   return [...hrefParams.entries()].every(([key, value]) => currentParams.get(key) === value);
 }
 

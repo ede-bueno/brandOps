@@ -7,7 +7,6 @@ import {
   FocusList,
   MetricRibbon,
   TrendBars,
-  WorkspaceTabs,
 } from "../StudioPrimitives";
 import { StudioEvidenceSection } from "../shared/StudioEvidenceSection";
 import { OfferCatalogPanel } from "./OfferCatalogPanel";
@@ -17,7 +16,6 @@ import { resolveOfferWorkspaceMeta } from "./resolveOfferWorkspaceMeta";
 import {
   buildOfferMetrics,
   buildStudioHref,
-  getStudioWorkspaceTabs,
   mapActionsToFocus,
   type OfferStudioSurface,
   type StudioModuleContext,
@@ -32,12 +30,6 @@ export function OfferWorkspace({
   context: StudioModuleContext;
 }) {
   const requestedSurface = context.surface as OfferStudioSurface;
-  const activeTab: OfferStudioSurface =
-    requestedSurface === "sales" ||
-    requestedSurface === "catalog" ||
-    requestedSurface === "evidence"
-      ? requestedSurface
-      : "products";
   const priorityFocus = mapActionsToFocus(report.priorities);
   const topProducts = report.catalog.highlights.topSellers.length
     ? report.catalog.highlights.topSellers
@@ -101,11 +93,67 @@ export function OfferWorkspace({
           <span>Painel de oferta</span>
           <strong>{report.context.brandName}</strong>
         </div>
-        <WorkspaceTabs active={activeTab} tabs={getStudioWorkspaceTabs("offer", context)} />
-        {activeTab === "products" ? <OfferProductsPanel report={report} context={context} /> : null}
-        {activeTab === "sales" ? <OfferSalesPanel report={report} /> : null}
-        {activeTab === "catalog" ? <OfferCatalogPanel report={report} topProducts={topProducts} /> : null}
-        {activeTab === "evidence" ? (
+        {requestedSurface === "overview" ? (
+          <div className="v3-section-grid">
+            <div className="v3-panel-body">
+              <div className="v3-subsection-head">
+                <span>Frentes do módulo</span>
+              </div>
+              <FocusList
+                items={[
+                  {
+                    label: "Produtos",
+                    title: "Abrir decisões do portfólio",
+                    detail:
+                      "Veja itens que merecem proteção, revisão ou escala sem sair do domínio de oferta.",
+                    href: buildStudioHref("offer", { surface: "products" }),
+                    tone: "good",
+                  },
+                  {
+                    label: "Radar",
+                    title: "Ler momentum dos itens",
+                    detail:
+                      "Acompanhe quais produtos estão ganhando ou perdendo força no recorte.",
+                    href: buildStudioHref("offer", { surface: "products", mode: "radar" }),
+                    tone: "warn",
+                  },
+                  {
+                    label: "Vendas",
+                    title: "Cruzar receita e unidades",
+                    detail:
+                      "Valide demanda real e contribuição comercial antes de aumentar o portfólio.",
+                    href: buildStudioHref("offer", { surface: "sales" }),
+                    tone: "info",
+                  },
+                  {
+                    label: "Catálogo",
+                    title: "Revisar cobertura visual",
+                    detail:
+                      "Abra o catálogo para localizar itens ativos, descobertos e lacunas de feed.",
+                    href: buildStudioHref("offer", { surface: "catalog" }),
+                    tone: "info",
+                  },
+                ]}
+              />
+            </div>
+            <div className="v3-panel-body">
+              <TrendBars
+                title="Produtos em destaque"
+                items={report.overview.topProducts.slice(0, 5).map((item) => ({
+                  label: item.label,
+                  value:
+                    Number(item.value.replace(/[^\d,-]/g, "").replace(/\./g, "").replace(",", ".")) || 0,
+                  detail: item.summary,
+                  tone: "good" as const,
+                }))}
+              />
+            </div>
+          </div>
+        ) : null}
+        {requestedSurface === "products" ? <OfferProductsPanel report={report} context={context} /> : null}
+        {requestedSurface === "sales" ? <OfferSalesPanel report={report} /> : null}
+        {requestedSurface === "catalog" ? <OfferCatalogPanel report={report} topProducts={topProducts} /> : null}
+        {requestedSurface === "evidence" ? (
           <StudioEvidenceSection
             queue={
               <ExecutiveQueueBoard

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { V3ModuleChrome } from "../BrandOpsShellV3";
-import { ExecutiveQueueBoard, FocusList, MetricRibbon, TrendBars, WorkspaceTabs } from "../StudioPrimitives";
+import { ExecutiveQueueBoard, FocusList, MetricRibbon, TrendBars } from "../StudioPrimitives";
 import { StudioEvidenceSection } from "../shared/StudioEvidenceSection";
 import { FinanceDreTab } from "./FinanceDreTab";
 import { FinanceLedger } from "./FinanceLedger";
@@ -14,7 +14,7 @@ import { FinanceSalesTab } from "./FinanceSalesTab";
 import { getFinanceWorkspaceMeta } from "./getFinanceWorkspaceMeta";
 import {
   buildFinanceMetrics,
-  getStudioWorkspaceTabs,
+  buildStudioHref,
   mapActionsToFocus,
   type FinanceStudioSurface,
   type StudioFocusItem,
@@ -38,12 +38,6 @@ export function FinanceWorkspace({
   context: StudioModuleContext;
 }) {
   const requestedSurface = context.surface as FinanceStudioSurface;
-  const activeTab: FinanceStudioSurface =
-    requestedSurface === "sales" ||
-    requestedSurface === "operations" ||
-    requestedSurface === "evidence"
-      ? requestedSurface
-      : "dre";
   const topProducts = report.sales.topProducts.slice(0, 6);
   const financeMeta = getFinanceWorkspaceMeta(requestedSurface, context);
 
@@ -102,8 +96,63 @@ export function FinanceWorkspace({
           <span>Painel financeiro</span>
           <strong>{report.financial.months.length} competências</strong>
         </div>
-        <WorkspaceTabs active={activeTab} tabs={getStudioWorkspaceTabs("finance", context)} />
-        {activeTab === "dre" ? (
+        {requestedSurface === "overview" ? (
+          <div className="v3-section-grid">
+            <div className="v3-panel-body">
+              <div className="v3-subsection-head">
+                <span>Frentes do módulo</span>
+              </div>
+              <FocusList
+                items={[
+                  {
+                    label: "DRE",
+                    title: "Abrir leitura financeira",
+                    detail:
+                      "Use o DRE para validar linha, pressão e resultado consolidado por competência.",
+                    href: buildStudioHref("finance", { surface: "dre" }),
+                    tone: "info",
+                  },
+                  {
+                    label: "Lançamentos",
+                    title: "Organizar despesas e categorias",
+                    detail:
+                      "Abra lançamentos para trabalhar competência, categorias e ritmo operacional do fechamento.",
+                    href: buildStudioHref("finance", { surface: "operations" }),
+                    tone: "warn",
+                  },
+                  {
+                    label: "CMV",
+                    title: "Auditar custo aplicado",
+                    detail:
+                      "Veja cobertura de CMV e pressão dos itens antes de qualquer decisão de preço.",
+                    href: buildStudioHref("finance", { surface: "operations", focus: "cmv" }),
+                    tone: "warn",
+                  },
+                  {
+                    label: "Vendas",
+                    title: "Cruzar receita e mix",
+                    detail:
+                      "Leia venda real e itens líderes para entender o que sustenta o caixa.",
+                    href: buildStudioHref("finance", { surface: "sales" }),
+                    tone: "good",
+                  },
+                ]}
+              />
+            </div>
+            <div className="v3-panel-body">
+              <TrendBars
+                title="Resultado por competência"
+                items={report.financial.months.slice(-6).map((month) => ({
+                  label: month.label,
+                  value: month.metrics.netResult,
+                  detail: `RLD ${currencyFormatter.format(month.metrics.rld)}`,
+                  tone: month.metrics.netResult >= 0 ? "good" : "bad",
+                }))}
+              />
+            </div>
+          </div>
+        ) : null}
+        {requestedSurface === "dre" ? (
           <FinanceDreTab
             ledger={<FinanceLedger report={report} />}
             queue={
@@ -117,7 +166,7 @@ export function FinanceWorkspace({
             }
           />
         ) : null}
-        {activeTab === "operations" ? (
+        {requestedSurface === "operations" ? (
           <FinanceOperationsTab
             primary={<FinanceOperationsPrimary report={report} context={context} />}
             secondary={
@@ -129,13 +178,13 @@ export function FinanceWorkspace({
             }
           />
         ) : null}
-        {activeTab === "sales" ? (
+        {requestedSurface === "sales" ? (
           <FinanceSalesTab
             sales={<FinanceSalesPanel topProducts={topProducts} />}
             playbook={<FinancePlaybookPanel report={report} />}
           />
         ) : null}
-        {activeTab === "evidence" ? (
+        {requestedSurface === "evidence" ? (
           <StudioEvidenceSection sources={report.sourceHealth} links={report.evidenceLinks} />
         ) : null}
       </section>

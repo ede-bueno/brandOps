@@ -7,24 +7,17 @@ import {
   buildOpsFocusItems,
   buildOpsMetrics,
   buildStudioHref,
-  getStudioWorkspaceTabs,
   makeModuleFallback,
   type OpsStudioSurface,
   type StudioModuleContext,
 } from "@/lib/brandops-v3/view-models";
 import { integerFormatter } from "@/lib/brandops/format";
 import { V3ModuleChrome } from "../BrandOpsShellV3";
-import { FocusList, InlineEmpty, MetricRibbon, TrendBars, WorkspaceTabs } from "../StudioPrimitives";
+import { FocusList, InlineEmpty, MetricRibbon, TrendBars } from "../StudioPrimitives";
 import { resolveOpsWorkspaceMeta } from "./resolveOpsWorkspaceMeta";
 
 export function OpsWorkspace({ context }: { context: StudioModuleContext }) {
   const requestedSurface = context.surface as OpsStudioSurface;
-  const activeTab: OpsStudioSurface =
-    requestedSurface === "imports" ||
-    requestedSurface === "governance" ||
-    requestedSurface === "support"
-      ? requestedSurface
-      : "integrations";
   const { activeBrand } = useBrandOps();
   const focus = buildOpsFocusItems(activeBrand);
   const integrations = activeBrand?.integrations ?? [];
@@ -82,8 +75,64 @@ export function OpsWorkspace({ context }: { context: StudioModuleContext }) {
           <span>Operação da marca</span>
           <strong>{activeBrand?.governance.planTier ?? "starter"}</strong>
         </div>
-        <WorkspaceTabs active={activeTab} tabs={getStudioWorkspaceTabs("ops", context)} />
-        {activeTab === "integrations" ? (
+        {requestedSurface === "overview" ? (
+          <div className="v3-section-grid">
+            <div className="v3-panel-body">
+              <div className="v3-subsection-head">
+                <span>Frentes do módulo</span>
+              </div>
+              <FocusList
+                items={[
+                  {
+                    label: "Integrações",
+                    title: "Conectar e revisar fontes",
+                    detail:
+                      "Abra o console de integrações para validar provedores, status e sincronizações.",
+                    href: buildStudioHref("ops", { surface: "integrations" }),
+                    tone: "info",
+                  },
+                  {
+                    label: "Importação",
+                    title: "Acompanhar cargas recentes",
+                    detail:
+                      "Use imports para revisar arquivos, linhas processadas e próximos envios.",
+                    href: buildStudioHref("ops", { surface: "imports" }),
+                    tone: "good",
+                  },
+                  {
+                    label: "Saneamento",
+                    title: "Resolver ruído da base",
+                    detail:
+                      "Abra governança com foco em saneamento para tratar pendências antes da análise.",
+                    href: buildStudioHref("ops", { surface: "governance", focus: "sanitization" }),
+                    tone: "warn",
+                  },
+                  {
+                    label: "Ajuda",
+                    title: "Abrir tutoriais e suporte",
+                    detail:
+                      "Centralize setup guiado, documentação e acessos administrativos em um só lugar.",
+                    href: buildStudioHref("ops", { surface: "support" }),
+                    tone: "info",
+                  },
+                ]}
+              />
+            </div>
+            <div className="v3-panel-body">
+              <TrendBars
+                title="Últimas cargas"
+                items={files.slice(0, 5).map((file) => ({
+                  label: file.kind,
+                  value: file.totalInserted,
+                  detail: file.lastImportedAt.slice(0, 10),
+                  tone: "info" as const,
+                }))}
+                formatValue={(value) => `${integerFormatter.format(value)} linhas`}
+              />
+            </div>
+          </div>
+        ) : null}
+        {requestedSurface === "integrations" ? (
           <div className="v3-panel-body">
             {context.provider ? (
               <div className="v3-note">
@@ -123,7 +172,7 @@ export function OpsWorkspace({ context }: { context: StudioModuleContext }) {
             </div>
           </div>
         ) : null}
-        {activeTab === "imports" ? (
+        {requestedSurface === "imports" ? (
           <div className="v3-panel-body">
             <div className="v3-data-list">
               {files.length ? (
@@ -143,7 +192,7 @@ export function OpsWorkspace({ context }: { context: StudioModuleContext }) {
             </div>
           </div>
         ) : null}
-        {activeTab === "governance" ? (
+        {requestedSurface === "governance" ? (
           <div className="v3-section-grid">
             <div className="v3-panel-body">
               <div className="v3-subsection-head">
@@ -166,7 +215,7 @@ export function OpsWorkspace({ context }: { context: StudioModuleContext }) {
             </div>
           </div>
         ) : null}
-        {activeTab === "support" ? (
+        {requestedSurface === "support" ? (
           <div className="v3-section-grid">
             <div className="v3-panel-body">
               <div className="v3-subsection-head">
@@ -218,4 +267,3 @@ export function OpsWorkspace({ context }: { context: StudioModuleContext }) {
     </V3ModuleChrome>
   );
 }
-
