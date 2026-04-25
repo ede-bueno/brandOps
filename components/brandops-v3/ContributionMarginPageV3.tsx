@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { ArrowUpRight } from "lucide-react";
 import { useBrandOps } from "@/components/BrandOpsProvider";
 import { currencyFormatter, percentFormatter } from "@/lib/brandops/format";
 import { buildStudioHref } from "@/lib/brandops-v3/view-models";
+import { MarginDecisionPanel, MarginPeriodSummaryPanel } from "./margin/MarginHeroPanels";
+import { MarginRadarPanel } from "./margin/MarginRadarPanel";
+import { MarginTimelinePanel } from "./margin/MarginTimelinePanel";
 import { WorkspaceTabs } from "./StudioPrimitives";
 import { V3EmptyState, V3ModuleChrome } from "./BrandOpsShellV3";
 
@@ -131,80 +133,24 @@ export function ContributionMarginPageV3({
       </section>
 
       <section className="v3-command-grid">
-        <div className="v3-panel v3-brief-panel">
-          <span>Decisão de margem</span>
-          <h2>{primaryAction}</h2>
-          <p>
-            {viewMode === "historical"
-              ? "A leitura histórica ajuda a separar desvio estrutural de ruído pontual."
-              : `Você está olhando o mesmo recorte ativo do shell: ${selectedPeriodLabel}.`}
-          </p>
-          <div className="v3-focus-list">
-            <Link href={buildStudioHref("finance", { surface: "dre" })} data-tone="warn">
-              <div>
-                <span>Melhor próximo passo</span>
-                <strong>{report.total.contributionMargin < 0 ? "Fechar DRE e despesas" : "Cruzar com aquisição"}</strong>
-                <p>
-                  {report.total.contributionMargin < 0
-                    ? "Valide linha a linha antes de aceitar qualquer expansão."
-                    : "Cheque se a tração veio de mídia eficiente ou de mix comercial."}
-                </p>
-              </div>
-              <ArrowUpRight size={16} />
-            </Link>
-            <article data-tone={momentum.tone === "positive" ? "good" : momentum.tone === "warning" ? "warn" : "info"}>
-              <div>
-                <span>Momentum</span>
-                <strong>{momentum.title}</strong>
-                <p>{momentum.description}</p>
-              </div>
-            </article>
-          </div>
-        </div>
-
-        <div className="v3-panel">
-          <div className="v3-panel-heading">
-            <span>Resumo do período</span>
-            <strong>{selectedBrandName}</strong>
-          </div>
-          <div className="v3-panel-body">
-            <div className="v3-focus-list">
-              <article data-tone="good">
-                <div>
-                  <span>Melhor mês</span>
-                  <strong>{bestMonth ? bestMonth.label : "Sem histórico"}</strong>
-                  <p>
-                    {bestMonth
-                      ? currencyFormatter.format(bestMonth.contributionAfterMedia)
-                      : "Ainda não há mês suficiente para comparação."}
-                  </p>
-                </div>
-              </article>
-              <article data-tone="warn">
-                <div>
-                  <span>Pior mês</span>
-                  <strong>{worstMonth ? worstMonth.label : "Sem histórico"}</strong>
-                  <p>
-                    {worstMonth
-                      ? currencyFormatter.format(worstMonth.contributionAfterMedia)
-                      : "Ainda não há mês suficiente para comparação."}
-                  </p>
-                </div>
-              </article>
-              <article data-tone="info">
-                <div>
-                  <span>Último fechamento</span>
-                  <strong>{latestMonth ? latestMonth.label : "Sem fechamento"}</strong>
-                  <p>
-                    {latestMonth
-                      ? `Resultado ${currencyFormatter.format(latestMonth.netResult)}`
-                      : "A série aparece aqui assim que houver fechamento mensal."}
-                  </p>
-                </div>
-              </article>
-            </div>
-          </div>
-        </div>
+        <MarginDecisionPanel
+          primaryAction={primaryAction}
+          viewMode={viewMode}
+          selectedPeriodLabel={selectedPeriodLabel}
+          contributionMargin={report.total.contributionMargin}
+          momentumTitle={momentum.title}
+          momentumDescription={momentum.description}
+          momentumTone={momentum.tone}
+        />
+        <MarginPeriodSummaryPanel
+          selectedBrandName={selectedBrandName}
+          bestMonthLabel={bestMonth ? bestMonth.label : "Sem histórico"}
+          bestMonthContribution={bestMonth?.contributionAfterMedia}
+          worstMonthLabel={worstMonth ? worstMonth.label : "Sem histórico"}
+          worstMonthContribution={worstMonth?.contributionAfterMedia}
+          latestMonthLabel={latestMonth ? latestMonth.label : "Sem fechamento"}
+          latestMonthResult={latestMonth?.netResult}
+        />
       </section>
 
       <section className="v3-panel">
@@ -228,92 +174,15 @@ export function ContributionMarginPageV3({
         />
 
         {activeSection === "radar" ? (
-          <div className="v3-section-grid">
-            <div className="v3-panel-body">
-              <div className="v3-subsection-head">
-                <span>Últimos meses</span>
-              </div>
-              <div className="v3-data-list">
-                {latestMonths.map((month) => (
-                  <Link key={month.monthKey} href={buildStudioHref("finance", { surface: "dre" })}>
-                    <span>{month.label}</span>
-                    <strong>{currencyFormatter.format(month.metrics.contributionAfterMedia)}</strong>
-                    <small>{percentFormatter.format(month.metrics.contributionMargin)} margem</small>
-                  </Link>
-                ))}
-              </div>
-            </div>
-            <div className="v3-section-stack">
-              <div className="v3-note">
-                <strong>Distribuição de pressão</strong>
-                <p>
-                  CMV {percentFormatter.format(cmvShare)} | Mídia {percentFormatter.format(mediaShare)} | Despesas {percentFormatter.format(expenseShare)}
-                </p>
-              </div>
-              <div className="v3-focus-list">
-                <article data-tone={report.total.contributionMargin >= 0 ? "good" : "bad"}>
-                  <div>
-                    <span>Margem atual</span>
-                    <strong>{percentFormatter.format(report.total.contributionMargin)}</strong>
-                    <p>
-                      {report.total.contributionMargin >= 0
-                        ? "A contribuição ainda sustenta a operação no período."
-                        : "A margem foi comprimida e precisa de correção antes de escalar."}
-                    </p>
-                  </div>
-                </article>
-                <Link href={buildStudioHref("growth", { surface: "media" })} data-tone="info">
-                  <div>
-                    <span>Cruzar com aquisição</span>
-                    <strong>{report.total.contributionMargin >= 0 ? "Validar ganho via mídia" : "Entender pressão da mídia"}</strong>
-                    <p>Abra Crescimento para ver se a tração ou a pressão veio do gasto.</p>
-                  </div>
-                  <ArrowUpRight size={16} />
-                </Link>
-                <Link href={buildStudioHref("offer", { surface: "sales" })} data-tone="info">
-                  <div>
-                    <span>Cruzar com oferta</span>
-                    <strong>Checar mix e ticket</strong>
-                    <p>Abra Oferta para confirmar se o mix comercial está sustentando a margem.</p>
-                  </div>
-                  <ArrowUpRight size={16} />
-                </Link>
-              </div>
-            </div>
-          </div>
+          <MarginRadarPanel
+            latestMonths={latestMonths}
+            cmvShare={cmvShare}
+            mediaShare={mediaShare}
+            expenseShare={expenseShare}
+            contributionMargin={report.total.contributionMargin}
+          />
         ) : (
-          <div className="v3-ledger">
-            <div className="v3-ledger-row v3-ledger-head">
-              <span>Indicador</span>
-              {latestMonths.map((month) => (
-                <strong key={month.monthKey}>{month.label}</strong>
-              ))}
-            </div>
-            <div className="v3-ledger-row">
-              <span>Contribuição</span>
-              {latestMonths.map((month) => (
-                <strong key={`contribution-${month.monthKey}`}>
-                  {currencyFormatter.format(month.metrics.contributionAfterMedia)}
-                </strong>
-              ))}
-            </div>
-            <div className="v3-ledger-row">
-              <span>Margem</span>
-              {latestMonths.map((month) => (
-                <strong key={`margin-${month.monthKey}`}>
-                  {percentFormatter.format(month.metrics.contributionMargin)}
-                </strong>
-              ))}
-            </div>
-            <div className="v3-ledger-row">
-              <span>Resultado</span>
-              {latestMonths.map((month) => (
-                <strong key={`result-${month.monthKey}`}>
-                  {currencyFormatter.format(month.metrics.netResult)}
-                </strong>
-              ))}
-            </div>
-          </div>
+          <MarginTimelinePanel latestMonths={latestMonths} />
         )}
       </section>
     </V3ModuleChrome>
